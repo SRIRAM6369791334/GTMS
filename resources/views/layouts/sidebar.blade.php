@@ -2,83 +2,109 @@
      <div class="dlabnav-scroll">
          <ul class="metismenu" id="menu">
 
-             <li><a href="/dashboard" aria-expanded="false">
-                     <i class="fas fa-home"></i>
-                     <span class="nav-text">Home</span>
-                 </a>
-             </li>
-             <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
-                     <i class="fas fa-user"></i>
-                     <span class="nav-text">Authentication</span>
-                 </a>
-                 <ul aria-expanded="false">
-                     <li><a href="/branch">Department</a></li>
-                     <li><a href="/roles">Role</a></li>
-                     <li><a href="/user">Users</a></li>
+            @can('dashboard.view')
+            <li><a href="/dashboard" aria-expanded="false">
+                    <i class="fas fa-home"></i>
+                    <span class="nav-text">Home</span>
+                </a>
+            </li>
+            @endcan
+            @canany(['branch.view', 'roles.view', 'users.view'])
+            <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
+                    <i class="fas fa-user"></i>
+                    <span class="nav-text">Authentication</span>
+                </a>
+                <ul aria-expanded="false">
+                    @can('branch.view')
+                    <li><a href="/branch">Department</a></li>
+                    @endcan
+                    @can('roles.view')
+                    <li><a href="/roles">Role</a></li>
+                    @endcan
+                    @can('users.view')
+                    <li><a href="/user">Users</a></li>
+                    @endcan
+                </ul>
+            </li>
+            @endcanany
+            @can('customer.view')
+            <li>
+                <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                    <i class="fas fa-users"></i>
+                    <span class="nav-text">Customers</span>
+                </a>
+                <ul aria-expanded="false">
+                    <li><a href="/customers">Customers</a></li>
+                </ul>
+            </li>
+            @endcan
 
-                 </ul>
-
-             </li>
-             <li>
-                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-                     <i class="fas fa-chart-line"></i>
-                     <span class="nav-text">Lease Applications</span>
-                 </a>
-                 <ul aria-expanded="false">
-                     <li><a href="/application">Application</a></li>
-
-
-                 </ul>
-             </li>
-             <li>
-                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-                     <i class="fas fa-file-alt"></i>
-                     <span class="nav-text">Mining Plan</span>
-                 </a>
-                 <ul aria-expanded="false">
-                     <li><a href="/miningplan">Mining Plan</a></li>
-                     <li><a href="/projectfolder">Project Folders</a></li>
-                     <li><a href="/process">Process</a></li>
+            @can('application.view')
+            <li>
+                <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="nav-text">Lease Applications</span>
+                </a>
+                <ul aria-expanded="false">
+                    <li><a href="/application">Application</a></li>
+                </ul>
+            </li>
+            @endcan
 
 
-                 </ul>
-             </li>
+            @can('mining.view')
+            <li>
+                <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                    <i class="fas fa-file-alt"></i>
+                    <span class="nav-text">Mining Plan</span>
+                </a>
+                <ul aria-expanded="false">
+                    <li><a href="/miningplan">Mining Plan</a></li>
+                    <li><a href="/projectfolder">Project Folders</a></li>
+                    <li><a href="/process">Process</a></li>
+                </ul>
+            </li>
+            @endcan
+            @can('environment.view')
+            <li>
+                <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                    <i class="fas fa-info-circle"></i>
+                    <span class="nav-text">Environment Clearance</span>
+                </a>
+                <ul aria-expanded="false">
+                    <li><a href="/environstage1">Sub Category 1</a></li>
+                    <li><a href="/environstage2">Sub Category 2</a></li>
+                    <li><a href="{{ route('environment-b2.index') }}">B2 Document Process</a></li>
+                    <li><a href="{{ route('ec-certificate.index') }}">EC Certificate Issuance</a></li>
+                </ul>
+            </li>
+            @endcan
+            @can('ppt.view')
+            <li>
+                <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
+                    <i class="fas fa-landmark"></i>
+                    <span class="nav-text">PPT Department</span>
+                </a>
+                <ul aria-expanded="false">
+                    <li><a href="{{ route('ppt-department.index') }}">Online Domain Process</a></li>
+                </ul>
+            </li>
+            @endcan
+            @can('dgps.view')
+            <li><a href="{{ route('dgps-survey.index') }}" aria-expanded="false">
+                    <i class="fa fa-map-marker-alt fa-2x"></i>
+                    <span class="nav-text">DGPS Survey</span>
+                </a>
+            </li>
+            @endcan
+            @can('drone.view')
+            <li><a href="{{ route('drone-survey.index') }}" aria-expanded="false">
+                    <i class="fa fa-paper-plane fa-2x"></i>
+                    <span class="nav-text">Drone Survey</span>
+                </a>
+            </li>
+            @endcan
 
-
-
-             <li>
-                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-                     <i class="fas fa-info-circle"></i>
-                     <span class="nav-text">Environment Clearance</span>
-                 </a>
-                 <ul aria-expanded="false">
-                     <li><a href="/environstage1">Sub Category 1</a></li>
-                     <li><a href="/environstage2">Sub Category 2</a></li>
-                     <li><a href="{{ route('environment-b2.index') }}">B2 Document Process</a></li>
-                     <li><a href="{{ route('ec-certificate.index') }}">EC Certificate Issuance</a></li>
-
-                 </ul>
-             </li>
-             <li>
-                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-                     <i class="fas fa-landmark"></i>
-                     <span class="nav-text">PPT Department</span>
-                 </a>
-                 <ul aria-expanded="false">
-                     <li><a href="{{ route('ppt-department.index') }}">Online Domain Process</a></li>
-
-                 </ul>
-             </li>
-             <li><a href="{{ route('dgps-survey.index') }}" aria-expanded="false">
-                     <i class="fa fa-map-marker-alt fa-2x"></i>
-                     <span class="nav-text">DGPS Survey</span>
-                 </a>
-             </li>
-             <li><a href="{{ route('drone-survey.index') }}" aria-expanded="false">
-                     <i class="fa fa-paper-plane fa-2x"></i>
-                     <span class="nav-text">Drone Survey</span>
-                 </a>
-             </li>
              {{--  <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
                             <i class="fas fa-info-circle"></i>
                             <span class="nav-text">Apps</span>

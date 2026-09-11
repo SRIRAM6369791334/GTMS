@@ -35,6 +35,7 @@
 
     <!-- Style css -->
     <link href="/vendor/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="/css/style.css?v=2" rel="stylesheet">
     {{-- <link href="css/style1.css" rel="stylesheet"> --}}
 

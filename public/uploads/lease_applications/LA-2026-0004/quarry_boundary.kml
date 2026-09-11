@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document><name>Quarry Boundary - LA-2026-0004</name>
+<Placemark><name>Boundary</name>
+<Polygon><outerBoundaryIs><LinearRing><coordinates>
+76.9600,11.0168,0 76.9610,11.0168,0 76.9610,11.0178,0 76.9600,11.0178,0 76.9600,11.0168,0
+</coordinates></LinearRing></outerBoundaryIs></Polygon>
+</Placemark></Document></kml>

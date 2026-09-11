@@ -23,10 +23,11 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="card-title mb-0">Departments</h4>
 
-                            <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
-                                   data-bs-toggle="modal" data-bs-target=".bd-example-modal-lg"><i
-                                        class="fa fa-plus color-info"></i>
-                                </span>Add Department</button>
+                            @can('branch.create')
+                            <button type="button" class="btn btn-rounded btn-info" data-bs-toggle="modal" data-bs-target=".bd-example-modal-lg">
+                                <span class="btn-icon-start text-info"><i class="fa fa-plus color-info"></i></span>Add Department
+                            </button>
+                            @endcan
 
                         </div>
                         <div class="card-body">
@@ -59,20 +60,23 @@
                                                     @endif
                                                 </td>
                                                 <td>
-
-
-                                                    <button type="button" class="btn btn-primary shadow btn-xs sharp me-1 editbranchBtn"  data-bs-toggle="modal" data-bs-target=".bd-editbranch-modal-lg"
+                                                    @can('branch.edit')
+                                                    <button type="button" class="btn btn-primary shadow btn-xs sharp me-1 editbranchBtn" data-bs-toggle="modal" data-bs-target=".bd-editbranch-modal-lg"
                                                         data-id="{{ $branch->id }}" data-name="{{ $branch->branch_name }}" data-contact="{{ $branch->contact_person }}" data-mobile="{{ $branch->mobile }}" data-address="{{ $branch->address }}"
                                                         data-city="{{ $branch->city }}" data-state="{{ $branch->state }}"
                                                         data-pincode="{{ $branch->pincode }}" data-status="{{ $branch->status }}">
                                                         <i class="fas fa-pencil-alt"></i>
                                                     </button>
+                                                    @endcan
 
+                                                    @can('branch.delete')
                                                     <button type="button" class="btn btn-danger shadow btn-xs sharp me-1 deletebranchBtn"
                                                         data-id="{{ $branch->id }}">
                                                         <i class="fa fa-trash"></i>
                                                     </button>
+                                                    @endcan
                                                 </td>
+
                                             </tr>
                                         @endforeach
                                     </tbody>

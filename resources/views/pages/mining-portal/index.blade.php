@@ -13,10 +13,13 @@
                     </ol>
                 </div>
                 <div class="col-lg-6 text-end">
+                    @can('mining.create')
                     <a href="/newapplication"><button class="btn btn-rounded btn-info"><span
                                 class="btn-icon-start text-info"><i class="fa fa-plus color-info"></i>
                             </span>New Application</button></a>
+                    @endcan
                 </div>
+
             </div>
 
             <div class="row">
@@ -150,10 +153,19 @@
                                             <td><a href="#" class="badge badge-primary">Pending</a></td>
 
                                             <td>
+                                                @can('mining.view')
                                                 <a href="/viewapplication" class="btn btn-sm btn-primary">View</a>
+                                                @endcan
+                                                @can('mining.edit')
                                                 <a href="#" class="btn btn-sm btn-success">Approve</a>
+                                                @endcan
+                                                @can('mining.delete')
                                                 <a href="#" class="btn btn-sm btn-danger">Reject</a>
+                                                @endcan
+                                            </td>
+                                        </tr>
                                     </tbody>
+
                                 </table>
                             </div>
                         </div>

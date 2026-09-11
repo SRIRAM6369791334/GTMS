@@ -289,10 +289,12 @@
 
                     <div class="d-flex justify-content-between mt-4 pt-3 border-top">
                         <button class="btn btn-outline-navy btn-prev"><i class="bi bi-arrow-left me-1"></i>Back</button>
+                        @can('mining.create')
                         <div class="d-flex gap-2">
                             <button class="btn btn-light border">Save as draft</button>
                             <button class="btn btn-navy btn-next">Continue<i class="bi bi-arrow-right ms-1"></i></button>
                         </div>
+                        @endcan
                     </div>
                 </div>
             </main>

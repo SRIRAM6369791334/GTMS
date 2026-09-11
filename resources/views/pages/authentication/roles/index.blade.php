@@ -23,19 +23,21 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="card-title mb-0">Roles</h4>
 
-                            <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
-                                    data-bs-toggle="modal" data-bs-target=".bd-example-modal-lg"><i
-                                        class="fa fa-plus color-info"></i>
-                                </span>Add</button>
+                            @can('roles.create')
+                            <button type="button" class="btn btn-rounded btn-info" data-bs-toggle="modal" data-bs-target=".bd-example-modal-lg">
+                                <span class="btn-icon-start text-info"><i class="fa fa-plus color-info"></i></span>Add
+                            </button>
+                            @endcan
 
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table id="example10" class="display" style="width:100%">
+                                <table id="example10" class="display table" style="width:100%">
                                     <thead>
                                         <tr>
                                             <th>S No</th>
                                             <th>Role</th>
+                                            <th>Permissions Assigned</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -43,22 +45,52 @@
                                         @foreach ($roles as $role)
                                             <tr id="row{{ $role->id }}">
                                                 <td>{{ $loop->iteration }}</td>
-                                                <td>{{ $role->name }}</td>
                                                 <td>
-                                                    <button type="button" class="btn btn-primary editBtn shadow btn-xs sharp me-1"  data-bs-toggle="modal" data-bs-target=".bd-edit-modal-lg"
-                                                        data-id="{{ $role->id }}" data-name="{{ $role->name }}">
+                                                    <span class="fw-bold text-dark fs-14">{{ $role->name }}</span>
+                                                    @if($role->name === 'Admin' || $role->name === 'Super Admin')
+                                                        <span class="badge badge-xs bg-danger ms-1">Super Admin</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($role->name === 'Admin')
+                                                        <span class="badge bg-success-subtle text-success border border-success px-2 py-1">
+                                                            <i class="fa fa-infinity me-1"></i> All Permissions (Super Admin)
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary px-2 py-1 me-1">
+                                                            <i class="fa fa-lock me-1"></i> {{ $role->permissions->count() }} Permissions
+                                                        </span>
+                                                        <small class="text-muted d-block mt-1">
+                                                            {{ Str::limit($role->permissions->pluck('name')->implode(', '), 50, '...') }}
+                                                        </small>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @can('roles.edit')
+                                                    <button type="button" class="btn btn-primary editBtn shadow btn-xs sharp me-1" 
+                                                        data-id="{{ $role->id }}" 
+                                                        data-name="{{ $role->name }}"
+                                                        title="Edit Role & Permissions">
                                                         <i class="fa fa-pencil"></i>
                                                     </button>
+                                                    @endcan
 
-                                                    <button type="button" class="btn btn-danger deleteBtn shadow btn-xs sharp me-1"
-                                                        data-id="{{ $role->id }}">
-                                                        <i class="fa fa-trash"></i>
-                                                    </button>
+                                                    @can('roles.delete')
+                                                    @if($role->name !== 'Admin' && $role->name !== 'Super Admin')
+                                                        <button type="button" class="btn btn-danger deleteBtn shadow btn-xs sharp me-1"
+                                                            data-id="{{ $role->id }}"
+                                                            title="Delete Role">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    @endif
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
+
                                 </table>
+
                             </div>
                         </div>
                     </div>

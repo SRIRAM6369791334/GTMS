@@ -165,19 +165,42 @@ body {
       <h4 style="font-weight:800;">Welcome back</h4>
       <p class="text-muted" style="font-size:.85rem;">Sign in to your District Mining Office account.</p>
 
-      <form>
+      @if ($errors->any())
+        <div class="alert alert-danger py-2" style="font-size: 0.85rem;">
+            <ul class="mb-0 ps-3">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+      @endif
+
+      @if (session('success'))
+        <div class="alert alert-success py-2" style="font-size: 0.85rem;">
+            {{ session('success') }}
+        </div>
+      @endif
+
+      <form method="POST" action="{{ route('login.post') }}">
+        @csrf
         <div class="mb-3">
           <label class="form-label">Email or Employee ID</label>
-          <input type="text" class="form-control" placeholder="r.selvam@mines.gov.in">
+          <input type="text" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" placeholder="admin@gtms.com or LUK_001" required autofocus>
         </div>
         <div class="mb-2">
           <label class="form-label">Password</label>
-          <input type="password" class="form-control" placeholder="••••••••">
+          <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="••••••••" required>
         </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="remember" id="rememberMe">
+            <label class="form-check-label" for="rememberMe" style="font-size: .8rem; color: #555;">
+              Remember me
+            </label>
+          </div>
           <a href="#" style="font-size:.78rem; font-weight:600; color:var(--navy);">Forgot password?</a>
         </div>
-        <a href="/dashboard" class="btn btn-navy w-100 py-2">Sign in <i class="bi bi-arrow-right"></i></a>
+        <button type="submit" class="btn btn-navy w-100 py-2">Sign in <i class="bi bi-arrow-right"></i></button>
       </form>
 
       <p class="text-center mt-4" style="font-size:.78rem; color:var(--muted);">Need access? Contact your District Mining Office administrator.</p>

@@ -10,9 +10,14 @@
                         <li class="breadcrumb-item active"><a href="javascript:void(0)">Users</a></li>
                     </ol>
                 </div>
-                <div class="col-lg-6 text-end"><button class="btn btn-rounded btn-info" data-bs-toggle="modal"
+                <div class="col-lg-6 text-end">
+                    @can('users.create')
+                    <button class="btn btn-rounded btn-info" data-bs-toggle="modal"
                         data-bs-target=".bd-user-modal-lg"><span class="btn-icon-start text-info"><i
-                                class="fa fa-plus color-info"></i></span>Add User</button></div>
+                                class="fa fa-plus color-info"></i></span>Add User</button>
+                    @endcan
+                </div>
+
             </div>
             <div class="row">
                 <div class="col-xl-3 col-lg-3 col-sm-6">
@@ -72,124 +77,166 @@
                 <div class="panel-head">
                     <div>
                         <h5>Team Members</h5>
-                        <p class="sub">Manage access across Sub Category 1 &amp; 2 folders</p>
+                        <p class="sub">Active users and their role assignments in GTMS</p>
                     </div>
-                    <button class="btn btn-sm"
-                        style="background:var(--c-documents); color:#fff; font-weight:700; font-size:.8rem;"
-                        data-bs-toggle="modal" data-bs-target=".bd-user-modal-lg"><i class="bi bi-plus-lg me-1"></i>Add
-                        User</button>
+                    @can('users.create')
+                    <button class="btn btn-sm btn-info text-white fw-bold"
+                        data-bs-toggle="modal" data-bs-target=".bd-user-modal-lg"><i class="fa fa-plus me-1"></i>Add User</button>
+                    @endcan
+
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-admin align-middle mb-0">
+                <div class="table-responsive p-3">
+                    <table id="example10" class="table table-hover align-middle mb-0 display" style="width:100%">
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th>User</th>
                                 <th>Role</th>
-                                <th>Folder Access</th>
+                                <th>Department</th>
+                                <th>Mobile</th>
                                 <th>Status</th>
-                                <th>Last Active</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2"><span class="av avatar-chip .av"
-                                            style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3350c9,#7a52a8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;">RK</span>
-                                        <div>
-                                            <div class="fw-bold" style="font-size:.85rem;">R. Kannan</div>
-                                            <div class="text-muted" style="font-size:.72rem;">kannan@ecportal.gov.in</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge-status uploaded"><i class="bi bi-shield-check"></i> Compliance
-                                        Officer</span></td>
-                                <td>Sub Category 1 &amp; 2</td>
-                                <td><span class="badge-status approved"><i class="bi bi-circle-fill"
-                                            style="font-size:.5rem;"></i> Active</span></td>
-                                <td>2 min ago</td>
-                                <td class="text-end"><button class="row-action-btn"><i class="fa fa-pencil"></i></button>
-                                    <button class="row-action-btn"><i class="fa fa-list-ul"></i></button></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2"><span
-                                            style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1f8a55,#12968a);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;">SP</span>
-                                        <div>
-                                            <div class="fw-bold" style="font-size:.85rem;">S. Priya</div>
-                                            <div class="text-muted" style="font-size:.72rem;">priya@ecportal.gov.in</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge-status uploaded"><i class="bi bi-file-earmark-text"></i>
-                                        Documentation Lead</span></td>
-                                <td>Sub Category 1</td>
-                                <td><span class="badge-status approved"><i class="bi bi-circle-fill"
-                                            style="font-size:.5rem;"></i> Active</span></td>
-                                <td>1 hour ago</td>
-                                <td class="text-end"><button class="row-action-btn"><i class="fa fa-pencil"></i></button>
-                                    <button class="row-action-btn"><i class="fa fa-list-ul"></i></button></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2"><span
-                                            style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#d97e1e,#c22568);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;">DM</span>
-                                        <div>
-                                            <div class="fw-bold" style="font-size:.85rem;">Dr. Meena</div>
-                                            <div class="text-muted" style="font-size:.72rem;">meena@eiaexperts.in</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge-status uploaded"><i class="bi bi-flower1"></i> EIA Expert</span>
-                                </td>
-                                <td>Sub Category 2 &middot; Baseline Study</td>
-                                <td><span class="badge-status approved"><i class="bi bi-circle-fill"
-                                            style="font-size:.5rem;"></i> Active</span></td>
-                                <td>3 hours ago</td>
-                                <td class="text-end"><button class="row-action-btn"><i class="fa fa-pencil"></i></button>
-                                    <button class="row-action-btn"><i class="fa fa-list-ul"></i></button></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2"><span
-                                            style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6b7280,#8b95c9);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.72rem;">AV</span>
-                                        <div>
-                                            <div class="fw-bold" style="font-size:.85rem;">A. Vignesh</div>
-                                            <div class="text-muted" style="font-size:.72rem;">vignesh@ecportal.gov.in
+                            @foreach ($users as $user)
+                                <tr id="user_row_{{ $user->id }}">
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            @if($user->image && file_exists(public_path('uploads/users/' . $user->image)))
+                                                <img src="{{ asset('uploads/users/' . $user->image) }}" width="38" height="38" class="rounded-circle border" alt="">
+                                            @else
+                                                <span class="avatar-chip" style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#3350c9,#7a52a8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;">
+                                                    {{ strtoupper(substr($user->name, 0, 2)) }}
+                                                </span>
+                                            @endif
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size:.9rem;">{{ $user->name }}</div>
+                                                <div class="text-muted" style="font-size:.75rem;">
+                                                    <span class="badge bg-light text-muted border me-1">{{ $user->user_code ?? 'LUK_' . str_pad($user->id, 3, '0', STR_PAD_LEFT) }}</span>
+                                                    {{ $user->email }}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td><span class="badge-status pending"><i class="bi bi-eye"></i> Viewer</span></td>
-                                <td>Sub Category 2</td>
-                                <td><span class="badge-status rejected"><i class="bi bi-circle-fill"
-                                            style="font-size:.5rem;"></i> Suspended</span></td>
-                                <td>6 days ago</td>
-                                <td class="text-end"><button class="row-action-btn"><i class="fa fa-pencil"></i></button>
-                                    <button class="row-action-btn"><i class="fa fa-list-ul"></i></button></td>
-                            </tr>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $assignedRole = $user->roles->first() ? $user->roles->first()->name : ($user->role ? $user->role->name : 'No Role');
+                                        @endphp
+                                        @if($assignedRole === 'Admin' || $assignedRole === 'Super Admin')
+                                            <span class="badge bg-danger-subtle text-danger border border-danger"><i class="fa fa-shield-alt me-1"></i> {{ $assignedRole }}</span>
+                                        @else
+                                            <span class="badge bg-primary-subtle text-primary border border-primary"><i class="fa fa-user-tag me-1"></i> {{ $assignedRole }}</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $user->branch ? $user->branch->branch_name : 'General' }}</td>
+                                    <td>{{ $user->mobile_num ?? '—' }}</td>
+                                    <td>
+                                        @if($user->status == 1)
+                                            <span class="badge bg-success-subtle text-success border border-success"><i class="fa fa-check-circle me-1"></i> Active</span>
+                                        @else
+                                            <span class="badge bg-danger-subtle text-danger border border-danger"><i class="fa fa-times-circle me-1"></i> Inactive</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @can('users.edit')
+                                        <button type="button" class="btn btn-primary edituserBtn shadow btn-xs sharp me-1"
+                                            data-id="{{ $user->id }}"
+                                            data-name="{{ $user->name }}"
+                                            data-email="{{ $user->email }}"
+                                            data-role="{{ $user->role_id }}"
+                                            data-branch="{{ $user->branch_id }}"
+                                            data-status="{{ $user->status }}"
+                                            data-image="{{ $user->image }}"
+                                            data-mobile="{{ $user->mobile_num }}"
+                                            data-password="{{ $user->show_password }}">
+                                            <i class="fa fa-pencil"></i>
+                                        </button>
+                                        @endcan
+                                        @can('users.delete')
+                                        @if($user->id !== auth()->id() && !($user->hasRole('Admin') && $users->where('role_id', $user->role_id)->count() <= 1))
+                                            <button type="button" class="btn btn-danger deleteuserBtn shadow btn-xs sharp me-1"
+                                                data-id="{{ $user->id }}">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        @endif
+                                        @endcan
+                                    </td>
+
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-
-
-
             </div>
 
-              <div class="admin-panel">
-        <div class="panel-head"><div><h5>Role Permissions</h5><p class="sub">What each role can see and do</p></div></div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th>Role</th><th class="text-center">View Documents</th><th class="text-center">Upload</th><th class="text-center">Approve</th><th class="text-center">Manage Users</th></tr></thead>
-            <tbody>
-              <tr><td class="fw-bold">Compliance Officer</td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td></tr>
-              <tr><td class="fw-bold">Documentation Lead</td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center text-muted">—</td><td class="text-center text-muted">—</td></tr>
-              <tr><td class="fw-bold">EIA Expert</td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center text-muted">—</td><td class="text-center text-muted">—</td></tr>
-              <tr><td class="fw-bold">Viewer</td><td class="text-center"><i class="fa fa-check-circle" style="color:var(--ok);"></i></td><td class="text-center text-muted">—</td><td class="text-center text-muted">—</td><td class="text-center text-muted">—</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <!-- Role Permissions Matrix Overview -->
+            <div class="admin-panel">
+                <div class="panel-head">
+                    <div>
+                        <h5>Role Permissions Overview</h5>
+                        <p class="sub">Assigned capabilities per role in the system</p>
+                    </div>
+                </div>
+                <div class="table-responsive p-3">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th class="text-center">Total Permissions</th>
+                                <th class="text-center">Users & Roles</th>
+                                <th class="text-center">Mining Plans</th>
+                                <th class="text-center">Environment B1/B2</th>
+                                <th class="text-center">Surveys (DGPS/Drone)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($role as $r)
+                                <tr>
+                                    <td class="fw-bold text-dark">
+                                        {{ $r->name }}
+                                        @if($r->name === 'Admin')
+                                            <span class="badge bg-danger ms-1">Full Access</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-primary border">{{ $r->name === 'Admin' ? 'All (Unrestricted)' : $r->permissions->count() . ' Permissions' }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if($r->name === 'Admin' || $r->hasPermissionTo('users.view'))
+                                            <i class="fa fa-check-circle text-success fs-16"></i>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($r->name === 'Admin' || $r->hasPermissionTo('mining.view'))
+                                            <i class="fa fa-check-circle text-success fs-16"></i>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($r->name === 'Admin' || $r->hasPermissionTo('environment.view'))
+                                            <i class="fa fa-check-circle text-success fs-16"></i>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        @if($r->name === 'Admin' || $r->hasPermissionTo('dgps.view') || $r->hasPermissionTo('drone.view'))
+                                            <i class="fa fa-check-circle text-success fs-16"></i>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     @include('pages.authentication.users.createuser')

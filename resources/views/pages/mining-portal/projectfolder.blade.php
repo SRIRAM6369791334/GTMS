@@ -12,12 +12,15 @@
                         <h1>Sri Bala Traders — Gravel, Mining Plan</h1>
                         <p>Salem District · Created 3 Aug 2026 · Last activity 2 hours ago</p>
                     </div>
+                    @can('mining.edit')
                     <div class="d-flex gap-2">
                         <a href="/newapplication" class="btn btn-outline-navy"><i class="bi bi-pencil me-1"></i>Edit
                             details</a>
                         {{-- <a href="process-flow.html" class="btn btn-navy"><i class="bi bi-play-fill me-1"></i>Continue process</a> --}}
                     </div>
+                    @endcan
                 </div>
+
 
                 <!-- Client / District / Mineral / Plan chips (steps 1-4 recap) -->
                 <div class="surface p-3 mb-4">

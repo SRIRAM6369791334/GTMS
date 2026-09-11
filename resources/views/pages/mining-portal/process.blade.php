@@ -117,12 +117,15 @@
                                 </div>
                             </div>
 
+                            @can('mining.edit')
                             <div class="d-flex justify-content-end gap-2 mt-4">
                                 <button class="btn btn-outline-navy"><i
                                         class="bi bi-arrow-counterclockwise me-1"></i>Request re-upload</button>
                                 <button class="btn btn-info" disabled><i class="bi bi-check2 me-1"></i>Approve data
                                     (Yes)</button>
                             </div>
+                            @endcan
+
                         </div>
                     </div>
 

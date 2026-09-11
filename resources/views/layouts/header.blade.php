@@ -317,48 +317,41 @@
                                 </div>
                             </li> --}}
 
-                            <li class="nav-item dropdown  header-profile">
-                                <a class="nav-link" href="javascript:void(0);" role="button"
+                            <li class="nav-item dropdown header-profile">
+                                <a class="nav-link d-flex align-items-center" href="javascript:void(0);" role="button"
                                     data-bs-toggle="dropdown">
-                                    <img src="images/user.jpg" width="56" alt="">
+                                    @if(Auth::check() && Auth::user()->image)
+                                        <img src="{{ asset('uploads/users/' . Auth::user()->image) }}" width="40" height="40" class="rounded-circle" alt="">
+                                    @else
+                                        <img src="{{ asset('images/user.jpg') }}" width="40" height="40" class="rounded-circle" alt="">
+                                    @endif
+                                    <div class="header-info ms-2 d-none d-sm-inline-block text-start">
+                                        <span class="fs-14 fw-bold text-dark d-block">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</span>
+                                        <small class="fs-12 text-muted badge bg-light text-primary border">{{ Auth::check() && Auth::user()->roles->first() ? Auth::user()->roles->first()->name : (Auth::check() && Auth::user()->role ? Auth::user()->role->name : 'User') }}</small>
+                                    </div>
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end">
-                                    <a href="#" class="dropdown-item ai-icon">
-                                        <svg id="icon-user1" xmlns="http://www.w3.org/2000/svg" class="text-primary"
-                                            width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="12" cy="7" r="4"></circle>
-                                        </svg>
-                                        <span class="ms-2">Profile </span>
-                                    </a>
-                                    {{-- <a href="email-inbox.html" class="dropdown-item ai-icon">
-                                        <svg id="icon-inbox" xmlns="http://www.w3.org/2000/svg" class="text-success"
-                                            width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path
-                                                d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
-                                            </path>
-                                            <polyline points="22,6 12,13 2,6"></polyline>
-                                        </svg>
-                                        <span class="ms-2">Inbox </span>
-                                    </a> --}}
-                                    <a href="/" class="dropdown-item ai-icon">
+                                    <div class="px-3 py-2 border-bottom d-sm-none">
+                                        <div class="fw-bold">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</div>
+                                        <div class="text-muted small">{{ Auth::check() ? Auth::user()->email : '' }}</div>
+                                    </div>
+                                    <form method="POST" action="{{ route('logout') }}" id="header-logout-form" style="display: none;">
+                                        @csrf
+                                    </form>
+                                    <a href="javascript:void(0);" onclick="document.getElementById('header-logout-form').submit();" class="dropdown-item ai-icon text-danger">
                                         <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger"
                                             width="18" height="18" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                             stroke-linejoin="round">
                                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                             <polyline points="16 17 21 12 16 7"></polyline>
-                                            <line x1="21" y1="12" x2="9" y2="12">
-                                            </line>
+                                            <line x1="21" y1="12" x2="9" y2="12"></line>
                                         </svg>
                                         <span class="ms-2">Logout </span>
                                     </a>
                                 </div>
                             </li>
+
                         </ul>
                     </div>
                 </nav>

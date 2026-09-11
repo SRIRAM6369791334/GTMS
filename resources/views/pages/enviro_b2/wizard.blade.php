@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'B2 Workflow Step '.$step)
 @section('main_content')
 <link href="{{ asset('css/style1.css') }}" rel="stylesheet">
@@ -53,7 +53,8 @@
       </div>
       <div class="card-panel mt-4 mb-0" style="background:var(--green-soft);border:none"><i class="bi bi-check-circle"></i> <span style="font-size:.78rem">Please confirm to finalize the B2 process.</span></div>
     @endif
-    <div class="wizard-actions"><a href="{{ $step === 1 ? route('environment-b2.index') : route('environment-b2.step', $step - 1) }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}</a><a href="{{ $step === 7 ? route('environment-b2.index') : route('environment-b2.step', $step + 1) }}" class="btn {{ $step === 7 ? 'btn-green' : 'btn-navy' }} px-4">{{ $step === 7 ? 'Finish Process' : 'Save & Continue' }} <i class="bi bi-arrow-right"></i></a></div>
+    <div class="wizard-actions"><a href="{{ $step === 1 ? route('environment-b2.index') : route('environment-b2.step', $step - 1) }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}</a>@can('environment.b2.create')<a href="{{ $step === 7 ? route('environment-b2.index') : route('environment-b2.step', $step + 1) }}" class="btn {{ $step === 7 ? 'btn-green' : 'btn-navy' }} px-4">{{ $step === 7 ? 'Finish Process' : 'Save & Continue' }} <i class="bi bi-arrow-right"></i></a>@endcan</div>
+
   </div>
 </div></div></div>
 @endsection

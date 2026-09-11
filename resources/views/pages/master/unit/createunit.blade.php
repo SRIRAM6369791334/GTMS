@@ -1,3 +1,4 @@
+@can('unit.create')
 <div class="modal fade bd-example-modal-lg" id="unitModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -26,9 +27,11 @@
         </div>
     </div>
 </div>
+@endcan
 
 
 {{-- edit --}}
+@can('unit.edit')
 <div class="modal fade bd-edit-modal-lg" id="uniteditModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-sm">
         <div class="modal-content">
@@ -58,3 +61,5 @@
         </div>
     </div>
 </div>
+@endcan
+

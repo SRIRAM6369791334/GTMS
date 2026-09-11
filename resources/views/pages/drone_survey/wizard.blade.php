@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('title', 'Drone Survey Workflow')
 @section('main_content')
 <link href="{{ asset('css/style1.css') }}" rel="stylesheet">
@@ -22,5 +22,6 @@
 </div>
 <div class="card-panel mb-0" style="background:var(--green-soft);border:none"><i class="bi bi-check-circle"></i> <span style="font-size:.78rem">Please confirm to finalize the Drone Survey process.</span></div>
 @endif
-<div class="mt-4">@foreach($steps[$step-1][1] as $item)<div class="checklist-row"><div class="ci-icon"><i class="bi bi-check-lg"></i></div><div class="flex-grow-1"><div class="ci-name">{{ $loop->iteration }}. {{ $item }}</div><div class="ci-meta">{{ $step<6?'To be completed':'Completed' }}</div></div><span class="badge-status {{ $step<6?'pending':'verified' }}">{{ $step<6?'Pending':'Completed' }}</span></div>@endforeach</div><div class="wizard-actions"><a href="{{ $step===1?route('drone-survey.index'):route('drone-survey.step',$step-1) }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> {{ $step===1?'Cancel':'Back' }}</a><a href="{{ $step===6?route('drone-survey.index'):route('drone-survey.step',$step+1) }}" class="btn {{ $step===6?'btn-green':'btn-navy' }} px-4">{{ $step===6?'Finish Process':'Save & Continue' }} <i class="bi bi-arrow-right"></i></a></div></div></div></div></div>
+<div class="mt-4">@foreach($steps[$step-1][1] as $item)<div class="checklist-row"><div class="ci-icon"><i class="bi bi-check-lg"></i></div><div class="flex-grow-1"><div class="ci-name">{{ $loop->iteration }}. {{ $item }}</div><div class="ci-meta">{{ $step<6?'To be completed':'Completed' }}</div></div><span class="badge-status {{ $step<6?'pending':'verified' }}">{{ $step<6?'Pending':'Completed' }}</span></div>@endforeach</div><div class="wizard-actions"><a href="{{ $step===1?route('drone-survey.index'):route('drone-survey.step',$step-1) }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> {{ $step===1?'Cancel':'Back' }}</a>@can('drone.create')<a href="{{ $step===6?route('drone-survey.index'):route('drone-survey.step',$step+1) }}" class="btn {{ $step===6?'btn-green':'btn-navy' }} px-4">{{ $step===6?'Finish Process':'Save & Continue' }} <i class="bi bi-arrow-right"></i></a>@endcan</div></div></div></div></div>
+
 @endsection

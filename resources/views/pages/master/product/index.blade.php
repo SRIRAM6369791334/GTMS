@@ -23,10 +23,12 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="card-title mb-0">Products</h4>
-                             <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
+                            @can('product.create')
+                            <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
                                     data-bs-toggle="modal" data-bs-target=".bd-product-modal-lg"><i
                                         class="fa fa-plus color-info"></i>
                                 </span>Add Product</button>
+                            @endcan
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -74,11 +76,16 @@
 
                                                 <td>
                                                     <div class="d-flex">
+                                                        @can('product.edit')
                                                         <a href="#" class="btn btn-primary shadow btn-xs sharp me-1" data-id="{{ $product->id }}" data-branch="{{ $product->branch_id }}" data-cat="{{ $product->cat_id }}" data-name="{{ $product->pro_name }}" data-gst="{{ $product->gst }}" data-cast-per="{{ $product->cast_per }}" data-mrp="{{ $product->mrp }}" data-unit="{{ $product->unit }}" data-qty="{{ $product->qty }}" data-discount-1="{{ $product->discount_1 }}" data-discount-2="{{ $product->discount_2 }}" data-discount-3="{{ $product->discount_3 }}"><i
                                                                 class="fas fa-pencil-alt"></i></a>
+                                                        @endcan
+                                                        @can('product.delete')
                                                         <a href="#" data-id="{{ $product->id }}" class="btn btn-danger shadow btn-xs sharp"><i
                                                                 class="fa fa-trash"></i></a>
+                                                        @endcan
                                                     </div>
+
                                                 </td>
 
                                             </tr>

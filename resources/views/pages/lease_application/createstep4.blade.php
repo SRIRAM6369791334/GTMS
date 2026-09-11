@@ -26,18 +26,18 @@
         <div class="folder-tile">
           <div class="fico"><i class="fa fa-folder-open"></i></div>
           <div class="ftitle">1. Documents</div>
-          <div class="fmeta">12 required files</div>
+          <div class="fmeta">9 required files</div>
           <div class="fprogress"><div class="bar" style="width:0%"></div></div>
-          <span class="badge-status pending">Not started</span>
+          <span class="badge-status pending">Folder #7</span>
         </div>
       </div>
       <div class="col-md-4">
         <div class="folder-tile">
           <div class="fico"><i class="fa fa-folder"></i></div>
           <div class="ftitle">2. Lease Application</div>
-          <div class="fmeta">Form + 4 affidavits</div>
+          <div class="fmeta">Form + 6 affidavits</div>
           <div class="fprogress"><div class="bar" style="width:0%"></div></div>
-          <span class="badge-status pending">Not started</span>
+          <span class="badge-status pending">Folder #8</span>
         </div>
       </div>
       <div class="col-md-4">
@@ -46,7 +46,7 @@
           <div class="ftitle">3. Plan</div>
           <div class="fmeta">Source, KML, PDF</div>
           <div class="fprogress"><div class="bar" style="width:0%"></div></div>
-          <span class="badge-status pending">Not started</span>
+          <span class="badge-status pending">Folder #9</span>
         </div>
       </div>
     </div>
@@ -55,20 +55,23 @@
       <div class="d-flex gap-2">
         <i class="bi bi-lightbulb" style="color:var(--navy);"></i>
         <div style="font-size:.78rem; color:#33447a;">
-          Based on your <b>Rule 44</b> category, 16 documents are required in total across these folders. The exact checklist is shown in the next step.
+          Based on your <b>{{ $categoryName }}</b> category, 16 regulatory documents and 3 survey plans (19 total) are required across these folders. The exact checklist is shown in the next step.
         </div>
       </div>
     </div>
 
-    <div class="wizard-actions">
+    <div class="wizard-actions d-flex justify-content-between align-items-center">
       <a href="/step3" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
-      <a href="/step5" class="btn btn-navy px-4">Open Documents <i class="bi bi-arrow-right"></i></a>
+      <div class="d-flex gap-2">
+        <a href="/application" class="btn btn-outline-primary px-3"><i class="fa fa-save me-1"></i> Save Draft &amp; Exit</a>
+        @can('application.create')
+        <a href="/step5" class="btn btn-navy px-4">Open Documents <i class="bi bi-arrow-right"></i></a>
+        @endcan
+      </div>
     </div>
   </div>
 </div>
 
-
-        </div>
+  </div>
 </div>
-
 @endsection

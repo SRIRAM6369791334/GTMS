@@ -47,7 +47,9 @@
           <div class="admin-panel mb-4">
             <div class="panel-head">
               <div><h5>Sub Category 1 &middot; Site &amp; Mining Documentation</h5><p class="sub">5 folders &middot; 24 checklist items</p></div>
-              <a href="sub-category-1.html" class="panel-link">Open <i class="bi bi-arrow-right"></i></a>
+              @can('environment.view')
+              <a href="{{ route('environstage1') }}" class="panel-link">Open <i class="bi bi-arrow-right"></i></a>
+              @endcan
             </div>
             <div class="p-3">
               <div class="row g-2">
@@ -63,8 +65,11 @@
           <div class="admin-panel">
             <div class="panel-head">
               <div><h5>Sub Category 2 &middot; EIA &amp; TNPCB Submission</h5><p class="sub">6 folders &middot; 15 checklist items</p></div>
-              <a href="sub-category-2.html" class="panel-link">Open <i class="fa fa-arrow-right"></i></a>
+              @can('environment.view')
+              <a href="{{ route('environstage2') }}" class="panel-link">Open <i class="fa fa-arrow-right"></i></a>
+              @endcan
             </div>
+
             <div class="p-3">
               <div class="row g-2">
                 <div class="col-6"><div class="d-flex justify-content-between small mb-1"><span>ToR Letter</span><span class="text-muted">1/1</span></div><div class="progress-slim"><div class="bar" style="width:100%; background:var(--c-documents);"></div></div></div>

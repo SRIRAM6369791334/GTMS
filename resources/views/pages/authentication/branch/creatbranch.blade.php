@@ -1,3 +1,4 @@
+ @can('branch.create')
  <div class="modal fade bd-example-modal-lg" tabindex="-1" id="branchModal" role="dialog" aria-hidden="true">
      <div class="modal-dialog modal-lg">
          <div class="modal-content">
@@ -54,9 +55,11 @@
          </form>
      </div>
  </div>
+ @endcan
 
  {{-- edit branch model --}}
 
+ @can('branch.edit')
  <div class="modal fade bd-editbranch-modal-lg" tabindex="-1" id="brancheeditModal" role="dialog" aria-hidden="true">
      <div class="modal-dialog modal-lg">
          <div class="modal-content">
@@ -121,4 +124,6 @@
          </form>
      </div>
  </div>
+ @endcan
+
 

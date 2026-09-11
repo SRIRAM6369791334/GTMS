@@ -23,10 +23,12 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="card-title mb-0">Categories</h4>
 
+                            @can('category.create')
                             <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
                                     data-bs-toggle="modal" data-bs-target=".bd-example-modal-lg"><i
                                         class="fa fa-plus color-info"></i>
                                 </span>Add Category</button>
+                            @endcan
 
                         </div>
                         <div class="card-body">
@@ -47,20 +49,25 @@
                                                 <td>{{ $cat->cat_code }}</td>
                                                 <td>{{ $cat->cat_name }}</td>
                                                 <td>
+                                                    @can('category.edit')
                                                     <button type="button" class="btn btn-primary editcategoryBtn shadow btn-xs sharp me-1"  data-bs-toggle="modal" data-bs-target=".bd-editcat-modal-lg"
                                                         data-id="{{ $cat->id }}"
                                                         data-code="{{ $cat->cat_code }}"
                                                         data-name="{{ $cat->cat_name }}">
                                                         <i class="fa fa-pencil"></i>
                                                     </button>
+                                                    @endcan
 
+                                                    @can('category.delete')
                                                     <button type="button" class="btn btn-danger deletecategoryBtn shadow btn-xs sharp me-1"
                                                         data-id="{{ $cat->id }}">
                                                         <i class="fa fa-trash"></i>
                                                     </button>
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @endforeach
+
                                     </tbody>
                                 </table>
                             </div>

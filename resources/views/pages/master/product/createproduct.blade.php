@@ -1,3 +1,4 @@
+ @can('product.create')
  <div class="modal fade bd-product-modal-lg" tabindex="-1" id="productModal" role="dialog" aria-hidden="true">
      <div class="modal-dialog modal-lg">
          <div class="modal-content">
@@ -78,9 +79,12 @@
          </form>
      </div>
  </div>
+ @endcan
 
  {{-- edit branch model --}}
 
+
+ @can('product.edit')
  <div class="modal fade bd-editbranch-modal-lg" tabindex="-1" id="brancheeditModal" role="dialog" aria-hidden="true">
      <div class="modal-dialog modal-lg">
          <div class="modal-content">
@@ -145,4 +149,6 @@
          </form>
      </div>
  </div>
+ @endcan
+
 
