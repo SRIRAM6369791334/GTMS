@@ -21,6 +21,7 @@ class EnvironmentProject extends Model
         'mining_application_id',
         'lease_application_id',
         'category',
+        'sub_category',
         'project_name',
         'district_id',
         'location',
@@ -34,13 +35,73 @@ class EnvironmentProject extends Model
         'created_by',
     ];
 
+    /**
+     * Returns human-readable sub category label.
+     * B1/SC1 → 'Sub Category 1 (Site & Mining Documentation)'
+     * B1/SC2 → 'Sub Category 2 (EIA & TNPCB Submission)'
+     * B2     → null
+     */
+    public function getSubCategoryLabelAttribute(): ?string
+    {
+        if ($this->category === 'B1') {
+            return match ($this->sub_category) {
+                'SC1' => 'Sub Category 1 — Site & Mining Documentation',
+                'SC2' => 'Sub Category 2 — EIA & TNPCB Submission',
+                default => null,
+            };
+        }
+        return null;
+    }
+
+    /**
+     * Returns the folder names for this project based on category + sub_category.
+     * Used to build dynamic folder tab views.
+     */
+    public function getFolderNamesAttribute(): array
+    {
+        if ($this->category === 'B1' && $this->sub_category === 'SC1') {
+            return ['Documents', 'Report', 'GIS & Maps', 'Signed Reports', 'PARIVESH Acknowledgements'];
+        }
+        if ($this->category === 'B1' && $this->sub_category === 'SC2') {
+            return [
+                'Documents (ToR Letter)',
+                'Baseline Study',
+                'Draft (12 Chapters)',
+                'TNPCB Draft Submission',
+                'Final EIA Report',
+                'Uploading File',
+            ];
+        }
+        // B2
+        return [
+            'Documents',
+            'Site Photographs',
+            'Report',
+            'GIS & Maps',
+            'Signed Reports',
+            'PARIVESH Acknowledgements',
+        ];
+    }
+
+    /**
+     * Returns the display badge label for category + sub_category.
+     */
+    public function getCategoryBadgeAttribute(): string
+    {
+        if ($this->category === 'B1') {
+            $sc = $this->sub_category === 'SC2' ? 'SC2' : 'SC1';
+            return "B1 · {$sc}";
+        }
+        return 'B2';
+    }
+
     protected $casts = [
         'public_hearing_date' => 'date',
     ];
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
     }
 
     public function miningApplication(): BelongsTo
@@ -76,5 +137,10 @@ class EnvironmentProject extends Model
     public function pptApplications(): HasMany
     {
         return $this->hasMany(PptApplication::class);
+    }
+
+    public function activities()
+    {
+        return $this->morphMany(ActivityLog::class, 'loggable')->latest();
     }
 }

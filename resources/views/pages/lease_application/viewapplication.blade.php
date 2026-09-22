@@ -32,26 +32,60 @@
 
       <div class="page-head">
         <div>
-          <div class="breadcrumb-min mb-1"><a href="/application">Applications</a> &nbsp;/&nbsp; {{ $application->application_no ?? 'LA-2026-0001' }}</div>
-          <h4>Application #{{ $application->application_no ?? 'N/A' }} <span class="text-muted fw-normal">— {{ $application->customer->company_name ?? $application->customer->customer_name ?? 'N/A' }}</span></h4>
+          <div class="breadcrumb-min mb-1"><a href="{{ route('application.index') }}">Applications</a> &nbsp;/&nbsp; {{ $application->application_no ?? 'LA-2026-0001' }}</div>
+          <h4>Application #{{ $application->application_no ?? 'N/A' }} <span class="text-muted fw-normal">— {{ $application->customer?->company_name ?? $application->customer?->customer_name ?? 'N/A' }}</span></h4>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="status-pill"><span class="blip"></span>{{ ucfirst(str_replace('_', ' ', $application->status ?? 'Under Scrutiny')) }}</span>
+            <span class="badge bg-navy text-white px-2 py-1" style="font-size:.78rem;">
+              <i class="bi bi-fingerprint me-1 text-warning"></i> Common ID: <b>{{ $application->common_id ?? ('GTMS-' . date('Y') . '-' . str_pad($application->id, 4, '0', STR_PAD_LEFT)) }}</b>
+            </span>
             <span class="text-muted" style="font-size:.78rem;"><i class="bi bi-geo-alt"></i> {{ $application->district->name ?? 'District N/A' }}</span>
             <span class="text-muted" style="font-size:.78rem;"><i class="bi bi-tag"></i> Category: {{ $application->category->code ?? 'N/A' }}</span>
             <span class="text-muted" style="font-size:.78rem;"><i class="bi bi-calendar3"></i> Submitted {{ $application->created_at ? $application->created_at->format('d M Y') : date('d M Y') }}</span>
           </div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          @php
+            $linkedMining = $application->miningApplications ? $application->miningApplications->first() : null;
+          @endphp
+          @if($linkedMining)
+            <a href="{{ route('process', ['id' => $linkedMining->id]) }}" class="btn btn-outline-success btn-sm">
+              <i class="fa fa-mountain me-1"></i> Mining Plan: {{ $linkedMining->common_id ?? $linkedMining->application_no }} ↗
+            </a>
+          @else
+            @can('application.edit')
+            <button type="button" class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalMoveToMining">
+              <i class="bi bi-rocket-takeoff me-1"></i> Move to Mining Plan
+            </button>
+            @endcan
+          @endif
           @if(isset($application->id))
           <a href="{{ route('application.report', $application->id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-download"></i> Export Summary
           </a>
           @endif
-          @can('application.edit')
+          @can('application.create')
           <a href="{{ route('step1') }}" class="btn btn-navy btn-sm"><i class="bi bi-pencil-square"></i> New Application</a>
           @endcan
         </div>
       </div>
+
+      @if($linkedMining)
+      <div class="alert alert-success d-flex justify-content-between align-items-center mb-3 mt-2 shadow-sm" style="border-radius:12px; background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+          <div>
+            <strong>This Lease Application has been promoted to Mining Plan Domain!</strong>
+            <div class="small mt-1" style="color:#047857 !important;">
+              Universal Common ID: <b>{{ $linkedMining->common_id }}</b> &middot; Mining Application No: <b>{{ $linkedMining->application_no }}</b> &middot; Stage: <b>Stage {{ $linkedMining->stage ?? '6.1' }}</b>
+            </div>
+          </div>
+        </div>
+        <a href="{{ route('process', ['id' => $linkedMining->id]) }}" class="btn btn-success btn-sm px-3">
+          Open Mining Plan Dossier <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+      @endif
 
       <!-- PRE-CALCULATE DYNAMIC COUNTS -->
       @php
@@ -64,54 +98,203 @@
         $validatedCount = $docs->where('status', 'validated')->count();
         $mimas = $application->mimasCredentials ? $application->mimasCredentials->first() : null;
         $sortedDocs = $docs->sortBy(function($d) {
-            return (int)preg_replace('/\D/', '', explode('.', $d->document_name)[0] ?? '99');
+            $num = preg_replace('/\D/', '', explode('.', $d->document_name)[0] ?? '');
+            return $num !== '' ? (int)$num : 99999;
         });
         $stageDuration = $application->updated_at
             ? $application->updated_at->diffForHumans(null, true)
             : ($application->created_at ? $application->created_at->diffForHumans(null, true) : 'Active');
       @endphp
 
+      <!-- DOSSIER KPI METRICS STYLES (UI/UX PRO MAX) -->
+      <style>
+        .dossier-kpi-card {
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          padding: 1.15rem 1.25rem;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 126px;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.02);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+        }
+        .dossier-kpi-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+          border-color: #cbd5e1;
+        }
+        .dossier-kpi-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .dossier-kpi-label {
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #64748b;
+          letter-spacing: 0.01em;
+          line-height: 1.3;
+          margin: 0;
+        }
+        .dossier-kpi-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.05rem;
+          flex-shrink: 0;
+          transition: transform 0.2s ease;
+        }
+        .dossier-kpi-card:hover .dossier-kpi-icon {
+          transform: scale(1.05);
+        }
+        .dossier-kpi-icon.icon-teal {
+          background: #e6fffa;
+          color: #0d9488;
+          border: 1px solid #b2f5ea;
+        }
+        .dossier-kpi-icon.icon-purple {
+          background: #f3e8ff;
+          color: #7c3aed;
+          border: 1px solid #e9d5ff;
+        }
+        .dossier-kpi-icon.icon-green {
+          background: #ecfdf5;
+          color: #059669;
+          border: 1px solid #a7f3d0;
+        }
+        .dossier-kpi-icon.icon-orange {
+          background: #fff7ed;
+          color: #ea580c;
+          border: 1px solid #fed7aa;
+        }
+        .dossier-kpi-value {
+          font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 1.6rem;
+          font-weight: 700;
+          color: #0f172a;
+          line-height: 1.15;
+          font-variant-numeric: tabular-nums;
+          white-space: nowrap;
+          letter-spacing: -0.02em;
+          margin: 0.15rem 0 0.55rem 0;
+        }
+        .dossier-kpi-total {
+          font-size: 1rem;
+          font-weight: 500;
+          color: #94a3b8;
+          margin-left: 2px;
+        }
+        .dossier-kpi-foot {
+          display: flex;
+          align-items: center;
+          margin-top: auto;
+        }
+        .dossier-kpi-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 0.72rem;
+          font-weight: 600;
+          padding: 0.22rem 0.65rem;
+          border-radius: 999px;
+          line-height: 1.2;
+        }
+        .dossier-kpi-pill.pill-success {
+          background: #ecfdf5;
+          color: #047857;
+          border: 1px solid #a7f3d0;
+        }
+        .dossier-kpi-pill.pill-warning {
+          background: #fffbeb;
+          color: #b45309;
+          border: 1px solid #fde68a;
+        }
+        .dossier-kpi-pill.pill-neutral {
+          background: #f8fafc;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+        }
+      </style>
+
       <!-- DYNAMIC KPI METRICS ROW -->
       <div class="row g-3 mb-3">
         <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon" style="background:var(--teal);"><i class="fa fa-folder"></i></div>
-            <div class="stat-value">{{ $regUploaded }} / {{ $regTotal }}</div>
-            <div class="stat-label">Regulatory documents</div>
-            <div class="stat-sub" style="color:{{ $regUploaded >= $regTotal ? 'var(--green)' : '#d97706' }};">
-              <i class="bi {{ $regUploaded >= $regTotal ? 'bi-check-circle' : 'bi-clock' }}"></i>
-              {{ $regUploaded >= $regTotal ? 'Complete' : ($regTotal - $regUploaded) . ' Pending' }}
+          <div class="dossier-kpi-card h-100">
+            <div class="dossier-kpi-head">
+              <span class="dossier-kpi-label">Regulatory Documents</span>
+              <div class="dossier-kpi-icon icon-teal"><i class="fa fa-folder"></i></div>
+            </div>
+            <div class="dossier-kpi-value">
+              {{ $regUploaded }} <span class="dossier-kpi-total">/ {{ $regTotal }}</span>
+            </div>
+            <div class="dossier-kpi-foot">
+              <span class="dossier-kpi-pill {{ $regUploaded >= $regTotal ? 'pill-success' : 'pill-warning' }}">
+                <i class="bi {{ $regUploaded >= $regTotal ? 'bi-check-circle-fill' : 'bi-clock-fill' }}"></i>
+                {{ $regUploaded >= $regTotal ? 'Complete' : ($regTotal - $regUploaded) . ' Pending' }}
+              </span>
             </div>
           </div>
         </div>
+
         <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon" style="background:var(--purple);"><i class="fa fa-cloud-upload"></i></div>
-            <div class="stat-value">{{ $planUploaded }} / {{ $planTotal }}</div>
-            <div class="stat-label">Plan files (Source/KML/PDF)</div>
-            <div class="stat-sub" style="color:{{ $planUploaded >= $planTotal ? 'var(--green)' : '#d97706' }};">
-              <i class="bi {{ $planUploaded >= $planTotal ? 'bi-check-circle' : 'bi-clock' }}"></i>
-              {{ $planUploaded >= $planTotal ? 'Complete' : ($planTotal - $planUploaded) . ' Pending' }}
+          <div class="dossier-kpi-card h-100">
+            <div class="dossier-kpi-head">
+              <span class="dossier-kpi-label">Plan Files (KML / PDF)</span>
+              <div class="dossier-kpi-icon icon-purple"><i class="fa fa-cloud-upload"></i></div>
+            </div>
+            <div class="dossier-kpi-value">
+              {{ $planUploaded }} <span class="dossier-kpi-total">/ {{ $planTotal }}</span>
+            </div>
+            <div class="dossier-kpi-foot">
+              <span class="dossier-kpi-pill {{ $planUploaded >= $planTotal ? 'pill-success' : 'pill-warning' }}">
+                <i class="bi {{ $planUploaded >= $planTotal ? 'bi-check-circle-fill' : 'bi-clock-fill' }}"></i>
+                {{ $planUploaded >= $planTotal ? 'Complete' : ($planTotal - $planUploaded) . ' Pending' }}
+              </span>
             </div>
           </div>
         </div>
+
+        @php
+          $allValidated = ($totalUploaded > 0 && $validatedCount >= $totalUploaded);
+        @endphp
         <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon" style="background:var(--green);"><i class="bi bi-shield-check"></i></div>
-            <div class="stat-value" id="kpi-validated-count">{{ $validatedCount }} / {{ $totalUploaded }}</div>
-            <div class="stat-label">Validated Files</div>
-            <div class="stat-sub" id="kpi-validated-sub" style="color:{{ ($totalUploaded > 0 && $validatedCount >= $totalUploaded) ? 'var(--green)' : '#d97706' }};">
-              <i class="bi {{ ($totalUploaded > 0 && $validatedCount >= $totalUploaded) ? 'bi-check-circle' : 'bi-clock' }}"></i>
-              <span id="kpi-validated-text">{{ ($totalUploaded > 0 && $validatedCount >= $totalUploaded) ? 'All Validated' : ($totalUploaded > 0 ? ($totalUploaded - $validatedCount) . ' Awaiting Scrutiny' : 'No Files Uploaded') }}</span>
+          <div class="dossier-kpi-card h-100">
+            <div class="dossier-kpi-head">
+              <span class="dossier-kpi-label">Validated Files</span>
+              <div class="dossier-kpi-icon icon-green"><i class="bi bi-shield-check"></i></div>
+            </div>
+            <div class="dossier-kpi-value" id="kpi-validated-count">{{ $validatedCount }} <span class="dossier-kpi-total">/ {{ $totalUploaded }}</span></div>
+            <div class="dossier-kpi-foot">
+              <span class="dossier-kpi-pill {{ $allValidated ? 'pill-success' : 'pill-warning' }}" id="kpi-validated-sub">
+                <i class="bi {{ $allValidated ? 'bi-check-circle-fill' : 'bi-clock-fill' }}"></i>
+                <span id="kpi-validated-text">{{ $allValidated ? 'All Validated' : ($totalUploaded > 0 ? ($totalUploaded - $validatedCount) . ' Awaiting Scrutiny' : 'No Files Uploaded') }}</span>
+              </span>
             </div>
           </div>
         </div>
+
         <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon" style="background:var(--orange);"><i class="fa fa-calendar"></i></div>
-            <div class="stat-value">{{ $stageDuration }}</div>
-            <div class="stat-label">In current stage</div>
-            <div class="stat-sub text-muted"><i class="bi bi-arrow-clockwise"></i> SLA: 10 days</div>
+          <div class="dossier-kpi-card h-100">
+            <div class="dossier-kpi-head">
+              <span class="dossier-kpi-label">In Current Stage</span>
+              <div class="dossier-kpi-icon icon-orange"><i class="bi bi-hourglass-split"></i></div>
+            </div>
+            <div class="dossier-kpi-value">
+              {{ $stageDuration }}
+            </div>
+            <div class="dossier-kpi-foot">
+              <span class="dossier-kpi-pill pill-neutral">
+                <i class="bi bi-stopwatch"></i> SLA: 10 days
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -131,12 +314,25 @@
         <div class="row g-3" style="font-size: 0.85rem;">
           <div class="col-md-3 col-sm-6">
             <span class="text-muted d-block small">Client / Firm</span>
-            <strong class="text-dark">{{ $application->customer->company_name ?? ($application->customer->customer_name ?? 'N/A') }}</strong>
-            <div class="text-muted small">{{ $application->customer->customer_name ?? '' }}</div>
+            <strong class="text-dark">{{ $application->customer?->company_name ?? ($application->customer?->customer_name ?? 'Deleted / Unassigned') }}</strong>
+            @if($application->customer?->trashed())
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1" style="font-size: .65rem;">Deleted</span>
+            @endif
+            <div class="text-muted small">{{ $application->customer?->customer_name ?? '' }}</div>
           </div>
           <div class="col-md-3 col-sm-6">
             <span class="text-muted d-block small">Mineral Type</span>
-            <strong class="text-primary">{{ $application->mineral->name ?? 'Not specified' }}</strong>
+            <strong class="text-primary">
+              @php
+                $mineralNames = $application->minerals && $application->minerals->isNotEmpty()
+                    ? $application->minerals->pluck('name')->toArray()
+                    : ($application->mineral ? [$application->mineral->name] : []);
+                if (!empty($application->other_mineral_name)) {
+                    $mineralNames[] = 'Other: ' . $application->other_mineral_name;
+                }
+              @endphp
+              {{ !empty($mineralNames) ? implode(', ', $mineralNames) : 'Not specified' }}
+            </strong>
             <div class="text-muted small">Major / Minor Mineral</div>
           </div>
           <div class="col-md-3 col-sm-6">
@@ -163,14 +359,23 @@
             </div>
           </div>
           <div class="col-md-3 col-sm-6">
-            <span class="text-muted d-block small">Contact Person</span>
-            <strong class="text-dark">{{ $application->contact_person ?? ($application->customer->customer_name ?? 'N/A') }}</strong>
-            <div class="text-muted small"><i class="fa fa-phone me-1"></i>{{ $application->contact_mobile ?? ($application->customer->mobile_num ?? 'N/A') }}</div>
+            <span class="text-muted d-block small">Primary Contact</span>
+            <strong class="text-dark">{{ $application->contact_person ?? ($application->customer?->customer_name ?? 'N/A') }}</strong>
+            <div class="text-muted small"><i class="fa fa-phone me-1"></i>{{ $application->contact_mobile ?? ($application->customer?->mobile_num ?? 'N/A') }}</div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <span class="text-muted d-block small">Secondary / Site Contact</span>
+            @if(!empty($application->secondary_contact_person) || !empty($application->secondary_contact_mobile) || !empty($application->customer?->secondary_contact_person) || !empty($application->customer?->secondary_mobile_num))
+              <strong class="text-dark">{{ $application->secondary_contact_person ?? ($application->customer?->secondary_contact_person ?? 'N/A') }}</strong>
+              <div class="text-muted small"><i class="fa fa-phone me-1 text-indigo"></i>{{ $application->secondary_contact_mobile ?? ($application->customer?->secondary_mobile_num ?? 'N/A') }}</div>
+            @else
+              <span class="text-muted fst-italic">Not provided</span>
+            @endif
           </div>
           <div class="col-md-3 col-sm-6">
             <span class="text-muted d-block small">Identity &amp; Tax IDs</span>
-            <div class="text-dark fw-semibold">Aadhaar: {{ $application->customer->aadhaar_no ?? 'N/A' }}</div>
-            <div class="text-muted small">PAN: {{ $application->customer->pan ?? 'N/A' }} &middot; GST: {{ $application->customer->gstin ?? 'N/A' }}</div>
+            <div class="text-dark fw-semibold">Customer Unique ID: <span class="text-primary">{{ $application->customer?->mimas_no ?? 'N/A' }}</span></div>
+            <div class="text-muted small">Aadhaar: {{ $application->customer?->aadhaar_no ?? 'N/A' }} &middot; PAN: {{ $application->customer?->pan ?? 'N/A' }}</div>
           </div>
         </div>
       </div>
@@ -443,7 +648,7 @@
             <div class="d-flex gap-2">
               @if(!$isApproved && !$isValidated)
                 <!-- Validate Pass Button -->
-                <form action="{{ route('application.validate', $application->id ?? 1) }}" method="POST" class="d-inline">
+                <form action="{{ route('application.validate', $application->id) }}" method="POST" class="d-inline">
                   @csrf
                   <input type="hidden" name="action" value="pass">
                   <button type="submit" class="btn btn-primary btn-sm">
@@ -457,7 +662,7 @@
                 </button>
               @elseif($isValidated && !$isApproved)
                 <!-- Approve Button -->
-                <form action="{{ route('application.approve', $application->id ?? 1) }}" method="POST" class="d-inline">
+                <form action="{{ route('application.approve', $application->id) }}" method="POST" class="d-inline">
                   @csrf
                   <button type="submit" class="btn btn-green btn-sm">
                     <i class="bi bi-check-circle-fill me-1"></i> Approve Application
@@ -468,9 +673,18 @@
                   <i class="bi bi-arrow-counterclockwise me-1"></i> Request Revision
                 </button>
               @elseif($isApproved)
-                <a href="{{ route('application.report', $application->id ?? 1) }}" target="_blank" class="btn btn-success btn-sm">
-                  <i class="bi bi-file-earmark-pdf me-1"></i> Download Dossier Report
+                <a href="{{ route('application.report', $application->id) }}" target="_blank" class="btn btn-success btn-sm">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Download Report
                 </a>
+                @if($linkedMining)
+                  <a href="/process?id={{ $linkedMining->id }}" class="btn btn-outline-success btn-sm">
+                    <i class="fa fa-mountain me-1"></i> Open Mining Plan ({{ $linkedMining->common_id }}) ↗
+                  </a>
+                @else
+                  <button type="button" class="btn btn-navy btn-sm" data-bs-toggle="modal" data-bs-target="#modalMoveToMining">
+                    <i class="bi bi-rocket-takeoff me-1"></i> Move to Mining Plan
+                  </button>
+                @endif
               @endif
             </div>
             @endcan
@@ -548,16 +762,22 @@
             <div class="panel-title">MIMAS Details</div>
             <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
               <span class="text-muted">User ID</span>
-              <span class="fw-semibold">{{ $mimas->user_id ?? ($application->customer->mimas_no ?? 'N/A') }}</span>
+              <span class="fw-semibold">{{ $mimas->user_id ?? ($application->customer?->mimas_no ?? 'N/A') }}</span>
             </div>
             <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
               <span class="text-muted">Email</span>
-              <span class="fw-semibold">{{ $mimas->email ?? ($application->customer->email ?? 'N/A') }}</span>
+              <span class="fw-semibold">{{ $mimas->email ?? ($application->customer?->email ?? 'N/A') }}</span>
             </div>
             <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
-              <span class="text-muted">Contact</span>
-              <span class="fw-semibold">{{ $mimas->contact_number ?? ($application->contact_mobile ?? ($application->customer->mobile_num ?? 'N/A')) }}</span>
+              <span class="text-muted">Primary Contact</span>
+              <span class="fw-semibold">{{ $mimas->contact_number ?? ($application->contact_mobile ?? ($application->customer?->mobile_num ?? 'N/A')) }}</span>
             </div>
+            @if(!empty($application->secondary_contact_mobile) || !empty($application->customer?->secondary_mobile_num))
+            <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
+              <span class="text-muted">Secondary Mobile</span>
+              <span class="fw-semibold" style="color:#4f46e5;">{{ $application->secondary_contact_mobile ?? ($application->customer?->secondary_mobile_num ?? 'N/A') }}</span>
+            </div>
+            @endif
             @if($mimas && $mimas->mimas_ack_no)
             <div class="d-flex justify-content-between py-1" style="font-size:.82rem;">
               <span class="text-muted">MIMAS Ack No</span>
@@ -580,7 +800,7 @@
 <div class="modal fade" id="revisionModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="{{ route('application.reject', $application->id ?? 1) }}" method="POST">
+      <form action="{{ route('application.reject', $application->id) }}" method="POST">
         @csrf
         <div class="modal-header">
           <h5 class="modal-title text-danger"><i class="bi bi-arrow-counterclockwise me-1"></i> Send Back for Revision</h5>
@@ -627,6 +847,56 @@
   </div>
 </div>
 
+<!-- Modal for Move to Mining Plan -->
+<div class="modal fade" id="modalMoveToMining" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <form action="{{ route('application.moveToMining', $application->id) }}" method="POST">
+        @csrf
+        <div class="modal-header text-white" style="background:#0F1E4D;">
+          <h5 class="modal-title text-white"><i class="bi bi-rocket-takeoff me-2 text-warning"></i> Move to Mining Plan Domain</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="p-3 mb-3 rounded" style="background:#eff6ff; border:1px solid #bfdbfe;">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Universal Common ID:</span>
+              <strong class="text-primary font-monospace">{{ $application->common_id ?? ('GTMS-' . date('Y') . '-' . str_pad($application->id, 4, '0', STR_PAD_LEFT)) }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Current Lease App No:</span>
+              <strong class="text-dark font-monospace">{{ $application->application_no }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Applicant / Firm:</span>
+              <strong class="text-dark">{{ $application->customer?->company_name ?? ($application->customer?->customer_name ?? 'Applicant') }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Quarry Extent:</span>
+              <strong class="text-dark">{{ $application->area_extent_ha ? ($application->area_extent_ha . ' Ha') : 'N/A' }}</strong>
+            </div>
+          </div>
+          <p class="small text-muted mb-2">
+            Moving this application to the <b>Mining Plan</b> domain will:
+          </p>
+          <ul class="small text-muted mb-0 ps-3">
+            <li class="mb-1">Retain the <b>exact same Universal Common ID</b> across the entire system.</li>
+            <li class="mb-1">Auto-carry applicant, district, survey numbers, and mineral data.</li>
+            <li class="mb-1">Auto-clone all verified statutory files (Patta, FMB, KML, Drawings) into Mining Folders #2 &amp; #5.</li>
+            <li>Initialize <b>Stage 6.1 (Data Ingest)</b> in the Mining Portal.</li>
+          </ul>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-navy btn-sm px-3">
+            <i class="bi bi-rocket-takeoff me-1"></i> Proceed &amp; Move to Mining Plan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 @endsection
 
 @section('scripts')
@@ -659,12 +929,14 @@ jQuery(document).ready(function($) {
         if (res.status === 1) {
           updateDocRowUI(docId, targetStatus);
           if (res.total_uploaded !== undefined) {
-            $('#kpi-validated-count').text(res.total_validated + ' / ' + res.total_uploaded);
+            $('#kpi-validated-count').html(res.total_validated + ' <span class="dossier-kpi-total">/ ' + res.total_uploaded + '</span>');
             if (res.total_validated >= res.total_uploaded && res.total_uploaded > 0) {
-              $('#kpi-validated-sub').css('color', 'var(--green)');
+              $('#kpi-validated-sub').removeClass('pill-warning').addClass('pill-success').css('color', '');
+              $('#kpi-validated-sub i').attr('class', 'bi bi-check-circle-fill');
               $('#kpi-validated-text').text('All Validated');
             } else {
-              $('#kpi-validated-sub').css('color', '#d97706');
+              $('#kpi-validated-sub').removeClass('pill-success').addClass('pill-warning').css('color', '');
+              $('#kpi-validated-sub i').attr('class', 'bi bi-clock-fill');
               $('#kpi-validated-text').text((res.total_uploaded - res.total_validated) + ' Awaiting Scrutiny');
             }
           }
@@ -676,7 +948,7 @@ jQuery(document).ready(function($) {
             }
           }
         } else {
-          alert(res.message || 'Action failed.');
+          showNotify('error', 'Action Failed', res.message || 'Action failed.');
           btn.prop('disabled', false).html(origHtml);
         }
       },
@@ -689,7 +961,7 @@ jQuery(document).ready(function($) {
         if (typeof toastr !== 'undefined') {
           toastr.error(msg);
         } else {
-          alert(msg);
+          showNotify('error', 'Update Error', msg);
         }
       }
     });
@@ -703,8 +975,11 @@ jQuery(document).ready(function($) {
     $('#flagDocId').val(docId);
     $('#flagDocModalTitle').text(docName);
     $('#flagDocNote').val('');
-    var modal = new bootstrap.Modal(document.getElementById('flagDocModal'));
-    modal.show();
+    var modalEl = document.getElementById('flagDocModal');
+    if (modalEl) {
+      var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+      modal.show();
+    }
   });
 
   // Submit Flag
@@ -712,7 +987,7 @@ jQuery(document).ready(function($) {
     var docId = $('#flagDocId').val();
     var note = $('#flagDocNote').val().trim();
     if (!note) {
-      alert('Please enter a reason or note for revision.');
+      showNotify('warning', 'Note Required', 'Please enter a reason or note for revision.');
       $('#flagDocNote').focus();
       return;
     }
@@ -735,8 +1010,9 @@ jQuery(document).ready(function($) {
 
         updateDocRowUI(docId, 'revision_required', note);
         if (res.total_uploaded !== undefined) {
-          $('#kpi-validated-count').text(res.total_validated + ' / ' + res.total_uploaded);
-          $('#kpi-validated-sub').css('color', '#d97706');
+          $('#kpi-validated-count').html(res.total_validated + ' <span class="dossier-kpi-total">/ ' + res.total_uploaded + '</span>');
+          $('#kpi-validated-sub').removeClass('pill-success').addClass('pill-warning').css('color', '');
+          $('#kpi-validated-sub i').attr('class', 'bi bi-clock-fill');
           $('#kpi-validated-text').text((res.total_uploaded - res.total_validated) + ' Awaiting Scrutiny');
         }
         if (typeof toastr !== 'undefined') {
@@ -752,11 +1028,26 @@ jQuery(document).ready(function($) {
         if (typeof toastr !== 'undefined') {
           toastr.error(msg);
         } else {
-          alert(msg);
+          showNotify('error', 'Flag Error', msg);
         }
       }
     });
   });
+
+  function showNotify(icon, title, text) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: icon,
+        title: title,
+        text: text,
+        confirmButtonColor: '#0F1E4D'
+      });
+    } else if (typeof toastr !== 'undefined') {
+      toastr[icon === 'error' ? 'error' : (icon === 'warning' ? 'warning' : 'info')](text, title);
+    } else {
+      alert(title + ': ' + text);
+    }
+  }
 
   function updateDocRowUI(docId, newStatus, note) {
     var badgeCol = $('#doc-badge-col-' + docId);

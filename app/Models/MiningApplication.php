@@ -6,6 +6,7 @@ use App\Models\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -14,13 +15,16 @@ class MiningApplication extends Model
     use HasFactory, SoftDeletes, BelongsToBranch;
 
     protected $fillable = [
+        'common_id',
         'application_no',
         'customer_id',
         'lease_application_id',
+        'nature_of_work_id',
         'parent_plan_id',
         'applicant_type_id',
         'district_id',
         'mineral_id',
+        'other_mineral_name',
         'plan_type_id',
         'taluk',
         'village',
@@ -54,7 +58,12 @@ class MiningApplication extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
+    }
+
+    public function natureOfWork(): BelongsTo
+    {
+        return $this->belongsTo(NatureOfWork::class);
     }
 
     public function leaseApplication(): BelongsTo
@@ -85,6 +94,11 @@ class MiningApplication extends Model
     public function mineral(): BelongsTo
     {
         return $this->belongsTo(Mineral::class);
+    }
+
+    public function minerals(): BelongsToMany
+    {
+        return $this->belongsToMany(Mineral::class, 'mining_application_minerals');
     }
 
     public function planType(): BelongsTo

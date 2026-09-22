@@ -6,6 +6,7 @@ use App\Models\Traits\BelongsToBranch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,11 +16,13 @@ class LeaseApplication extends Model
     use HasFactory, SoftDeletes, BelongsToBranch;
 
     protected $fillable = [
+        'common_id',
         'application_no',
         'customer_id',
         'district_id',
         'category_id',
         'mineral_id',
+        'other_mineral_name',
         'taluk',
         'village',
         'area_extent_ha',
@@ -28,7 +31,9 @@ class LeaseApplication extends Model
         'end_date',
         'lease_period_years',
         'contact_person',
+        'secondary_contact_person',
         'contact_mobile',
+        'secondary_contact_mobile',
         'current_step',
         'status',
         'go_number',
@@ -51,7 +56,7 @@ class LeaseApplication extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
     }
 
     public function district(): BelongsTo
@@ -67,6 +72,11 @@ class LeaseApplication extends Model
     public function mineral(): BelongsTo
     {
         return $this->belongsTo(Mineral::class);
+    }
+
+    public function minerals(): BelongsToMany
+    {
+        return $this->belongsToMany(Mineral::class, 'lease_application_minerals');
     }
 
     public function branch(): BelongsTo

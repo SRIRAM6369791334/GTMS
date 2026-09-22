@@ -28255,6 +28255,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .btn-outline-navy{border-color:var(--navy-700); color:var(--navy-700); background:transparent;}
 .btn-outline-navy:hover{background:var(--navy-100); color:var(--navy-900); border-color:var(--navy-700);}
 
+.bg-navy{background-color:#0F1E4D !important; color:#ffffff !important;}
+.bg-navy-subtle{background-color:#eff6ff !important; color:#1d4ed8 !important; border:1px solid #bfdbfe !important;}
+
 .chip{
   display:inline-flex; align-items:center; gap:.35rem; font-size:11.6px; font-weight:600;
   padding:.28rem .65rem; border-radius:20px; line-height:1;

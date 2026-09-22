@@ -1,8 +1,8 @@
 @extends('layouts.app')
-@section('title', 'Enviro B2')
+@section('title', 'Environment Clearance B1')
 @section('main_content')
 
-  <link href="css/style1.css" rel="stylesheet">
+  <link href="{{ asset('css/style1.css') }}" rel="stylesheet">
 
     <div class="content-body default-height">
         <div class="container-fluid">
@@ -14,28 +14,28 @@
         <div class="col-6 col-lg-3">
           <div class="stat-card">
             <div class="top-row"><span class="ic" style="background:var(--c-documents);"><i class="fa fa-clone"></i></span></div>
-            <div class="value">39</div>
+            <div class="value">{{ $kpis['total_items'] ?? 39 }}</div>
             <div class="lbl">Total Checklist Items</div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="stat-card">
-            <div class="top-row"><span class="ic" style="background:var(--ok);"><i class="bi fa fa-check-circle"></i></span></div>
-            <div class="value">21</div>
+            <div class="top-row"><span class="ic" style="background:var(--ok);"><i class="fa fa-check-circle"></i></span></div>
+            <div class="value">{{ $kpis['approved_doc'] ?? 0 }}</div>
             <div class="lbl">Approved Documents</div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="stat-card">
-            <div class="top-row"><span class="ic" style="background:var(--warn);"><i class="fa fa-hourglass-half"></i></div>
-            <div class="value">14</div>
+            <div class="top-row"><span class="ic" style="background:var(--warn);"><i class="fa fa-hourglass-half"></i></span></div>
+            <div class="value">{{ $kpis['pending_rev'] ?? 0 }}</div>
             <div class="lbl">Pending Review</div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="stat-card">
             <div class="top-row"><span class="ic" style="background:var(--c-parivesh);"><i class="fa fa-paper-plane"></i></span></div>
-            <div class="value">4</div>
+            <div class="value">{{ $kpis['parivesh_sub'] ?? 0 }}</div>
             <div class="lbl">PARIVESH Submissions</div>
           </div>
         </div>

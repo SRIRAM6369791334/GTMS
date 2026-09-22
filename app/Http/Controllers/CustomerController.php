@@ -12,6 +12,9 @@ use App\Models\LeaseApplication;
 use App\Models\LeaseSurveyNumber;
 use App\Models\MimasCredential;
 use App\Models\LeaseDocument;
+use App\Models\MiningApplication;
+use App\Models\MiningDocument;
+use App\Models\DocumentField;
 use App\Models\ActivityLog;
 use App\Models\Folder;
 use Illuminate\Http\Request;
@@ -27,7 +30,7 @@ class CustomerController extends Controller
 
     public function index()
     {
-        $applications = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'documents'])
+        $applications = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'documents', 'miningApplications'])
             ->latest()
             ->get();
 
@@ -60,44 +63,80 @@ class CustomerController extends Controller
     public function saveStep1(Request $request)
     {
         $validated = $request->validate([
-            'customer_id'  => 'nullable|integer',
-            'mimas_no'     => 'required|string|max:50',
-            'client_name'  => 'required|string|max:255',
-            'company_name' => 'required|string|max:255',
-            'district_id'  => 'required|integer|exists:districts,id',
-            'mineral_id'   => 'nullable|integer|exists:minerals,id',
-            'mobile_num'   => 'required|string|max:15',
-            'email'        => 'nullable|email|max:255',
-            'pan'          => 'required|string|max:10',
-            'aadhaar_no'   => 'required|string|max:14',
-            'gstin'        => 'nullable|string|max:15',
-            'area'         => 'nullable|string|max:20',
-            'address'      => 'nullable|string|max:500',
+            'customer_id'              => 'nullable|integer',
+            'mimas_no'                 => 'required|string|max:50',
+            'client_name'              => 'required|string|max:255',
+            'secondary_contact_person' => 'nullable|string|max:255',
+            'company_name'             => 'required|string|max:255',
+            'district_id'              => 'required|integer|exists:districts,id',
+            'mineral_ids'              => 'nullable|array',
+            'mineral_ids.*'            => 'integer|exists:minerals,id',
+            'mineral_id'               => 'nullable|integer|exists:minerals,id',
+            'other_mineral_name'       => 'nullable|string|max:255',
+            'mobile_num'               => 'required|string|max:15',
+            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'email'                    => 'nullable|email|max:255',
+            'pan'                      => 'required|string|max:10',
+            'aadhaar_no'               => 'required|string|max:14',
+            'gstin'                    => 'nullable|string|max:15',
+            'area'                     => 'nullable|string|max:20',
+            'address'                  => 'nullable|string|max:500',
         ]);
+
+        // Resolve mineral IDs and custom other mineral name
+        $mineralIds = $request->input('mineral_ids', []);
+        if (empty($mineralIds) && $request->filled('mineral_id')) {
+            $mineralIds = [(int)$request->input('mineral_id')];
+        }
+        $primaryMineralId = !empty($mineralIds) ? (int)$mineralIds[0] : 1;
+        $otherMineralName = $request->input('other_mineral_name');
+        $validated['mineral_id'] = $primaryMineralId;
+        $validated['mineral_ids'] = $mineralIds;
+        $validated['other_mineral_name'] = $otherMineralName;
 
         // 1. Resolve or create Customer record
         $customer = null;
         if (!empty($validated['customer_id'])) {
-            $customer = Customer::find($validated['customer_id']);
+            $customer = Customer::withTrashed()->find($validated['customer_id']);
         }
         if (!$customer && !empty($validated['mimas_no'])) {
-            $customer = Customer::where('mimas_no', $validated['mimas_no'])->first();
+            $customer = Customer::withTrashed()->where('mimas_no', $validated['mimas_no'])->first();
         }
-        if (!$customer) {
+        if (!$customer && !empty($validated['aadhaar_no'])) {
+            $customer = Customer::withTrashed()->where('aadhaar_no', $validated['aadhaar_no'])->first();
+        }
+        if ($customer) {
+            if ($customer->trashed()) {
+                $customer->restore();
+            }
+            // Update secondary contact if provided and currently empty
+            $customerUpdates = [];
+            if (!empty($validated['secondary_contact_person']) && empty($customer->secondary_contact_person)) {
+                $customerUpdates['secondary_contact_person'] = $validated['secondary_contact_person'];
+            }
+            if (!empty($validated['secondary_mobile_num']) && empty($customer->secondary_mobile_num)) {
+                $customerUpdates['secondary_mobile_num'] = $validated['secondary_mobile_num'];
+            }
+            if (!empty($customerUpdates)) {
+                $customer->update($customerUpdates);
+            }
+        } else {
             $customer = Customer::create([
-                'customer_name' => $validated['client_name'],
-                'company_name'  => $validated['company_name'],
-                'mimas_no'      => $validated['mimas_no'],
-                'mobile_num'    => $validated['mobile_num'],
-                'email'         => $validated['email'] ?? null,
-                'district_id'   => $validated['district_id'],
-                'mineral_id'    => $validated['mineral_id'] ?? null,
-                'pan'           => $validated['pan'],
-                'aadhaar_no'    => $validated['aadhaar_no'],
-                'gstin'         => $validated['gstin'] ?? null,
-                'area'          => !empty($validated['area']) ? (float)$validated['area'] : null,
-                'address'       => $validated['address'] ?? null,
-                'status'        => 1,
+                'customer_name'            => $validated['client_name'],
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
+                'company_name'             => $validated['company_name'],
+                'mimas_no'                 => $validated['mimas_no'],
+                'mobile_num'               => $validated['mobile_num'],
+                'secondary_mobile_num'     => $validated['secondary_mobile_num'] ?? null,
+                'email'                    => $validated['email'] ?? null,
+                'district_id'              => $validated['district_id'],
+                'mineral_id'               => $primaryMineralId,
+                'pan'                      => $validated['pan'],
+                'aadhaar_no'               => $validated['aadhaar_no'],
+                'gstin'                    => $validated['gstin'] ?? null,
+                'area'                     => !empty($validated['area']) ? (float)$validated['area'] : null,
+                'address'                  => $validated['address'] ?? null,
+                'status'                   => 1,
             ]);
         }
         $validated['customer_id'] = $customer->id;
@@ -108,35 +147,46 @@ class CustomerController extends Controller
         $leaseApp = $draftAppId ? LeaseApplication::find($draftAppId) : null;
 
         if (!$leaseApp) {
-            $appNo = 'LA-DRAFT-' . date('Y') . '-' . str_pad((string)(LeaseApplication::count() + 1), 4, '0', STR_PAD_LEFT);
+            $appNo = $this->generateDraftAppNumber();
             $defaultCategory = LeaseCategory::first();
-            $defaultMineral = ($customer && $customer->mineral_id) ? Mineral::find($customer->mineral_id) : Mineral::first();
             $branch = Branch::first();
 
             $leaseApp = LeaseApplication::create([
-                'application_no'     => $appNo,
-                'customer_id'        => $customer->id,
-                'district_id'        => $validated['district_id'],
-                'category_id'        => $defaultCategory ? $defaultCategory->id : 1,
-                'mineral_id'         => $validated['mineral_id'] ?? ($defaultMineral ? $defaultMineral->id : 1),
-                'taluk'              => $validated['address'] ?? null,
-                'area_extent_ha'     => !empty($validated['area']) ? (float)$validated['area'] : null,
-                'contact_person'     => $validated['client_name'],
-                'contact_mobile'     => $validated['mobile_num'],
-                'current_step'       => 1,
-                'status'             => 'draft',
-                'branch_id'          => $branch ? $branch->id : null,
-                'created_by'         => Auth::id() ?? 1,
+                'application_no'           => $appNo,
+                'customer_id'              => $customer->id,
+                'district_id'              => $validated['district_id'],
+                'category_id'              => $defaultCategory ? $defaultCategory->id : 1,
+                'mineral_id'               => $primaryMineralId,
+                'other_mineral_name'       => $otherMineralName,
+                'taluk'                    => $validated['address'] ?? null,
+                'area_extent_ha'           => !empty($validated['area']) ? (float)$validated['area'] : null,
+                'contact_person'           => $validated['client_name'],
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null),
+                'contact_mobile'           => $validated['mobile_num'],
+                'secondary_contact_mobile' => $validated['secondary_mobile_num'] ?? ($customer->secondary_mobile_num ?? null),
+                'current_step'             => 1,
+                'status'                   => 'draft',
+                'branch_id'                => $branch ? $branch->id : null,
+                'created_by'               => Auth::id() ?? 1,
             ]);
+            if (!empty($mineralIds)) {
+                $leaseApp->minerals()->sync($mineralIds);
+            }
         } else {
             $leaseApp->update([
-                'customer_id'    => $customer->id,
-                'district_id'    => $validated['district_id'],
-                'mineral_id'     => $validated['mineral_id'] ?? $leaseApp->mineral_id,
-                'taluk'          => $validated['address'] ?? $leaseApp->taluk,
-                'area_extent_ha' => !empty($validated['area']) ? (float)$validated['area'] : $leaseApp->area_extent_ha,
-                'current_step'   => max((int)$leaseApp->current_step, 1),
+                'customer_id'              => $customer->id,
+                'district_id'              => $validated['district_id'],
+                'mineral_id'               => $primaryMineralId,
+                'other_mineral_name'       => $otherMineralName,
+                'taluk'                    => $validated['address'] ?? $leaseApp->taluk,
+                'area_extent_ha'           => !empty($validated['area']) ? (float)$validated['area'] : $leaseApp->area_extent_ha,
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? $leaseApp->secondary_contact_person,
+                'secondary_contact_mobile' => $validated['secondary_mobile_num'] ?? $leaseApp->secondary_contact_mobile,
+                'current_step'             => max((int)$leaseApp->current_step, 1),
             ]);
+            if (!empty($mineralIds)) {
+                $leaseApp->minerals()->sync($mineralIds);
+            }
         }
 
         $draft['application_id'] = $leaseApp->id;
@@ -176,25 +226,65 @@ class CustomerController extends Controller
     public function saveStep2(Request $request)
     {
         $validated = $request->validate([
-            'contact_person' => 'required|string|max:255',
-            'contact_mobile' => 'required|string|max:15',
+            'contact_person'           => 'required|string|max:255',
+            'contact_mobile'           => 'required|string|max:15',
+            'secondary_contact_person' => 'nullable|string|max:255',
+            'secondary_contact_mobile' => 'nullable|string|max:15|different:contact_mobile',
+            'mimas_user_id'            => 'required|string|max:100',
+            'mimas_password'           => 'nullable|string|max:255',
+            'mimas_email'              => 'required|email|max:255',
+            'mimas_contact'            => 'nullable|string|max:15',
         ]);
 
         $draft = session('lease_draft', []);
+
+        // Password handling (preserve existing if __UNCHANGED__ or empty)
+        if (empty($validated['mimas_password']) || $validated['mimas_password'] === '__UNCHANGED__') {
+            $existingPassword = $draft['step6']['mimas_password'] ?? ($draft['step2']['mimas_password'] ?? null);
+            if (!$existingPassword && !empty($draft['application_id'])) {
+                $cred = MimasCredential::where('lease_application_id', $draft['application_id'])->first();
+                $existingPassword = $cred ? $cred->password : 'MimasPass@2026';
+            }
+            $validated['mimas_password'] = $existingPassword ?? 'MimasPass@2026';
+        }
+
+        if (empty($validated['mimas_contact'])) {
+            $validated['mimas_contact'] = $validated['contact_mobile'];
+        }
+
         $draft['step2'] = $validated;
+        $draft['step6'] = [
+            'mimas_user_id'  => $validated['mimas_user_id'],
+            'mimas_password' => $validated['mimas_password'],
+            'mimas_email'    => $validated['mimas_email'],
+            'mimas_contact'  => $validated['mimas_contact'],
+        ];
         session(['lease_draft' => $draft]);
 
         if (!empty($draft['application_id'])) {
             LeaseApplication::where('id', $draft['application_id'])->update([
-                'contact_person' => $validated['contact_person'],
-                'contact_mobile' => $validated['contact_mobile'],
-                'current_step'   => 2,
+                'contact_person'           => $validated['contact_person'],
+                'contact_mobile'           => $validated['contact_mobile'],
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
+                'secondary_contact_mobile' => $validated['secondary_contact_mobile'] ?? null,
+                'current_step'             => max((int)(LeaseApplication::where('id', $draft['application_id'])->value('current_step') ?? 1), 2),
             ]);
+
+            MimasCredential::updateOrCreate(
+                ['lease_application_id' => $draft['application_id']],
+                [
+                    'user_id'        => $validated['mimas_user_id'],
+                    'password'       => $validated['mimas_password'],
+                    'email'          => $validated['mimas_email'],
+                    'contact_number' => $validated['mimas_contact'],
+                    'portal_status'  => 'verified',
+                ]
+            );
         }
 
         $isExit = $request->boolean('exit') || $request->input('action') === 'exit';
         if ($isExit) {
-            session()->flash('success', 'Draft application saved! Contact details updated.');
+            session()->flash('success', 'Draft application saved! Contact & MIMAS details updated.');
             return response()->json(['status' => 1, 'message' => 'Draft saved', 'redirect' => '/application']);
         }
 
@@ -245,6 +335,12 @@ class CustomerController extends Controller
     public function step4()
     {
         $draft = session('lease_draft', []);
+        if (!empty($draft['application_id'])) {
+            $existingStep = (int)(LeaseApplication::where('id', $draft['application_id'])->value('current_step') ?? 1);
+            if ($existingStep < 4) {
+                LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 4]);
+            }
+        }
 
         $categoryName = 'Rule 44';
         if (!empty($draft['step3']['category_id'])) {
@@ -267,11 +363,16 @@ class CustomerController extends Controller
 
         // Milestone Document Loading from DB
         if ($draftAppId) {
+            $existingStep = (int)(LeaseApplication::where('id', $draftAppId)->value('current_step') ?? 1);
+            if ($existingStep < 5) {
+                LeaseApplication::where('id', $draftAppId)->update(['current_step' => 5]);
+            }
             $dbDocs = LeaseDocument::where('lease_application_id', $draftAppId)->get();
             foreach ($dbDocs as $doc) {
                 $item = $doc->document_field_id;
                 if ($item && !isset($uploadedDocs[$item])) {
                     $uploadedDocs[$item] = [
+                        'doc_name'    => $doc->document_name,
                         'file_name'   => $doc->file_name,
                         'file_size'   => $doc->file_size,
                         'file_type'   => $doc->file_type,
@@ -279,6 +380,21 @@ class CustomerController extends Controller
                         'draft_path'  => $doc->file_path,
                         'uploaded_at' => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
                     ];
+                } elseif (!$item) {
+                    $customKey = 'custom_' . $doc->id;
+                    if (!isset($uploadedDocs[$customKey])) {
+                        $uploadedDocs[$customKey] = [
+                            'doc_name'     => $doc->document_name,
+                            'is_custom'    => true,
+                            'is_mandatory' => false,
+                            'file_name'    => $doc->file_name,
+                            'file_size'    => $doc->file_size,
+                            'file_type'    => $doc->file_type,
+                            'folder_id'    => $doc->folder_id,
+                            'draft_path'   => $doc->file_path,
+                            'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
+                        ];
+                    }
                 }
             }
             $draft['uploaded_docs'] = $uploadedDocs;
@@ -295,14 +411,19 @@ class CustomerController extends Controller
     public function uploadDocument(Request $request)
     {
         $request->validate([
-            'file'      => 'required|file|max:10240|mimes:pdf,png,jpg,jpeg,kml,xml,txt',
-            'doc_item'  => 'required|integer|min:1|max:19',
-            'folder_id' => 'required|integer',
+            'file'         => 'required|file|max:25600|mimes:pdf,png,jpg,jpeg,kml,xml,txt,doc,docx,dwg',
+            'doc_item'     => 'nullable',
+            'folder_id'    => 'required|integer',
+            'doc_name'     => 'nullable|string|max:255',
+            'is_mandatory' => 'nullable',
         ]);
 
         $file = $request->file('file');
-        $docItem = (int)$request->input('doc_item');
+        $rawDocItem = $request->input('doc_item');
+        $isCustom = $request->filled('doc_name') || (is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_'));
+        $docItem = $isCustom ? ($rawDocItem ?: ('custom_' . time() . '_' . rand(100, 999))) : (int)$rawDocItem;
         $folderId = (int)$request->input('folder_id');
+        $isMandatory = $request->input('is_mandatory') == '1' || $request->input('is_mandatory') === true;
 
         $draft = session('lease_draft', []);
         $draftAppId = $draft['application_id'] ?? null;
@@ -322,74 +443,101 @@ class CustomerController extends Controller
         $fileType = mime_content_type($fullUploadPath . '/' . $fileName);
 
         $docNames = [
-            1  => '1. Lease application – signed, FMB, Plan',
-            2  => '2. Affidavit – Income Tax',
-            3  => '3. IT returns (If Applicable)',
-            4  => '4. Affidavit – Mining Due',
-            5  => '5. Affidavit – Mining Lease',
-            6  => '6. Affidavit – 1.5 meter depth',
-            7  => '7. Affidavit – Hill Areas',
-            8  => '8. Land Document',
-            9  => '9. Consent (If Applicable)',
-            10 => '10. Adangal & A-register',
-            11 => '11. Patta & Encumbrance Certificate',
-            12 => '12. Work Order',
-            13 => '13. Gazette',
-            14 => '14. Recommendation Letter',
-            15 => '15. Mineral Management System – Application',
-            16 => '16. Challan downloaded from Mimas',
+            1  => '1. Land Document',
+            2  => '2. Consent (If Applicable)',
+            3  => '3. Adangal & A-register',
+            4  => '4. Patta & Encumbrance Certificate',
+            5  => '5. Work Order',
+            6  => '6. Gazette',
+            7  => '7. Recommendation Letter',
+            8  => '8. Mineral Management System – Application',
+            9  => '9. Challan downloaded from Mimas',
+            10 => '10. Lease application – signed, FMB, Plan',
+            11 => '11. Affidavit – Income Tax',
+            12 => '12. IT returns (If Applicable)',
+            13 => '13. Affidavit – Mining Due',
+            14 => '14. Affidavit – Mining Lease',
+            15 => '15. Affidavit – 1.5 meter depth',
+            16 => '16. Affidavit – Hill Areas',
             17 => '17. Plan Source File',
             18 => '18. KML File',
             19 => '19. Plan PDF',
         ];
 
+        $resolvedDocName = $isCustom ? ($request->input('doc_name') ?: 'Custom Document') : ($docNames[$docItem] ?? ('Item ' . $docItem));
+
         // Milestone Persistence in MySQL:
         if ($leaseApp) {
-            LeaseDocument::updateOrCreate(
-                [
+            if ($isCustom) {
+                $dbDoc = LeaseDocument::create([
                     'lease_application_id' => $leaseApp->id,
-                    'document_field_id'    => $docItem,
-                ],
-                [
-                    'folder_id'      => $folderId,
-                    'document_name'  => $docNames[$docItem] ?? ('Item ' . $docItem),
-                    'file_name'      => $fileName,
-                    'file_path'      => $uploadSubdir . '/' . $fileName,
-                    'file_type'      => $fileType,
-                    'file_size'      => $fileSize,
-                    'status'         => 'uploaded',
-                    'uploaded_by'    => Auth::id() ?? 1,
-                    'uploaded_at'    => now(),
-                ]
-            );
+                    'folder_id'            => $folderId,
+                    'document_field_id'    => null,
+                    'document_name'        => $resolvedDocName,
+                    'file_name'            => $fileName,
+                    'file_path'            => $uploadSubdir . '/' . $fileName,
+                    'file_type'            => $fileType,
+                    'file_size'            => $fileSize,
+                    'status'               => 'uploaded',
+                    'uploaded_by'          => Auth::id() ?? 1,
+                    'uploaded_at'          => now(),
+                ]);
+                $docItem = 'custom_' . $dbDoc->id;
+            } else {
+                LeaseDocument::updateOrCreate(
+                    [
+                        'lease_application_id' => $leaseApp->id,
+                        'document_field_id'    => $docItem,
+                    ],
+                    [
+                        'folder_id'      => $folderId,
+                        'document_name'  => $resolvedDocName,
+                        'file_name'      => $fileName,
+                        'file_path'      => $uploadSubdir . '/' . $fileName,
+                        'file_type'      => $fileType,
+                        'file_size'      => $fileSize,
+                        'status'         => 'uploaded',
+                        'uploaded_by'    => Auth::id() ?? 1,
+                        'uploaded_at'    => now(),
+                    ]
+                );
+            }
             $leaseApp->update(['current_step' => 5]);
         }
 
         // Track in session
         $uploadedDocs = session('lease_draft.uploaded_docs', []);
         $uploadedDocs[$docItem] = [
-            'file_name'   => $fileName,
-            'file_size'   => $fileSize,
-            'file_type'   => $fileType,
-            'folder_id'   => $folderId,
-            'draft_path'  => $uploadSubdir . '/' . $fileName,
-            'uploaded_at' => now()->format('d M Y, h:i A'),
+            'doc_name'     => $resolvedDocName,
+            'is_custom'    => $isCustom,
+            'is_mandatory' => $isMandatory,
+            'file_name'    => $fileName,
+            'file_size'    => $fileSize,
+            'file_type'    => $fileType,
+            'folder_id'    => $folderId,
+            'draft_path'   => $uploadSubdir . '/' . $fileName,
+            'uploaded_at'  => now()->format('d M Y, h:i A'),
         ];
         $draft['uploaded_docs'] = $uploadedDocs;
         session(['lease_draft' => $draft]);
 
-        $totalItems = 19;
+        $customCount = count(array_filter($uploadedDocs, fn($d) => !empty($d['is_custom'])));
+        $totalItems = 19 + $customCount;
         $uploadedCount = count($uploadedDocs);
 
         return response()->json([
-            'status'    => 1,
-            'message'   => $fileName . ' uploaded & saved to database',
-            'doc_item'  => $docItem,
-            'file_name' => $fileName,
-            'file_size' => $this->formatFileSize($fileSize),
-            'uploaded'  => $uploadedCount,
-            'total'     => $totalItems,
-            'percent'   => round(($uploadedCount / $totalItems) * 100),
+            'status'       => 1,
+            'message'      => $fileName . ' uploaded & saved successfully',
+            'is_custom'    => $isCustom,
+            'doc_item'     => $docItem,
+            'doc_name'     => $resolvedDocName,
+            'folder_id'    => $folderId,
+            'is_mandatory' => $isMandatory,
+            'file_name'    => $fileName,
+            'file_size'    => $this->formatFileSize($fileSize),
+            'uploaded'     => $uploadedCount,
+            'total'        => $totalItems,
+            'percent'      => min(100, round(($uploadedCount / $totalItems) * 100)),
         ]);
     }
 
@@ -397,22 +545,44 @@ class CustomerController extends Controller
     // STEP 6: MIMAS Registration Details (GET & POST)
     // ───────────────────────────────────────
 
+    // ───────────────────────────────────────
+    // STEP 6: Review & Submit (GET)
+    // ───────────────────────────────────────
+
     public function step6()
     {
         $draft = session('lease_draft', []);
-        return view('pages.lease_application.createstep6', compact('draft'));
+        if (!empty($draft['application_id'])) {
+            $existingStep = (int)(LeaseApplication::where('id', $draft['application_id'])->value('current_step') ?? 1);
+            if ($existingStep < 6) {
+                LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 6]);
+            }
+        }
+        $previewData = $this->buildPreviewData($draft);
+        return view('pages.lease_application.createstep7', compact('draft', 'previewData'));
     }
 
     public function saveStep6(Request $request)
     {
         $validated = $request->validate([
             'mimas_user_id' => 'required|string|max:100',
-            'mimas_password' => 'required|string|max:255',
+            'mimas_password' => 'nullable|string|max:255',
             'mimas_email'    => 'required|email|max:255',
             'mimas_contact'  => 'required|string|max:15',
         ]);
 
         $draft = session('lease_draft', []);
+
+        // If unchanged placeholder or empty, preserve existing password
+        if (empty($validated['mimas_password']) || $validated['mimas_password'] === '__UNCHANGED__') {
+            $existingPassword = $draft['step6']['mimas_password'] ?? null;
+            if (!$existingPassword && !empty($draft['application_id'])) {
+                $cred = MimasCredential::where('lease_application_id', $draft['application_id'])->first();
+                $existingPassword = $cred ? $cred->password : 'MimasPass@2026';
+            }
+            $validated['mimas_password'] = $existingPassword ?? 'MimasPass@2026';
+        }
+
         $draft['step6'] = $validated;
         session(['lease_draft' => $draft]);
 
@@ -421,7 +591,7 @@ class CustomerController extends Controller
                 ['lease_application_id' => $draft['application_id']],
                 [
                     'user_id'        => $validated['mimas_user_id'],
-                    'password'       => Crypt::encryptString($validated['mimas_password']),
+                    'password'       => $validated['mimas_password'],
                     'email'          => $validated['mimas_email'],
                     'contact_number' => $validated['mimas_contact'],
                     'portal_status'  => 'verified',
@@ -436,7 +606,7 @@ class CustomerController extends Controller
             return response()->json(['status' => 1, 'message' => 'Draft saved', 'redirect' => '/application']);
         }
 
-        return response()->json(['status' => 1, 'message' => 'Step 6 saved', 'redirect' => '/step7']);
+        return response()->json(['status' => 1, 'message' => 'Step 6 saved', 'redirect' => '/step6']);
     }
 
     // ───────────────────────────────────────
@@ -445,7 +615,7 @@ class CustomerController extends Controller
 
     public function resumeDraft($id)
     {
-        $app = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'mimasCredentials', 'documents'])->findOrFail($id);
+        $app = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'mimasCredentials', 'documents'])->findOrFail($id);
 
         // Reconstruct lease_draft session from database
         $draft = [
@@ -458,23 +628,34 @@ class CustomerController extends Controller
                 'mimas_no'     => $app->customer->mimas_no ?? '',
                 'district_id'  => $app->district_id,
                 'mineral_id'   => $app->mineral_id,
-                'mobile_num'   => $app->customer->mobile_num ?? '',
-                'email'        => $app->customer->email ?? '',
-                'pan'          => $app->customer->pan ?? '',
-                'aadhaar_no'   => $app->customer->aadhaar_no ?? '',
-                'gstin'        => $app->customer->gstin ?? '',
-                'area'         => $app->area_extent_ha ?? ($app->customer->area ?? ''),
-                'address'      => $app->taluk ?? ($app->customer->address ?? ''),
+                'mineral_ids'  => ($app->minerals && $app->minerals->isNotEmpty()) ? $app->minerals->pluck('id')->toArray() : ($app->mineral_id ? [$app->mineral_id] : []),
+                'other_mineral_name' => $app->other_mineral_name ?? '',
+                'mobile_num'               => $app->customer->mobile_num ?? '',
+                'secondary_contact_person' => $app->secondary_contact_person ?? ($app->customer->secondary_contact_person ?? ''),
+                'secondary_mobile_num'     => $app->secondary_contact_mobile ?? ($app->customer->secondary_mobile_num ?? ''),
+                'email'                    => $app->customer->email ?? '',
+                'pan'                      => $app->customer->pan ?? '',
+                'aadhaar_no'               => $app->customer->aadhaar_no ?? '',
+                'gstin'                    => $app->customer->gstin ?? '',
+                'area'                     => $app->area_extent_ha ?? ($app->customer->area ?? ''),
+                'address'                  => $app->taluk ?? ($app->customer->address ?? ''),
             ],
             'step2' => [
-                'contact_person' => $app->contact_person ?? ($app->customer->customer_name ?? ''),
-                'contact_mobile' => $app->contact_mobile ?? ($app->customer->mobile_num ?? ''),
+                'contact_person'           => $app->contact_person ?? ($app->customer->customer_name ?? ''),
+                'contact_mobile'           => $app->contact_mobile ?? ($app->customer->mobile_num ?? ''),
+                'secondary_contact_person' => $app->secondary_contact_person ?? ($app->customer->secondary_contact_person ?? ''),
+                'secondary_contact_mobile' => $app->secondary_contact_mobile ?? ($app->customer->secondary_mobile_num ?? ''),
+                'mimas_user_id' => $app->mimasCredentials->first()->user_id ?? ($app->customer->mimas_no ?? ''),
+                'mimas_password' => $app->mimasCredentials->first() ? '__UNCHANGED__' : '',
+                'mimas_email'   => $app->mimasCredentials->first()->email ?? ($app->customer->email ?? ''),
+                'mimas_contact' => $app->mimasCredentials->first()->contact_number ?? ($app->customer->mobile_num ?? ''),
             ],
             'step3' => [
                 'category_id' => $app->category_id,
             ],
             'step6' => [
                 'mimas_user_id' => $app->mimasCredentials->first()->user_id ?? ($app->customer->mimas_no ?? ''),
+                'mimas_password' => $app->mimasCredentials->first() ? '__UNCHANGED__' : '',
                 'mimas_email'   => $app->mimasCredentials->first()->email ?? ($app->customer->email ?? ''),
                 'mimas_contact' => $app->mimasCredentials->first()->contact_number ?? ($app->customer->mobile_num ?? ''),
             ],
@@ -497,19 +678,17 @@ class CustomerController extends Controller
 
         session(['lease_draft' => $draft]);
 
-        $step = $app->current_step ? min(max((int)$app->current_step, 1), 7) : 1;
-        return redirect("/step{$step}")->with('success', "Resumed draft application {$app->application_no} at Step {$step} of 7.");
+        $step = $app->current_step ? min(max((int)$app->current_step, 1), 6) : 1;
+        return redirect("/step{$step}")->with('success', "Resumed draft application {$app->application_no} at Step {$step} of 6.");
     }
 
     // ───────────────────────────────────────
-    // STEP 7: Preview (GET) & Submit (POST)
+    // STEP 7: Legacy Alias (redirects to Step 6 Review)
     // ───────────────────────────────────────
 
     public function step7()
     {
-        $draft = session('lease_draft', []);
-        $previewData = $this->buildPreviewData($draft);
-        return view('pages.lease_application.createstep7', compact('draft', 'previewData'));
+        return redirect()->route('step6');
     }
 
     /**
@@ -529,21 +708,23 @@ class CustomerController extends Controller
             'mimas_no'       => $step1['mimas_no'] ?? 'N/A',
             'aadhaar_no'     => $step1['aadhaar_no'] ?? 'N/A',
             'district_name'  => 'N/A',
-            'mobile_num'     => $step1['mobile_num'] ?? 'N/A',
-            'email'          => !empty($step1['email']) ? $step1['email'] : 'Not provided',
+            'mobile_num'           => $step1['mobile_num'] ?? 'N/A',
+            'secondary_mobile_num' => $step1['secondary_mobile_num'] ?? null,
+            'email'                => !empty($step1['email']) ? $step1['email'] : 'Not provided',
             'pan'            => $step1['pan'] ?? 'N/A',
             'gstin'          => !empty($step1['gstin']) ? $step1['gstin'] : 'Not provided',
             'area'           => $step1['area'] ?? null,
-            'address'        => !empty($step1['address']) ? $step1['address'] : 'Not provided',
-            'contact_person' => $step2['contact_person'] ?? ($step1['client_name'] ?? 'N/A'),
-            'contact_mobile' => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? 'N/A'),
-            'category_name'  => 'N/A',
-            'category_code'  => 'N/A',
-            'mimas_user_id'  => $step6['mimas_user_id'] ?? ($step1['mimas_no'] ?? 'Not entered'),
-            'mimas_email'    => $step6['mimas_email'] ?? ($step1['email'] ?? 'Not entered'),
-            'mimas_contact'  => $step6['mimas_contact'] ?? ($step1['mobile_num'] ?? 'Not entered'),
-            'uploaded_count' => count($uploadedDocs),
-            'uploaded_docs'  => $uploadedDocs,
+            'contact_person'           => $step2['contact_person'] ?? ($step1['client_name'] ?? 'N/A'),
+            'contact_mobile'           => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? 'N/A'),
+            'secondary_contact_person' => $step2['secondary_contact_person'] ?? ($step1['secondary_contact_person'] ?? null),
+            'secondary_contact_mobile' => $step2['secondary_contact_mobile'] ?? ($step1['secondary_mobile_num'] ?? null),
+            'category_name'            => 'N/A',
+            'category_code'            => 'N/A',
+            'mimas_user_id'            => $step6['mimas_user_id'] ?? ($step1['mimas_no'] ?? 'Not entered'),
+            'mimas_email'              => $step6['mimas_email'] ?? ($step1['email'] ?? 'Not entered'),
+            'mimas_contact'            => $step6['mimas_contact'] ?? ($step1['mobile_num'] ?? 'Not entered'),
+            'uploaded_count'           => count($uploadedDocs),
+            'uploaded_docs'            => $uploadedDocs,
         ];
 
         // Resolve District Name
@@ -552,22 +733,28 @@ class CustomerController extends Controller
             if ($dist) $preview['district_name'] = $dist->name;
         }
 
-        // Resolve Customer & Mineral strictly from user selection/input
+        // Resolve Customer & Minerals strictly from user selection/input
         $customer = null;
         if (!empty($step1['customer_id'])) {
-            $customer = Customer::with('mineral')->find($step1['customer_id']);
+            $customer = Customer::withTrashed()->with('mineral')->find($step1['customer_id']);
         } elseif (!empty($step1['mimas_no'])) {
-            $customer = Customer::with('mineral')->where('mimas_no', $step1['mimas_no'])->first();
+            $customer = Customer::withTrashed()->with('mineral')->where('mimas_no', $step1['mimas_no'])->first();
         }
 
-        if (!empty($step1['mineral_id'])) {
-            $mineralObj = Mineral::find($step1['mineral_id']);
-            $preview['mineral_name'] = $mineralObj ? $mineralObj->name : 'Not specified';
+        $mineralNames = [];
+        $mineralIds = $step1['mineral_ids'] ?? (!empty($step1['mineral_id']) ? [$step1['mineral_id']] : []);
+        if (!empty($mineralIds)) {
+            $mineralNames = Mineral::whereIn('id', $mineralIds)->pluck('name')->toArray();
         } elseif ($customer && $customer->mineral) {
-            $preview['mineral_name'] = $customer->mineral->name;
-        } else {
-            $preview['mineral_name'] = 'Not specified';
+            $mineralNames = [$customer->mineral->name];
         }
+        if (!empty($step1['other_mineral_name'])) {
+            $mineralNames[] = 'Other: ' . $step1['other_mineral_name'];
+        }
+
+        $preview['mineral_names'] = $mineralNames;
+        $preview['mineral_name'] = !empty($mineralNames) ? implode(', ', $mineralNames) : 'Not specified';
+        $preview['other_mineral_name'] = $step1['other_mineral_name'] ?? null;
 
         if (empty($preview['area']) && $customer && $customer->area) {
             $preview['area'] = $customer->area;
@@ -592,10 +779,16 @@ class CustomerController extends Controller
         $f8Count = 0;
         $f9Count = 0;
         foreach ($uploadedDocs as $item => $doc) {
-            $it = (int)$item;
-            if (in_array($it, [8, 9, 10, 11, 12, 13, 14, 15, 16])) $f7Count++;
-            elseif (in_array($it, [1, 2, 3, 4, 5, 6, 7])) $f8Count++;
-            elseif (in_array($it, [17, 18, 19])) $f9Count++;
+            $folderId = $doc['folder_id'] ?? null;
+            if ($folderId == 7) $f7Count++;
+            elseif ($folderId == 8) $f8Count++;
+            elseif ($folderId == 9) $f9Count++;
+            else {
+                $it = (int)$item;
+                if ($it >= 1 && $it <= 9) $f7Count++;
+                elseif ($it >= 10 && $it <= 16) $f8Count++;
+                elseif ($it >= 17 && $it <= 19) $f9Count++;
+            }
         }
         $preview['f7_count'] = $f7Count;
         $preview['f8_count'] = $f8Count;
@@ -615,12 +808,19 @@ class CustomerController extends Controller
         // 1. Resolve Customer (find or create)
         $customer = null;
         if (!empty($step1['customer_id'])) {
-            $customer = Customer::find($step1['customer_id']);
+            $customer = Customer::withTrashed()->find($step1['customer_id']);
         }
         if (!$customer && !empty($step1['mimas_no'])) {
-            $customer = Customer::where('mimas_no', $step1['mimas_no'])->first();
+            $customer = Customer::withTrashed()->where('mimas_no', $step1['mimas_no'])->first();
         }
-        if (!$customer) {
+        if (!$customer && !empty($step1['aadhaar_no'])) {
+            $customer = Customer::withTrashed()->where('aadhaar_no', $step1['aadhaar_no'])->first();
+        }
+        if ($customer) {
+            if ($customer->trashed()) {
+                $customer->restore();
+            }
+        } else {
             $customer = Customer::create([
                 'customer_name' => $step1['client_name'] ?? $request->input('client_name', 'Applicant'),
                 'company_name'  => $step1['company_name'] ?? $request->input('company_name', 'Applicant Quarry'),
@@ -653,16 +853,18 @@ class CustomerController extends Controller
         // 4. Resolve Mineral
         $mineralId = $step1['mineral_id'] ?? ($customer->mineral_id ?? null);
         $mineral = $mineralId ? (Mineral::find($mineralId) ?? Mineral::first()) : Mineral::first();
+        $mineralIds = $step1['mineral_ids'] ?? ($mineralId ? [$mineralId] : [1]);
+        $otherMineralName = $step1['other_mineral_name'] ?? null;
 
         $branch = Branch::first();
         $user = Auth::user() ?? User::first();
 
-        // Generate official Application Number (e.g. LA-2026-0005)
-        $officialAppCount = LeaseApplication::where('status', '!=', 'draft')->count() + 1;
-        $appNo = 'LA-' . date('Y') . '-' . str_pad((string)$officialAppCount, 4, '0', STR_PAD_LEFT);
+        $appNo = null;
+        $submittedAppId = null;
 
-        DB::transaction(function() use ($appNo, $customer, $district, $category, $mineral, $branch, $user, $request, $draft, $step1, $step2, $step6) {
+        DB::transaction(function() use (&$appNo, &$submittedAppId, $customer, $district, $category, $mineral, $mineralIds, $otherMineralName, $branch, $user, $request, $draft, $step1, $step2, $step6) {
             $currentYear = (int)date('Y');
+            $appNo = $this->generateOfficialAppNumber();
 
             // Check if this was a saved draft in DB
             $existingAppId = $draft['application_id'] ?? null;
@@ -671,44 +873,59 @@ class CustomerController extends Controller
 
             if ($leaseApp) {
                 $leaseApp->update([
+                    'common_id'          => 'GTMS-' . substr($appNo, 3),
                     'application_no'     => $appNo,
                     'customer_id'        => $customer->id,
                     'district_id'        => $district->id,
                     'category_id'        => $category->id,
                     'mineral_id'         => $mineral->id,
+                    'other_mineral_name' => $otherMineralName,
                     'taluk'              => $step1['address'] ?? null,
                     'area_extent_ha'     => !empty($step1['area']) ? (float)$step1['area'] : ($customer->area ?? null),
                     'start_date'         => "{$currentYear}-10-01",
                     'end_date'           => ($currentYear + 5) . "-09-30",
                     'lease_period_years' => 5,
-                    'contact_person'     => $step2['contact_person'] ?? ($step1['client_name'] ?? $customer->customer_name),
-                    'contact_mobile'     => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
-                    'current_step'       => 7,
-                    'status'             => 'under_scrutiny',
-                    'branch_id'          => $branch ? $branch->id : null,
+                    'contact_person'           => $step2['contact_person'] ?? ($step1['client_name'] ?? $customer->customer_name),
+                    'secondary_contact_person' => $step2['secondary_contact_person'] ?? ($step1['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null)),
+                    'contact_mobile'           => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
+                    'secondary_contact_mobile' => $step2['secondary_contact_mobile'] ?? ($step1['secondary_mobile_num'] ?? ($customer->secondary_mobile_num ?? null)),
+                    'current_step'             => 6,
+                    'status'                   => 'under_scrutiny',
+                    'branch_id'                => $branch ? $branch->id : null,
                 ]);
             } else {
                 $leaseApp = LeaseApplication::create([
-                    'application_no'     => $appNo,
-                    'customer_id'        => $customer->id,
-                    'district_id'        => $district->id,
-                    'category_id'        => $category->id,
-                    'mineral_id'         => $mineral->id,
-                    'taluk'              => $step1['address'] ?? null,
-                    'village'            => null,
-                    'area_extent_ha'     => !empty($step1['area']) ? (float)$step1['area'] : ($customer->area ?? null),
-                    'area_extent_acres'  => null,
-                    'start_date'         => "{$currentYear}-10-01",
-                    'end_date'           => ($currentYear + 5) . "-09-30",
-                    'lease_period_years' => 5,
-                    'contact_person'     => $step2['contact_person'] ?? ($step1['client_name'] ?? $customer->customer_name),
-                    'contact_mobile'     => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
-                    'current_step'       => 7,
-                    'status'             => 'under_scrutiny',
-                    'branch_id'          => $branch ? $branch->id : null,
-                    'created_by'         => $user ? $user->id : 1,
+                    'common_id'                => 'GTMS-' . substr($appNo, 3),
+                    'application_no'           => $appNo,
+                    'customer_id'              => $customer->id,
+                    'district_id'              => $district->id,
+                    'category_id'              => $category->id,
+                    'mineral_id'               => $mineral->id,
+                    'other_mineral_name'       => $otherMineralName,
+                    'taluk'                    => $step1['address'] ?? null,
+                    'village'                  => null,
+                    'area_extent_ha'           => !empty($step1['area']) ? (float)$step1['area'] : ($customer->area ?? null),
+                    'area_extent_acres'        => null,
+                    'start_date'               => "{$currentYear}-10-01",
+                    'end_date'                 => ($currentYear + 5) . "-09-30",
+                    'lease_period_years'       => 5,
+                    'contact_person'           => $step2['contact_person'] ?? ($step1['client_name'] ?? $customer->customer_name),
+                    'secondary_contact_person' => $step2['secondary_contact_person'] ?? ($step1['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null)),
+                    'contact_mobile'           => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
+                    'secondary_contact_mobile' => $step2['secondary_contact_mobile'] ?? ($step1['secondary_mobile_num'] ?? ($customer->secondary_mobile_num ?? null)),
+                    'current_step'             => 6,
+                    'status'                   => 'under_scrutiny',
+                    'branch_id'                => $branch ? $branch->id : null,
+                    'created_by'               => $user ? $user->id : 1,
                 ]);
             }
+
+            // Sync multi-minerals into pivot table
+            if (!empty($mineralIds)) {
+                $leaseApp->minerals()->sync($mineralIds);
+            }
+
+            $submittedAppId = $leaseApp->id;
 
             // Survey numbers bound to applicant
             if (!empty($step1['area'])) {
@@ -733,7 +950,7 @@ class CustomerController extends Controller
                 ['lease_application_id' => $leaseApp->id],
                 [
                     'user_id'        => $mimasUserId,
-                    'password'       => Crypt::encryptString($mimasPassword),
+                    'password'       => $mimasPassword,
                     'email'          => $mimasEmail,
                     'contact_number' => $mimasContact,
                     'mimas_ack_no'   => 'ACK-MMS-' . date('Y') . '-' . rand(1000, 9999),
@@ -763,22 +980,22 @@ class CustomerController extends Controller
 
             // Document metadata for all 19 items (16 regulatory + 3 plan)
             $docsMeta = [
-                ['folder_id' => 8, 'doc_item' => 1,  'doc_name' => '1. Lease application – signed, FMB, Plan', 'file_name' => 'signed_lease_application.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 8, 'doc_item' => 2,  'doc_name' => '2. Affidavit – Income Tax', 'file_name' => 'affidavit_income_tax.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 8, 'doc_item' => 3,  'doc_name' => '3. IT returns (If Applicable)', 'file_name' => 'it_returns_assessment.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 8, 'doc_item' => 4,  'doc_name' => '4. Affidavit – Mining Due', 'file_name' => 'affidavit_mining_dues.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 8, 'doc_item' => 5,  'doc_name' => '5. Affidavit – Mining Lease', 'file_name' => 'affidavit_mining_lease.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 8, 'doc_item' => 6,  'doc_name' => '6. Affidavit – 1.5 meter depth', 'file_name' => 'affidavit_depth_safety.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 8, 'doc_item' => 7,  'doc_name' => '7. Affidavit – Hill Areas', 'file_name' => 'affidavit_hill_areas.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 7, 'doc_item' => 8,  'doc_name' => '8. Land Document', 'file_name' => 'land_document_title.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 7, 'doc_item' => 9,  'doc_name' => '9. Consent (If Applicable)', 'file_name' => 'landowner_consent_deed.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 7, 'doc_item' => 10, 'doc_name' => '10. Adangal & A-register', 'file_name' => 'adangal_a_register_record.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 7, 'doc_item' => 11, 'doc_name' => '11. Patta & Encumbrance Certificate', 'file_name' => 'patta_chitta_certificate.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 7, 'doc_item' => 12, 'doc_name' => '12. Work Order', 'file_name' => 'work_order_approval.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 7, 'doc_item' => 13, 'doc_name' => '13. Gazette', 'file_name' => 'district_gazette_notification.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 7, 'doc_item' => 14, 'doc_name' => '14. Recommendation Letter', 'file_name' => 'ad_mines_recommendation_letter.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
-                ['folder_id' => 7, 'doc_item' => 15, 'doc_name' => '15. Mineral Management System – Application', 'file_name' => 'mimas_portal_application.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
-                ['folder_id' => 7, 'doc_item' => 16, 'doc_name' => '16. Challan downloaded from Mimas', 'file_name' => 'mimas_treasury_challan.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 7, 'doc_item' => 1,  'doc_name' => '1. Land Document', 'file_name' => 'land_document_title.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 7, 'doc_item' => 2,  'doc_name' => '2. Consent (If Applicable)', 'file_name' => 'landowner_consent_deed.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 7, 'doc_item' => 3,  'doc_name' => '3. Adangal & A-register', 'file_name' => 'adangal_a_register_record.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 7, 'doc_item' => 4,  'doc_name' => '4. Patta & Encumbrance Certificate', 'file_name' => 'patta_chitta_certificate.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 7, 'doc_item' => 5,  'doc_name' => '5. Work Order', 'file_name' => 'work_order_approval.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 7, 'doc_item' => 6,  'doc_name' => '6. Gazette', 'file_name' => 'district_gazette_notification.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 7, 'doc_item' => 7,  'doc_name' => '7. Recommendation Letter', 'file_name' => 'ad_mines_recommendation_letter.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 7, 'doc_item' => 8,  'doc_name' => '8. Mineral Management System – Application', 'file_name' => 'mimas_portal_application.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 7, 'doc_item' => 9,  'doc_name' => '9. Challan downloaded from Mimas', 'file_name' => 'mimas_treasury_challan.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 8, 'doc_item' => 10, 'doc_name' => '10. Lease application – signed, FMB, Plan', 'file_name' => 'signed_lease_application.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 8, 'doc_item' => 11, 'doc_name' => '11. Affidavit – Income Tax', 'file_name' => 'affidavit_income_tax.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 8, 'doc_item' => 12, 'doc_name' => '12. IT returns (If Applicable)', 'file_name' => 'it_returns_assessment.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 8, 'doc_item' => 13, 'doc_name' => '13. Affidavit – Mining Due', 'file_name' => 'affidavit_mining_dues.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 8, 'doc_item' => 14, 'doc_name' => '14. Affidavit – Mining Lease', 'file_name' => 'affidavit_mining_lease.pdf', 'file_type' => 'application/pdf', 'status' => 'validated'],
+                ['folder_id' => 8, 'doc_item' => 15, 'doc_name' => '15. Affidavit – 1.5 meter depth', 'file_name' => 'affidavit_depth_safety.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
+                ['folder_id' => 8, 'doc_item' => 16, 'doc_name' => '16. Affidavit – Hill Areas', 'file_name' => 'affidavit_hill_areas.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
                 ['folder_id' => 9, 'doc_item' => 17, 'doc_name' => '17. Plan Source File', 'file_name' => 'plan_source_file.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
                 ['folder_id' => 9, 'doc_item' => 18, 'doc_name' => '18. KML File', 'file_name' => 'quarry_boundary.kml', 'file_type' => 'application/xml', 'status' => 'uploaded'],
                 ['folder_id' => 9, 'doc_item' => 19, 'doc_name' => '19. Plan PDF', 'file_name' => 'quarry_plan_layout.pdf', 'file_type' => 'application/pdf', 'status' => 'uploaded'],
@@ -870,6 +1087,42 @@ class CustomerController extends Controller
                 }
             }
 
+            // Priority 4: Custom documents persistence from draft uploads
+            foreach ($draftUploads as $k => $cDoc) {
+                if (!empty($cDoc['is_custom']) || (is_string($k) && str_starts_with($k, 'custom_'))) {
+                    $cDocName = $cDoc['doc_name'] ?? 'Custom Document';
+                    $cFolderId = $cDoc['folder_id'] ?? 7;
+                    $targetFileName = null;
+                    $targetFilePath = null;
+                    $fileType = $cDoc['file_type'] ?? 'application/pdf';
+                    $size = 0;
+                    if (!empty($cDoc['draft_path'])) {
+                        $draftFile = public_path($cDoc['draft_path']);
+                        if (file_exists($draftFile)) {
+                            $targetFileName = basename($draftFile);
+                            $targetFilePath = $fullUploadPath . '/' . $targetFileName;
+                            if ($draftFile !== $targetFilePath) {
+                                @copy($draftFile, $targetFilePath);
+                            }
+                            $size = filesize($targetFilePath);
+                        }
+                    }
+                    LeaseDocument::create([
+                        'lease_application_id' => $leaseApp->id,
+                        'document_field_id'    => null,
+                        'folder_id'            => $cFolderId,
+                        'document_name'        => $cDocName,
+                        'file_name'            => $targetFileName,
+                        'file_path'            => $targetFilePath ? ($uploadSubdir . '/' . $targetFileName) : null,
+                        'file_type'            => $fileType,
+                        'file_size'            => $size,
+                        'status'               => $targetFilePath ? 'uploaded' : 'pending',
+                        'uploaded_by'          => $user->id,
+                        'uploaded_at'          => now(),
+                    ]);
+                }
+            }
+
             // Clean up old draft directory if different from official app directory
             if ($oldAppNo && $oldAppNo !== $appNo) {
                 $oldPath = public_path('uploads/lease_applications/' . $oldAppNo);
@@ -885,6 +1138,10 @@ class CustomerController extends Controller
 
         // Clear draft session after successful submission
         session()->forget('lease_draft');
+
+        if ($request->input('move_to_mining') == 1 && $submittedAppId) {
+            return $this->moveToMining($request, $submittedAppId);
+        }
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -905,7 +1162,7 @@ class CustomerController extends Controller
     {
         $id = $request->query('id');
         $withRelations = [
-            'customer', 'district', 'category', 'mineral', 'surveyNumbers', 'mimasCredentials',
+            'customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'mimasCredentials', 'miningApplications',
             'documents' => function($q) {
                 $q->with('folder')->orderBy('folder_id')->orderBy('id');
             }
@@ -915,8 +1172,12 @@ class CustomerController extends Controller
             ? LeaseApplication::with($withRelations)->find($id)
             : LeaseApplication::with($withRelations)->latest()->first();
 
+        if (!$application) {
+            return redirect('/application')->with('error', 'The requested lease application dossier was not found.');
+        }
+
         $activityLogs = ActivityLog::where('loggable_type', 'lease_application')
-            ->where('loggable_id', $application->id ?? 0)
+            ->where('loggable_id', $application->id)
             ->orderByDesc('created_at')
             ->take(20)
             ->get();
@@ -1065,7 +1326,7 @@ class CustomerController extends Controller
 
     public function generateReport($id)
     {
-        $application = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'surveyNumbers', 'mimasCredentials', 'documents.folder'])
+        $application = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'mimasCredentials', 'documents.folder'])
             ->findOrFail($id);
 
         $this->logActivity($id, 'report_generated', 'Summary report generated.');
@@ -1099,6 +1360,234 @@ class CustomerController extends Controller
             // Silently fail — activity logging should never break the main flow
             \Log::warning('Activity log failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Cross-Module Transition: Promote Lease Application to Mining Plan under Universal Common ID.
+     */
+    public function moveToMining(Request $request, $id)
+    {
+        $lease = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'documents', 'miningApplications'])->findOrFail($id);
+
+        // Idempotency: Check if already moved
+        $existingMining = $lease->miningApplications()->first();
+        if ($existingMining) {
+            $msg = "This lease application is already linked to Mining Plan: {$existingMining->common_id} ({$existingMining->application_no}).";
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'   => 1,
+                    'message'  => $msg,
+                    'redirect' => '/process?id=' . $existingMining->id,
+                ]);
+            }
+            return redirect('/process?id=' . $existingMining->id)->with('info', $msg);
+        }
+
+        // 1. Resolve Universal Common ID (GTMS-YYYY-XXXX)
+        $commonId = $lease->common_id;
+        if (empty($commonId)) {
+            $year = date('Y', strtotime($lease->created_at ?? 'now'));
+            if ($lease->application_no && preg_match('/LA-(\d{4}-\d+)/', $lease->application_no, $m)) {
+                $commonId = 'GTMS-' . $m[1];
+            } else {
+                $commonId = 'GTMS-' . $year . '-' . str_pad($lease->id, 4, '0', STR_PAD_LEFT);
+            }
+            $lease->update(['common_id' => $commonId]);
+        }
+
+        // 2. Generate Mining Application Number (MP-YYYY-XXXX)
+        $suffix = substr($commonId, 5); // e.g. '2026-0011'
+        $miningAppNo = 'MP-' . $suffix;
+        if (MiningApplication::where('application_no', $miningAppNo)->exists()) {
+            $miningAppNo = 'MP-' . $suffix . '-A';
+        }
+
+        // 3. Resolve Lookup IDs (Nature of Work, Applicant Type, Plan Type)
+        $natureOfWorkId = DB::table('nature_of_works')->where('name', 'like', '%Fresh%')->value('id') ?? 1;
+        $applicantTypeId = DB::table('applicant_types')->value('id') ?? 1;
+        $planTypeId = DB::table('plan_types')->where('name', 'like', '%Mining Plan%')->value('id') ?? 1;
+
+        $surveyText = $lease->surveyNumbers->pluck('survey_no')->filter()->join(', ');
+        if (empty($surveyText)) {
+            $surveyText = $lease->sf_no ?? 'SF.No 1';
+        }
+
+        // 4. Create Mining Application Record
+        $miningApp = MiningApplication::create([
+            'common_id'            => $commonId,
+            'application_no'       => $miningAppNo,
+            'customer_id'          => $lease->customer_id,
+            'lease_application_id' => $lease->id,
+            'nature_of_work_id'    => $natureOfWorkId,
+            'applicant_type_id'    => $applicantTypeId,
+            'plan_type_id'         => $planTypeId,
+            'district_id'          => $lease->district_id,
+            'mineral_id'           => $lease->mineral_id,
+            'other_mineral_name'   => $lease->other_mineral_name,
+            'taluk'                => $lease->taluk,
+            'village'              => $lease->village,
+            'survey_numbers_text'  => $surveyText,
+            'area_extent_ha'       => $lease->area_extent_ha,
+            'validity_years'       => $lease->lease_period_years ?? 5,
+            'stage'                => '6.1',
+            'status'               => 'draft',
+            'branch_id'            => $lease->branch_id,
+            'created_by'           => Auth::id() ?? 1,
+        ]);
+
+        // Sync mineral pivot (all selected minerals from lease application)
+        $mineralIds = $lease->minerals->pluck('id')->toArray();
+        if (empty($mineralIds) && $lease->mineral_id) {
+            $mineralIds = [$lease->mineral_id];
+        }
+        if (!empty($mineralIds)) {
+            $miningApp->minerals()->sync($mineralIds);
+        }
+
+        // 5. Physical Document Auto-Cloning to Mining Storage
+        $miningUploadSubdir = 'uploads/mining/' . $miningAppNo;
+        $miningUploadPath = public_path($miningUploadSubdir);
+        if (!file_exists($miningUploadPath)) {
+            mkdir($miningUploadPath, 0777, true);
+        }
+
+        // Folders in Mining Module: 2 = Documents, 5 = Plan
+        $clonedCount = 0;
+        foreach ($lease->documents as $lDoc) {
+            if (!empty($lDoc->file_path) && file_exists(public_path($lDoc->file_path))) {
+                $sourcePath = public_path($lDoc->file_path);
+                $destFileName = basename($sourcePath);
+                $destPath = $miningUploadPath . '/' . $destFileName;
+                @copy($sourcePath, $destPath);
+
+                // Map target folder: KML/Plan -> Folder 5 (Plan), others -> Folder 2 (Documents)
+                $targetFolderId = 2;
+                $docLower = strtolower($lDoc->document_name . ' ' . $destFileName);
+                if (str_contains($docLower, 'kml') || str_contains($docLower, 'plan') || str_contains($docLower, 'drawing') || $lDoc->folder_id == 9) {
+                    $targetFolderId = 5;
+                }
+
+                MiningDocument::create([
+                    'mining_application_id' => $miningApp->id,
+                    'folder_id'             => $targetFolderId,
+                    'document_field_id'     => null, // Custom/carried document
+                    'document_name'         => $lDoc->document_name,
+                    'file_name'             => $destFileName,
+                    'file_path'             => $miningUploadSubdir . '/' . $destFileName,
+                    'file_type'             => $lDoc->file_type ?? 'application/pdf',
+                    'file_size'             => file_exists($destPath) ? filesize($destPath) : ($lDoc->file_size ?? 0),
+                    'status'                => in_array($lDoc->status, ['validated', 'approved']) ? 'validated' : 'uploaded',
+                    'uploaded_by'           => Auth::id() ?? 1,
+                    'uploaded_at'           => now(),
+                ]);
+                $clonedCount++;
+            }
+        }
+
+        // 6. Initialize default required fields for Mining Folders (marked as pending if not uploaded)
+        $natureOfWork = $natureOfWorkId;
+        $standardFields = DocumentField::whereIn('folder_id', [1, 2, 3, 4, 5, 6])
+            ->where(function($q) use ($natureOfWork) {
+                $q->where('nature_of_work_id', $natureOfWork)
+                  ->orWhereNull('nature_of_work_id');
+            })
+            ->get();
+
+        foreach ($standardFields as $field) {
+            $alreadyExists = MiningDocument::where('mining_application_id', $miningApp->id)
+                ->where('document_field_id', $field->id)
+                ->exists();
+
+            if (!$alreadyExists) {
+                MiningDocument::create([
+                    'mining_application_id' => $miningApp->id,
+                    'folder_id'             => $field->folder_id,
+                    'document_field_id'     => $field->id,
+                    'document_name'         => $field->name,
+                    'file_name'             => null,
+                    'file_path'             => null,
+                    'file_type'             => null,
+                    'file_size'             => null,
+                    'status'                => 'pending',
+                    'uploaded_by'           => null,
+                    'uploaded_at'           => null,
+                ]);
+            }
+        }
+
+        // 7. Log Activity in unified audit trail
+        $this->logActivity($lease->id, 'moved_to_mining', "Promoted to Mining Plan {$miningAppNo} under Common Tracking ID: {$commonId}. {$clonedCount} verified documents auto-cloned.");
+
+        try {
+            ActivityLog::create([
+                'user_id'       => Auth::id() ?? 1,
+                'action'        => 'created_from_lease',
+                'description'   => "Mining Plan initiated from Lease Application {$lease->application_no} under Common Tracking ID: {$commonId}. {$clonedCount} verified statutory documents auto-cloned.",
+                'loggable_type' => 'mining_application',
+                'loggable_id'   => $miningApp->id,
+                'ip_address'    => request()->ip(),
+                'user_agent'    => request()->userAgent(),
+                'created_at'    => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('Activity log failed: ' . $e->getMessage());
+        }
+
+        $successMsg = "🎉 Successfully transitioned to Mining Plan domain under Common ID: {$commonId}! {$clonedCount} statutory documents auto-carried.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'   => 1,
+                'message'  => $successMsg,
+                'redirect' => '/process?id=' . $miningApp->id,
+            ]);
+        }
+
+        return redirect('/process?id=' . $miningApp->id)->with('success', $successMsg);
+    }
+
+    // ───────────────────────────────────────
+    // Helper: Atomic Application Number Generators
+    // ───────────────────────────────────────
+
+    private function generateDraftAppNumber(): string
+    {
+        $year = date('Y');
+        $prefix = "LA-DRAFT-{$year}-";
+
+        $maxApp = LeaseApplication::withTrashed()
+            ->where('application_no', 'like', "{$prefix}%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(application_no, '-', -1) AS UNSIGNED) DESC")
+            ->lockForUpdate()
+            ->first();
+
+        $nextSeq = 1;
+        if ($maxApp && preg_match('/-(\d+)$/', $maxApp->application_no, $matches)) {
+            $nextSeq = (int)$matches[1] + 1;
+        }
+
+        return $prefix . str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function generateOfficialAppNumber(): string
+    {
+        $year = date('Y');
+        $prefix = "LA-{$year}-";
+
+        $maxApp = LeaseApplication::withTrashed()
+            ->where('status', '!=', 'draft')
+            ->where('application_no', 'like', "{$prefix}%")
+            ->where('application_no', 'not like', 'LA-DRAFT-%')
+            ->orderByRaw("CAST(SUBSTRING_INDEX(application_no, '-', -1) AS UNSIGNED) DESC")
+            ->lockForUpdate()
+            ->first();
+
+        $nextSeq = 1;
+        if ($maxApp && preg_match('/-(\d+)$/', $maxApp->application_no, $matches)) {
+            $nextSeq = (int)$matches[1] + 1;
+        }
+
+        return $prefix . str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
     }
 
     // ───────────────────────────────────────

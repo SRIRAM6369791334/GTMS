@@ -39,6 +39,117 @@
     <link href="/css/style.css?v=2" rel="stylesheet">
     {{-- <link href="css/style1.css" rel="stylesheet"> --}}
 
+    <style>
+        /* GTMS Universal Pagination Styling */
+        .pagination {
+            display: inline-flex !important;
+            align-items: center;
+            margin-bottom: 0 !important;
+            gap: 4px;
+        }
+        .pagination .page-item .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: 6px !important;
+            border: 1px solid #e2e8f0;
+            color: #0F1E4D;
+            background-color: #ffffff;
+            transition: all 0.2s ease;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #0F1E4D !important;
+            border-color: #0F1E4D !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(15, 30, 77, 0.25);
+        }
+        .pagination .page-item.disabled .page-link {
+            background-color: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .pagination .page-item:not(.active):not(.disabled) .page-link:hover {
+            background-color: #eff6ff !important;
+            border-color: #0F1E4D !important;
+            color: #0F1E4D !important;
+        }
+        /* Defend against unstyled SVG icons in pagination */
+        .pagination svg, nav[role="navigation"] svg {
+            width: 1rem !important;
+            height: 1rem !important;
+            max-width: 16px !important;
+            max-height: 16px !important;
+            display: inline-block !important;
+        }
+
+        /* GTMS DataTables Pagination Harmonization */
+        .dataTables_wrapper .dataTables_paginate {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding-top: 0.75rem !important;
+            justify-content: flex-end !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button,
+        .dataTables_wrapper .dataTables_paginate span .paginate_button,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 34px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+            padding: 0 10px !important;
+            margin: 0 2px !important;
+            font-size: 0.85rem !important;
+            font-weight: 500 !important;
+            border-radius: 6px !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #0F1E4D !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+        }
+        .dataTables_wrapper .dataTables_paginate span .paginate_button.current,
+        .dataTables_wrapper .dataTables_paginate span .paginate_button.current:hover {
+            background: #0F1E4D !important;
+            border-color: #0F1E4D !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 6px rgba(15, 30, 77, 0.25) !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:not(.current):not(.disabled):hover,
+        .dataTables_wrapper .dataTables_paginate span .paginate_button:not(.current):hover {
+            background: #eff6ff !important;
+            border-color: #0F1E4D !important;
+            color: #0F1E4D !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+        .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed !important;
+            opacity: 0.7 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button i {
+            font-size: 0.8rem !important;
+        }
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 0.75rem !important;
+            font-size: 0.85rem !important;
+            color: #64748b !important;
+        }
+    </style>
+
 </head>
 
 <body>
@@ -157,7 +268,7 @@
 
 
     <!-- Toastr -->
-    <script src="vendor/toastr/js/toastr.min.js"></script>
+    <script src="/vendor/toastr/js/toastr.min.js"></script>
     <!-- All init script -->
     <script src="/js/plugins-init/toastr-init.js"></script>
 
@@ -168,7 +279,7 @@
 
     <!-- counter -->
     <script src="/vendor/counter/counter.min.js"></script>
-    <script src="vendor/counter/waypoint.min.js"></script>
+    <script src="/vendor/counter/waypoint.min.js"></script>
 
     <!-- Apex Chart -->
     <script src="/vendor/apexchart/apexchart.js"></script>
@@ -176,7 +287,9 @@
     <!-- Chart peity plugin files -->
     <script src="/vendor/peity/jquery.peity.min.js"></script>
     <!-- Dashboard 1 -->
+    @if(request()->is('/') || request()->is('dashboard*'))
     <script src="/js/dashboard/dashboard-1.js"></script>
+    @endif
      <!-- Datatable -->
     <script src="/vendor/datatables/js/jquery.dataTables.min.js"></script>
     <script src="/vendor/datatables/responsive/responsive.js"></script>

@@ -279,7 +279,10 @@
                     </h4>
                     <span class="code-badge">CUST-{{ str_pad($customer->id, 3, '0', STR_PAD_LEFT) }}</span>
                     @if($customer->mimas_no)
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold" title="Universal MIMAS ID"><i class="fa fa-fingerprint me-1"></i>{{ $customer->mimas_no }}</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 fw-bold" title="Customer Unique ID"><i class="fa fa-fingerprint me-1"></i>{{ $customer->mimas_no }}</span>
+                    @endif
+                    @if($customer->mimas_number)
+                        <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 fw-bold" title="MIMAS Number"><i class="fa fa-id-badge me-1"></i>{{ $customer->mimas_number }}</span>
                     @endif
                     @if($customer->status == 1)
                         <span class="status-blip-badge active"><span class="status-blip-dot"></span>Active</span>
@@ -331,9 +334,21 @@
                                 Tax & Business Identifiers
                             </span>
                             <div class="info-chip-card d-flex justify-content-between align-items-center mb-2" style="background:#eff6ff;border:1px solid #bfdbfe;">
-                                <span class="text-primary fw-bold small"><i class="fa fa-fingerprint me-1"></i> MIMAS Number</span>
+                                <span class="text-primary fw-bold small"><i class="fa fa-fingerprint me-1"></i> Customer Unique ID</span>
                                 <span class="badge bg-primary text-white fw-bold" style="letter-spacing:0.04em;">{{ $customer->mimas_no ?? 'N/A' }}</span>
                             </div>
+                            @if($customer->mimas_number)
+                            <div class="info-chip-card d-flex justify-content-between align-items-center mb-2" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+                                <span class="text-success fw-bold small"><i class="fa fa-id-badge me-1"></i> MIMAS Number</span>
+                                <span class="badge bg-success text-white fw-bold" style="letter-spacing:0.04em;">{{ $customer->mimas_number }}</span>
+                            </div>
+                            @endif
+                            @if($customer->mimas_status)
+                            <div class="info-chip-card d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted small"><i class="fa fa-info-circle me-1 text-primary"></i> MIMAS Status</span>
+                                <span class="badge bg-light text-dark border fw-bold">{{ $customer->mimas_status }}</span>
+                            </div>
+                            @endif
                             <div class="info-chip-card d-flex justify-content-between align-items-center">
                                 <span class="text-muted small">PAN Number</span>
                                 <span class="code-badge">{{ $customer->pan ?? 'N/A' }}</span>
@@ -357,12 +372,32 @@
                                 <span class="text-muted small"><i class="fa fa-map-marker-alt me-1 text-danger"></i> District</span>
                                 <span class="fw-bold text-dark small">{{ $customer->district->name ?? 'Unassigned' }}</span>
                             </div>
-                            <div class="info-chip-card d-flex justify-content-between align-items-center">
-                                <span class="text-muted small"><i class="fa fa-phone me-1 text-primary"></i> Mobile</span>
-                                <a href="tel:{{ $customer->mobile_num }}" class="fw-bold text-primary text-decoration-none small">
-                                    {{ $customer->mobile_num }}
-                                </a>
+                            <div class="info-chip-card mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small"><i class="fa fa-phone me-1 text-primary"></i> Primary Contact</span>
+                                    <a href="tel:{{ $customer->mobile_num }}" class="fw-bold text-primary text-decoration-none small">
+                                        {{ $customer->mobile_num }}
+                                    </a>
+                                </div>
+                                <div class="text-muted text-end" style="font-size:.72rem;">
+                                    {{ $customer->customer_name }}
+                                </div>
                             </div>
+                            @if($customer->secondary_mobile_num)
+                            <div class="info-chip-card mb-2" style="background:#f8fafc; border-left:3px solid #6366f1;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-muted small"><i class="fa fa-phone-alt me-1 text-indigo"></i> Secondary Contact</span>
+                                    <a href="tel:{{ $customer->secondary_mobile_num }}" class="fw-bold text-dark text-decoration-none small">
+                                        {{ $customer->secondary_mobile_num }}
+                                    </a>
+                                </div>
+                                @if($customer->secondary_contact_person)
+                                <div class="text-muted text-end" style="font-size:.72rem;">
+                                    {{ $customer->secondary_contact_person }}
+                                </div>
+                                @endif
+                            </div>
+                            @endif
                             <div class="info-chip-card d-flex justify-content-between align-items-center">
                                 <span class="text-muted small"><i class="fa fa-envelope me-1 text-info"></i> Email</span>
                                 <span class="small text-truncate" style="max-width: 130px;" title="{{ $customer->email }}">
@@ -553,13 +588,14 @@
                                     <table class="table dossier-table">
                                         <thead>
                                             <tr>
-                                                <th>App No / Order</th>
+                                                <th>App No &amp; Common ID</th>
                                                 <th>Category</th>
                                                 <th>Mineral</th>
                                                 <th>Location</th>
                                                 <th>Area (Ha)</th>
-                                                <th>Survey & Sub-div Nos</th>
+                                                <th>Survey &amp; Sub-div Nos</th>
                                                 <th>Status</th>
+                                                <th class="text-end" style="min-width: 140px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -567,6 +603,11 @@
                                             <tr>
                                                 <td>
                                                     <span class="fw-bold text-primary font-monospace">{{ $lease->application_no }}</span>
+                                                    <div class="mt-1">
+                                                        <span class="badge bg-light text-dark border font-monospace" style="font-size: .68rem;" title="Universal Common ID">
+                                                            <i class="fa fa-fingerprint text-primary me-1"></i>{{ $lease->common_id ?? ('GTMS-' . date('Y', strtotime($lease->created_at ?? 'now')) . '-' . str_pad($lease->id, 4, '0', STR_PAD_LEFT)) }}
+                                                        </span>
+                                                    </div>
                                                     @if($lease->go_number)
                                                         <div class="text-muted small" style="font-size: .72rem;">GO: {{ $lease->go_number }}</div>
                                                     @endif
@@ -575,9 +616,23 @@
                                                     <span class="badge bg-light text-dark border">{{ $lease->category->name ?? 'Standard Rule' }}</span>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary">
-                                                        <i class="fa fa-gem me-1"></i> {{ $lease->mineral->name ?? 'Unassigned' }}
-                                                    </span>
+                                                    @php
+                                                        $leaseMinerals = $lease->minerals && $lease->minerals->isNotEmpty()
+                                                            ? $lease->minerals->pluck('name')->toArray()
+                                                            : ($lease->mineral ? [$lease->mineral->name] : []);
+                                                        if (!empty($lease->other_mineral_name)) {
+                                                            $leaseMinerals[] = 'Other: ' . $lease->other_mineral_name;
+                                                        }
+                                                    @endphp
+                                                    @if(!empty($leaseMinerals))
+                                                        @foreach($leaseMinerals as $mName)
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary me-1 mb-1 d-inline-block">
+                                                                <i class="fa fa-gem me-1"></i> {{ $mName }}
+                                                            </span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="badge bg-light text-muted border">Unassigned</span>
+                                                    @endif
                                                 </td>
                                                 <td>{{ $lease->village ?? '-' }}, {{ $lease->taluk ?? '-' }}</td>
                                                 <td class="fw-bold text-dark font-monospace">{{ number_format($lease->area_extent_ha, 2) }} Ha</td>
@@ -597,10 +652,34 @@
                                                         <span class="status-blip-badge pending"><span class="status-blip-dot"></span>{{ ucfirst($lease->status) }}</span>
                                                     @endif
                                                 </td>
+                                                <td class="text-end">
+                                                    @php
+                                                        $miningLinked = $lease->miningApplications ? $lease->miningApplications->first() : null;
+                                                    @endphp
+                                                    <div class="d-inline-flex gap-1 align-items-center justify-content-end">
+                                                        <a href="{{ route('viewapplication', ['id' => $lease->id]) }}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View Lease Dossier">
+                                                            <i class="fa fa-eye"></i>
+                                                        </a>
+                                                        @if($miningLinked)
+                                                            <a href="/process?id={{ $miningLinked->id }}" class="btn btn-sm btn-outline-success py-1 px-2" title="Open Mining Plan ({{ $miningLinked->common_id }})">
+                                                                <i class="fa fa-mountain me-1"></i> {{ $miningLinked->common_id ?? $miningLinked->application_no }} ↗
+                                                            </a>
+                                                        @else
+                                                            @can('application.edit')
+                                                            <form action="{{ route('application.moveToMining', $lease->id) }}" method="POST" class="d-inline">
+                                                                @csrf
+                                                                <button type="submit" class="btn btn-sm btn-navy py-1 px-2" title="Move to Mining Plan" onclick="return confirm('Promote Lease {{ $lease->application_no }} to Mining Plan domain under Common ID {{ $lease->common_id }}?');">
+                                                                    <i class="fa fa-rocket me-1"></i> Move to Mining
+                                                                </button>
+                                                            </form>
+                                                            @endcan
+                                                        @endif
+                                                    </div>
+                                                </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="7">
+                                                <td colspan="8">
                                                     <div class="empty-state-box">
                                                         <div class="empty-state-icon"><i class="fa fa-file-contract"></i></div>
                                                         <h6 class="fw-bold text-dark mb-1">No Lease Applications Found</h6>

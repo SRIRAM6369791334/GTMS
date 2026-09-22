@@ -7,8 +7,9 @@ $(document).ready(function() {
     });
 
     // Initialize DataTable if not already initialized
+    var dataTable;
     if (!$.fn.DataTable.isDataTable('#example10')) {
-        $('#example10').DataTable({
+        dataTable = $('#example10').DataTable({
             responsive: true,
             pageLength: 10,
             language: {
@@ -18,7 +19,21 @@ $(document).ready(function() {
                 }
             }
         });
+    } else {
+        dataTable = $('#example10').DataTable();
     }
+
+    // Quick Filter by District (Column index 2)
+    $('#filter_district').on('change', function () {
+        var val = $(this).val();
+        dataTable.column(2).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
+    });
+
+    // Quick Filter by Status (Column index 5)
+    $('#filter_status').on('change', function () {
+        var val = $(this).val();
+        dataTable.column(5).search(val).draw();
+    });
 
     // =========================================================================
     // AUTO-CONVERT / MASK AADHAAR NUMBER: 987654321001 -> 9876-5432-1001
@@ -96,11 +111,17 @@ $(document).ready(function() {
         var btn = $(this);
         $('#edit_id').val(btn.data('id'));
         $('#edit_mimas_no').val(btn.data('mimas'));
+        $('#edit_mimas_number').val(btn.data('mimas-number') || '');
+        $('#edit_mimas_status').val(btn.data('mimas-status') || '');
         $('#edit_customer_name').val(btn.data('name'));
+        $('#edit_secondary_contact_person').val(btn.data('secondary-contact') || '');
         $('#edit_company_name').val(btn.data('company'));
         $('#edit_mobile_num').val(btn.data('mobile'));
+        $('#edit_secondary_mobile_num').val(btn.data('secondary-mobile') || '');
         $('#edit_email').val(btn.data('email'));
         $('#edit_district_id').val(btn.data('district-id'));
+        $('#edit_mineral_id').val(btn.data('mineral-id') || '');
+        $('#edit_area').val(btn.data('area') || '');
         $('#edit_pan').val(btn.data('pan'));
         $('#edit_aadhaar_no').val(btn.data('aadhaar'));
         $('#edit_gstin').val(btn.data('gstin'));
@@ -183,9 +204,16 @@ $(document).ready(function() {
                     }
 
                     $('#view_mimas_no').text(c.mimas_no || 'N/A');
+                    $('#view_mimas_number').text(c.mimas_number || 'N/A');
+                    $('#view_mimas_status').text(c.mimas_status || 'N/A');
+                    $('#view_rep').text(c.customer_name || 'N/A');
                     $('#view_mobile').text(c.mobile_num || 'N/A');
+                    $('#view_secondary_contact').text(c.secondary_contact_person || 'Not specified');
+                    $('#view_secondary_mobile').text(c.secondary_mobile_num || 'Not specified');
                     $('#view_email').text(c.email || 'N/A');
                     $('#view_district').text(c.district ? c.district.name : 'N/A');
+                    $('#view_mineral').text(c.mineral ? (c.mineral.name + (c.mineral.type ? ' (' + c.mineral.type + ')' : '')) : 'Not specified');
+                    $('#view_area').text(c.area ? (c.area + ' Ha') : 'Not specified');
                     $('#view_pan').text(c.pan || 'N/A');
                     $('#view_aadhaar_no').text(c.aadhaar_no || 'N/A');
                     $('#view_gstin').text(c.gstin || 'N/A');
@@ -229,11 +257,20 @@ $(document).ready(function() {
                             toastr.success(response.message);
                             setTimeout(function() { location.reload(); }, 600);
                         } else {
-                            toastr.error(response.message || 'Could not delete customer.');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Cannot Delete Customer',
+                                text: response.message || 'Could not delete customer.'
+                            });
                         }
                     },
-                    error: function () {
-                        toastr.error('Something went wrong during deletion.');
+                    error: function (xhr) {
+                        var msg = (xhr.responseJSON && xhr.responseJSON.message) ? xhr.responseJSON.message : 'Something went wrong during deletion.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Cannot Delete Customer',
+                            text: msg
+                        });
                     }
                 });
             }

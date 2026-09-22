@@ -1,5 +1,6 @@
+{{-- ⚠️ DEPRECATED: This file is no longer active. MIMAS credentials merged into Step 2 (createstep2.blade.php). Route /step6 now renders createstep7.blade.php as the Review & Submit page. Kept for reference only. --}}
 @extends('layouts.app')
-@section('title', 'Step6')
+@section('title', 'MIMAS Credentials - Step 6')
 @section('main_content')
 
 <div class="content-body default-height">
@@ -21,6 +22,10 @@
         <h4>MIMAS Registration Details</h4>
         <div class="wc-sub">Store the applicant's Mineral Management System (MIMAS) login so the office can retrieve the challan and track status directly.</div>
 
+        @php
+          $hasSavedPass = !empty($draft['step6']['mimas_password']);
+        @endphp
+
         <form id="mimas_form" method="POST" action="{{ route('step6.save') }}">
           @csrf
           <div class="row g-3">
@@ -31,7 +36,7 @@
             <div class="col-md-6">
               <label class="form-label">Password <span class="text-danger">*</span></label>
               <div class="input-group">
-                <input type="password" name="mimas_password" id="field_mimas_password" class="form-control" placeholder="Enter your MIMAS portal password" value="{{ $draft['step6']['mimas_password'] ?? '' }}" required autocomplete="current-password" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+                <input type="password" name="mimas_password" id="field_mimas_password" class="form-control" placeholder="{{ $hasSavedPass ? '•••••••••••• (Stored securely — enter new password to update)' : 'Enter your MIMAS portal password' }}" value="{{ $hasSavedPass ? '__UNCHANGED__' : '' }}" required autocomplete="new-password" style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
                 <button class="btn btn-outline-secondary d-flex align-items-center justify-content-center px-3" type="button" id="btn_toggle_password" title="Show / Hide Password" style="background:#fff; border:1px solid #ced4da; border-left:none; border-top-left-radius: 0; border-bottom-left-radius: 0; cursor:pointer;">
                   <!-- Eye Open SVG -->
                   <svg id="svg_eye_open" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#475569" viewBox="0 0 16 16">
@@ -46,7 +51,7 @@
                   </svg>
                 </button>
               </div>
-              <div class="form-text-hint mt-1"><i class="bi bi-shield-lock text-success me-1"></i> Stored encrypted with AES-256. Visible only to authorised officers.</div>
+              <div class="form-text-hint mt-1"><i class="bi bi-shield-lock text-success me-1"></i> Stored encrypted with AES-256. Plaintext is never exposed in browser source.</div>
             </div>
             <div class="col-md-6">
               <label class="form-label">Email ID <span class="text-danger">*</span></label>
@@ -54,7 +59,7 @@
             </div>
             <div class="col-md-6">
               <label class="form-label">Contact Number <span class="text-danger">*</span></label>
-              <input type="text" name="mimas_contact" id="field_mimas_contact" class="form-control" placeholder="10-digit mobile number" value="{{ $draft['step6']['mimas_contact'] ?? $draft['step1']['mobile_num'] ?? '' }}" required>
+              <input type="tel" name="mimas_contact" id="field_mimas_contact" class="form-control" placeholder="10-digit mobile number" value="{{ $draft['step6']['mimas_contact'] ?? $draft['step1']['mobile_num'] ?? '' }}" required maxlength="10">
             </div>
           </div>
         </form>
@@ -69,15 +74,15 @@
         </div>
 
         <div class="wizard-actions d-flex justify-content-between align-items-center">
-          <a href="/step5" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+          <a href="{{ route('step5') }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> Back</a>
+          @can('application.create')
           <div class="d-flex gap-2">
             <button type="button" id="btn_save_later_step6" class="btn btn-outline-primary px-3">
               <i class="fa fa-save me-1"></i> Save &amp; Continue Later
             </button>
-            @can('application.create')
             <button type="button" id="btn_save_step6" class="btn btn-navy px-4">Save &amp; Continue <i class="bi bi-arrow-right"></i></button>
-            @endcan
           </div>
+          @endcan
         </div>
       </div>
     </div>
@@ -89,16 +94,34 @@
 @section('scripts')
 <script>
 $(document).ready(function() {
+  // Prevent native form submit (e.g. Enter key) from rendering raw JSON
+  $('#mimas_form').on('submit', function(e) {
+    e.preventDefault();
+    $('#btn_save_step6').trigger('click');
+  });
+
+  // Clear masked placeholder on focus so user can type a new password cleanly
+  $('#field_mimas_password').on('focus', function() {
+    if ($(this).val() === '__UNCHANGED__') {
+      $(this).val('');
+    }
+  });
+
+  // Numeric-only input restriction on contact
+  $('#field_mimas_contact').on('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '').substring(0, 10);
+  });
+
   // Toggle password visibility (Eye Icon)
   $('#btn_toggle_password').on('click', function(e) {
     e.preventDefault();
     var passInput = $('#field_mimas_password');
-    if (passInput.attr('type') === 'password') {
-      passInput.attr('type', 'text');
+    if (passInput.prop('type') === 'password') {
+      passInput.prop('type', 'text');
       $('#svg_eye_open').hide();
       $('#svg_eye_closed').show();
     } else {
-      passInput.attr('type', 'password');
+      passInput.prop('type', 'password');
       $('#svg_eye_closed').hide();
       $('#svg_eye_open').show();
     }
@@ -106,17 +129,13 @@ $(document).ready(function() {
 
   // Save & Continue Later (exit = 1)
   $('#btn_save_later_step6').on('click', function() {
-    var btn = $(this);
-    var userId = $('#field_mimas_user_id').val().trim();
-    var pass = $('#field_mimas_password').val().trim();
-    var email = $('#field_mimas_email').val().trim();
-    var contact = $('#field_mimas_contact').val().trim();
-
-    if (!userId || !pass || !email || !contact) {
-      alert('Please fill MIMAS details before saving draft.');
+    var form = document.getElementById('mimas_form');
+    if (form && !form.checkValidity()) {
+      form.reportValidity();
       return;
     }
 
+    var btn = $(this);
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Saving Draft...');
     var formData = $('#mimas_form').serialize() + '&exit=1';
     $.ajax({
@@ -125,31 +144,29 @@ $(document).ready(function() {
       data: formData,
       headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
       success: function(res) {
+        if (typeof toastr !== 'undefined') toastr.success('MIMAS credentials saved.');
         window.location.href = res.redirect || '/application';
       },
       error: function(xhr) {
         btn.prop('disabled', false).html('<i class="fa fa-save me-1"></i> Save &amp; Continue Later');
         var msg = 'Failed to save MIMAS details.';
         if (xhr.responseJSON && xhr.responseJSON.errors) {
-          msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+          msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
         }
-        alert(msg);
+        if (typeof toastr !== 'undefined') toastr.error(msg);
+        else alert(msg);
       }
     });
   });
 
   $('#btn_save_step6').on('click', function() {
-    var btn = $(this);
-    var userId = $('#field_mimas_user_id').val().trim();
-    var pass = $('#field_mimas_password').val().trim();
-    var email = $('#field_mimas_email').val().trim();
-    var contact = $('#field_mimas_contact').val().trim();
-
-    if (!userId || !pass || !email || !contact) {
-      alert('All MIMAS credentials are required.');
+    var form = document.getElementById('mimas_form');
+    if (form && !form.checkValidity()) {
+      form.reportValidity();
       return;
     }
 
+    var btn = $(this);
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Saving...');
     $.ajax({
       url: '{{ route("step6.save") }}',
@@ -165,9 +182,10 @@ $(document).ready(function() {
         btn.prop('disabled', false).html('Save & Continue <i class="bi bi-arrow-right"></i>');
         var msg = 'Failed to save MIMAS details.';
         if (xhr.responseJSON && xhr.responseJSON.errors) {
-          msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+          msg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
         }
-        alert(msg);
+        if (typeof toastr !== 'undefined') toastr.error(msg);
+        else alert(msg);
       }
     });
   });

@@ -16,10 +16,14 @@ class Customer extends Model
 
     protected $fillable = [
         'customer_name',
+        'secondary_contact_person',
         'company_name',
         'mimas_no',
+        'mimas_number',
+        'mimas_status',
         'slug',
         'mobile_num',
+        'secondary_mobile_num',
         'email',
         'district_id',
         'mineral_id',
@@ -43,9 +47,26 @@ class Customer extends Model
         static::creating(function ($customer) {
             if (empty($customer->slug)) {
                 $name = $customer->company_name ?: $customer->customer_name;
-                $base = Str::slug($name);
-                $count = static::where('slug', 'like', "{$base}%")->count();
-                $customer->slug = $count ? "{$base}-" . ($count + 1) : $base;
+                $base = Str::slug($name) ?: 'customer';
+                $slug = $base;
+                $i = 1;
+                while (static::withTrashed()->where('slug', $slug)->exists()) {
+                    $slug = "{$base}-" . (++$i);
+                }
+                $customer->slug = $slug;
+            }
+        });
+
+        static::updating(function ($customer) {
+            if ($customer->isDirty('company_name') || $customer->isDirty('customer_name')) {
+                $name = $customer->company_name ?: $customer->customer_name;
+                $base = Str::slug($name) ?: 'customer';
+                $slug = $base;
+                $i = 1;
+                while (static::withTrashed()->where('slug', $slug)->where('id', '!=', $customer->id)->exists()) {
+                    $slug = "{$base}-" . (++$i);
+                }
+                $customer->slug = $slug;
             }
         });
     }
@@ -108,5 +129,10 @@ class Customer extends Model
     public function stockpiles(): HasMany
     {
         return $this->hasMany(MineralStockpile::class, 'quarry_customer_id');
+    }
+
+    public function ecCertificates(): HasMany
+    {
+        return $this->hasMany(EcCertificate::class);
     }
 }

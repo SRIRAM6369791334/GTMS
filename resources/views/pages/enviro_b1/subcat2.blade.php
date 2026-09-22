@@ -1,146 +1,195 @@
 @extends('layouts.app')
-@section('title', 'Sub Category 2')
+@section('title', 'Sub Category 2 — EIA & TNPCB Submission')
 @section('main_content')
- <link href="css/style1.css" rel="stylesheet">
+<link href="{{ asset('css/style1.css') }}" rel="stylesheet">
 
+<div class="content-body default-height">
+    <div class="container-fluid">
 
-    <div class="content-body default-height">
-        <div class="container-fluid">
-            <div class="row page-titles">
-                <ol class="breadcrumb">
-                     <li class="breadcrumb-item"><a href="javascript:void(0)">Dashboard · Sub Category 1</a></li>
-                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Sub Category 2 Table</a></li>
+        <div class="row page-titles align-items-center">
+            <div class="col-md-6">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ route('eviron.index') }}">Environment Clearance B1</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Sub Category 2</a></li>
                 </ol>
             </div>
-            <!-- row -->
-            <main class="admin-content">
-
-      <!-- ================= FOLDER TABS ================= -->
-      <div class="admin-tabs">
-        <div class="admin-tab active" data-target="tab-1" style="--tab-color:var(--c-documents); --tab-tint:#eef1fb;"><span class="badge-num" style="background:var(--c-documents);">1</span>ToR Letter <span class="cnt">1</span></div>
-        <div class="admin-tab" data-target="tab-2" style="--tab-color:var(--c-report); --tab-tint:#e9f7ef;"><span class="badge-num" style="background:var(--c-report);">2</span>Baseline Study <span class="cnt">4</span></div>
-        <div class="admin-tab" data-target="tab-3" style="--tab-color:var(--c-gis); --tab-tint:#f2ecfa;"><span class="badge-num" style="background:var(--c-gis);">3</span>Draft (12 Ch.) <span class="cnt">2</span></div>
-        <div class="admin-tab" data-target="tab-4" style="--tab-color:var(--c-upload); --tab-tint:#fdf1e2;"><span class="badge-num" style="background:var(--c-upload);">4</span>TNPCB Submission <span class="cnt">4</span></div>
-        <div class="admin-tab" data-target="tab-5" style="--tab-color:var(--c-parivesh); --tab-tint:#fbe9f0;"><span class="badge-num" style="background:var(--c-parivesh);">5</span>Final EIA Report <span class="cnt">3</span></div>
-        <div class="admin-tab" data-target="tab-6" style="--tab-color:var(--c-file); --tab-tint:#e3f6f3;"><span class="badge-num" style="background:var(--c-file);">6</span>Uploading File <span class="cnt">1</span></div>
-      </div>
-
-      <!-- ================= TAB 1: TOR LETTER ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-1">
-        <div class="panel-head">
-          <div><h5>1 &middot; Documents (ToR Letter)</h5><p class="sub">Terms of Reference correspondence</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-documents);">1 / 1 approved</span>
+            <div class="col-md-6 text-end">
+                @if($allProjects->isNotEmpty())
+                <form method="GET" action="{{ route('environstage2') }}" class="d-inline-flex align-items-center gap-2">
+                    <label class="small text-muted mb-0">Active Project:</label>
+                    <select name="project_id" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                        @foreach($allProjects as $p)
+                        <option value="{{ $p->id }}" @selected($project && $project->id === $p->id)>
+                            {{ $p->project_code }} — {{ $p->project_name }}
+                        </option>
+                        @endforeach
+                    </select>
+                </form>
+                @endif
+            </div>
         </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox" checked></td><td><span class="row-mod-dot" style="background:var(--c-documents);"></span><span class="doc-name">ToR Letter</span><div class="doc-hint">Terms of Reference issued for the project</div></td><td><span class="badge-status approved" data-cyclable="1" data-state="approved"><i class="fa fa-check-circle"></i> Approved</span></td><td>4 days ago</td><td>S. Priya</td><td class="text-end"><button class="row-action-btn"><i class="fa fa-eye"></i></button></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <!-- ================= TAB 2: BASELINE STUDY ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-2" style="display:none;">
-        <div class="panel-head">
-          <div><h5>2 &middot; Baseline Study</h5><p class="sub">Baseline data collection by EIA experts</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-report);">0 / 4 approved</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox" checked></td><td><span class="row-mod-dot" style="background:var(--c-report);"></span><span class="doc-name">Air Quality Monitoring</span></td><td><span class="badge-status uploaded" data-cyclable="1" data-state="uploaded"><i class="bi bi-cloud-check"></i> Uploaded</span></td><td>Yesterday</td><td>Dr. Meena</td><td class="text-end"><button class="row-action-btn"><i class="fa fa-eye"></i></button></td></tr>
-              <tr><td><input type="checkbox" checked></td><td><span class="row-mod-dot" style="background:var(--c-report);"></span><span class="doc-name">Noise Monitoring</span></td><td><span class="badge-status uploaded" data-cyclable="1" data-state="uploaded"><i class="bi bi-cloud-check"></i> Uploaded</span></td><td>Yesterday</td><td>Dr. Meena</td><td class="text-end"><button class="row-action-btn"><i class="fa fa-eye"></i></button></td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-report);"></span><span class="doc-name">Water Quality Monitoring</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-report);"></span><span class="doc-name">Soil Study</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        @if(session('success'))<div class="alert alert-success py-2">{{ session('success') }}</div>@endif
+        @if(session('error'))<div class="alert alert-danger py-2">{{ session('error') }}</div>@endif
 
-      <!-- ================= TAB 3: DRAFT ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-3" style="display:none;">
-        <div class="panel-head">
-          <div><h5>3 &middot; Draft (12 Chapters)</h5><p class="sub">Draft EIA report preparation</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-gis);">0 / 2 approved</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-gis);"></span><span class="doc-name">Draft Preparation — 12 Chapters</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-gis);"></span><span class="doc-name">ToR Compliance</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <main class="admin-content">
 
-      <!-- ================= TAB 4: TNPCB SUBMISSION ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-4" style="display:none;">
-        <div class="panel-head">
-          <div><h5>4 &middot; TNPCB Draft Submission</h5><p class="sub">Draft EIA, executive summary &amp; public hearing</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-upload);">0 / 4 approved</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox" checked></td><td><span class="row-mod-dot" style="background:var(--c-upload);"></span><span class="doc-name">Draft EIA &amp; Executive Summary</span><div class="doc-hint">Prepared in Tamil &amp; English</div></td><td><span class="badge-status uploaded" data-cyclable="1" data-state="uploaded"><i class="bi bi-cloud-check"></i> Uploaded</span></td><td>3 days ago</td><td>S. Priya</td><td class="text-end"><button class="row-action-btn"><i class="fa fa-eye"></i></button></td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-upload);"></span><span class="doc-name">Public Hearing PPT</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-upload);"></span><span class="doc-name">Public Opinion Poll</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-upload);"></span><span class="doc-name">Recording of Queries</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <!-- ================= FOLDER TABS ================= -->
+            <div class="admin-tabs">
+                @php
+                    $tabColors = [
+                        'Documents (ToR Letter)' => ['var(--c-documents)', '#eef1fb'],
+                        'Baseline Study' => ['var(--c-report)', '#e9f7ef'],
+                        'Draft (12 Chapters)' => ['var(--c-gis)', '#f2ecfa'],
+                        'TNPCB Draft Submission' => ['var(--c-upload)', '#fdf1e2'],
+                        'Final EIA Report' => ['var(--c-parivesh)', '#fbe9f0'],
+                        'Uploading File' => ['var(--c-file)', '#e3f6f3'],
+                    ];
+                @endphp
+                @foreach($folders as $idx => $folder)
+                @php
+                    $fColor = $tabColors[$folder->name] ?? ['#007bff', '#eef1fb'];
+                    $docs = $documentsByFolder[$folder->id] ?? collect();
+                @endphp
+                <div class="admin-tab {{ $idx === 0 ? 'active' : '' }}" data-target="tab-sc2-{{ $folder->id }}" style="--tab-color:{{ $fColor[0] }}; --tab-tint:{{ $fColor[1] }};">
+                    <span class="badge-num" style="background:{{ $fColor[0] }};">{{ $idx + 1 }}</span>
+                    {{ $folder->name }} <span class="cnt">{{ $docs->count() }}</span>
+                </div>
+                @endforeach
+            </div>
 
-      <!-- ================= TAB 5: FINAL EIA REPORT ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-5" style="display:none;">
-        <div class="panel-head">
-          <div><h5>5 &middot; Final EIA Report</h5><p class="sub">Final report with action plan &amp; EMP</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-parivesh);">0 / 3 approved</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-parivesh);"></span><span class="doc-name">Final EIA Report — 12 Chapters</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-parivesh);"></span><span class="doc-name">Integrating Public Queries</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-parivesh);"></span><span class="doc-name">Action Plan + EMP</span></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <!-- ================= FOLDER TAB PANELS ================= -->
+            @foreach($folders as $idx => $folder)
+            @php
+                $fColor = $tabColors[$folder->name] ?? ['#007bff', '#eef1fb'];
+                $docs = $documentsByFolder[$folder->id] ?? collect();
+                $approvedCount = $docs->where('status', 'approved')->count();
+            @endphp
+            <div class="admin-panel tab-panel mb-4" id="tab-sc2-{{ $folder->id }}" style="{{ $idx > 0 ? 'display:none;' : '' }}">
+                <div class="panel-head d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ $idx + 1 }} &middot; {{ $folder->name }}</h5>
+                        <p class="sub mb-0">EIA / Public hearing documents for {{ $folder->name }}</p>
+                    </div>
+                    <span class="panel-progress-chip fw-bold" style="font-size:.82rem; color:{{ $fColor[0] }};">
+                        {{ $approvedCount }} / {{ $docs->count() }} approved
+                    </span>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-admin align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:36px;"><input type="checkbox"></th>
+                                <th>Document</th>
+                                <th>Status</th>
+                                <th>Uploaded File</th>
+                                <th>Uploaded At</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($docs as $doc)
+                            <tr>
+                                <td><input type="checkbox"></td>
+                                <td>
+                                    <span class="row-mod-dot" style="background:{{ $fColor[0] }};"></span>
+                                    <span class="doc-name font-w600">{{ $doc->document_name }}</span>
+                                    @if($doc->review_note)
+                                        <div class="doc-hint text-danger"><i class="fa fa-info-circle"></i> {{ $doc->review_note }}</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ $doc->status === 'approved' ? 'success' : ($doc->status === 'revision_required' ? 'danger' : ($doc->status === 'pending' ? 'secondary' : 'warning')) }}">
+                                        {{ ucfirst(str_replace('_', ' ', $doc->status)) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    @if($doc->file_path)
+                                        <a href="{{ route('environment-b2.documents.download', $doc) }}" class="text-primary font-w600">
+                                            <i class="fa fa-download me-1"></i>{{ $doc->file_name ?: 'Download' }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                                <td>{{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : '—' }}</td>
+                                <td class="text-end">
+                                    @can('environment.b2.upload')
+                                    <button class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#b1Sc2Upload{{ $doc->id }}" title="Upload Document">
+                                        <i class="fa fa-upload"></i>
+                                    </button>
+                                    @endcan
+                                    @can('environment.b2.review')
+                                    @if($doc->file_path)
+                                    <button class="btn btn-xs btn-outline-success" data-bs-toggle="modal" data-bs-target="#b1Sc2Review{{ $doc->id }}" title="Review Document">
+                                        <i class="fa fa-check"></i>
+                                    </button>
+                                    @endif
+                                    @endcan
+                                </td>
+                            </tr>
 
-      <!-- ================= TAB 6: UPLOADING FILE ================= -->
-      <div class="admin-panel tab-panel mb-4" id="tab-6" style="display:none;">
-        <div class="panel-head">
-          <div><h5>6 &middot; Uploading File</h5><p class="sub">Final online submission</p></div>
-          <span class="panel-progress-chip fw-bold" style="font-size:.78rem; color:var(--c-file);">0 / 1 approved</span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-admin align-middle mb-0">
-            <thead><tr><th style="width:36px;"><input type="checkbox"></th><th>Document</th><th>Status</th><th>Updated</th><th>Uploaded By</th><th class="text-end">Actions</th></tr></thead>
-            <tbody>
-              <tr><td><input type="checkbox"></td><td><span class="row-mod-dot" style="background:var(--c-file);"></span><span class="doc-name">Uploading File</span><div class="doc-hint">Online submission on the PARIVESH Portal</div></td><td><span class="badge-status pending" data-cyclable="1" data-state="pending"><i class="fa fa-hourglass-half"></i> Pending</span></td><td>—</td><td>—</td><td class="text-end">@can('environment.create')<button class="row-action-btn"><i class="fa fa-upload"></i></button>@endcan</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+                            <!-- Upload Modal -->
+                            <div class="modal fade" id="b1Sc2Upload{{ $doc->id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <form class="modal-content" method="POST" enctype="multipart/form-data" action="{{ route('environment-b2.documents.upload', $doc) }}">
+                                        @csrf
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Upload: {{ $doc->document_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label class="form-label">File to upload</label>
+                                            <input type="file" name="file" class="form-control" required accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.kml,.kmz,.dwg">
+                                            <small class="text-muted">Supports PDF, EIA chapters, PPT, opinion recordings; max 25 MB.</small>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button class="btn btn-primary">Upload Now</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
 
+                            <!-- Review Modal -->
+                            <div class="modal fade" id="b1Sc2Review{{ $doc->id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <form class="modal-content" method="POST" action="{{ route('environment-b2.documents.review', $doc) }}">
+                                        @csrf
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Review: {{ $doc->document_name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label class="form-label">Decision</label>
+                                            <select name="status" class="form-select" required>
+                                                <option value="validated" @selected($doc->status === 'validated')>Validated</option>
+                                                <option value="approved" @selected($doc->status === 'approved')>Approved</option>
+                                                <option value="revision_required" @selected($doc->status === 'revision_required')>Revision Required</option>
+                                            </select>
+                                            <label class="form-label mt-3">Notes / Remarks</label>
+                                            <textarea class="form-control" name="review_note" rows="3">{{ $doc->review_note }}</textarea>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button class="btn btn-success">Save Decision</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-3">No documents required for this folder.</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endforeach
 
+        </main>
 
-    </main>
-
-
-
-        </div>
     </div>
-
-
-
+</div>
 @endsection
-
-

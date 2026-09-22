@@ -8,6 +8,7 @@ use App\Models\Mineral;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 class CustomerDirectoryController extends Controller
 {
@@ -55,19 +56,27 @@ class CustomerDirectoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'mimas_no'      => 'required|string|max:50|unique:customers,mimas_no',
-            'customer_name' => 'required|string|max:255',
-            'company_name'  => 'required|string|max:255',
-            'mobile_num'    => 'required|string|max:15',
-            'email'         => 'nullable|email|max:255',
-            'district_id'   => 'required|exists:districts,id',
-            'pan'           => 'required|string|max:10',
-            'aadhaar_no'    => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', 'unique:customers,aadhaar_no'],
-            'gstin'         => 'nullable|string|max:15',
-            'address'       => 'nullable|string',
-            'status'        => 'required|in:0,1',
+            'mimas_no'                 => ['required', 'string', 'max:50', Rule::unique('customers', 'mimas_no')->whereNull('deleted_at')],
+            'mimas_number'             => 'nullable|string|max:100',
+            'mimas_status'             => 'nullable|string|max:100',
+            'customer_name'            => 'required|string|max:255',
+            'secondary_contact_person' => 'nullable|string|max:255',
+            'company_name'             => 'required|string|max:255',
+            'mobile_num'               => 'required|string|max:15',
+            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'email'                    => 'nullable|email|max:255',
+            'district_id'              => 'required|exists:districts,id',
+            'mineral_id'               => 'nullable|exists:minerals,id',
+            'area'                     => 'nullable|numeric|min:0',
+            'pan'                      => 'required|string|max:10',
+            'aadhaar_no'               => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
+            'gstin'                    => 'nullable|string|max:15',
+            'address'                  => 'nullable|string',
+            'status'                   => 'required|in:0,1',
         ], [
-            'aadhaar_no.regex' => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'aadhaar_no.regex'   => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'mimas_no.unique'    => 'This Customer Unique ID is already registered by an active customer.',
+            'aadhaar_no.unique'  => 'This Aadhaar number is already registered by an active customer.',
         ]);
 
         if ($validator->fails()) {
@@ -85,6 +94,26 @@ class CustomerDirectoryController extends Controller
             $data['gstin'] = strtoupper($data['gstin']);
         }
         $data['created_by'] = Auth::id();
+
+        // If a previously soft-deleted customer exists with this MIMAS or Aadhaar, restore and update
+        $trashedCustomer = Customer::onlyTrashed()
+            ->where(function ($query) use ($data) {
+                $query->where('mimas_no', $data['mimas_no']);
+                if (!empty($data['aadhaar_no'])) {
+                    $query->orWhere('aadhaar_no', $data['aadhaar_no']);
+                }
+            })
+            ->first();
+
+        if ($trashedCustomer) {
+            $trashedCustomer->restore();
+            $trashedCustomer->update($data);
+            return response()->json([
+                'status'  => 1,
+                'message' => 'Archived customer "' . $trashedCustomer->company_name . '" has been restored and updated successfully!',
+                'data'    => $trashedCustomer,
+            ]);
+        }
 
         $customer = Customer::create($data);
 
@@ -105,8 +134,11 @@ class CustomerDirectoryController extends Controller
             'leaseApplications.surveyNumbers',
             'leaseApplications.category',
             'leaseApplications.mineral',
+            'leaseApplications.minerals',
+            'leaseApplications.miningApplications',
             'miningApplications.planType',
             'miningApplications.mineral',
+            'miningApplications.minerals',
             'miningApplications.boundaryPoints',
             'miningApplications.productionSchedules',
             'environmentProjects.ecCertificates',
@@ -177,20 +209,28 @@ class CustomerDirectoryController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'id'            => 'required|exists:customers,id',
-            'mimas_no'      => 'required|string|max:50|unique:customers,mimas_no,' . $id,
-            'customer_name' => 'required|string|max:255',
-            'company_name'  => 'required|string|max:255',
-            'mobile_num'    => 'required|string|max:15',
-            'email'         => 'nullable|email|max:255',
-            'district_id'   => 'required|exists:districts,id',
-            'pan'           => 'required|string|max:10',
-            'aadhaar_no'    => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', 'unique:customers,aadhaar_no,' . $id],
-            'gstin'         => 'nullable|string|max:15',
-            'address'       => 'nullable|string',
-            'status'        => 'required|in:0,1',
+            'id'                       => 'required|exists:customers,id',
+            'mimas_no'                 => ['required', 'string', 'max:50', Rule::unique('customers', 'mimas_no')->ignore($id)->whereNull('deleted_at')],
+            'mimas_number'             => 'nullable|string|max:100',
+            'mimas_status'             => 'nullable|string|max:100',
+            'customer_name'            => 'required|string|max:255',
+            'secondary_contact_person' => 'nullable|string|max:255',
+            'company_name'             => 'required|string|max:255',
+            'mobile_num'               => 'required|string|max:15',
+            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'email'                    => 'nullable|email|max:255',
+            'district_id'              => 'required|exists:districts,id',
+            'mineral_id'               => 'nullable|exists:minerals,id',
+            'area'                     => 'nullable|numeric|min:0',
+            'pan'                      => 'required|string|max:10',
+            'aadhaar_no'               => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
+            'gstin'                    => 'nullable|string|max:15',
+            'address'                  => 'nullable|string',
+            'status'                   => 'required|in:0,1',
         ], [
-            'aadhaar_no.regex' => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'aadhaar_no.regex'   => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'mimas_no.unique'    => 'This Customer Unique ID is already registered by an active customer.',
+            'aadhaar_no.unique'  => 'This Aadhaar number is already registered by an active customer.',
         ]);
 
         if ($validator->fails()) {
@@ -206,6 +246,26 @@ class CustomerDirectoryController extends Controller
         $data['pan'] = strtoupper($data['pan']);
         if (!empty($data['gstin'])) {
             $data['gstin'] = strtoupper($data['gstin']);
+        }
+
+        // Check if conflict with an existing archived/soft-deleted record
+        $trashedConflict = Customer::onlyTrashed()
+            ->where(function ($query) use ($data) {
+                $query->where('mimas_no', $data['mimas_no']);
+                if (!empty($data['aadhaar_no'])) {
+                    $query->orWhere('aadhaar_no', $data['aadhaar_no']);
+                }
+            })
+            ->where('id', '!=', $customer->id)
+            ->first();
+
+        if ($trashedConflict) {
+            return response()->json([
+                'status' => 0,
+                'errors' => [
+                    'mimas_no' => ['This MIMAS or Aadhaar number is currently reserved by an archived customer ("' . $trashedConflict->company_name . '"). Please restore that customer or use a different number.']
+                ]
+            ], 422);
         }
 
         $customer->update($data);
@@ -224,7 +284,7 @@ class CustomerDirectoryController extends Controller
     {
         $mimas_no = trim(urldecode($mimas_no));
 
-        $customer = Customer::with(['district', 'mineral'])
+        $customer = Customer::withTrashed()->with(['district', 'mineral'])
             ->where('mimas_no', $mimas_no)
             ->first();
 
@@ -241,10 +301,14 @@ class CustomerDirectoryController extends Controller
             'data' => [
                 'id'              => $customer->id,
                 'mimas_no'        => $customer->mimas_no,
+                'mimas_number'    => $customer->mimas_number,
+                'mimas_status'    => $customer->mimas_status,
                 'company_name'    => $customer->company_name,
-                'customer_name'   => $customer->customer_name,
-                'mobile_num'      => $customer->mobile_num,
-                'email'           => $customer->email,
+                'customer_name'            => $customer->customer_name,
+                'secondary_contact_person' => $customer->secondary_contact_person,
+                'mobile_num'               => $customer->mobile_num,
+                'secondary_mobile_num'     => $customer->secondary_mobile_num,
+                'email'                    => $customer->email,
                 'district_id'     => $customer->district_id,
                 'district_name'   => $customer->district?->name,
                 'mineral_id'      => $customer->mineral_id,
@@ -261,7 +325,7 @@ class CustomerDirectoryController extends Controller
     }
 
     /**
-     * Soft delete the specified customer.
+     * Soft delete the specified customer with active dependency protection.
      */
     public function destroy(Request $request)
     {
@@ -270,6 +334,31 @@ class CustomerDirectoryController extends Controller
 
         if (!$customer) {
             return response()->json(['status' => 0, 'message' => 'Customer not found.'], 404);
+        }
+
+        // Active statutory dependencies check
+        $activeDependencies = [];
+        if ($customer->leaseApplications()->exists()) {
+            $activeDependencies[] = $customer->leaseApplications()->count() . ' Lease Application(s)';
+        }
+        if ($customer->miningApplications()->exists()) {
+            $activeDependencies[] = $customer->miningApplications()->count() . ' Mining Plan(s)';
+        }
+        if ($customer->environmentProjects()->exists()) {
+            $activeDependencies[] = $customer->environmentProjects()->count() . ' Environmental Project(s)';
+        }
+        if ($customer->dgpsSurveys()->exists()) {
+            $activeDependencies[] = $customer->dgpsSurveys()->count() . ' DGPS Survey(s)';
+        }
+        if ($customer->stockpiles()->exists()) {
+            $activeDependencies[] = $customer->stockpiles()->count() . ' Mineral Stockpile(s)';
+        }
+
+        if (!empty($activeDependencies)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Cannot delete customer. This customer is linked to: ' . implode(', ', $activeDependencies) . '. Please reassign or delete these linked records first.'
+            ], 422);
         }
 
         $company = $customer->company_name;

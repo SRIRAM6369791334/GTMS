@@ -19,6 +19,7 @@ use App\Http\Controllers\DgpsSurveyController;
 use App\Http\Controllers\DroneSurveyController;
 
 use App\Http\Controllers\CustomerDirectoryController;
+use App\Http\Controllers\CustomerTrackingController;
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -41,6 +42,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:customer.view')->group(function () {
         Route::get('/customers', [CustomerDirectoryController::class, 'index'])->name('customers.index');
         Route::get('/customers/{slug}', [CustomerDirectoryController::class, 'show'])->name('customers.show');
+        Route::get('/customer-tracking', [CustomerTrackingController::class, 'index'])->name('customer-tracking.index');
+        Route::get('/customer-tracking/search', [CustomerTrackingController::class, 'search'])->name('customer-tracking.search');
+        Route::get('/customer-tracking/{customer}', [CustomerTrackingController::class, 'show'])->name('customer-tracking.show');
     });
     Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->name('customers.lookup.mimas');
     Route::post('/customeradd', [CustomerDirectoryController::class, 'store'])->name('customeradd')->middleware('permission:customer.create');
@@ -112,11 +116,14 @@ Route::middleware('auth')->group(function () {
     });
 
     // Lease Application Workflow Routes (Process Flow 6.2-6.4)
-    Route::middleware('permission:application.view')->group(function () {
+    Route::middleware('permission:application.edit')->group(function () {
         Route::post('/application/{id}/validate', [CustomerController::class, 'validateApplication'])->name('application.validate');
         Route::post('/application/{id}/approve', [CustomerController::class, 'approveApplication'])->name('application.approve');
         Route::post('/application/{id}/reject', [CustomerController::class, 'rejectApplication'])->name('application.reject');
+        Route::post('/application/{id}/move-to-mining', [CustomerController::class, 'moveToMining'])->name('application.moveToMining');
         Route::post('/application/document/{id}/status', [CustomerController::class, 'updateDocumentStatus'])->name('application.document.status');
+    });
+    Route::middleware('permission:application.view')->group(function () {
         Route::get('/application/{id}/report', [CustomerController::class, 'generateReport'])->name('application.report');
     });
 
@@ -129,45 +136,76 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('permission:mining.create')->group(function () {
         Route::get('/newapplication', [MiningController::class, 'newApplication'])->name('newapplication');
+        Route::post('/newapplication', [MiningController::class, 'store'])->name('newapplication.store');
+        Route::post('/mining/document/upload', [MiningController::class, 'uploadDocument'])->name('mining.document.upload');
+    });
+    Route::middleware('permission:mining.edit')->group(function () {
+        Route::post('/mining/document/{id}/validate', [MiningController::class, 'validateDocument'])->name('mining.document.validate');
+        Route::post('/mining/application/{id}/stage', [MiningController::class, 'advanceStage'])->name('mining.application.stage');
+        Route::post('/mining/application/{id}/move-to-environment', [MiningController::class, 'moveToEnvironment'])->name('mining.application.moveToEnvironment');
     });
 
-    // Environment Clearance routes
+    // ─── Environment Clearance — Unified Routes ───────────────────────────
     Route::middleware('permission:environment.view')->group(function () {
+        // Unified Landing Page (B1 + B2 all projects)
         Route::get('/eviron', [EnverionsoneController::class, 'index'])->name('eviron.index');
+
+        // Unified Project Show (dynamic folder tabs — SC1 / SC2 / B2)
+        Route::get('/eviron/{id}', [EnverionsoneController::class, 'show'])->whereNumber('id')->name('eviron.show');
+
+        // Create Wizard — Step 1: Category Selection, Step 2: Project Details
+        Route::get('/eviron/create', [EnverionsoneController::class, 'create'])->name('eviron.create');
+
+        // Backward-compatible routes (still accessible, now redirect to show page)
         Route::get('/environstage1', [EnverionsoneController::class, 'index1'])->name('environstage1');
         Route::get('/environstage2', [EnverionsoneController::class, 'index2'])->name('environstage2');
 
-        // B2 workflow
+        // B2 workflow — list & detail (kept for backward compat)
         Route::get('/environment-b2', [EnvironmentalB2Controller::class, 'index'])->name('environment-b2.index');
         Route::get('/environment-b2/step/{step}', [EnvironmentalB2Controller::class, 'wizard'])->whereNumber('step')->name('environment-b2.step');
         Route::get('/environment-b2/{project}', [EnvironmentalB2Controller::class, 'show'])->name('environment-b2.show');
+
+        // Document download (shared between B1 & B2)
+        Route::get('/environment-b2/documents/{document}/download', [EnvironmentalB2Controller::class, 'download'])->name('environment-b2.documents.download');
+        Route::get('/eviron/documents/{document}/download', [EnverionsoneController::class, 'downloadDocument'])->name('eviron.documents.download');
     });
 
     Route::middleware('permission:environment.b2.create')->group(function () {
+        // Unified create (handles B1-SC1, B1-SC2, B2)
+        Route::post('/eviron', [EnverionsoneController::class, 'store'])->name('eviron.store');
+
+        // B2 legacy store
         Route::post('/environment-b2', [EnvironmentalB2Controller::class, 'store'])->name('environment-b2.store');
     });
 
-    Route::middleware('permission:environment.b2.review')->group(function () {
-        Route::post('/environment-b2/{project}/status', [EnvironmentalB2Controller::class, 'updateStatus'])->name('environment-b2.status');
-    });
-
     Route::middleware('permission:environment.b2.upload')->group(function () {
+        // Unified document upload (for B1 & B2 via eviron/{id})
+        Route::post('/eviron/{id}/documents/{document}/upload', [EnverionsoneController::class, 'uploadDocument'])->name('eviron.documents.upload');
+
+        // B2 legacy upload
         Route::post('/environment-b2/documents/{document}/upload', [EnvironmentalB2Controller::class, 'upload'])->name('environment-b2.documents.upload');
     });
 
     Route::middleware('permission:environment.b2.review')->group(function () {
-        Route::post('/environment-b2/documents/{document}/review', [EnvironmentalB2Controller::class, 'review'])->name('environment-b2.documents.review');
-    });
+        // Unified project status update
+        Route::post('/eviron/{id}/status', [EnverionsoneController::class, 'updateStatus'])->name('eviron.status');
 
-    Route::middleware('permission:environment.view')->group(function () {
-        Route::get('/environment-b2/documents/{document}/download', [EnvironmentalB2Controller::class, 'download'])->name('environment-b2.documents.download');
+        // Unified document review
+        Route::post('/eviron/{id}/documents/{document}/review', [EnverionsoneController::class, 'reviewDocument'])->name('eviron.documents.review');
+
+        // B2 legacy review
+        Route::post('/environment-b2/{project}/status', [EnvironmentalB2Controller::class, 'updateStatus'])->name('environment-b2.status');
+        Route::post('/environment-b2/documents/{document}/review', [EnvironmentalB2Controller::class, 'review'])->name('environment-b2.documents.review');
     });
 
 
     // EC Certificate Issuance
     Route::middleware('permission:environment.view')->group(function () {
         Route::get('/ec-certificate', [EcCertificateController::class, 'index'])->name('ec-certificate.index');
+        Route::get('/ec-certificate/{id}', [EcCertificateController::class, 'show'])->whereNumber('id')->name('ec-certificate.show');
         Route::get('/ec-certificate/step/{step}', [EcCertificateController::class, 'wizard'])->whereNumber('step')->name('ec-certificate.step');
+        Route::post('/ec-certificate/step/{step}', [EcCertificateController::class, 'saveStep'])->whereNumber('step')->name('ec-certificate.saveStep');
+        Route::post('/ec-certificate', [EcCertificateController::class, 'store'])->name('ec-certificate.store');
     });
 
 

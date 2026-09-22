@@ -34,7 +34,8 @@
                     <span class="nav-text">Customers</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="/customers">Customers</a></li>
+                    <li><a href="/customers">Customer Directory</a></li>
+                    <li><a href="{{ route('customer-tracking.index') }}">Customer Tracking</a></li>
                 </ul>
             </li>
             @endcan
@@ -56,10 +57,10 @@
             <li>
                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
                     <i class="fas fa-file-alt"></i>
-                    <span class="nav-text">Mining Plan</span>
+                    <span class="nav-text">Mining Department</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="/miningplan">Mining Plan</a></li>
+                    <li><a href="/miningplan">Services</a></li>
                     <li><a href="/projectfolder">Project Folders</a></li>
                     <li><a href="/process">Process</a></li>
                 </ul>
@@ -68,13 +69,14 @@
             @can('environment.view')
             <li>
                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
-                    <i class="fas fa-info-circle"></i>
+                    <i class="fas fa-leaf"></i>
                     <span class="nav-text">Environment Clearance</span>
                 </a>
                 <ul aria-expanded="false">
-                    <li><a href="/environstage1">Sub Category 1</a></li>
-                    <li><a href="/environstage2">Sub Category 2</a></li>
-                    <li><a href="{{ route('environment-b2.index') }}">B2 Document Process</a></li>
+                    <li><a href="{{ route('eviron.index') }}">All Applications</a></li>
+                    @can('environment.b2.create')
+                    <!-- <li><a href="{{ route('eviron.create') }}">New Application</a></li> -->
+                    @endcan
                     <li><a href="{{ route('ec-certificate.index') }}">EC Certificate Issuance</a></li>
                 </ul>
             </li>

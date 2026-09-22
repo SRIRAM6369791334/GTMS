@@ -33,7 +33,7 @@ class PptApplication extends Model
 
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class)->withTrashed();
     }
 
     public function environmentProject(): BelongsTo

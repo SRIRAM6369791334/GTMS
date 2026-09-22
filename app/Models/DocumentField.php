@@ -12,6 +12,7 @@ class DocumentField extends Model
 
     protected $fillable = [
         'folder_id',
+        'nature_of_work_id',
         'name',
         'required',
         'sort_order',
