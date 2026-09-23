@@ -457,13 +457,131 @@ class EnverionsoneController extends Controller
         return redirect()->route('eviron.show', $project->id);
     }
 
-    // ─── PRIVATE HELPERS ─────────────────────────────────────────────────
+    /**
+     * Submit Sub Category 1 (SC1) to PPT Department for Stage 1 ToR Presentation.
+     */
+    public function submitSc1ToPpt(int $id)
+    {
+        $project = EnvironmentProject::findOrFail($id);
+        abort_unless($project->category === 'B1', 400, 'Only Category B1 applications require PPT appraisal.');
+
+        $ppt = $project->pptStage1;
+        if (!$ppt) {
+            $count = PptApplication::count() + 1;
+            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+
+            $ppt = PptApplication::create([
+                'application_no'         => $appNo,
+                'customer_id'            => $project->customer_id,
+                'environment_project_id' => $project->id,
+                'presentation_stage'     => 'tor_presentation',
+                'project_name'           => $project->project_name . ' (Stage 1: ToR Presentation)',
+                'district_id'            => $project->district_id,
+                'taluk_village'          => $project->location ?? 'Quarry Site',
+                'mineral_id'             => 1,
+                'status'                 => 'agenda_scheduled',
+                'product_value'          => 25000.00,
+                'paid_amount'            => 25000.00,
+                'pending_amount'         => 0.00,
+                'payment_status'         => 'paid',
+                'branch_id'              => $project->branch_id ?? 1,
+                'created_by'             => Auth::id(),
+            ]);
+
+            ApplicationHandler::create([
+                'application_type' => 'ppt',
+                'application_id'   => $ppt->id,
+                'name'             => 'Dr. K. Ravichandran',
+                'role'             => 'Lead Technical Consultant',
+                'notes'            => 'SEAC ToR presentation defense',
+                'sort_order'       => 1,
+            ]);
+        }
+
+        $project->update([
+            'ppt_stage_1_id' => $ppt->id,
+            'b1_stage'       => 'sc1_ppt_review',
+            'status'         => 'validation',
+        ]);
+
+        ActivityLog::create([
+            'loggable_type' => EnvironmentProject::class,
+            'loggable_id'   => $project->id,
+            'action'        => 'sc1_submitted_to_ppt',
+            'description'   => "Sub Category 1 completed and submitted to PPT Department for ToR Presentation ({$ppt->application_no}).",
+            'user_id'       => Auth::id(),
+        ]);
+
+        return redirect()->route('eviron.show', $project->id)
+            ->with('success', "Stage 1 (SC1) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.");
+    }
+
+    /**
+     * Submit Sub Category 2 (SC2) to PPT Department for Stage 2 Final EC Presentation.
+     */
+    public function submitSc2ToPpt(int $id)
+    {
+        $project = EnvironmentProject::findOrFail($id);
+        abort_unless($project->category === 'B1' && $project->sub_category === 'SC2', 400, 'Project must be in Sub Category 2.');
+
+        $ppt = $project->pptStage2;
+        if (!$ppt) {
+            $count = PptApplication::count() + 1;
+            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+
+            $ppt = PptApplication::create([
+                'application_no'         => $appNo,
+                'customer_id'            => $project->customer_id,
+                'environment_project_id' => $project->id,
+                'presentation_stage'     => 'final_ec_presentation',
+                'project_name'           => $project->project_name . ' (Stage 2: Final EC Presentation)',
+                'district_id'            => $project->district_id,
+                'taluk_village'          => $project->location ?? 'Quarry Site',
+                'mineral_id'             => 1,
+                'status'                 => 'agenda_scheduled',
+                'product_value'          => 25000.00,
+                'paid_amount'            => 25000.00,
+                'pending_amount'         => 0.00,
+                'payment_status'         => 'paid',
+                'branch_id'              => $project->branch_id ?? 1,
+                'created_by'             => Auth::id(),
+            ]);
+
+            ApplicationHandler::create([
+                'application_type' => 'ppt',
+                'application_id'   => $ppt->id,
+                'name'             => 'Dr. K. Ravichandran',
+                'role'             => 'Lead Technical Consultant',
+                'notes'            => 'Final SEAC / SEIAA EC presentation defense',
+                'sort_order'       => 1,
+            ]);
+        }
+
+        $project->update([
+            'ppt_stage_2_id' => $ppt->id,
+            'b1_stage'       => 'sc2_ppt_review',
+            'status'         => 'validation',
+        ]);
+
+        ActivityLog::create([
+            'loggable_type' => EnvironmentProject::class,
+            'loggable_id'   => $project->id,
+            'action'        => 'sc2_submitted_to_ppt',
+            'description'   => "Sub Category 2 completed and submitted to PPT Department for Final EC Presentation ({$ppt->application_no}).",
+            'user_id'       => Auth::id(),
+        ]);
+
+        return redirect()->route('eviron.show', $project->id)
+            ->with('success', "Stage 2 (SC2) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.");
+    }
+
+    // ─── DOCUMENT SLOTS GENERATOR ────────────────────────────────────────
 
     /**
      * Auto-generate EnvironmentDocument slots for every document_field
      * belonging to the correct folders for this project's category + sub_category.
      */
-    private function autoGenerateDocumentSlots(EnvironmentProject $project): void
+    public function autoGenerateDocumentSlots(EnvironmentProject $project): void
     {
         $folderNames = $project->folder_names;
 
@@ -495,5 +613,10 @@ class EnverionsoneController extends Controller
                 }
             }
         }
+    }
+
+    public static function generateSlots(EnvironmentProject $project): void
+    {
+        (new self())->autoGenerateDocumentSlots($project);
     }
 }
