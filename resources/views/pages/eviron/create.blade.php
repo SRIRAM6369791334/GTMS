@@ -62,22 +62,26 @@
 
                     {{-- B1 Sub Category Selector (Appears when B1 is checked) --}}
                     <div id="b1_subcategory_box" class="mt-3 pt-3 border-top {{ old('category', $category) === 'B1' ? '' : 'd-none' }}">
-                      <label class="form-label small fw-bold text-dark mb-2">Select B1 Sub Category *</label>
-                      <div class="row g-2">
-                        <div class="col-sm-6">
-                          <label class="subcat-pill p-2 rounded border d-block" id="pill_sc1" for="radio_sc1" style="cursor:pointer; background:#f8fafc;">
-                            <input type="radio" name="sub_category" value="SC1" id="radio_sc1" class="form-check-input me-1" {{ old('sub_category', $subCat) === 'SC1' || (!old('sub_category') && old('category') === 'B1') ? 'checked' : '' }}>
-                            <span class="small fw-semibold">Sub Category 1</span>
-                            <div class="text-muted" style="font-size:0.75rem;">ToR &amp; Mining Docs (5 Folders)</div>
-                          </label>
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <label class="form-label small fw-bold text-dark mb-0">B1 Statutory Stage *</label>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10px;">
+                          <i class="fa fa-route me-1"></i> 2-Stage Sequential Flow
+                        </span>
+                      </div>
+                      <div class="p-3 rounded border" id="pill_sc1" style="background:#f0fdf4; border-color:#86efac !important;">
+                        <div class="d-flex align-items-center justify-content-between">
+                          <div class="d-flex align-items-center gap-2">
+                            <input type="radio" name="sub_category" value="SC1" id="radio_sc1" class="form-check-input mt-0" checked required>
+                            <div>
+                              <span class="small fw-bold text-success">Sub Category 1 (SC1)</span>
+                              <div class="text-muted" style="font-size:0.75rem;">ToR &amp; Mining Documents (5 Folders)</div>
+                            </div>
+                          </div>
+                          <span class="badge bg-success text-white" style="font-size:10px;">Stage 1 Active</span>
                         </div>
-                        <div class="col-sm-6">
-                          <label class="subcat-pill p-2 rounded border d-block" id="pill_sc2" for="radio_sc2" style="cursor:pointer; background:#f8fafc;">
-                            <input type="radio" name="sub_category" value="SC2" id="radio_sc2" class="form-check-input me-1" {{ old('sub_category', $subCat) === 'SC2' ? 'checked' : '' }}>
-                            <span class="small fw-semibold">Sub Category 2</span>
-                            <div class="text-muted" style="font-size:0.75rem;">EIA &amp; TNPCB (6 Folders)</div>
-                          </label>
-                        </div>
+                      </div>
+                      <div class="alert alert-info py-2 px-3 small mt-2 mb-0" style="font-size:0.78rem; background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1;">
+                        <i class="fa fa-info-circle me-1"></i> <strong>Sequential B1 Workflow:</strong> All B1 applications start exclusively at <strong>Sub Category 1</strong>. Once SC1 is completed and approved by the <strong>PPT Department (ToR Presentation)</strong>, Sub Category 2 will unlock automatically.
                       </div>
                     </div>
 
@@ -374,33 +378,9 @@ document.addEventListener('DOMContentLoaded', function() {
   const cardCatB2 = document.getElementById('card_cat_b2');
   const b1SubBox = document.getElementById('b1_subcategory_box');
   const radioSc1 = document.getElementById('radio_sc1');
-  const radioSc2 = document.getElementById('radio_sc2');
-
   const pillSc1 = document.getElementById('pill_sc1');
-  const pillSc2 = document.getElementById('pill_sc2');
   const customerSelect = document.getElementById('customer_select');
   const projectNameInput = document.getElementById('project_name');
-
-  function updateSubCategoryHighlight() {
-    if (pillSc1 && pillSc2) {
-      if (radioSc1 && radioSc1.checked) {
-        pillSc1.style.borderColor = '#0F1E4D';
-        pillSc1.style.background = '#eff6ff';
-        pillSc2.style.borderColor = '#e2e8f0';
-        pillSc2.style.background = '#f8fafc';
-      } else if (radioSc2 && radioSc2.checked) {
-        pillSc2.style.borderColor = '#0F1E4D';
-        pillSc2.style.background = '#eff6ff';
-        pillSc1.style.borderColor = '#e2e8f0';
-        pillSc1.style.background = '#f8fafc';
-      } else {
-        pillSc1.style.borderColor = '#e2e8f0';
-        pillSc1.style.background = '#f8fafc';
-        pillSc2.style.borderColor = '#e2e8f0';
-        pillSc2.style.background = '#f8fafc';
-      }
-    }
-  }
 
   function updateCategoryHighlight() {
     if (radioCatB1 && radioCatB1.checked) {
@@ -413,10 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardCatB2.style.background = '#ffffff';
       }
       if (b1SubBox) b1SubBox.classList.remove('d-none');
-      if (radioSc1 && radioSc2 && !radioSc1.checked && !radioSc2.checked) {
-        radioSc1.checked = true;
-      }
-      updateSubCategoryHighlight();
+      if (radioSc1) radioSc1.checked = true;
     } else if (radioCatB2 && radioCatB2.checked) {
       if (cardCatB2) {
         cardCatB2.style.borderColor = '#0F1E4D';
@@ -428,15 +405,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       if (b1SubBox) b1SubBox.classList.add('d-none');
       if (radioSc1) radioSc1.checked = false;
-      if (radioSc2) radioSc2.checked = false;
-      updateSubCategoryHighlight();
     }
   }
 
   if (radioCatB1) radioCatB1.addEventListener('change', updateCategoryHighlight);
   if (radioCatB2) radioCatB2.addEventListener('change', updateCategoryHighlight);
-  if (radioSc1) radioSc1.addEventListener('change', updateSubCategoryHighlight);
-  if (radioSc2) radioSc2.addEventListener('change', updateSubCategoryHighlight);
 
   // Card click activation
   if (cardCatB1) {

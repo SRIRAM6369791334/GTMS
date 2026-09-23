@@ -128,6 +128,11 @@
                   <td class="ps-3 fw-semibold text-muted">{{ $applications->firstItem() ? $applications->firstItem() + $loop->index : $loop->iteration }}</td>
                   <td>
                     <span class="fw-bold text-navy">{{ $app->application_no }}</span>
+                    @if($app->presentation_stage)
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10px;">
+                        {{ $app->presentation_stage === 'tor_presentation' ? 'ToR Gate' : 'Final EC Gate' }}
+                      </span>
+                    @endif
                     @if($app->project_name)
                       <div class="small text-muted text-truncate" style="max-width:220px;" title="{{ $app->project_name }}">{{ $app->project_name }}</div>
                     @endif

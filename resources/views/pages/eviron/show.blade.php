@@ -124,35 +124,211 @@
 
           {{-- Stage Action Buttons --}}
           <div class="d-flex gap-2 align-items-center">
-            @if($project->ecCertificates?->isNotEmpty())
-              <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
-                <i class="fa fa-certificate me-1"></i> View Issued EC Certificate ({{ $project->ecCertificates->first()->ec_ref_no }})
-              </a>
-            @elseif($project->status === 'draft')
-              <form method="POST" action="{{ route('eviron.status', $project->id) }}">
-                @csrf
-                <input type="hidden" name="status" value="validation">
-                <button type="submit" class="btn btn-warning btn-sm">
-                  <i class="fa fa-arrow-right me-1"></i> Send to Validation (6.2)
-                </button>
-              </form>
-            @elseif($project->status === 'validation')
-              <form method="POST" action="{{ route('eviron.status', $project->id) }}">
-                @csrf
-                <input type="hidden" name="status" value="approved">
-                <button type="submit" class="btn btn-success btn-sm">
-                  <i class="fa fa-check-circle me-1"></i> Approve Application (6.3)
-                </button>
-              </form>
-            @elseif($project->status === 'approved')
-              <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
-                <i class="fa fa-certificate me-1"></i> Issue EC Certificate
-              </a>
+            @if($project->category === 'B1')
+              {{-- B1 Sequential Statutory Stage Buttons --}}
+              @if($project->b1_stage === 'sc1_prep')
+                <form method="POST" action="{{ route('eviron.submitSc1ToPpt', $project->id) }}" onsubmit="return confirm('Submit SC1 (ToR & Mining Documents) to PPT Department for Stage 1 ToR Presentation?');">
+                  @csrf
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa fa-paper-plane me-1"></i> Submit SC1 to PPT Department (Stage 1 Gate)
+                  </button>
+                </form>
+              @elseif($project->b1_stage === 'sc1_ppt_review')
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
+                  <i class="fa fa-spinner fa-spin me-1"></i> Awaiting PPT ToR Approval
+                </span>
+                @if($project->ppt_stage_1_id)
+                  <a href="{{ route('ppt-department.show', $project->ppt_stage_1_id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-tv me-1"></i> View PPT Dossier
+                  </a>
+                @endif
+              @elseif($project->b1_stage === 'sc2_prep')
+                <form method="POST" action="{{ route('eviron.submitSc2ToPpt', $project->id) }}" onsubmit="return confirm('Submit SC2 (EIA Study & TNPCB Submission) to PPT Department for Stage 2 Final EC Presentation?');">
+                  @csrf
+                  <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa fa-paper-plane me-1"></i> Submit SC2 to PPT Department (Stage 2 Gate)
+                  </button>
+                </form>
+              @elseif($project->b1_stage === 'sc2_ppt_review')
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
+                  <i class="fa fa-spinner fa-spin me-1"></i> Awaiting Final EC Approval
+                </span>
+                @if($project->ppt_stage_2_id)
+                  <a href="{{ route('ppt-department.show', $project->ppt_stage_2_id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-tv me-1"></i> View Final EC Dossier
+                  </a>
+                @endif
+              @elseif($project->b1_stage === 'completed' || $project->status === 'approved')
+                @if($project->ecCertificates?->isNotEmpty())
+                  <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
+                    <i class="fa fa-certificate me-1"></i> View Issued EC Certificate ({{ $project->ecCertificates->first()->ec_ref_no }})
+                  </a>
+                @else
+                  <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-success btn-sm">
+                    <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+                  </a>
+                @endif
+              @endif
+            @else
+              {{-- Category B2 & Legacy Action Buttons --}}
+              @if($project->ecCertificates?->isNotEmpty())
+                <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
+                  <i class="fa fa-certificate me-1"></i> View Issued EC Certificate ({{ $project->ecCertificates->first()->ec_ref_no }})
+                </a>
+              @elseif($project->status === 'draft')
+                <form method="POST" action="{{ route('eviron.status', $project->id) }}">
+                  @csrf
+                  <input type="hidden" name="status" value="validation">
+                  <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="fa fa-arrow-right me-1"></i> Send to Validation (6.2)
+                  </button>
+                </form>
+              @elseif($project->status === 'validation')
+                <form method="POST" action="{{ route('eviron.status', $project->id) }}">
+                  @csrf
+                  <input type="hidden" name="status" value="approved">
+                  <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fa fa-check-circle me-1"></i> Approve Application (6.3)
+                  </button>
+                </form>
+              @elseif($project->status === 'approved')
+                <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
+                  <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+                </a>
+              @endif
             @endif
           </div>
         </div>
       </div>
     </div>
+
+    {{-- ================= CATEGORY B1 STATUTORY LIFECYCLE STEPPER ================= --}}
+    @if($project->category === 'B1')
+    <div class="card mb-4 border-0 shadow-sm" style="border-radius:14px; border-left: 5px solid #2563eb !important;">
+      <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <div>
+          <span class="badge bg-primary me-2">Category B1 Statutory Lifecycle</span>
+          <span class="small fw-bold text-navy">2-Stage Sequential Process Flow with PPT Department Approval Gates</span>
+        </div>
+        <span class="badge bg-light text-navy border">
+          Current State: {{ strtoupper(str_replace('_', ' ', $project->b1_stage ?? 'sc1_prep')) }}
+        </span>
+      </div>
+      <div class="card-body py-3">
+        @php
+          $b1Stage = $project->b1_stage ?? 'sc1_prep';
+          $isStep1Done = in_array($b1Stage, ['sc1_ppt_review', 'sc2_prep', 'sc2_ppt_review', 'completed']);
+          $isStep1Active = ($b1Stage === 'sc1_prep');
+
+          $isStep2Done = in_array($b1Stage, ['sc2_prep', 'sc2_ppt_review', 'completed']);
+          $isStep2Active = ($b1Stage === 'sc1_ppt_review');
+
+          $isStep3Done = in_array($b1Stage, ['sc2_ppt_review', 'completed']);
+          $isStep3Active = ($b1Stage === 'sc2_prep');
+
+          $isStep4Done = ($b1Stage === 'completed');
+          $isStep4Active = ($b1Stage === 'sc2_ppt_review');
+        @endphp
+        <div class="row g-2 align-items-center">
+          {{-- Step 1 --}}
+          <div class="col-md-3">
+            <div class="p-3 rounded-3 border {{ $isStep1Active ? 'bg-primary text-white border-primary shadow-sm' : ($isStep1Done ? 'bg-light text-success border-success' : 'bg-light text-muted') }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isStep1Active ? 'bg-white text-primary' : ($isStep1Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
+                  @if($isStep1Done)<i class="fa fa-check"></i>@else 1 @endif
+                </span>
+                <span class="fw-bold small {{ $isStep1Active ? 'text-white' : ($isStep1Done ? 'text-success' : 'text-dark') }}">Stage 1: SC1 Intake</span>
+              </div>
+              <div class="small {{ $isStep1Active ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
+                ToR &amp; Mining Documents (5 Folders)
+              </div>
+            </div>
+          </div>
+
+          {{-- Step 2 --}}
+          <div class="col-md-3">
+            <div class="p-3 rounded-3 border {{ $isStep2Active ? 'bg-warning text-dark border-warning shadow-sm' : ($isStep2Done ? 'bg-light text-success border-success' : 'bg-light text-muted') }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isStep2Active ? 'bg-dark text-white' : ($isStep2Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
+                  @if($isStep2Done)<i class="fa fa-check"></i>@else 2 @endif
+                </span>
+                <span class="fw-bold small {{ $isStep2Active ? 'text-dark' : ($isStep2Done ? 'text-success' : 'text-dark') }}">PPT Stage 1 Gate</span>
+              </div>
+              <div class="small {{ $isStep2Active ? 'text-dark' : 'text-muted' }}" style="font-size:0.78rem;">
+                ToR Presentation &amp; SEAC Review
+              </div>
+            </div>
+          </div>
+
+          {{-- Step 3 --}}
+          <div class="col-md-3">
+            <div class="p-3 rounded-3 border {{ $isStep3Active ? 'bg-primary text-white border-primary shadow-sm' : ($isStep3Done ? 'bg-light text-success border-success' : 'bg-light text-muted') }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isStep3Active ? 'bg-white text-primary' : ($isStep3Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
+                  @if($isStep3Done)<i class="fa fa-check"></i>@else 3 @endif
+                </span>
+                <span class="fw-bold small {{ $isStep3Active ? 'text-white' : ($isStep3Done ? 'text-success' : 'text-dark') }}">Stage 2: SC2 Unlocked</span>
+              </div>
+              <div class="small {{ $isStep3Active ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
+                EIA Study &amp; TNPCB Submission (6 Folders)
+              </div>
+            </div>
+          </div>
+
+          {{-- Step 4 --}}
+          <div class="col-md-3">
+            <div class="p-3 rounded-3 border {{ $isStep4Active ? 'bg-warning text-dark border-warning shadow-sm' : ($isStep4Done ? 'bg-light text-success border-success' : 'bg-light text-muted') }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isStep4Active ? 'bg-dark text-white' : ($isStep4Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
+                  @if($isStep4Done)<i class="fa fa-check"></i>@else 4 @endif
+                </span>
+                <span class="fw-bold small {{ $isStep4Active ? 'text-dark' : ($isStep4Done ? 'text-success' : 'text-dark') }}">PPT Stage 2 Gate &amp; EC</span>
+              </div>
+              <div class="small {{ $isStep4Active ? 'text-dark' : 'text-muted' }}" style="font-size:0.78rem;">
+                Final EC Presentation &amp; Clearance
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if($b1Stage === 'sc1_ppt_review' && $project->pptStage1)
+          <div class="alert alert-warning py-2 px-3 mt-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+            <div class="small">
+              <i class="fa fa-info-circle me-1"></i>
+              <strong>Stage 1 In Progress:</strong> This application is currently under review in the PPT Department (Dossier: <strong>{{ $project->pptStage1->application_no }}</strong>).
+              Once PPT Department approves the ToR Presentation, Sub Category 2 (SC2) will automatically unlock here with 6 new document folders.
+            </div>
+            <a href="{{ route('ppt-department.show', $project->pptStage1->id) }}" class="btn btn-sm btn-navy text-nowrap ms-2" style="background:#0F1E4D; color:#fff;">
+              <i class="fa fa-tv me-1"></i> Go to PPT Review
+            </a>
+          </div>
+        @elseif($b1Stage === 'sc2_ppt_review' && $project->pptStage2)
+          <div class="alert alert-warning py-2 px-3 mt-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+            <div class="small">
+              <i class="fa fa-info-circle me-1"></i>
+              <strong>Stage 2 In Progress:</strong> Final EIA documentation has been submitted to the PPT Department (Dossier: <strong>{{ $project->pptStage2->application_no }}</strong>).
+              Once PPT Department approves the Final EC Presentation, this Environment Clearance project will be fully marked as Approved!
+            </div>
+            <a href="{{ route('ppt-department.show', $project->pptStage2->id) }}" class="btn btn-sm btn-navy text-nowrap ms-2" style="background:#0F1E4D; color:#fff;">
+              <i class="fa fa-tv me-1"></i> Go to PPT Review
+            </a>
+          </div>
+        @elseif($b1Stage === 'completed')
+          <div class="alert alert-success py-2 px-3 mt-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+            <div class="small">
+              <i class="fa fa-check-circle me-1"></i>
+              <strong>Category B1 Lifecycle Complete!</strong> Both Stage 1 (ToR) and Stage 2 (Final EC) presentations have been approved by the PPT Department. The project is fully cleared for EC Certificate issuance.
+            </div>
+            @if(!$project->ecCertificates?->isNotEmpty())
+              <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-sm btn-success text-nowrap ms-2">
+                <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+              </a>
+            @endif
+          </div>
+        @endif
+      </div>
+    </div>
+    @endif
 
     {{-- ================= 6-STAGE PROCESS FLOW BAR ================= --}}
     <div class="card mb-4 border-0 shadow-sm" style="border-radius:14px;">

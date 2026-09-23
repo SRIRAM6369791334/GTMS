@@ -195,6 +195,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:environment.b2.review')->group(function () {
         // Unified project status update
         Route::post('/eviron/{id}/status', [EnverionsoneController::class, 'updateStatus'])->name('eviron.status');
+        Route::post('/eviron/{id}/submit-sc1-ppt', [EnverionsoneController::class, 'submitSc1ToPpt'])->name('eviron.submitSc1ToPpt');
+        Route::post('/eviron/{id}/submit-sc2-ppt', [EnverionsoneController::class, 'submitSc2ToPpt'])->name('eviron.submitSc2ToPpt');
 
         // Unified document review
         Route::post('/eviron/{id}/documents/{document}/review', [EnverionsoneController::class, 'reviewDocument'])->name('eviron.documents.review');
@@ -222,6 +224,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ppt-department/step/{step}', [PptDepartmentController::class, 'saveStep'])->whereNumber('step')->name('ppt-department.saveStep');
         Route::post('/ppt-department', [PptDepartmentController::class, 'store'])->name('ppt-department.store');
         Route::get('/ppt-department/{id}', [PptDepartmentController::class, 'show'])->whereNumber('id')->name('ppt-department.show');
+        Route::post('/ppt-department/{id}/approve-stage', [PptDepartmentController::class, 'approvePresentation'])->whereNumber('id')->name('ppt-department.approveStage');
         Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
     });
 

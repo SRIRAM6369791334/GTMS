@@ -33,6 +33,54 @@
       </div>
     </div>
 
+    {{-- Linked Environment Clearance Project Banner --}}
+    @if($ppt->environmentProject)
+      <div class="card border-0 shadow-sm mb-4" style="border-radius:12px; border-left: 5px solid #2563eb !important; background: #f8faff;">
+        <div class="card-body p-3">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary">Linked Environment Clearance Project</span>
+                <span class="badge {{ $ppt->presentation_stage === 'tor_presentation' ? 'bg-info text-white' : 'bg-success text-white' }}">
+                  {{ $ppt->presentation_stage === 'tor_presentation' ? 'Stage 1: ToR Presentation Gate' : 'Stage 2: Final EC Presentation Gate' }}
+                </span>
+                <span class="fw-bold text-navy">{{ $ppt->environmentProject->project_code }}</span>
+              </div>
+              <div class="small text-muted">
+                <strong>Project:</strong> {{ $ppt->environmentProject->project_name }}
+                &bull; <strong>Current EC Sub Category:</strong> {{ $ppt->environmentProject->sub_category }}
+                &bull; <strong>B1 Stage:</strong> {{ strtoupper(str_replace('_', ' ', $ppt->environmentProject->b1_stage)) }}
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <a href="{{ route('eviron.show', $ppt->environmentProject->id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fa fa-folder-open me-1"></i> View EC Project Dossier
+              </a>
+
+              @if($ppt->status !== 'approved')
+                <form method="POST" action="{{ route('ppt-department.approveStage', $ppt->id) }}" onsubmit="return confirm('Approve this presentation and advance the linked Environment Clearance project?');">
+                  @csrf
+                  <button type="submit" class="btn btn-success btn-sm">
+                    <i class="fa fa-check-circle me-1"></i>
+                    @if($ppt->presentation_stage === 'tor_presentation')
+                      Approve ToR &amp; Unlock SC2 Folders
+                    @else
+                      Approve Final EC &amp; Complete Project
+                    @endif
+                  </button>
+                </form>
+              @else
+                <span class="badge bg-success py-2 px-3">
+                  <i class="fa fa-check-circle me-1"></i> Presentation Approved
+                </span>
+              @endif
+            </div>
+          </div>
+        </div>
+      </div>
+    @endif
+
     {{-- 4 Metric Cards --}}
     <div class="row g-3 mb-4">
       <div class="col-md-3">

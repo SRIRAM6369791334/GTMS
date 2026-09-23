@@ -108,9 +108,10 @@ class EnverionsoneController extends Controller
             'mimas_no'      => 'nullable|string|max:50',
         ]);
 
-        // B1 Category defaults to Sub Category 1 (SC1)
-        if ($validated['category'] === 'B1') {
-            $validated['sub_category'] = $validated['sub_category'] ?: 'SC1';
+        // B1 must have sub_category
+        if ($validated['category'] === 'B1' && empty($validated['sub_category'])) {
+            return back()->withErrors(['sub_category' => 'B1 Category requires a Sub Category selection (SC1).'])
+                ->withInput();
         }
 
         return DB::transaction(function () use ($validated, $request) {

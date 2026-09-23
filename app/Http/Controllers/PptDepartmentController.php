@@ -253,7 +253,7 @@ class PptDepartmentController extends Controller
      */
     public function show($id)
     {
-        $ppt = PptApplication::with(['customer', 'district', 'mineral', 'handlers', 'payments', 'documents', 'agendas'])->findOrFail($id);
+        $ppt = PptApplication::with(['customer', 'district', 'mineral', 'handlers', 'payments', 'documents', 'agendas', 'environmentProject'])->findOrFail($id);
         return view('pages.ppt_department.show', compact('ppt'));
     }
 
@@ -295,5 +295,43 @@ class PptDepartmentController extends Controller
             'file_url'  => asset('storage/' . $filePath),
             'file_size' => round($file->getSize() / 1024) . ' KB',
         ]);
+    }
+
+    /**
+     * Approve presentation and advance linked Environment Clearance Project stage.
+     */
+    public function approvePresentation(Request $request, int $id)
+    {
+        $ppt = PptApplication::findOrFail($id);
+        $ppt->update(['status' => 'approved']);
+
+        if ($ppt->environment_project_id) {
+            $project = EnvironmentProject::find($ppt->environment_project_id);
+            if ($project && $project->category === 'B1') {
+                if ($ppt->presentation_stage === 'tor_presentation') {
+                    // Advance to SC2
+                    $project->update([
+                        'sub_category' => 'SC2',
+                        'b1_stage'     => 'sc2_prep',
+                        'status'       => 'draft',
+                    ]);
+
+                    // Generate SC2 document slots
+                    EnverionsoneController::generateSlots($project);
+
+                    return redirect()->back()->with('success', "Stage 1 ToR Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} has advanced to Sub Category 2 (EIA Study & TNPCB Submission).");
+                } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
+                    // Complete B1 Environmental Clearance
+                    $project->update([
+                        'b1_stage' => 'completed',
+                        'status'   => 'approved',
+                    ]);
+
+                    return redirect()->back()->with('success', "Stage 2 Final EC Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} is now fully Approved and ready for EC Certificate Issuance.");
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', "PPT Application {$ppt->application_no} status updated to Approved.");
     }
 }

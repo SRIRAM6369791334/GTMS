@@ -700,6 +700,121 @@ class EnvironmentClearanceTest extends TestCase
     }
 
     /**
+     * Test Category B1 full sequential statutory lifecycle with PPT Department approval gates:
+     * Intake (SC1: 5 Folders) -> Submit SC1 to PPT -> PPT Approves Stage 1 -> Project unlocks SC2 (6 Folders)
+     * -> Submit SC2 to PPT -> PPT Approves Stage 2 -> Project Completed & Approved for EC Certificate.
+     */
+    public function test_category_b1_full_sequential_statutory_lifecycle(): void
+    {
+        $customer = Customer::first() ?? Customer::create([
+            'customer_name' => 'B1 Test Quarry Owner',
+            'mobile_num'    => '9888877771',
+        ]);
+
+        $district = District::first() ?? District::create([
+            'name'       => 'Salem',
+            'state_name' => 'Tamil Nadu',
+        ]);
+
+        $uniq = uniqid();
+
+        // 1. Intake: Create B1 project with SC1
+        $createData = [
+            'category'      => 'B1',
+            'sub_category'  => 'SC1',
+            'customer_id'   => $customer->id,
+            'client_name'   => 'B1 Test Quarry Owner',
+            'company_name'  => 'B1 Granites Private Limited',
+            'project_name'  => 'B1 Statutory Quarry Flow ' . $uniq,
+            'district_id'   => $district->id,
+            'location'      => 'Survey No 101/A',
+            'contact_phone' => '9888877771',
+        ];
+
+        $resCreate = $this->post(route('eviron.store'), $createData);
+        $resCreate->assertSessionHasNoErrors();
+
+        $project = EnvironmentProject::where('project_name', 'B1 Statutory Quarry Flow ' . $uniq)->first();
+        $this->assertNotNull($project);
+        $this->assertEquals('B1', $project->category);
+        $this->assertEquals('SC1', $project->sub_category);
+        $this->assertEquals('sc1_prep', $project->b1_stage);
+        $this->assertEquals('draft', $project->status);
+        $this->assertCount(5, $project->folder_names);
+
+        // 2. Submit SC1 to PPT Department (Stage 1 Gate)
+        $resSubmit1 = $this->post(route('eviron.submitSc1ToPpt', $project->id));
+        $resSubmit1->assertRedirect(route('eviron.show', $project->id));
+        $resSubmit1->assertSessionHas('success');
+
+        $project->refresh();
+        $this->assertEquals('sc1_ppt_review', $project->b1_stage);
+        $this->assertEquals('validation', $project->status);
+        $this->assertNotNull($project->ppt_stage_1_id);
+
+        $pptStage1 = $project->pptStage1;
+        $this->assertNotNull($pptStage1);
+        $this->assertEquals('tor_presentation', $pptStage1->presentation_stage);
+        $this->assertEquals('agenda_scheduled', $pptStage1->status);
+
+        // 3. PPT Department Approves Stage 1 ToR Presentation
+        $resApprove1 = $this->post(route('ppt-department.approveStage', $pptStage1->id));
+        $resApprove1->assertRedirect();
+        $resApprove1->assertSessionHas('success');
+
+        $pptStage1->refresh();
+        $this->assertEquals('approved', $pptStage1->status);
+
+        $project->refresh();
+        $this->assertEquals('SC2', $project->sub_category);
+        $this->assertEquals('sc2_prep', $project->b1_stage);
+        $this->assertEquals('draft', $project->status);
+        $this->assertCount(6, $project->folder_names);
+
+        // Verify show page displays SC2 state and submit button
+        $showRes1 = $this->get(route('eviron.show', $project->id));
+        $showRes1->assertStatus(200);
+        $showRes1->assertSee('Submit SC2 to PPT Department');
+
+        // 4. Submit SC2 to PPT Department (Stage 2 Gate)
+        $resSubmit2 = $this->post(route('eviron.submitSc2ToPpt', $project->id));
+        $resSubmit2->assertRedirect(route('eviron.show', $project->id));
+        $resSubmit2->assertSessionHas('success');
+
+        $project->refresh();
+        $this->assertEquals('sc2_ppt_review', $project->b1_stage);
+        $this->assertEquals('validation', $project->status);
+        $this->assertNotNull($project->ppt_stage_2_id);
+
+        $pptStage2 = $project->pptStage2;
+        $this->assertNotNull($pptStage2);
+        $this->assertEquals('final_ec_presentation', $pptStage2->presentation_stage);
+
+        // 5. PPT Department Approves Stage 2 Final EC Presentation
+        $resApprove2 = $this->post(route('ppt-department.approveStage', $pptStage2->id));
+        $resApprove2->assertRedirect();
+        $resApprove2->assertSessionHas('success');
+
+        $pptStage2->refresh();
+        $this->assertEquals('approved', $pptStage2->status);
+
+        $project->refresh();
+        $this->assertEquals('completed', $project->b1_stage);
+        $this->assertEquals('approved', $project->status);
+
+        // Verify eviron.show displays completion alert and EC certificate link
+        $showRes2 = $this->get(route('eviron.show', $project->id));
+        $showRes2->assertStatus(200);
+        $showRes2->assertSee('Category B1 Lifecycle Complete!');
+        $showRes2->assertSee('Issue EC Certificate');
+
+        // Clean up
+        $pptStage1->forceDelete();
+        $pptStage2->forceDelete();
+        $project->forceDelete();
+    }
+
+    /**
      * Test Compliance: Codebase contains zero Tamil Unicode characters
      */
     public function test_codebase_contains_zero_tamil_characters(): void
