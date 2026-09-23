@@ -1,6 +1,28 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 5.25 — UNIVERSAL CUSTOMER UNIQUE ID LOOKUP & INSTANT AUTOFILL ACROSS ALL 7 APPLICATIONS (+ EC COMPLIANCE) (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 5.26 — CATEGORY B1 SEQUENTIAL 2-STAGE STATUTORY LIFECYCLE & PPT DEPARTMENT APPROVAL GATES (COMPLETED & VERIFIED) ✅
+- **Status:** Implemented and thoroughly verified the sequential statutory lifecycle for **Category B1 Environment Clearance** applications with strict two-stage approval gates via the **PPT Department (கருத்துக்காட்சி அனுமதி துறை)**:
+  1. **Intake Screen (`eviron/create.blade.php`):**
+     - When **Category B1** is selected, user is presented exclusively with **Sub Category 1 (SC1: ToR & Mining Documents — 5 Folders)** as the active Stage 1 intake option.
+     - **Sub Category 2 (SC2)** is completely removed from the intake form as requested by the user, ensuring zero premature EIA filing.
+  2. **Sequential Progression Workflow (`b1_stage` & approval gates):**
+     - **Stage 1 (SC1 Preparation):** Project initializes in `b1_stage = 'sc1_prep'`, loading 5 SC1 document folders.
+     - **Stage 1 PPT Handoff:** Officer clicks `[ 🚀 Submit SC1 to PPT Department (Stage 1 Gate) ]` via `POST /eviron/{id}/submit-sc1-ppt`, creating a linked `PptApplication` record with `presentation_stage = 'tor_presentation'`, and putting the project in `b1_stage = 'sc1_ppt_review'`.
+     - **Stage 1 PPT Approval Gate:** PPT Department reviews ToR presentation and clicks `[ Approve ToR & Unlock SC2 Folders ]` via `POST /ppt-department/{id}/approve-stage`. This transitions the environment project to `sub_category = 'SC2'`, `b1_stage = 'sc2_prep'`, and automatically generates the 6 SC2 document slots.
+     - **Stage 2 (SC2 Preparation):** Project now loads the 6 EIA & TNPCB document folders. Officer uploads EIA study, public hearing minutes, and TNPCB documents.
+     - **Stage 2 PPT Handoff:** Officer clicks `[ 🚀 Submit SC2 to PPT Department (Stage 2 Gate) ]` via `POST /eviron/{id}/submit-sc2-ppt`, creating a linked `PptApplication` record with `presentation_stage = 'final_ec_presentation'`, setting project in `b1_stage = 'sc2_ppt_review'`.
+     - **Stage 2 PPT Approval Gate:** PPT Department reviews final EC presentation and clicks `[ Approve Final EC & Complete Project ]` via `POST /ppt-department/{id}/approve-stage`. This marks the environment project as `b1_stage = 'completed'`, `status = 'approved'`, ready for EC Certificate issuance.
+  3. **Visual UI Enhancements:**
+     - **Category B1 Stepper Card (`eviron/show.blade.php`):** Dedicated 4-stage visual progress stepper tracking SC1 Intake -> PPT Stage 1 Gate -> SC2 Unlocked -> PPT Stage 2 Gate & EC, with contextual action buttons.
+     - **Linked EC Project Banner (`ppt_department/show.blade.php` & `index.blade.php`):** Renders project code, stage badge (`ToR Gate` / `Final EC Gate`), and instant one-click approval buttons.
+  4. **Category B2 Isolation:**
+     - Direct Category B2 (6 Folders) remains completely untouched, operating with its independent 6-step workflow.
+  5. **Automated Testing & Compliance:**
+     - Full automated test suite passes: 44 tests passing (293 assertions), including comprehensive sequential test `test_category_b1_full_sequential_statutory_lifecycle`.
+     - Strict English adherence maintained: `test_codebase_contains_zero_tamil_characters` passes with 0 violations across all `.php`, `.js`, `.css` files.
+- **Last Updated:** 2026-09-23
+
+## Previous Phase: PHASE 5.25 — UNIVERSAL CUSTOMER UNIQUE ID LOOKUP & INSTANT AUTOFILL ACROSS ALL 7 APPLICATIONS (+ EC COMPLIANCE) (COMPLETED & VERIFIED) ✅
 - **Status:** Implemented and standardized the **Customer Unique ID Lookup & Instant Autofill** card component (`#mimas_search_input`, `#mimas_datalist`, `#btn_lookup_mimas`, `#mimas_feedback_box`) across **ALL 7 GTMS REGULATORY APPLICATIONS** (plus the 8th EC Half-Yearly Compliance Monitoring module), providing instant retrieval of customer profile records and automatic form pre-population with green visual cues (`.field-autofilled`):
   1. **Lease Application (`createstep1.blade.php`):** Verified existing lookup component, instant prefill of client name, company name, district, address, mobile, email, PAN, and Aadhaar.
   2. **Mining Plan (`newapplication.blade.php`):** Verified existing lookup component, instant prefill of applicant details, company name, and district binding.
