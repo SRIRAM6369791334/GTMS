@@ -78,6 +78,7 @@
                     <!-- <li><a href="{{ route('eviron.create') }}">New Application</a></li> -->
                     @endcan
                     <li><a href="{{ route('ec-certificate.index') }}">EC Certificate Issuance</a></li>
+                    <li><a href="{{ route('ec-compliance.index') }}">Half Yearly Compliance</a></li>
                 </ul>
             </li>
             @endcan

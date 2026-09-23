@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\ApplicationHandler;
+use App\Models\ApplicationPayment;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\DocumentField;
 use App\Models\EnvironmentDocument;
 use App\Models\EnvironmentProject;
 use App\Models\Folder;
+use App\Models\PptApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -105,10 +108,9 @@ class EnverionsoneController extends Controller
             'mimas_no'      => 'nullable|string|max:50',
         ]);
 
-        // B1 must have sub_category
-        if ($validated['category'] === 'B1' && empty($validated['sub_category'])) {
-            return back()->withErrors(['sub_category' => 'B1 Category requires a Sub Category selection (SC1 or SC2).'])
-                ->withInput();
+        // B1 Category defaults to Sub Category 1 (SC1)
+        if ($validated['category'] === 'B1') {
+            $validated['sub_category'] = $validated['sub_category'] ?: 'SC1';
         }
 
         return DB::transaction(function () use ($validated, $request) {
@@ -147,21 +149,63 @@ class EnverionsoneController extends Controller
                 }
             }
 
+            $pv = (float) $request->input('product_value', 0);
+            $pa = (float) $request->input('paid_amount', 0);
+            $pe = max(0, $pv - $pa);
+            $status = $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
+
             // Create environment project
             $project = EnvironmentProject::create([
-                'project_code'  => $code,
-                'customer_id'   => $customerId,
-                'category'      => $cat,
-                'sub_category'  => $sc,
-                'project_name'  => $validated['project_name'],
-                'district_id'   => $validated['district_id'],
-                'location'      => $validated['location'] ?? null,
-                'contact_name'  => $validated['contact_name'] ?? $validated['client_name'],
-                'contact_phone' => $validated['contact_phone'],
-                'contact_email' => $validated['contact_email'] ?? null,
-                'status'        => 'draft',
-                'branch_id'     => auth()->user()->branch_id ?? 1,
-                'created_by'    => Auth::id(),
+                'project_code'   => $code,
+                'customer_id'    => $customerId,
+                'category'       => $cat,
+                'sub_category'   => $sc,
+                'b1_stage'       => ($cat === 'B1') ? 'sc1_prep' : null,
+                'project_name'   => $validated['project_name'],
+                'district_id'    => $validated['district_id'],
+                'location'       => $validated['location'] ?? null,
+                'contact_name'   => $validated['contact_name'] ?? $validated['client_name'],
+                'contact_phone'  => $validated['contact_phone'],
+                'contact_email'  => $validated['contact_email'] ?? null,
+                'product_value'  => $pv,
+                'paid_amount'    => $pa,
+                'pending_amount' => $pe,
+                'payment_status' => $status,
+                'status'         => 'draft',
+                'branch_id'      => auth()->user()->branch_id ?? 1,
+                'created_by'     => Auth::id(),
+            ]);
+
+            // Save Application Handlers
+            if ($request->has('handlers') && is_array($request->input('handlers'))) {
+                foreach ($request->input('handlers') as $idx => $h) {
+                    $name = trim($h['person_name'] ?? ($h['name'] ?? ''));
+                    if (!empty($name)) {
+                        ApplicationHandler::create([
+                            'application_type' => 'environment',
+                            'application_id'   => $project->id,
+                            'handlerable_type' => EnvironmentProject::class,
+                            'handlerable_id'   => $project->id,
+                            'name'             => $name,
+                            'role'             => $h['role'] ?? 'Field Officer',
+                            'notes'            => $h['notes'] ?? null,
+                            'sort_order'       => $idx + 1,
+                        ]);
+                    }
+                }
+            }
+
+            // Save Application Payment
+            ApplicationPayment::create([
+                'application_type' => 'environment',
+                'application_id'   => $project->id,
+                'payable_type'     => EnvironmentProject::class,
+                'payable_id'       => $project->id,
+                'product_value'    => $pv,
+                'paid_amount'      => $pa,
+                'pending_amount'   => $pe,
+                'payment_status'   => $status,
+                'notes'            => $request->input('payment_notes', 'Initial Environment Clearance registration fee settlement'),
             ]);
 
             // Auto-generate document checklist slots for this category
@@ -186,7 +230,7 @@ class EnverionsoneController extends Controller
      */
     public function show(int $id)
     {
-        $project = EnvironmentProject::with(['customer', 'district', 'ecCertificates'])->findOrFail($id);
+        $project = EnvironmentProject::with(['customer', 'district', 'ecCertificates', 'handlers', 'payments', 'pptStage1', 'pptStage2', 'pptApplications'])->findOrFail($id);
 
         // Auto-generate document slots if legacy project has zero slots
         if ($project->documents()->count() === 0) {
@@ -254,6 +298,40 @@ class EnverionsoneController extends Controller
         ]);
 
         return back()->with('success', "'{$doc->document_name}' uploaded successfully.");
+    }
+
+    /**
+     * Add and upload a custom document to an environment project folder.
+     */
+    public function addDocument(Request $request, int $id)
+    {
+        $request->validate([
+            'folder_id'     => 'required|integer',
+            'document_name' => 'required|string|max:255',
+            'file'          => 'required|file|max:25600',
+        ]);
+
+        $project  = EnvironmentProject::findOrFail($id);
+        $file     = $request->file('file');
+        $dir      = "environment/{$project->project_code}";
+        $filename = time() . '_' . $file->getClientOriginalName();
+        $path     = $file->storeAs($dir, $filename, 'public');
+
+        EnvironmentDocument::create([
+            'environment_project_id' => $id,
+            'folder_id'              => $request->folder_id,
+            'document_field_id'      => null,
+            'document_name'          => $request->document_name,
+            'file_name'              => $file->getClientOriginalName(),
+            'file_path'              => $path,
+            'file_type'              => $file->extension(),
+            'file_size'              => $file->getSize(),
+            'status'                 => 'uploaded',
+            'uploaded_by'            => Auth::id(),
+            'uploaded_at'            => now(),
+        ]);
+
+        return back()->with('success', "'{$request->document_name}' added and uploaded successfully.");
     }
 
     /**

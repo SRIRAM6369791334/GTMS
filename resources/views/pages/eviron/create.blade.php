@@ -123,71 +123,69 @@
         <div class="card-body p-4">
           <div class="row g-3">
 
-            {{-- Customer Unique ID / MIMAS Instant Lookup Card --}}
+            {{-- CUSTOMER UNIQUE ID LOOKUP CARD --}}
             <div class="col-md-12">
-              <div class="p-3 rounded mb-2" style="background:#f0f7ff; border:2px dashed #93c5fd; border-radius:12px;">
+              <div class="card p-3 mb-3" style="background:#f0f7ff; border:2px dashed #93c5fd; border-radius:14px;">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                   <label class="form-label fw-bold mb-0 text-primary" style="font-size:0.92rem;">
-                    <i class="fa fa-fingerprint me-1"></i> Customer Unique ID Instant Lookup
+                    <i class="fa fa-fingerprint me-1"></i> Customer Unique ID Lookup
                   </label>
-                  <span class="badge bg-primary text-white"><i class="fa fa-bolt me-1"></i> Autofill</span>
+                  <span class="badge bg-primary text-white"><i class="fa fa-bolt me-1"></i> Instant Autofill</span>
                 </div>
-                <p class="text-muted small mb-2">Type or select Customer Unique ID / MIMAS number to automatically populate client details, contact person, mobile, email, and quarry district.</p>
+                <p class="text-muted small mb-2">Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.</p>
+                
                 <div class="input-group">
                   <span class="input-group-text bg-white border-primary"><i class="fa fa-search text-primary"></i></span>
-                  <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold border-primary"
-                    placeholder="Type Customer Unique ID (e.g. TN-MMS-SLM-001)" list="customer_datalist" autocomplete="off">
-                  <select class="form-select border-primary" id="customer_select" name="customer_id" style="max-width:350px;">
-                    <option value="">-- Or Choose from List --</option>
-                    @foreach($customers as $c)
-                      <option value="{{ $c->id }}"
-                        data-client="{{ $c->customer_name }}"
-                        data-company="{{ $c->company_name }}"
-                        data-contact="{{ $c->secondary_contact_person ?: $c->customer_name }}"
-                        data-phone="{{ $c->mobile_num }}"
-                        data-email="{{ $c->email }}"
-                        data-mimas="{{ $c->mimas_no }}"
-                        data-district="{{ $c->district_id }}"
-                        data-location="{{ $c->address }}"
-                        {{ old('customer_id') == $c->id ? 'selected' : '' }}>
-                        {{ $c->customer_name }} @if($c->company_name) ({{ $c->company_name }}) @endif — {{ $c->mimas_no ?: 'No MIMAS' }}
-                      </option>
-                    @endforeach
-                  </select>
+                  <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold border-primary" 
+                         placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off">
+                  <button class="btn btn-primary px-3 fw-bold" type="button" id="btn_lookup_mimas">
+                    <i class="fa fa-sync-alt me-1"></i> Fetch Details
+                  </button>
                 </div>
-                <datalist id="customer_datalist">
-                  @foreach($customers as $c)
-                    @if($c->mimas_no)
-                      <option value="{{ $c->mimas_no }}">{{ $c->company_name ?: $c->customer_name }}</option>
-                    @endif
-                  @endforeach
+                
+                <datalist id="mimas_datalist">
+                  @if(isset($customers))
+                    @foreach($customers as $c)
+                      <option value="{{ $c->mimas_no }}">{{ $c->company_name }} ({{ $c->customer_name }})</option>
+                    @endforeach
+                  @endif
                 </datalist>
-                <div id="mimas_feedback" class="small mt-2" style="display:none;"></div>
+                <datalist id="customer_datalist">
+                  @if(isset($customers))
+                    @foreach($customers as $c)
+                      <option value="{{ $c->mimas_no }}">{{ $c->company_name }} ({{ $c->customer_name }})</option>
+                    @endforeach
+                  @endif
+                </datalist>
+
+                <div id="mimas_feedback_box" class="mt-2" style="display:none;"></div>
               </div>
             </div>
+
+            <input type="hidden" name="customer_id" id="field_customer_id" value="{{ old('customer_id') }}">
 
             {{-- Client Name --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Client / Applicant Name *</label>
-              <input type="text" class="form-control" name="client_name" id="client_name" value="{{ old('client_name') }}" required placeholder="e.g. R. Kumaresan">
+              <input type="text" class="form-control auto-filled-field" name="client_name" id="client_name" value="{{ old('client_name') }}" required placeholder="e.g. R. Kumaresan">
             </div>
 
             {{-- Company Name --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Company / Enterprise Name</label>
-              <input type="text" class="form-control" name="company_name" id="company_name" value="{{ old('company_name') }}" placeholder="e.g. Sri Bala Minerals &amp; Traders">
+              <input type="text" class="form-control auto-filled-field" name="company_name" id="company_name" value="{{ old('company_name') }}" placeholder="e.g. Sri Bala Minerals &amp; Traders">
             </div>
 
             {{-- Project Name --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Project / Quarry Name *</label>
-              <input type="text" class="form-control" name="project_name" id="project_name" value="{{ old('project_name') }}" required placeholder="e.g. Salem Rough Stone &amp; Gravel Quarry">
+              <input type="text" class="form-control auto-filled-field" name="project_name" id="project_name" value="{{ old('project_name') }}" required placeholder="e.g. Salem Rough Stone &amp; Gravel Quarry">
             </div>
 
             {{-- District --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">District *</label>
-              <select class="form-select" name="district_id" id="district_id" required>
+              <select class="form-select auto-filled-field" name="district_id" id="district_id" required>
                 <option value="">-- Select District --</option>
                 @foreach($districts as $d)
                   <option value="{{ $d->id }}" {{ old('district_id') == $d->id ? 'selected' : '' }}>{{ $d->name }}</option>
@@ -198,33 +196,157 @@
             {{-- Location / Survey Numbers --}}
             <div class="col-md-12">
               <label class="form-label fw-semibold">Location / Survey Numbers</label>
-              <input type="text" class="form-control" name="location" id="location" value="{{ old('location') }}" placeholder="e.g. SF Nos. 124/1, 124/2, Thammampatti Village, Gangavalli Taluk">
+              <input type="text" class="form-control auto-filled-field" name="location" id="location" value="{{ old('location') }}" placeholder="e.g. SF Nos. 124/1, 124/2, Thammampatti Village, Gangavalli Taluk">
             </div>
 
             {{-- Contact Person --}}
             <div class="col-md-4">
               <label class="form-label fw-semibold">Contact Person</label>
-              <input type="text" class="form-control" name="contact_name" id="contact_name" value="{{ old('contact_name') }}" placeholder="Authorized representative">
+              <input type="text" class="form-control auto-filled-field" name="contact_name" id="contact_name" value="{{ old('contact_name') }}" placeholder="Authorized representative">
             </div>
 
             {{-- Contact Phone --}}
             <div class="col-md-4">
               <label class="form-label fw-semibold">Contact Mobile Number *</label>
-              <input type="text" class="form-control" name="contact_phone" id="contact_phone" value="{{ old('contact_phone') }}" required maxlength="15" placeholder="10-digit mobile number">
+              <input type="text" class="form-control auto-filled-field" name="contact_phone" id="contact_phone" value="{{ old('contact_phone') }}" required maxlength="15" placeholder="10-digit mobile number">
             </div>
 
             {{-- Contact Email --}}
             <div class="col-md-4">
               <label class="form-label fw-semibold">Contact Email</label>
-              <input type="email" class="form-control" name="contact_email" id="contact_email" value="{{ old('contact_email') }}" placeholder="applicant@example.com">
+              <input type="email" class="form-control auto-filled-field" name="contact_email" id="contact_email" value="{{ old('contact_email') }}" placeholder="applicant@example.com">
             </div>
 
             {{-- Customer Unique ID / MIMAS --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Customer Unique ID / MIMAS No</label>
-              <input type="text" class="form-control" name="mimas_no" id="mimas_no" value="{{ old('mimas_no') }}" placeholder="e.g. TN-MMS-SLM-001">
+              <input type="text" class="form-control auto-filled-field" name="mimas_no" id="mimas_no" value="{{ old('mimas_no') }}" placeholder="e.g. TN-MMS-SLM-001">
             </div>
 
+          </div>
+        </div>
+      {{-- ================= SECTION 3: PROJECT HANDLING TEAM ================= --}}
+      <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+          <div>
+            <h5 class="card-title mb-0 fw-bold" style="color:#0F1E4D;">
+              <span class="badge rounded-circle bg-navy text-white me-2 px-2 py-1" style="background:#0F1E4D;">3</span>
+              Project Handling Team &amp; In-Charge Persons
+            </h5>
+            <small class="text-muted">Assign environmental coordinators, field officers, EIA coordinators, and liaison personnel</small>
+          </div>
+          <button type="button" class="btn btn-sm btn-navy px-3" id="btn_add_env_handler" style="background:#0F1E4D; color:#fff;">
+            <i class="fa fa-user-plus me-1 text-warning"></i> + Add Person
+          </button>
+        </div>
+        <div class="card-body p-4">
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle" id="env_handlers_table">
+              <thead class="bg-light text-navy" style="font-size:0.85rem;">
+                <tr>
+                  <th style="width: 50px;" class="text-center">#</th>
+                  <th style="width: 30%;">Person Name <span class="text-danger">*</span></th>
+                  <th style="width: 30%;">Role / Designation <span class="text-danger">*</span></th>
+                  <th>Notes &amp; Responsibilities</th>
+                  <th style="width: 70px;" class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="env_handlers_tbody">
+                <tr>
+                  <td class="text-center fw-bold row-num">1</td>
+                  <td>
+                    <input type="text" name="handlers[0][person_name]" class="form-control form-control-sm" placeholder="e.g. Ramesh Kumar">
+                  </td>
+                  <td>
+                    <input type="text" name="handlers[0][role]" class="form-control form-control-sm" placeholder="e.g. EIA Coordinator, Field Officer">
+                  </td>
+                  <td>
+                    <input type="text" name="handlers[0][notes]" class="form-control form-control-sm" placeholder="e.g. Site inspection, Public hearing liaison">
+                  </td>
+                  <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-handler disabled" style="opacity:0.4;">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="alert alert-info py-2 px-3 small rounded-2 mb-0" style="background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1;">
+            <i class="fa fa-info-circle me-1"></i> You can type custom roles manually (e.g. <em>EIA Coordinator, Field Geologist, Environmental Chemist, Documentation In-Charge</em>).
+          </div>
+        </div>
+      </div>
+
+      {{-- ================= SECTION 4: PAYMENT & FINANCIAL SETTLEMENT ================= --}}
+      <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom py-3">
+          <h5 class="card-title mb-0 fw-bold" style="color:#0F1E4D;">
+            <span class="badge rounded-circle bg-navy text-white me-2 px-2 py-1" style="background:#0F1E4D;">4</span>
+            Payment &amp; Financial Settlement
+          </h5>
+          <small class="text-muted">Record statutory clearance quotation, client advance paid, and track pending settlement</small>
+        </div>
+        <div class="card-body p-4">
+          <!-- Real-Time Metrics -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#f8fafc; border-left: 4px solid #0F1E4D !important;">
+                <div class="text-muted small fw-semibold text-uppercase">Service / Product Value</div>
+                <div class="h4 fw-bold mb-0 text-navy mt-1" id="disp_env_product_val">₹ 0.00</div>
+                <small class="text-muted" style="font-size:11px;">Clearance package quotation</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#f0fdf4; border-left: 4px solid #10b981 !important;">
+                <div class="text-success small fw-semibold text-uppercase">Paid Amount</div>
+                <div class="h4 fw-bold mb-0 text-success mt-1" id="disp_env_paid_val">₹ 0.00</div>
+                <small class="text-muted" style="font-size:11px;">Advance / received so far</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#fff7ed; border-left: 4px solid #f97316 !important;">
+                <div class="text-warning-emphasis small fw-semibold text-uppercase">Pending Balance Due</div>
+                <div class="h4 fw-bold mb-0 text-danger mt-1" id="disp_env_pending_val">₹ 0.00</div>
+                <small class="text-muted" style="font-size:11px;">Auto-calculated outstanding</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Product / Service Value (₹) *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white fw-bold">₹</span>
+                <input type="number" step="0.01" min="0" name="product_value" id="env_product_value" class="form-control fw-bold" placeholder="0.00" value="{{ old('product_value', '0.00') }}" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Paid Amount (₹) *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-white fw-bold text-success">₹</span>
+                <input type="number" step="0.01" min="0" name="paid_amount" id="env_paid_amount" class="form-control fw-bold text-success" placeholder="0.00" value="{{ old('paid_amount', '0.00') }}" required>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Pending Balance (₹)</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light text-muted">₹</span>
+                <input type="number" step="0.01" name="pending_amount" id="env_pending_amount" class="form-control bg-light fw-bold text-danger" placeholder="0.00" readonly value="{{ old('pending_amount', '0.00') }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Payment Status *</label>
+              <select class="form-select" name="payment_status" id="env_payment_status">
+                <option value="pending" {{ old('payment_status') === 'pending' ? 'selected' : '' }}>Pending (Full Balance Due)</option>
+                <option value="partial" {{ old('payment_status') === 'partial' ? 'selected' : '' }}>Partial Payment Received</option>
+                <option value="paid" {{ old('payment_status') === 'paid' ? 'selected' : '' }}>Paid (Fully Settled)</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Payment Notes / Reference</label>
+              <input type="text" class="form-control" name="payment_notes" id="env_payment_notes" value="{{ old('payment_notes') }}" placeholder="e.g. Advance paid via Cheque #1029 / NEFT Ref">
+            </div>
           </div>
         </div>
       </div>
@@ -347,8 +469,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function applyCustomerAutofill(opt) {
-    if (!opt || !opt.value) return;
+  function applyCustomerAutofill(c) {
+    if (!c) return;
     const clientNameInput = document.getElementById('client_name');
     const companyNameInput = document.getElementById('company_name');
     const contactNameInput = document.getElementById('contact_name');
@@ -357,67 +479,215 @@ document.addEventListener('DOMContentLoaded', function() {
     const mimasNoInput = document.getElementById('mimas_no');
     const districtSelect = document.getElementById('district_id');
     const locationInput = document.getElementById('location');
+    const customerIdInput = document.getElementById('field_customer_id');
 
-    if (clientNameInput) clientNameInput.value = opt.dataset.client || '';
-    if (companyNameInput) companyNameInput.value = opt.dataset.company || '';
-    if (contactNameInput) contactNameInput.value = opt.dataset.contact || opt.dataset.client || '';
-    if (contactPhoneInput) contactPhoneInput.value = opt.dataset.phone || '';
-    if (contactEmailInput) contactEmailInput.value = opt.dataset.email || '';
-    if (mimasNoInput) mimasNoInput.value = opt.dataset.mimas || '';
-    if (districtSelect && opt.dataset.district) districtSelect.value = opt.dataset.district;
-    if (locationInput && opt.dataset.location) locationInput.value = opt.dataset.location;
+    if (customerIdInput) customerIdInput.value = c.id || '';
+    if (clientNameInput) clientNameInput.value = c.customer_name || '';
+    if (companyNameInput) companyNameInput.value = c.company_name || '';
+    if (contactNameInput) contactNameInput.value = c.secondary_contact_person || c.customer_name || '';
+    if (contactPhoneInput) contactPhoneInput.value = c.mobile_num || '';
+    if (contactEmailInput) contactEmailInput.value = c.email || '';
+    if (mimasNoInput) mimasNoInput.value = c.mimas_no || '';
+    if (districtSelect && c.district_id) districtSelect.value = c.district_id;
+    if (locationInput) locationInput.value = c.address || '';
 
-    if (projectNameInput && (!projectNameInput.value || projectNameInput.dataset.autofilled === '1')) {
-      const entityName = opt.dataset.company || opt.dataset.client || 'Mining';
+    if (projectNameInput) {
+      const entityName = c.company_name || c.customer_name || 'Mining';
       projectNameInput.value = entityName + ' Quarry Project';
       projectNameInput.dataset.autofilled = '1';
     }
 
-    if (mimasFeedback) {
-      mimasFeedback.style.display = 'block';
-      mimasFeedback.className = 'small mt-2 text-success fw-bold';
-      mimasFeedback.innerHTML = '<i class="fa fa-check-circle me-1"></i> Loaded: ' + (opt.dataset.company || opt.dataset.client) + ' (' + (opt.dataset.mimas || 'No MIMAS') + ')';
+    // Visual highlight on auto-filled fields
+    document.querySelectorAll('.auto-filled-field').forEach(el => {
+      el.classList.add('field-autofilled');
+      setTimeout(() => el.classList.remove('field-autofilled'), 3000);
+    });
+
+    const feedbackBox = document.getElementById('mimas_feedback_box');
+    if (feedbackBox) {
+      feedbackBox.style.display = 'block';
+      feedbackBox.innerHTML = `
+        <div class="alert alert-success py-2 px-3 mb-0 small d-flex align-items-center justify-content-between">
+          <div>
+            <i class="fa fa-check-circle me-1 text-success"></i>
+            <strong>Customer Profile Loaded:</strong> ${c.company_name || c.customer_name}
+            &middot; <span class="text-muted">${c.district_name || 'District'}</span>
+            &middot; <span class="badge bg-success-subtle text-success border border-success ms-1">Customer ID: ${c.mimas_no || c.id}</span>
+          </div>
+          <span class="badge bg-success text-white">All details populated</span>
+        </div>
+      `;
     }
   }
 
-  if (customerSelect) {
-    customerSelect.addEventListener('change', function() {
-      const selected = this.options[this.selectedIndex];
-      if (selected && selected.value) {
-        if (selected.dataset.mimas && mimasSearchInput) {
-          mimasSearchInput.value = selected.dataset.mimas;
+  function performMimasLookup() {
+    const searchInput = document.getElementById('mimas_search_input');
+    const btn = document.getElementById('btn_lookup_mimas');
+    const feedbackBox = document.getElementById('mimas_feedback_box');
+    const val = searchInput ? searchInput.value.trim() : '';
+
+    if (!val) {
+      if (feedbackBox) {
+        feedbackBox.style.display = 'block';
+        feedbackBox.innerHTML = '<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-exclamation-triangle me-1"></i> Please enter or select a Customer Unique ID first.</div>';
+      }
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Searching...';
+    }
+    if (feedbackBox) feedbackBox.style.display = 'none';
+
+    fetch('/customers/lookup-mimas/' + encodeURIComponent(val))
+      .then(res => res.json())
+      .then(res => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
         }
-        applyCustomerAutofill(selected);
+        if (res.status === 1 && res.data) {
+          applyCustomerAutofill(res.data);
+        } else {
+          if (feedbackBox) {
+            feedbackBox.style.display = 'block';
+            feedbackBox.innerHTML = `<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-info-circle me-1"></i> ${res.message || 'No customer found.'}</div>`;
+          }
+        }
+      })
+      .catch(err => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
+        }
+        if (feedbackBox) {
+          feedbackBox.style.display = 'block';
+          feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="fa fa-times-circle me-1"></i> Customer not found. You can enter details manually below.</div>';
+        }
+      });
+  }
+
+  const btnLookup = document.getElementById('btn_lookup_mimas');
+  const searchInput = document.getElementById('mimas_search_input');
+
+  if (btnLookup) btnLookup.addEventListener('click', performMimasLookup);
+  if (searchInput) {
+    searchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performMimasLookup();
+      }
+    });
+    searchInput.addEventListener('change', function() {
+      if (this.value.trim().length >= 3) {
+        performMimasLookup();
       }
     });
   }
 
-  if (mimasSearchInput && customerSelect) {
-    mimasSearchInput.addEventListener('input', function() {
-      const val = this.value.trim().toUpperCase();
-      if (!val) {
-        if (mimasFeedback) mimasFeedback.style.display = 'none';
-        return;
-      }
-      let found = false;
-      for (let i = 0; i < customerSelect.options.length; i++) {
-        const opt = customerSelect.options[i];
-        const mimas = (opt.dataset.mimas || '').toUpperCase();
-        const name = (opt.dataset.client || '').toUpperCase();
-        const company = (opt.dataset.company || '').toUpperCase();
-        if (mimas === val || (val.length >= 3 && (mimas.includes(val) || name.includes(val) || company.includes(val)))) {
-          customerSelect.selectedIndex = i;
-          applyCustomerAutofill(opt);
-          found = true;
-          break;
+  // ====== DYNAMIC HANDLERS TABLE ======
+  const btnAddHandler = document.getElementById('btn_add_env_handler');
+  const handlersTbody = document.getElementById('env_handlers_tbody');
+
+  function reindexHandlers() {
+    const rows = handlersTbody.querySelectorAll('tr');
+    rows.forEach((r, idx) => {
+      const numCell = r.querySelector('.row-num');
+      if (numCell) numCell.textContent = idx + 1;
+      const inputs = r.querySelectorAll('input');
+      inputs.forEach(inp => {
+        if (inp.name.includes('[person_name]')) inp.name = `handlers[${idx}][person_name]`;
+        if (inp.name.includes('[role]')) inp.name = `handlers[${idx}][role]`;
+        if (inp.name.includes('[notes]')) inp.name = `handlers[${idx}][notes]`;
+      });
+      const removeBtn = r.querySelector('.btn-remove-handler');
+      if (removeBtn) {
+        if (rows.length === 1) {
+          removeBtn.classList.add('disabled');
+          removeBtn.style.opacity = '0.4';
+        } else {
+          removeBtn.classList.remove('disabled');
+          removeBtn.style.opacity = '1';
         }
       }
-      if (!found && val.length >= 4 && mimasFeedback) {
-        mimasFeedback.style.display = 'block';
-        mimasFeedback.className = 'small mt-2 text-warning';
-        mimasFeedback.innerHTML = '<i class="fa fa-info-circle me-1"></i> No matching registered customer found. You can enter details manually below.';
+    });
+  }
+
+  if (btnAddHandler && handlersTbody) {
+    btnAddHandler.addEventListener('click', function() {
+      const currentRows = handlersTbody.querySelectorAll('tr').length;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-center fw-bold row-num">${currentRows + 1}</td>
+        <td>
+          <input type="text" name="handlers[${currentRows}][person_name]" class="form-control form-control-sm" placeholder="e.g. Ramesh Kumar">
+        </td>
+        <td>
+          <input type="text" name="handlers[${currentRows}][role]" class="form-control form-control-sm" placeholder="e.g. EIA Coordinator, Field Officer">
+        </td>
+        <td>
+          <input type="text" name="handlers[${currentRows}][notes]" class="form-control form-control-sm" placeholder="e.g. Site inspection, Liaison">
+        </td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-remove-handler">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      `;
+      handlersTbody.appendChild(tr);
+      reindexHandlers();
+    });
+
+    handlersTbody.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-remove-handler');
+      if (btn && !btn.classList.contains('disabled')) {
+        const row = btn.closest('tr');
+        if (row && handlersTbody.querySelectorAll('tr').length > 1) {
+          row.remove();
+          reindexHandlers();
+        }
       }
     });
+  }
+
+  // ====== REAL-TIME PAYMENT LEDGER ======
+  const inpVal = document.getElementById('env_product_value');
+  const inpPaid = document.getElementById('env_paid_amount');
+  const inpPending = document.getElementById('env_pending_amount');
+  const selStatus = document.getElementById('env_payment_status');
+
+  const dispVal = document.getElementById('disp_env_product_val');
+  const dispPaid = document.getElementById('disp_env_paid_val');
+  const dispPending = document.getElementById('disp_env_pending_val');
+
+  function calculatePayment() {
+    const val = parseFloat(inpVal ? inpVal.value : 0) || 0;
+    const paid = parseFloat(inpPaid ? inpPaid.value : 0) || 0;
+    const pending = Math.max(0, val - paid);
+
+    if (inpPending) inpPending.value = pending.toFixed(2);
+    if (dispVal) dispVal.textContent = '₹ ' + val.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (dispPaid) dispPaid.textContent = '₹ ' + paid.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (dispPending) dispPending.textContent = '₹ ' + pending.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+    if (selStatus) {
+      if (val > 0) {
+        if (paid >= val) {
+          selStatus.value = 'paid';
+        } else if (paid > 0) {
+          selStatus.value = 'partial';
+        } else {
+          selStatus.value = 'pending';
+        }
+      }
+    }
+  }
+
+  if (inpVal && inpPaid) {
+    inpVal.addEventListener('input', calculatePayment);
+    inpPaid.addEventListener('input', calculatePayment);
+    calculatePayment();
   }
 });
 </script>

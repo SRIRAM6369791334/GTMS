@@ -380,6 +380,97 @@
         </div>
       </div>
 
+      <!-- TEAM ALLOCATION & PAYMENT CARDS ROW -->
+      <div class="row g-3 mb-3">
+        <!-- Team Handlers -->
+        <div class="col-lg-7">
+          <div class="card-panel h-100 mb-0">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+              <div>
+                <div class="panel-title mb-0" style="font-size:0.92rem;"><i class="bi bi-people-fill text-primary me-2"></i>Project Handling Team</div>
+                <div class="panel-sub mb-0" style="font-size:0.75rem;">Assigned technical personnel and field coordinators</div>
+              </div>
+              <span class="badge bg-light text-dark border px-2 py-1" style="font-size:0.75rem;">
+                {{ $application->handlers ? $application->handlers->count() : 0 }} Members Assigned
+              </span>
+            </div>
+            @if($application->handlers && $application->handlers->isNotEmpty())
+              <div class="table-responsive">
+                <table class="table table-sm table-borderless align-middle mb-0" style="font-size:0.83rem;">
+                  <thead class="text-muted border-bottom" style="font-size:0.75rem;">
+                    <tr>
+                      <th style="width:30px;">#</th>
+                      <th>Name</th>
+                      <th>Role / Designation</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($application->handlers as $hIndex => $handler)
+                      <tr>
+                        <td class="text-muted fw-bold">{{ $hIndex + 1 }}</td>
+                        <td class="fw-semibold text-navy"><i class="bi bi-person-badge text-primary me-1"></i> {{ $handler->name }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary border py-1 px-2">{{ $handler->role }}</span></td>
+                        <td class="text-muted small">{{ $handler->notes ?: '—' }}</td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @else
+              <div class="text-muted small fst-italic py-2"><i class="bi bi-info-circle me-1"></i> No project handling personnel assigned to this application.</div>
+            @endif
+          </div>
+        </div>
+
+        <!-- Payment & Billing Summary -->
+        <div class="col-lg-5">
+          <div class="card-panel h-100 mb-0">
+            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+              <div>
+                <div class="panel-title mb-0" style="font-size:0.92rem;"><i class="bi bi-cash-stack text-success me-2"></i>Financial &amp; Billing Ledger</div>
+                <div class="panel-sub mb-0" style="font-size:0.75rem;">Settlement status and balance tracking</div>
+              </div>
+              @php
+                $pStatus = $application->payment_status ?? 'pending';
+              @endphp
+              @if($pStatus === 'paid')
+                <span class="badge bg-success text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟢 Fully Paid</span>
+              @elseif($pStatus === 'partial')
+                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟡 Partial Payment</span>
+              @else
+                <span class="badge bg-danger text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;">🔴 Pending Full Due</span>
+              @endif
+            </div>
+
+            <div class="row g-2 text-center mt-1">
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <span class="text-muted d-block" style="font-size:0.72rem;">Product Value</span>
+                  <b class="text-navy" style="font-size:0.9rem;">₹ {{ number_format((float)($application->product_value ?? 0), 2) }}</b>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <span class="text-success d-block" style="font-size:0.72rem;">Paid Amount</span>
+                  <b class="text-success" style="font-size:0.9rem;">₹ {{ number_format((float)($application->paid_amount ?? 0), 2) }}</b>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 border rounded bg-light">
+                  <span class="text-danger d-block" style="font-size:0.72rem;">Pending Balance</span>
+                  <b class="text-danger" style="font-size:0.9rem;">₹ {{ number_format((float)($application->pending_amount ?? 0), 2) }}</b>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between text-muted" style="font-size:0.75rem;">
+              <span><i class="bi bi-clock-history me-1"></i> Status: <strong class="text-dark text-capitalize">{{ $pStatus }}</strong></span>
+              <span><i class="bi bi-shield-check text-success me-1"></i> Recorded in Ledger</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PROCESS FLOW STEPPER (6.1 - 6.6) -->
       @php
         $status = $application->status ?? 'under_scrutiny';

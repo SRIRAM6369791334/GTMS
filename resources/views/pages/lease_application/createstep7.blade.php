@@ -1,217 +1,157 @@
 @extends('layouts.app')
-@section('title', 'Application Preview - Step 6')
+@section('title', 'Payment Details - Step 7')
 @section('main_content')
 
 <div class="content-body default-height">
   <div class="container-fluid">
+    <div class="wizard-wrap">
 
-    <div class="wizard-wrap" style="max-width: 920px;">
-
+      <!-- 8-STEP PROGRESS BAR -->
       <div class="step-progress">
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Application</div></div>
-        <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Basic &amp; MIMAS</div></div>
+        <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Basic Info</div></div>
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Category</div></div>
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Folders</div></div>
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Documents</div></div>
-        <div class="sp-step active"><div class="circ">6</div><div class="sp-label">Review</div></div>
+        <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Handlers</div></div>
+        <div class="sp-step active"><div class="circ">7</div><div class="sp-label">Payment</div></div>
+        <div class="sp-step"><div class="circ">8</div><div class="sp-label">Review</div></div>
       </div>
 
-      <div class="wizard-card">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+      <div class="wizard-card shadow-sm border rounded-3 p-4 bg-white">
+        <div class="d-flex align-items-center justify-content-between mb-2">
           <div>
-            <div class="wc-eyebrow">Step 6 of 6</div>
-            <h4 class="mb-0">Application Preview &amp; Verification</h4>
-            <div class="wc-sub">Verify all details entered across previous steps before final submission.</div>
+            <div class="wc-eyebrow text-uppercase fw-bold text-primary small">Step 7 of 8</div>
+            <h4 class="fw-bold mb-1" style="color:#0F1E4D;">Payment &amp; Financial Settlement</h4>
+            <div class="wc-sub text-muted small">Record the overall application value, advance payments received, balance due, and statutory settlement status.</div>
           </div>
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-light text-dark border px-3 py-2" style="font-size: 0.82rem;">
-              <i class="bi bi-fingerprint me-1 text-primary"></i> Common ID: <b>GTMS-{{ date('Y') }}-AUTO</b>
-            </span>
-            <span class="badge bg-primary px-3 py-2" style="font-size: 0.82rem;">
-              <i class="bi bi-shield-check me-1"></i> Pre-Submission Review
-            </span>
-          </div>
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+            <i class="bi bi-cash-stack me-1"></i> Billing Ledger
+          </span>
         </div>
 
-        <!-- 1. APPLICANT & BASIC INFO (FROM STEP 1) -->
-        <div class="card-panel mt-3 mb-3" style="background:var(--navy-soft); border:1px solid #bfdbfe; border-radius:10px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="color:var(--navy); font-weight:700; margin-bottom: 0;">
-              <i class="bi bi-person-lines-fill me-2"></i>1. Applicant &amp; Entity Information (Step 1)
-            </h6>
-            <a href="{{ route('step1') }}" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-pencil"></i> Edit Step 1</a>
-          </div>
-          <div class="row g-2" style="font-size: 0.85rem;">
-            <div class="col-md-4"><span class="text-muted">Company / Quarry Name:</span> <br><b>{{ $previewData['company_name'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4"><span class="text-muted">Representative Name:</span> <br><b>{{ $previewData['client_name'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4"><span class="text-muted">Customer Unique ID:</span> <br><b class="text-primary">{{ $previewData['mimas_no'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4 mt-2"><span class="text-muted">District:</span> <br><b>{{ $previewData['district_name'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4 mt-2"><span class="text-muted">Aadhaar Number:</span> <br><b>{{ $previewData['aadhaar_no'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4 mt-2"><span class="text-muted">PAN Number:</span> <br><b>{{ $previewData['pan'] ?? 'N/A' }}</b></div>
-            <div class="col-md-4 mt-2"><span class="text-muted">GSTIN:</span> <br><b>{{ $previewData['gstin'] ?? 'Not provided' }}</b></div>
-            <div class="col-md-4 mt-2">
-              <span class="text-muted">Applicant Mobile (Primary):</span> <br>
-              <b>{{ $previewData['mobile_num'] ?? 'N/A' }}</b>
-              @if(!empty($previewData['secondary_mobile_num']))
-                <div class="small mt-1 text-indigo"><i class="bi bi-telephone-fill me-1"></i> Secondary: <b>{{ $previewData['secondary_mobile_num'] }}</b></div>
-              @endif
-            </div>
-            <div class="col-md-4 mt-2"><span class="text-muted">Applicant Email:</span> <br><b>{{ $previewData['email'] ?? 'Not provided' }}</b></div>
-            <div class="col-md-4 mt-2"><span class="text-muted">Quarry Area Extent:</span> <br><b>{{ $previewData['extent_display'] ?? 'Not specified' }}</b></div>
-            <div class="col-md-8 mt-2"><span class="text-muted">Registered Business Address:</span> <br><b>{{ $previewData['address'] ?? 'Not provided' }}</b></div>
-          </div>
-        </div>
+        @php
+          $pv = (float)($payment['product_value'] ?? 0);
+          $pa = (float)($payment['paid_amount'] ?? 0);
+          $pe = max(0, $pv - $pa);
+          $st = $payment['payment_status'] ?? ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
+        @endphp
 
-        <!-- 2. CONTACT PERSON (FROM STEP 2) -->
-        <div class="card-panel mb-3" style="background:#f8f9fa; border:1px solid #e2e8f0; border-radius:10px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="font-weight:700; margin-bottom: 0;">
-              <i class="bi bi-person-check-fill me-2" style="color:#0284c7;"></i>2. Authorized Contact Persons (Step 2)
-            </h6>
-            <a href="{{ route('step2') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-pencil"></i> Edit Step 2</a>
-          </div>
-          <div class="row g-2" style="font-size: 0.85rem;">
-            <div class="col-md-6">
-              <span class="text-muted"><i class="bi bi-person-badge text-primary me-1"></i> Primary Contact Person:</span> <br>
-              <b>{{ $previewData['contact_person'] ?? 'N/A' }}</b>
-              <div class="text-muted small mt-1"><i class="bi bi-telephone me-1"></i> +91 {{ $previewData['contact_mobile'] ?? 'N/A' }}</div>
+        <!-- Real-Time Financial Metric Cards -->
+        <div class="row g-3 my-2">
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border" style="background:#f8fafc; border-left: 4px solid #0F1E4D !important;">
+              <div class="text-muted small fw-semibold text-uppercase">Product / Contract Value</div>
+              <div class="h4 fw-bold mb-0 text-navy mt-1" id="card_disp_product_value">₹ {{ number_format($pv, 2) }}</div>
+              <small class="text-muted" style="font-size:11px;">Total quoted service value</small>
             </div>
-            <div class="col-md-6">
-              <span class="text-muted"><i class="bi bi-person-badge-fill text-indigo me-1"></i> Secondary / Site Contact Person:</span> <br>
-              @if(!empty($previewData['secondary_contact_person']) || !empty($previewData['secondary_contact_mobile']))
-                <b>{{ $previewData['secondary_contact_person'] ?? 'N/A' }}</b>
-                <div class="text-muted small mt-1"><i class="bi bi-telephone-fill text-indigo me-1"></i> +91 {{ $previewData['secondary_contact_mobile'] ?? 'N/A' }}</div>
-              @else
-                <span class="text-muted fst-italic">Not provided (Optional)</span>
-              @endif
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border" style="background:#f0fdf4; border-left: 4px solid #10b981 !important;">
+              <div class="text-success small fw-semibold text-uppercase">Paid Amount</div>
+              <div class="h4 fw-bold mb-0 text-success mt-1" id="card_disp_paid_amount">₹ {{ number_format($pa, 2) }}</div>
+              <small class="text-muted" style="font-size:11px;">Received via Cash / Bank / NEFT</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border" style="background:#fff7ed; border-left: 4px solid #f97316 !important;">
+              <div class="text-warning-emphasis small fw-semibold text-uppercase">Pending Balance Due</div>
+              <div class="h4 fw-bold mb-0 text-danger mt-1" id="card_disp_pending_amount">₹ {{ number_format($pe, 2) }}</div>
+              <small class="text-muted" style="font-size:11px;">Remaining balance to collect</small>
             </div>
           </div>
         </div>
 
-        <!-- 3. CATEGORY & MINERAL (FROM STEP 3) -->
-        <div class="card-panel mb-3" style="background:#f8f9fa; border:1px solid #e2e8f0; border-radius:10px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="font-weight:700; margin-bottom: 0;">
-              <i class="bi bi-tags-fill me-2" style="color:#64748b;"></i>3. Lease Category &amp; Mining Details (Step 3)
-            </h6>
-            <a href="{{ route('step3') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-pencil"></i> Edit Step 3</a>
-          </div>
-          <div class="row g-2" style="font-size: 0.85rem;">
-            <div class="col-md-6"><span class="text-muted">Selected Lease Category:</span> <br><b>{{ $previewData['category_code'] ?? 'N/A' }}</b> &mdash; {{ $previewData['category_name'] ?? 'N/A' }}</div>
-            <div class="col-md-3"><span class="text-muted">Mineral Type:</span> <br><b>{{ $previewData['mineral_name'] ?? 'Not specified' }}</b></div>
-            <div class="col-md-3"><span class="text-muted">Lease Validity Period:</span> <br><b>{{ $previewData['lease_period'] ?? '5 Years' }}</b></div>
-          </div>
-        </div>
+        <form id="payment_form" method="POST" action="{{ route('step7.save') }}">
+          @csrf
 
-        <!-- 4. FOLDERS & DOCUMENTS (FROM STEP 4 & 5) -->
-        <div class="card-panel mb-3" style="background:#f8f9fa; border:1px solid #e2e8f0; border-radius:10px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="font-weight:700; margin-bottom: 0;">
-              <i class="bi bi-folder-check me-2" style="color:#16a34a;"></i>4. Folders &amp; Document Checklist (Step 5)
-            </h6>
-            <a href="{{ route('step5') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-pencil"></i> Edit Step 5</a>
-          </div>
-          <div class="row g-2 mb-2" style="font-size: 0.85rem;">
-            <div class="col-md-4">
-              <div class="p-2 border rounded bg-white">
-                <span class="text-muted small">1. Documents Folder (#7):</span> <br>
-                <b>{{ $previewData['f7_count'] ?? 0 }} / 9 Files Attached</b>
+          <div class="card p-3 my-3 bg-light border-0 rounded-3">
+            <div class="row g-3">
+              <!-- Product Value -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">
+                  Product / Service Value (₹) <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white fw-bold text-navy">₹</span>
+                  <input type="number" step="0.01" min="0" name="product_value" id="field_product_value"
+                         class="form-control fw-bold" placeholder="0.00" value="{{ $pv > 0 ? $pv : '' }}" required>
+                </div>
+                <div class="form-text text-muted" style="font-size:11px;">Enter the total agreed fee or departmental quotation.</div>
+              </div>
+
+              <!-- Paid Amount -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">
+                  Paid Amount (₹) <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white fw-bold text-success">₹</span>
+                  <input type="number" step="0.01" min="0" name="paid_amount" id="field_paid_amount"
+                         class="form-control fw-bold text-success" placeholder="0.00" value="{{ $pa > 0 ? $pa : '' }}" required>
+                </div>
+                <div class="form-text text-muted" style="font-size:11px;">Amount paid by applicant (enter 0 if unpaid).</div>
+              </div>
+
+              <!-- Pending Amount (Auto-Calculated) -->
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">
+                  Pending Balance (₹) <span class="text-muted">(Auto-Calculated)</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light fw-bold text-danger">₹</span>
+                  <input type="number" step="0.01" name="pending_amount_display" id="field_pending_amount"
+                         class="form-control bg-light fw-bold text-danger" placeholder="0.00" value="{{ $pe }}" readonly>
+                </div>
+                <div class="form-text text-muted" style="font-size:11px;">Calculated automatically as Value minus Paid.</div>
+              </div>
+
+              <!-- Payment Status -->
+              <div class="col-md-6 mt-3">
+                <label class="form-label fw-bold text-navy small mb-1">
+                  Payment Settlement Status <span class="text-danger">*</span>
+                </label>
+                <select name="payment_status" id="field_payment_status" class="form-select fw-semibold" required>
+                  <option value="pending" {{ $st === 'pending' ? 'selected' : '' }}>🔴 Pending (Full Balance Due)</option>
+                  <option value="partial" {{ $st === 'partial' ? 'selected' : '' }}>🟡 Partial (Part Payment Received)</option>
+                  <option value="paid" {{ $st === 'paid' ? 'selected' : '' }}>🟢 Paid (Fully Cleared)</option>
+                </select>
+                <div class="form-text text-muted" style="font-size:11px;">Status adapts automatically based on amounts or can be overridden manually.</div>
+              </div>
+
+              <!-- Status Badge Feedback -->
+              <div class="col-md-6 mt-3 d-flex align-items-center">
+                <div class="p-3 w-100 rounded-2 d-flex align-items-center justify-content-between" id="status_feedback_box" style="background:#f1f5f9;">
+                  <div>
+                    <div class="small fw-semibold text-muted">Settlement Assessment</div>
+                    <div class="fw-bold" id="status_feedback_text" style="color:#0F1E4D;">Pending Payment</div>
+                  </div>
+                  <span class="badge px-3 py-2 rounded-pill fs-6" id="status_feedback_badge" style="background:#e2e8f0; color:#475569;">
+                    Pending
+                  </span>
+                </div>
               </div>
             </div>
-            <div class="col-md-4">
-              <div class="p-2 border rounded bg-white">
-                <span class="text-muted small">2. Lease Application (#8):</span> <br>
-                <b>{{ $previewData['f8_count'] ?? 0 }} / 7 Files Attached</b>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="p-2 border rounded bg-white">
-                <span class="text-muted small">3. Plan Files (#9):</span> <br>
-                <b>{{ $previewData['f9_count'] ?? 0 }} / 3 Files Attached</b>
-              </div>
-            </div>
           </div>
-          @php
-            $customCount = count(array_filter($previewData['uploaded_docs'] ?? [], fn($d) => !empty($d['is_custom'])));
-            $totalExpected = 19 + $customCount;
-          @endphp
-          <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-            <div>
-              <span class="text-muted">Total Upload Progress:</span> 
-              <b>{{ $previewData['uploaded_count'] }} of {{ $totalExpected }} Items Attached</b>
-            </div>
-            <div>
-              @if($previewData['uploaded_count'] >= $totalExpected)
-                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i> All {{ $totalExpected }} Files Verified &amp; Attached across 3 Folders</span>
-              @elseif($previewData['uploaded_count'] > 0)
-                <span class="badge bg-primary"><i class="bi bi-file-earmark-check me-1"></i> {{ $previewData['uploaded_count'] }} of {{ $totalExpected }} Files Attached ({{ max(0, $totalExpected - $previewData['uploaded_count']) }} Pending)</span>
-              @else
-                <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i> 0 of {{ $totalExpected }} Uploaded (All documents pending)</span>
-              @endif
-            </div>
-          </div>
-          @if(!empty($previewData['uploaded_docs']) && count($previewData['uploaded_docs']) > 0)
-          <div class="mt-3 pt-2 border-top">
-            <small class="text-muted fw-bold d-block mb-1">Attached Files from Step 5:</small>
-            <div class="d-flex flex-wrap gap-2">
-              @foreach($previewData['uploaded_docs'] as $docItem => $doc)
-                <span class="badge bg-light text-dark border py-1 px-2" style="font-size:0.75rem;">
-                  <i class="bi bi-file-earmark-check text-success me-1"></i> {{ !empty($doc['doc_name']) ? $doc['doc_name'] : ('Item #' . $docItem) }}: {{ $doc['file_name'] ?? 'file' }}
-                </span>
-              @endforeach
-            </div>
-          </div>
-          @endif
-        </div>
 
-        <!-- 5. MIMAS CREDENTIALS (FROM STEP 6) -->
-        <div class="card-panel mb-4" style="background:#f8f9fa; border:1px solid #e2e8f0; border-radius:10px;">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 style="font-weight:700; margin-bottom: 0;">
-              <i class="bi bi-key-fill me-2" style="color:#d97706;"></i>5. MIMAS Portal Credentials (Step 2)
-            </h6>
-            <a href="{{ route('step2') }}" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.75rem;"><i class="bi bi-pencil"></i> Edit Step 2</a>
-          </div>
-          <div class="row g-2" style="font-size: 0.85rem;">
-            <div class="col-md-3"><span class="text-muted">User ID:</span> <br><b>{{ $previewData['mimas_user_id'] ?? 'Not Entered' }}</b></div>
-            <div class="col-md-3"><span class="text-muted">Password:</span> <br><b class="text-muted">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</b> <span class="badge bg-success-subtle text-success border border-success ms-1" style="font-size:0.65rem;">Encrypted AES-256</span></div>
-            <div class="col-md-3"><span class="text-muted">Registered Email:</span> <br><b>{{ $previewData['mimas_email'] ?? 'Not Entered' }}</b></div>
-            <div class="col-md-3"><span class="text-muted">Registered Contact:</span> <br><b>{{ $previewData['mimas_contact'] ?? 'Not Entered' }}</b></div>
-          </div>
-        </div>
-
-        <!-- SUBMIT CONFIRMATION BANNER -->
-        <div class="card-panel mt-4 mb-0" style="background:var(--green-soft); border:none; border-radius:10px;">
-          <div class="d-flex gap-2">
-            <i class="bi bi-check-circle fs-5" style="color:var(--green);"></i>
-            <div style="font-size:.82rem; color:#0f4c27;">
-              <b>Ready for Submission:</b> You are about to submit the final application. Once submitted, it will be assigned an official Application Number (LA-{{ date('Y') }}-NNNN), moved to the scrutiny queue, and all documents will be compiled into the secure compliance dossier.
-            </div>
-          </div>
-        </div>
-
-        <div class="wizard-actions mt-4 d-flex justify-content-between align-items-center">
-          <a href="{{ route('step5') }}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left"></i> Back to Step 5</a>
-          @can('application.create')
-          <form action="{{ route('application.submit') }}" method="POST" class="d-inline" id="final_submit_form">
-            @csrf
-            <input type="hidden" name="mimas_no" value="{{ $previewData['mimas_no'] ?? '' }}">
-            <input type="hidden" name="category_code" value="{{ $previewData['category_code'] ?? '' }}">
-            <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
-              <button type="submit" id="btn_final_submit" class="btn btn-green px-3">
-                Submit Final Application <i class="bi bi-check-lg ms-1"></i>
+          <!-- Wizard Actions -->
+          <div class="wizard-actions d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="{{ route('step6') }}" class="btn btn-outline-secondary btn-sm px-3">
+              <i class="bi bi-arrow-left me-1"></i> Back to Handlers
+            </a>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-outline-primary btn-sm px-3" id="btn_save_draft_exit">
+                <i class="fa fa-save me-1"></i> Save Draft &amp; Exit
               </button>
-              <button type="submit" name="move_to_mining" value="1" id="btn_submit_move_mining" class="btn btn-navy px-3" title="Save Lease and immediately initiate Mining Plan under same Common ID">
-                <i class="bi bi-rocket-takeoff me-1"></i> Submit &amp; Move to Mining Plan
+              <button type="submit" class="btn btn-navy btn-sm px-4 fw-semibold" id="btn_submit_step7">
+                Continue to Review <i class="bi bi-arrow-right ms-1"></i>
               </button>
             </div>
-          </form>
-          @endcan
-        </div>
+          </div>
+        </form>
 
       </div>
     </div>
-
   </div>
 </div>
 
@@ -219,16 +159,128 @@
 
 @section('scripts')
 <script>
-$(document).ready(function() {
-  $('#final_submit_form').on('submit', function(e) {
-    var submitter = e.originalEvent && e.originalEvent.submitter;
-    if (submitter && submitter.id === 'btn_submit_move_mining') {
-      $('#btn_submit_move_mining').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Creating & Moving to Mining...');
-      $('#btn_final_submit').prop('disabled', true);
-    } else {
-      $('#btn_final_submit').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Submitting Application...');
-      $('#btn_submit_move_mining').prop('disabled', true);
+document.addEventListener('DOMContentLoaded', function () {
+  const inputProduct = document.getElementById('field_product_value');
+  const inputPaid = document.getElementById('field_paid_amount');
+  const inputPending = document.getElementById('field_pending_amount');
+  const selectStatus = document.getElementById('field_payment_status');
+
+  const cardProduct = document.getElementById('card_disp_product_value');
+  const cardPaid = document.getElementById('card_disp_paid_amount');
+  const cardPending = document.getElementById('card_disp_pending_amount');
+
+  const feedbackText = document.getElementById('status_feedback_text');
+  const feedbackBadge = document.getElementById('status_feedback_badge');
+  const feedbackBox = document.getElementById('status_feedback_box');
+
+  const form = document.getElementById('payment_form');
+  const btnSaveExit = document.getElementById('btn_save_draft_exit');
+  const btnSubmit = document.getElementById('btn_submit_step7');
+
+  function formatCurrency(val) {
+    return '₹ ' + Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function calculatePayment(isManualStatusChange = false) {
+    const productVal = parseFloat(inputProduct.value) || 0;
+    const paidVal = parseFloat(inputPaid.value) || 0;
+    const pendingVal = Math.max(0, productVal - paidVal);
+
+    inputPending.value = pendingVal.toFixed(2);
+
+    cardProduct.textContent = formatCurrency(productVal);
+    cardPaid.textContent = formatCurrency(paidVal);
+    cardPending.textContent = formatCurrency(pendingVal);
+
+    if (!isManualStatusChange) {
+      if (paidVal <= 0 || productVal <= 0) {
+        selectStatus.value = 'pending';
+      } else if (pendingVal <= 0 && productVal > 0) {
+        selectStatus.value = 'paid';
+      } else {
+        selectStatus.value = 'partial';
+      }
     }
+
+    updateStatusUI();
+  }
+
+  function updateStatusUI() {
+    const currentStatus = selectStatus.value;
+    if (currentStatus === 'paid') {
+      feedbackText.textContent = 'Account Fully Settled (Zero Balance)';
+      feedbackBadge.textContent = 'Fully Paid';
+      feedbackBadge.className = 'badge bg-success text-white px-3 py-2 rounded-pill fs-6';
+      feedbackBox.style.background = '#ecfdf5';
+      feedbackBox.style.border = '1px solid #a7f3d0';
+    } else if (currentStatus === 'partial') {
+      feedbackText.textContent = 'Part Payment Received (Balance Remaining)';
+      feedbackBadge.textContent = 'Partial Payment';
+      feedbackBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill fs-6';
+      feedbackBox.style.background = '#fffbeb';
+      feedbackBox.style.border = '1px solid #fde68a';
+    } else {
+      feedbackText.textContent = 'Full Payment Outstanding (Pending)';
+      feedbackBadge.textContent = 'Pending Payment';
+      feedbackBadge.className = 'badge bg-danger text-white px-3 py-2 rounded-pill fs-6';
+      feedbackBox.style.background = '#fef2f2';
+      feedbackBox.style.border = '1px solid #fecaca';
+    }
+  }
+
+  inputProduct.addEventListener('input', () => calculatePayment(false));
+  inputPaid.addEventListener('input', () => calculatePayment(false));
+  selectStatus.addEventListener('change', () => updateStatusUI());
+
+  // Run initial calculation
+  calculatePayment(false);
+
+  // AJAX Submission Helper
+  function submitStep7(isExit = false) {
+    if (!form.reportValidity()) return;
+
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Saving...`;
+
+    const formData = new FormData(form);
+    if (isExit) {
+      formData.append('exit', '1');
+    }
+
+    fetch("{{ route('step7.save') }}", {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+      },
+      body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 1) {
+        toastr.success(data.message || 'Payment details saved successfully!');
+        window.location.href = data.redirect || "{{ route('step8') }}";
+      } else {
+        toastr.error(data.message || 'Error saving payment information.');
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `Continue to Review <i class="bi bi-arrow-right ms-1"></i>`;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      toastr.error('Network or server error while saving data.');
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = `Continue to Review <i class="bi bi-arrow-right ms-1"></i>`;
+    });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitStep7(false);
+  });
+
+  btnSaveExit.addEventListener('click', function () {
+    submitStep7(true);
   });
 });
 </script>

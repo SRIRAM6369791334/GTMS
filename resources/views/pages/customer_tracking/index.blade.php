@@ -542,11 +542,17 @@
             </div>
             <div class="col-md-5 text-end align-self-center">
                 @if($customer)
-                    <button type="button" onclick="window.print()" class="btn btn-primary btn-sm me-2 shadow-sm">
+                    <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="btn btn-sm text-white me-1 shadow-sm" style="background:#0F1E4D;">
+                        <i class="bi bi-file-earmark-text me-1 text-warning"></i> Proforma Invoice
+                    </a>
+                    <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="btn btn-success btn-sm me-1 shadow-sm">
+                        <i class="bi bi-receipt me-1"></i> Tax Invoice
+                    </a>
+                    <button type="button" onclick="window.print()" class="btn btn-primary btn-sm me-1 shadow-sm">
                         <i class="bi bi-printer me-1"></i> Print Dossier
                     </button>
                     <a href="{{ route('customer-tracking.index') }}" class="btn btn-light border text-dark btn-sm shadow-sm">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i> Clear Search
+                        <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
                     </a>
                 @endif
             </div>
@@ -781,6 +787,12 @@
                                                 <i class="bi bi-envelope text-primary"></i> <strong>{{ $customer->email }}</strong>
                                             </span>
                                         @endif
+                                        <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-primary" style="color:#0F1E4D;">
+                                            <i class="bi bi-file-earmark-text text-primary"></i> <strong>Proforma Invoice ↗</strong>
+                                        </a>
+                                        <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-success" style="color:#059669;">
+                                            <i class="bi bi-receipt text-success"></i> <strong>Tax Invoice ↗</strong>
+                                        </a>
                                     </div>
                                 </div>
                             </div>

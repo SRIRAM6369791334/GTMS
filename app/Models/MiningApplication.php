@@ -43,18 +43,30 @@ class MiningApplication extends Model
         'approval_date',
         'approval_file',
         'kml_file_path',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'branch_id',
         'created_by',
     ];
 
     protected $casts = [
         'area_extent_ha' => 'decimal:2',
+        'product_value' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'pending_amount' => 'decimal:2',
         'safety_distance_meters' => 'decimal:2',
         'start_date' => 'date',
         'end_date' => 'date',
         'approval_date' => 'date',
         'validity_years' => 'integer',
     ];
+
+    public function handlers(): HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'mining')->orderBy('sort_order');
+    }
 
     public function customer(): BelongsTo
     {

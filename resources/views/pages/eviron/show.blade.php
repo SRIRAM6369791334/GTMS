@@ -190,6 +190,109 @@
       </div>
     </div>
 
+    {{-- ================= HANDLING TEAM & FINANCIAL LEDGER CARDS ================= --}}
+    <div class="row g-3 mb-4">
+      {{-- Project Handling Team Card --}}
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+          <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold text-navy" style="color:#0F1E4D;">
+              <i class="fa fa-users me-2 text-primary"></i> Project Handling Team
+            </h6>
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+              {{ $project->handlers->count() }} members
+            </span>
+          </div>
+          <div class="card-body p-3">
+            @if($project->handlers->isNotEmpty())
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.85rem;">
+                  <thead class="bg-light">
+                    <tr>
+                      <th style="width:35px;" class="text-center">#</th>
+                      <th>Person Name</th>
+                      <th>Role / Designation</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @foreach($project->handlers as $idx => $handler)
+                      <tr>
+                        <td class="text-center fw-bold">{{ $idx + 1 }}</td>
+                        <td class="fw-semibold text-navy">{{ $handler->name }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ $handler->role }}</span></td>
+                        <td class="text-muted small">{{ $handler->notes ?: '—' }}</td>
+                      </tr>
+                    @endforeach
+                  </tbody>
+                </table>
+              </div>
+            @else
+              <div class="text-center py-3 text-muted small">
+                <i class="fa fa-user-clock fa-2x mb-2 text-secondary opacity-50"></i>
+                <div>No handling team members assigned yet.</div>
+              </div>
+            @endif
+          </div>
+        </div>
+      </div>
+
+      {{-- Financial & Billing Ledger Card --}}
+      <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+          <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+            <h6 class="mb-0 fw-bold text-navy" style="color:#0F1E4D;">
+              <i class="fa fa-receipt me-2 text-success"></i> Financial &amp; Billing Ledger
+            </h6>
+            @php
+              $pStatus = $project->payment_status ?: 'pending';
+              $badgeClass = match($pStatus) {
+                'paid' => 'bg-success text-white',
+                'partial' => 'bg-warning text-dark',
+                default => 'bg-danger text-white',
+              };
+            @endphp
+            <span class="badge {{ $badgeClass }} px-2 py-1 text-uppercase" style="font-size:0.75rem;">
+              {{ ucfirst($pStatus) }}
+            </span>
+          </div>
+          <div class="card-body p-3">
+            <div class="row g-2 mb-3">
+              <div class="col-4">
+                <div class="p-2 rounded bg-light border text-center">
+                  <div class="text-muted small" style="font-size:11px;">Quotation</div>
+                  <div class="fw-bold text-navy">₹ {{ number_format((float)$project->product_value, 2) }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 rounded border text-center" style="background:#f0fdf4;">
+                  <div class="text-success small" style="font-size:11px;">Paid</div>
+                  <div class="fw-bold text-success">₹ {{ number_format((float)$project->paid_amount, 2) }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2 rounded border text-center" style="background:#fff7ed;">
+                  <div class="text-danger small" style="font-size:11px;">Pending</div>
+                  <div class="fw-bold text-danger">₹ {{ number_format((float)$project->pending_amount, 2) }}</div>
+                </div>
+              </div>
+            </div>
+            @if($project->payments->isNotEmpty())
+              <small class="text-muted d-block mb-1">Payment Transactions ({{ $project->payments->count() }}):</small>
+              <ul class="list-group list-group-flush small" style="font-size:0.8rem;">
+                @foreach($project->payments as $pmt)
+                  <li class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center">
+                    <span>{{ $pmt->created_at->format('d M Y') }} &bull; {{ $pmt->notes ?: 'Payment recorded' }}</span>
+                    <span class="fw-bold text-success">₹ {{ number_format((float)$pmt->paid_amount, 2) }}</span>
+                  </li>
+                @endforeach
+              </ul>
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+
     {{-- ================= DYNAMIC FOLDER TABS & CHECKLIST ================= --}}
     <main class="admin-content">
 
@@ -238,9 +341,19 @@
               <h5 class="mb-0">{{ $idx + 1 }} &middot; {{ $folder->name }}</h5>
               <p class="sub mb-0">Checklist items for {{ $folder->name }}</p>
             </div>
-            <span class="panel-progress-chip fw-bold" style="font-size:.82rem; color:{{ $fPalette[0] }};">
-              {{ $approvedCount }} / {{ $docs->count() }} Approved
-            </span>
+            <div class="d-flex align-items-center gap-2">
+              @can('environment.b2.upload')
+              <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-open-add-enviro-doc"
+                      data-folder-id="{{ $folder->id }}"
+                      data-folder-name="{{ $folder->name }}"
+                      data-bs-toggle="modal" data-bs-target="#modalAddEnviroDoc">
+                <i class="bi bi-plus-circle me-1"></i>Add Document
+              </button>
+              @endcan
+              <span class="panel-progress-chip fw-bold" style="font-size:.82rem; color:{{ $fPalette[0] }};">
+                {{ $approvedCount }} / {{ $docs->count() }} Approved
+              </span>
+            </div>
           </div>
 
           <div class="table-responsive">
@@ -296,6 +409,15 @@
                   </td>
                   <td class="text-end">
                     <div class="table-action-group">
+                      {{-- View Button (Opens in separate page) --}}
+                      @if($doc->file_path)
+                      <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" rel="noopener noreferrer"
+                         class="btn-action-icon" style="background:#eff6ff; color:#0284c7; border-color:#bae6fd;"
+                         title="View Document in separate page">
+                        <i class="fa fa-eye"></i>
+                      </a>
+                      @endif
+
                       {{-- Upload Button (triggers shared modal) --}}
                       @can('environment.b2.upload')
                       <button type="button" class="btn-action-icon" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"
@@ -396,6 +518,38 @@
   </div>
 </div>
 
+{{-- Shared Add Custom Document Modal --}}
+<div class="modal fade" id="modalAddEnviroDoc" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formAddEnviroDoc" method="POST" enctype="multipart/form-data" action="{{ route('eviron.documents.add', $project->id) }}">
+      @csrf
+      <input type="hidden" name="folder_id" id="add_doc_folder_id" value="">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" id="add_doc_modal_title"><i class="bi bi-plus-circle me-2 text-primary"></i>Add Document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Target Folder</label>
+          <input type="text" id="add_doc_folder_name_display" class="form-control" readonly style="background:#f8fafc;">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Document Title / Name *</label>
+          <input type="text" name="document_name" class="form-control" placeholder="e.g. Additional Site Photograph, Revised Map" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Select File (PDF, DOCX, JPG, PNG, KML, max 25MB) *</label>
+          <input type="file" name="file" class="form-control" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.kml,.zip">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">Attach &amp; Add Document</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Dynamic Folder Tabs Switcher
@@ -424,6 +578,19 @@ document.addEventListener('DOMContentLoaded', function() {
       if (btn) {
         document.getElementById('formUploadDoc').action = btn.dataset.action;
         document.getElementById('upload_modal_title').textContent = 'Upload: ' + (btn.dataset.docName || 'Document');
+      }
+    });
+  }
+
+  // Dynamic Add Custom Document Modal Binding
+  const modalAddEnviro = document.getElementById('modalAddEnviroDoc');
+  if (modalAddEnviro) {
+    modalAddEnviro.addEventListener('show.bs.modal', function(e) {
+      const btn = e.relatedTarget;
+      if (btn) {
+        document.getElementById('add_doc_folder_id').value = btn.dataset.folderId || '';
+        document.getElementById('add_doc_folder_name_display').value = btn.dataset.folderName || '';
+        document.getElementById('add_doc_modal_title').innerHTML = '<i class="bi bi-plus-circle me-2 text-primary"></i>Add Document to ' + (btn.dataset.folderName || 'Folder');
       }
     });
   }

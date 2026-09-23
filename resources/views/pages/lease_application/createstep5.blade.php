@@ -11,11 +11,13 @@
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Category</div></div>
         <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Folders</div></div>
         <div class="sp-step active"><div class="circ">5</div><div class="sp-label">Documents</div></div>
-        <div class="sp-step"><div class="circ">6</div><div class="sp-label">Review</div></div>
+        <div class="sp-step"><div class="circ">6</div><div class="sp-label">Handlers</div></div>
+        <div class="sp-step"><div class="circ">7</div><div class="sp-label">Payment</div></div>
+        <div class="sp-step"><div class="circ">8</div><div class="sp-label">Review</div></div>
       </div>
 
       <div class="wizard-card">
-        <div class="wc-eyebrow">Step 5 of 6</div>
+        <div class="wc-eyebrow">Step 5 of 8</div>
         <h4>Regulatory Checklist &amp; Survey Plans</h4>
         <div class="wc-sub">Upload all required statutory documents, affidavits, and digital survey plans across the 3 folders.</div>
 
@@ -117,6 +119,12 @@
               </div>
               @if($isUp)
                 <span class="badge-status uploaded">Uploaded</span>
+                @php
+                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                @endphp
+                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
               @else
                 <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
@@ -129,6 +137,7 @@
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
               $isMandatory = !empty($cDoc['is_mandatory']);
+              $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
             <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="7" data-is-custom="1">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
@@ -145,6 +154,9 @@
               </div>
               <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
               <span class="badge-status uploaded">Uploaded</span>
+              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                <i class="bi bi-eye"></i> View
+              </a>
               <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
             </div>
           @endforeach
@@ -207,6 +219,12 @@
               </div>
               @if($isUp)
                 <span class="badge-status uploaded">Uploaded</span>
+                @php
+                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                @endphp
+                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
               @else
                 <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
@@ -219,6 +237,7 @@
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
               $isMandatory = !empty($cDoc['is_mandatory']);
+              $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
             <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="8" data-is-custom="1">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
@@ -235,6 +254,9 @@
               </div>
               <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
               <span class="badge-status uploaded">Uploaded</span>
+              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                <i class="bi bi-eye"></i> View
+              </a>
               <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
             </div>
           @endforeach
@@ -293,6 +315,12 @@
               </div>
               @if($isUp)
                 <span class="badge-status uploaded">Uploaded</span>
+                @php
+                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                @endphp
+                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
                 <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
               @else
                 <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
@@ -305,6 +333,7 @@
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
               $isMandatory = !empty($cDoc['is_mandatory']);
+              $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
             <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="9" data-is-custom="1">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
@@ -321,6 +350,9 @@
               </div>
               <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
               <span class="badge-status uploaded">Uploaded</span>
+              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                <i class="bi bi-eye"></i> View
+              </a>
               <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
             </div>
           @endforeach
@@ -333,7 +365,7 @@
             <a href="{{ route('application.index') }}" class="btn btn-outline-primary px-3">
               <i class="fa fa-save me-1"></i> Save Draft &amp; Continue Later
             </a>
-            <a href="{{ route('step6') }}" id="btn_continue_mimas" class="btn {{ $uploadedCount >= $totalCount ? 'btn-green shadow-sm' : 'btn-navy' }} px-4">Continue to Review <i class="bi bi-arrow-right"></i></a>
+            <a href="{{ route('step6') }}" id="btn_continue_mimas" class="btn {{ $uploadedCount >= $totalCount ? 'btn-green shadow-sm' : 'btn-navy' }} px-4">Continue to Handlers <i class="bi bi-arrow-right"></i></a>
           </div>
           @endcan
         </div>
@@ -437,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let currentTargetRow = null;
 
-  function markRowUploaded(row, fileName, fileSize) {
+  function markRowUploaded(row, fileName, fileSize, fileUrl) {
     row.classList.add('up');
     const iconDiv = row.querySelector('.ci-icon');
     if (iconDiv) {
@@ -457,6 +489,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const uploadBtn = row.querySelector('.btn-upload-item');
+    if (fileUrl) {
+      let viewBtn = row.querySelector('.btn-view-item');
+      if (!viewBtn) {
+        viewBtn = document.createElement('a');
+        viewBtn.className = 'btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1';
+        viewBtn.style.fontSize = '.7rem';
+        viewBtn.target = '_blank';
+        viewBtn.rel = 'noopener noreferrer';
+        viewBtn.title = 'View document in separate page';
+        viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
+        if (uploadBtn) {
+          uploadBtn.parentNode.insertBefore(viewBtn, uploadBtn);
+        }
+      }
+      viewBtn.href = fileUrl;
+    }
+
     if (uploadBtn) {
       uploadBtn.className = 'btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item';
       uploadBtn.style.fontSize = '.7rem';
@@ -522,7 +571,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(res => res.json())
     .then(data => {
       if (data.status === 1) {
-        markRowUploaded(row, data.file_name, data.file_size);
+        markRowUploaded(row, data.file_name, data.file_size, data.file_url);
         updateOverallProgress(data.uploaded, data.total, data.percent);
         return true;
       } else {
@@ -726,6 +775,9 @@ document.addEventListener('DOMContentLoaded', function () {
               </div>
               <span class="badge-status ${data.is_mandatory ? 'mandatory' : 'pending'}">${data.is_mandatory ? 'Mandatory' : 'Optional'}</span>
               <span class="badge-status uploaded">Uploaded</span>
+              <a href="${data.file_url || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                <i class="bi bi-eye"></i> View
+              </a>
               <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
             `;
             targetContainer.appendChild(rowDiv);

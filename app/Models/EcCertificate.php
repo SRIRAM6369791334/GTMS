@@ -28,14 +28,31 @@ class EcCertificate extends Model
         'certificate_file',
         'conditions_summary',
         'status',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'created_by',
     ];
 
     protected $casts = [
-        'issue_date' => 'date',
-        'expiry_date' => 'date',
+        'issue_date'     => 'date',
+        'expiry_date'    => 'date',
         'validity_years' => 'integer',
+        'product_value'  => 'decimal:2',
+        'paid_amount'    => 'decimal:2',
+        'pending_amount' => 'decimal:2',
     ];
+
+    public function handlers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'ec')->orderBy('sort_order');
+    }
+
+    public function payments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ApplicationPayment::class, 'application_id')->where('application_type', 'ec');
+    }
 
     public function environmentProject(): BelongsTo
     {

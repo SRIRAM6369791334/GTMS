@@ -15,6 +15,8 @@ use App\Models\DocumentField;
 use App\Models\EnvironmentProject;
 use App\Models\EnvironmentDocument;
 use App\Models\ActivityLog;
+use App\Models\ApplicationHandler;
+use App\Models\ApplicationPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -120,6 +122,11 @@ class MiningController extends Controller
                     'mineral_ids'              => $mineralIds,
                     'other_mineral_name'       => $resumeApp->other_mineral_name ?? ($lease?->other_mineral_name ?? ''),
                     'existing_docs'            => $resumeApp->documents,
+                    'handlers'                 => $resumeApp->handlers ?? collect(),
+                    'product_value'            => $resumeApp->product_value ?? 0,
+                    'paid_amount'              => $resumeApp->paid_amount ?? 0,
+                    'pending_amount'           => $resumeApp->pending_amount ?? 0,
+                    'payment_status'           => $resumeApp->payment_status ?? 'pending',
                 ];
             }
         } elseif ($request->filled('lease_id')) {
@@ -153,6 +160,11 @@ class MiningController extends Controller
                     'mineral_ids'              => $mineralIds,
                     'other_mineral_name'       => $lease->other_mineral_name ?? '',
                     'existing_docs'            => $lease->documents,
+                    'handlers'                 => $lease->handlers ?? collect(),
+                    'product_value'            => $lease->product_value ?? 0,
+                    'paid_amount'              => $lease->paid_amount ?? 0,
+                    'pending_amount'           => $lease->pending_amount ?? 0,
+                    'payment_status'           => $lease->payment_status ?? 'pending',
                 ];
             }
         }
@@ -276,6 +288,11 @@ class MiningController extends Controller
             $customerId = $customer->id;
         }
 
+        $prodVal = (float)$request->input('product_value', 0);
+        $paidVal = (float)$request->input('paid_amount', 0);
+        $pendingVal = max(0, $prodVal - $paidVal);
+        $payStatus = $request->input('payment_status') ?: ($paidVal <= 0 ? 'pending' : ($pendingVal <= 0 ? 'paid' : 'partial'));
+
         if ($request->filled('mining_app_id')) {
             $miningApp = MiningApplication::findOrFail($request->input('mining_app_id'));
             $appUpdates = [
@@ -290,6 +307,10 @@ class MiningController extends Controller
                 'village'             => $request->village,
                 'survey_numbers_text' => $request->survey_numbers_text,
                 'area_extent_ha'      => $request->area_extent_ha,
+                'product_value'       => $prodVal,
+                'paid_amount'         => $paidVal,
+                'pending_amount'      => $pendingVal,
+                'payment_status'      => $payStatus,
                 'status'              => 'draft',
             ];
 
@@ -323,11 +344,51 @@ class MiningController extends Controller
                 'village'             => $request->village,
                 'survey_numbers_text' => $request->survey_numbers_text,
                 'area_extent_ha'      => $request->area_extent_ha,
+                'product_value'       => $prodVal,
+                'paid_amount'         => $paidVal,
+                'pending_amount'      => $pendingVal,
+                'payment_status'      => $payStatus,
                 'stage'               => '6.1',
                 'status'              => 'draft',
                 'branch_id'           => Auth::user()->branch_id ?? null,
                 'created_by'          => Auth::id(),
             ]);
+        }
+
+        // Persist polymorphic application_payments
+        ApplicationPayment::updateOrCreate(
+            [
+                'application_type' => 'mining',
+                'application_id'   => $miningApp->id,
+            ],
+            [
+                'payable_type'   => MiningApplication::class,
+                'payable_id'     => $miningApp->id,
+                'product_value'  => $prodVal,
+                'paid_amount'    => $paidVal,
+                'pending_amount' => $pendingVal,
+                'payment_status' => $payStatus,
+            ]
+        );
+
+        // Persist Handlers
+        $handlers = $request->input('handlers', []);
+        if (is_array($handlers)) {
+            ApplicationHandler::where('application_type', 'mining')->where('application_id', $miningApp->id)->delete();
+            foreach ($handlers as $idx => $h) {
+                if (!empty($h['name'])) {
+                    ApplicationHandler::create([
+                        'application_type' => 'mining',
+                        'application_id'   => $miningApp->id,
+                        'handlerable_type' => MiningApplication::class,
+                        'handlerable_id'   => $miningApp->id,
+                        'name'             => trim($h['name']),
+                        'role'             => trim($h['role'] ?? ''),
+                        'notes'            => trim($h['notes'] ?? ''),
+                        'sort_order'       => $idx,
+                    ]);
+                }
+            }
         }
 
         // Sync multiple minerals to pivot table
@@ -501,7 +562,7 @@ class MiningController extends Controller
 
         // If specific ID is provided -> Show Full Application Dossier
         if ($appId) {
-            $application = MiningApplication::with(['customer', 'district', 'mineral', 'minerals', 'planType', 'natureOfWork', 'documents', 'leaseApplication'])->find($appId);
+            $application = MiningApplication::with(['customer', 'district', 'mineral', 'minerals', 'planType', 'natureOfWork', 'documents', 'leaseApplication', 'handlers'])->find($appId);
             
             if (!$application) {
                 return redirect()->route('projectfolder')->with('error', 'The requested mining application dossier was not found.');

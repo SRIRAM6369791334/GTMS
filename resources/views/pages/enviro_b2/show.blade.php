@@ -111,6 +111,11 @@
                   @endif
                 </td>
                 <td class="text-end">
+                  @if($document->file_path)
+                  <a href="{{ asset('storage/' . $document->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info me-1" title="View Document in separate page">
+                    <i class="fa fa-eye"></i> View
+                  </a>
+                  @endif
                   @can('environment.b2.upload')
                   <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#upload{{ $document->id }}">
                     <i class="fa fa-upload me-1"></i>Upload

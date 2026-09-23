@@ -135,4 +135,9 @@ class Customer extends Model
     {
         return $this->hasMany(EcCertificate::class);
     }
+
+    public function ecCompliances(): HasMany
+    {
+        return $this->hasMany(EcCompliance::class);
+    }
 }

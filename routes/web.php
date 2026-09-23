@@ -17,6 +17,7 @@ use App\Http\Controllers\PptDepartmentController;
 use App\Http\Controllers\EcCertificateController;
 use App\Http\Controllers\DgpsSurveyController;
 use App\Http\Controllers\DroneSurveyController;
+use App\Http\Controllers\EcComplianceController;
 
 use App\Http\Controllers\CustomerDirectoryController;
 use App\Http\Controllers\CustomerTrackingController;
@@ -45,6 +46,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/customer-tracking', [CustomerTrackingController::class, 'index'])->name('customer-tracking.index');
         Route::get('/customer-tracking/search', [CustomerTrackingController::class, 'search'])->name('customer-tracking.search');
         Route::get('/customer-tracking/{customer}', [CustomerTrackingController::class, 'show'])->name('customer-tracking.show');
+        Route::get('/customer-tracking/{customer}/proforma-invoice', [CustomerTrackingController::class, 'proformaInvoice'])->name('customer-tracking.proforma-invoice');
+        Route::get('/customer-tracking/{customer}/tax-invoice', [CustomerTrackingController::class, 'taxInvoice'])->name('customer-tracking.tax-invoice');
     });
     Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->name('customers.lookup.mimas');
     Route::post('/customeradd', [CustomerDirectoryController::class, 'store'])->name('customeradd')->middleware('permission:customer.create');
@@ -111,6 +114,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/step6', [CustomerController::class, 'step6'])->name('step6');
         Route::post('/step6', [CustomerController::class, 'saveStep6'])->name('step6.save');
         Route::get('/step7', [CustomerController::class, 'step7'])->name('step7');
+        Route::post('/step7', [CustomerController::class, 'saveStep7'])->name('step7.save');
+        Route::get('/step8', [CustomerController::class, 'step8'])->name('step8');
         Route::post('/application/submit', [CustomerController::class, 'submit'])->name('application.submit');
         Route::get('/application/{id}/resume', [CustomerController::class, 'resumeDraft'])->name('application.resume');
     });
@@ -181,6 +186,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:environment.b2.upload')->group(function () {
         // Unified document upload (for B1 & B2 via eviron/{id})
         Route::post('/eviron/{id}/documents/{document}/upload', [EnverionsoneController::class, 'uploadDocument'])->name('eviron.documents.upload');
+        Route::post('/eviron/{id}/documents/add', [EnverionsoneController::class, 'addDocument'])->name('eviron.documents.add');
 
         // B2 legacy upload
         Route::post('/environment-b2/documents/{document}/upload', [EnvironmentalB2Controller::class, 'upload'])->name('environment-b2.documents.upload');
@@ -213,18 +219,36 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:ppt.view')->group(function () {
         Route::get('/ppt-department', [PptDepartmentController::class, 'index'])->name('ppt-department.index');
         Route::get('/ppt-department/step/{step}', [PptDepartmentController::class, 'wizard'])->whereNumber('step')->name('ppt-department.step');
+        Route::post('/ppt-department/step/{step}', [PptDepartmentController::class, 'saveStep'])->whereNumber('step')->name('ppt-department.saveStep');
+        Route::post('/ppt-department', [PptDepartmentController::class, 'store'])->name('ppt-department.store');
+        Route::get('/ppt-department/{id}', [PptDepartmentController::class, 'show'])->whereNumber('id')->name('ppt-department.show');
+        Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
     });
 
     // DGPS Survey
     Route::middleware('permission:dgps.view')->group(function () {
         Route::get('/dgps-survey', [DgpsSurveyController::class, 'index'])->name('dgps-survey.index');
         Route::get('/dgps-survey/step/{step}', [DgpsSurveyController::class, 'wizard'])->whereNumber('step')->name('dgps-survey.step');
+        Route::post('/dgps-survey/step/{step}', [DgpsSurveyController::class, 'saveStep'])->whereNumber('step')->name('dgps-survey.saveStep');
+        Route::post('/dgps-survey', [DgpsSurveyController::class, 'store'])->name('dgps-survey.store');
+        Route::get('/dgps-survey/{id}', [DgpsSurveyController::class, 'show'])->whereNumber('id')->name('dgps-survey.show');
+        Route::post('/dgps-survey/upload', [DgpsSurveyController::class, 'uploadDocument'])->name('dgps-survey.upload');
     });
 
     // Drone Survey
     Route::middleware('permission:drone.view')->group(function () {
         Route::get('/drone-survey', [DroneSurveyController::class, 'index'])->name('drone-survey.index');
         Route::get('/drone-survey/step/{step}', [DroneSurveyController::class, 'wizard'])->whereNumber('step')->name('drone-survey.step');
+    });
+
+    // EC Compliance (Half Yearly Compliance)
+    Route::middleware('permission:environment.view')->group(function () {
+        Route::get('/ec-compliance', [EcComplianceController::class, 'index'])->name('ec-compliance.index');
+        Route::get('/ec-compliance/step/{step}', [EcComplianceController::class, 'wizard'])->whereNumber('step')->name('ec-compliance.step');
+        Route::post('/ec-compliance/step/{step}', [EcComplianceController::class, 'saveStep'])->whereNumber('step')->name('ec-compliance.saveStep');
+        Route::post('/ec-compliance', [EcComplianceController::class, 'store'])->name('ec-compliance.store');
+        Route::get('/ec-compliance/{id}', [EcComplianceController::class, 'show'])->whereNumber('id')->name('ec-compliance.show');
+        Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
     });
 
 });

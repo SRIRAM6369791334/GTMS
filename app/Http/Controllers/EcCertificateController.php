@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\ApplicationHandler;
+use App\Models\ApplicationPayment;
 use App\Models\Customer;
 use App\Models\EcCertificate;
 use App\Models\EnvironmentProject;
@@ -63,7 +65,7 @@ class EcCertificateController extends Controller
      */
     public function wizard(int $step, Request $request)
     {
-        abort_unless($step >= 1 && $step <= 6, 404);
+        abort_unless($step >= 1 && $step <= 8, 404);
 
         $draft = session('ec_wizard', []);
 
@@ -142,7 +144,9 @@ class EcCertificateController extends Controller
             session(['ec_wizard' => $draft]);
         }
 
-        return view('pages.ec_certificate.wizard', compact('step', 'approvedProjects', 'selectedProject', 'draft', 'maxUnlockedStep'));
+        $customers = \App\Models\Customer::withTrashed()->orderBy('customer_name')->get();
+
+        return view('pages.ec_certificate.wizard', compact('step', 'approvedProjects', 'selectedProject', 'draft', 'maxUnlockedStep', 'customers'));
     }
 
     /**
@@ -161,6 +165,12 @@ class EcCertificateController extends Controller
                         $max = 5;
                         if (!empty($draft['step5']['recipient_email'])) {
                             $max = 6;
+                            if (isset($draft['step6'])) {
+                                $max = 7;
+                                if (isset($draft['step7'])) {
+                                    $max = 8;
+                                }
+                            }
                         }
                     }
                 }
@@ -174,7 +184,7 @@ class EcCertificateController extends Controller
      */
     public function saveStep(Request $request, int $step)
     {
-        abort_unless($step >= 1 && $step <= 6, 404);
+        abort_unless($step >= 1 && $step <= 8, 404);
 
         $draft = session('ec_wizard', []);
         $maxUnlockedStep = $this->getMaxUnlockedStep($draft);
@@ -300,10 +310,38 @@ class EcCertificateController extends Controller
                 $draft['step5'] = $validated;
                 session(['ec_wizard' => $draft]);
                 return redirect()->route('ec-certificate.step', 6)
-                    ->with('success', 'Step 5 saved. Final verification before issuance.');
+                    ->with('success', 'Step 5 saved. Assign handling team members.');
 
             case 6:
-                // Final submission from Step 6 preview
+                // Step 6: Handling Team
+                $handlers = $request->input('handlers', []);
+                $draft['step6'] = [
+                    'handlers' => $handlers,
+                ];
+                session(['ec_wizard' => $draft]);
+                return redirect()->route('ec-certificate.step', 7)
+                    ->with('success', 'Step 6 saved. Record payment and financial settlement.');
+
+            case 7:
+                // Step 7: Payment & Financial Settlement
+                $pv = (float) $request->input('product_value', 0);
+                $pa = (float) $request->input('paid_amount', 0);
+                $pe = max(0, $pv - $pa);
+                $pStatus = $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
+
+                $draft['step7'] = [
+                    'product_value'  => $pv,
+                    'paid_amount'    => $pa,
+                    'pending_amount' => $pe,
+                    'payment_status' => $pStatus,
+                    'notes'          => $request->input('payment_notes'),
+                ];
+                session(['ec_wizard' => $draft]);
+                return redirect()->route('ec-certificate.step', 8)
+                    ->with('success', 'Step 7 saved. Final verification before issuance.');
+
+            case 8:
+                // Final submission from Step 8 preview
                 return $this->store($request);
         }
 
@@ -404,6 +442,11 @@ class EcCertificateController extends Controller
                 $applicantName = substr(trim((string) $applicantName), 0, 255);
                 $conditionsSummary = $conditionsSummary ? substr(trim((string) $conditionsSummary), 0, 2000) : null;
 
+                $pv = (float) ($draft['step7']['product_value'] ?? $request->input('product_value', 0));
+                $pa = (float) ($draft['step7']['paid_amount'] ?? $request->input('paid_amount', 0));
+                $pe = max(0, $pv - $pa);
+                $pStatus = $draft['step7']['payment_status'] ?? $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
+
                 // Upsert or create certificate record
                 $certificate = EcCertificate::updateOrCreate(
                     ['ec_ref_no' => $ecRefNo],
@@ -419,10 +462,47 @@ class EcCertificateController extends Controller
                         'communication_type'     => $communicationType,
                         'certificate_file'       => $filePath,
                         'conditions_summary'     => $conditionsSummary,
+                        'product_value'          => $pv,
+                        'paid_amount'            => $pa,
+                        'pending_amount'         => $pe,
+                        'payment_status'         => $pStatus,
                         'status'                 => 'active',
                         'created_by'             => Auth::id() ?? 1,
                     ]
                 );
+
+                // Save EC Application Handlers
+                $handlersList = $draft['step6']['handlers'] ?? $request->input('handlers', []);
+                if (is_array($handlersList)) {
+                    foreach ($handlersList as $idx => $h) {
+                        $name = trim($h['person_name'] ?? ($h['name'] ?? ''));
+                        if (!empty($name)) {
+                            ApplicationHandler::create([
+                                'application_type' => 'ec',
+                                'application_id'   => $certificate->id,
+                                'handlerable_type' => EcCertificate::class,
+                                'handlerable_id'   => $certificate->id,
+                                'name'             => $name,
+                                'role'             => $h['role'] ?? 'Environmental Officer',
+                                'notes'            => $h['notes'] ?? null,
+                                'sort_order'       => $idx + 1,
+                            ]);
+                        }
+                    }
+                }
+
+                // Save EC Application Payment
+                ApplicationPayment::create([
+                    'application_type' => 'ec',
+                    'application_id'   => $certificate->id,
+                    'payable_type'     => EcCertificate::class,
+                    'payable_id'       => $certificate->id,
+                    'product_value'    => $pv,
+                    'paid_amount'      => $pa,
+                    'pending_amount'   => $pe,
+                    'payment_status'   => $pStatus,
+                    'notes'            => $draft['step7']['notes'] ?? 'EC Certificate Issuance Fee',
+                ]);
 
                 // Promote project status to approved / reported
                 $project->update(['status' => 'approved']);
@@ -443,7 +523,7 @@ class EcCertificateController extends Controller
             });
         } catch (\Throwable $e) {
             Log::error('Failed to issue EC Certificate: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->route('ec-certificate.step', 6)
+            return redirect()->route('ec-certificate.step', 8)
                 ->with('error', 'Failed to issue EC Certificate: ' . $e->getMessage());
         }
     }

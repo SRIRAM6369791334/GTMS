@@ -33,17 +33,34 @@ class DroneSurvey extends Model
         'survey_status',
         'deliverable_files_path',
         'gtms_report_file',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'branch_id',
         'created_by',
     ];
 
     protected $casts = [
-        'flight_date' => 'date',
-        'lease_area' => 'decimal:2',
-        'altitude_meters' => 'decimal:2',
-        'gsd_cm_px' => 'decimal:2',
+        'flight_date'          => 'date',
+        'lease_area'           => 'decimal:2',
+        'altitude_meters'      => 'decimal:2',
+        'gsd_cm_px'            => 'decimal:2',
         'extracted_volume_cbm' => 'decimal:2',
+        'product_value'        => 'decimal:2',
+        'paid_amount'          => 'decimal:2',
+        'pending_amount'       => 'decimal:2',
     ];
+
+    public function handlers(): HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'drone')->orderBy('sort_order');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ApplicationPayment::class, 'application_id')->where('application_type', 'drone');
+    }
 
     public function customer(): BelongsTo
     {

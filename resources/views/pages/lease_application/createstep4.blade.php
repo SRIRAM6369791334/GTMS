@@ -12,7 +12,9 @@
     <div class="sp-step done"><div class="circ"><i class="bi bi-check-lg"></i></div><div class="sp-label">Category</div></div>
     <div class="sp-step active"><div class="circ">4</div><div class="sp-label">Folders</div></div>
     <div class="sp-step"><div class="circ">5</div><div class="sp-label">Documents</div></div>
-    <div class="sp-step"><div class="circ">6</div><div class="sp-label">Review</div></div>
+    <div class="sp-step"><div class="circ">6</div><div class="sp-label">Handlers</div></div>
+    <div class="sp-step"><div class="circ">7</div><div class="sp-label">Payment</div></div>
+    <div class="sp-step"><div class="circ">8</div><div class="sp-label">Review</div></div>
   </div>
 
   @php
@@ -36,7 +38,7 @@
   @endphp
 
   <div class="wizard-card">
-    <div class="wc-eyebrow">Step 4 of 6</div>
+    <div class="wc-eyebrow">Step 4 of 8</div>
     <h4>Folders</h4>
     <div class="wc-sub">Your documents are organised into three regulatory folders. Click open documents to view and upload files against the checklist.</div>
 

@@ -34,16 +34,33 @@ class DgpsSurvey extends Model
         'report_status',
         'gtm_report_file',
         'autocad_dwg_file',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'branch_id',
         'created_by',
     ];
 
     protected $casts = [
-        'survey_date' => 'date',
-        'lease_area_ha' => 'decimal:2',
-        'surveyed_area_ha' => 'decimal:2',
+        'survey_date'         => 'date',
+        'lease_area_ha'       => 'decimal:2',
+        'surveyed_area_ha'    => 'decimal:2',
         'area_discrepancy_ha' => 'decimal:2',
+        'product_value'       => 'decimal:2',
+        'paid_amount'         => 'decimal:2',
+        'pending_amount'      => 'decimal:2',
     ];
+
+    public function handlers(): HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'dgps')->orderBy('sort_order');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ApplicationPayment::class, 'application_id')->where('application_type', 'dgps');
+    }
 
     public function customer(): BelongsTo
     {

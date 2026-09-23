@@ -35,6 +35,10 @@ class LeaseApplication extends Model
         'contact_mobile',
         'secondary_contact_mobile',
         'current_step',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'status',
         'go_number',
         'go_date',
@@ -47,12 +51,20 @@ class LeaseApplication extends Model
 
     protected $casts = [
         'area_extent_ha' => 'decimal:2',
+        'product_value' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'pending_amount' => 'decimal:2',
         'start_date' => 'date',
         'end_date' => 'date',
         'go_date' => 'date',
         'current_step' => 'integer',
         'lease_period_years' => 'integer',
     ];
+
+    public function handlers(): HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'lease')->orderBy('sort_order');
+    }
 
     public function customer(): BelongsTo
     {

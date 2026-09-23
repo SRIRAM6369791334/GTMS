@@ -78,7 +78,15 @@
                         </div>
                         <div class="flow-connector"></div>
                         <div class="flow-step" id="stepNode_6">
-                            <div class="node"><div class="circle" id="circle_preview">7</div><div class="lbl">Preview</div></div>
+                            <div class="node"><div class="circle" id="circle_handlers">7</div><div class="lbl">Handling Team</div></div>
+                        </div>
+                        <div class="flow-connector"></div>
+                        <div class="flow-step" id="stepNode_7">
+                            <div class="node"><div class="circle" id="circle_payment">8</div><div class="lbl">Payment</div></div>
+                        </div>
+                        <div class="flow-connector"></div>
+                        <div class="flow-step" id="stepNode_8">
+                            <div class="node"><div class="circle" id="circle_preview">9</div><div class="lbl">Preview</div></div>
                         </div>
                     </div>
                 </div>
@@ -662,14 +670,180 @@
                         </div>
 
                         {{-- ========================================================== --}}
-                        {{-- STEP 7: APPLICATION SUMMARY & SUBMISSION --}}
+                        {{-- STEP 7: PROJECT HANDLING PERSONS / MULTI-USER ALLOCATION   --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_6">
-                            <span class="small-caps-label text-primary fw-semibold"><i class="bi bi-card-checklist me-1"></i>Step 6 &middot; Review &amp; Launch</span>
+                            <span class="small-caps-label text-primary fw-semibold"><i class="bi bi-people-fill me-1"></i>Step <span class="lbl-step-num-handlers">7</span> &middot; Handling Persons</span>
+                            <h2 class="h5 fw-bold mt-1 mb-2">Project Handling Team Allocation</h2>
+                            <p class="text-muted small mb-3">Assign internal staff, surveyors, or consulting officers responsible for executing this mining application.</p>
+
+                            <div class="card p-3 p-lg-4 mb-4 rounded-3 border shadow-sm" style="background:#f8fafc;">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-navy"><i class="bi bi-person-lines-fill text-primary me-2"></i>Designated Application Handlers</h6>
+                                        <div class="text-muted small">Add multiple team members and specify their roles manually.</div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-navy" id="btn_add_mining_handler">
+                                        <i class="bi bi-person-plus-fill me-1"></i>+ Add Person
+                                    </button>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle bg-white mb-0" id="mining_handlers_table">
+                                        <thead class="table-light" style="font-size:0.85rem;">
+                                            <tr>
+                                                <th style="width: 50px;" class="text-center">#</th>
+                                                <th style="min-width: 220px;">Person / Executive Name <span class="text-danger">*</span></th>
+                                                <th style="min-width: 200px;">Role / Designation <span class="text-danger">*</span></th>
+                                                <th style="min-width: 260px;">Notes / Responsibilities</th>
+                                                <th style="width: 70px;" class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="mining_handlers_tbody">
+                                            @if(!empty($prefillData['handlers']) && count($prefillData['handlers']) > 0)
+                                                @foreach($prefillData['handlers'] as $hIdx => $h)
+                                                    <tr id="handler_row_{{ $hIdx }}">
+                                                        <td class="text-center text-muted fw-semibold handler-idx-col">{{ $loop->iteration }}</td>
+                                                        <td><input type="text" name="handlers[{{ $hIdx }}][name]" class="form-control form-control-sm handler-name-input" placeholder="e.g. Ramesh Kumar" value="{{ $h->name ?? '' }}" required></td>
+                                                        <td><input type="text" name="handlers[{{ $hIdx }}][role]" class="form-control form-control-sm handler-role-input" placeholder="e.g. Surveyor / Engineer" value="{{ $h->role ?? '' }}" required></td>
+                                                        <td><input type="text" name="handlers[{{ $hIdx }}][notes]" class="form-control form-control-sm" placeholder="e.g. Field inspection & DGPS logs" value="{{ $h->notes ?? '' }}"></td>
+                                                        <td class="text-center">
+                                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-mining-handler" data-idx="{{ $hIdx }}" title="Remove Person">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            @endif
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="text-muted small mt-2 d-flex align-items-center gap-1">
+                                    <i class="bi bi-info-circle text-primary"></i>
+                                    <span>Roles can be freely typed (e.g. <em>Surveyor, Mining Engineer, Liaison Officer, Documentation In-Charge</em>).</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ========================================================== --}}
+                        {{-- STEP 8: PAYMENT & FINANCIAL SETTLEMENT                     --}}
+                        {{-- ========================================================== --}}
+                        <div class="wizard-pane d-none" id="pane_7">
+                            <span class="small-caps-label text-primary fw-semibold"><i class="bi bi-cash-stack me-1"></i>Step <span class="lbl-step-num-payment">8</span> &middot; Payment Details</span>
+                            <h2 class="h5 fw-bold mt-1 mb-2">Financial &amp; Billing Ledger</h2>
+                            <p class="text-muted small mb-3">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
+
+                            <!-- Financial Summary KPI Cards -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-6 col-md-3">
+                                    <div class="p-3 bg-white border rounded-3 shadow-xs h-100 border-start border-primary border-4">
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 11px;">Product Value</div>
+                                        <div class="h5 fw-bold text-navy mb-0 mt-1" id="disp_mining_product_val">₹ {{ number_format((float)($prefillData['product_value'] ?? 0), 2) }}</div>
+                                        <small class="text-muted" style="font-size: 11px;">Project Billing Cost</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-3 bg-white border rounded-3 shadow-xs h-100 border-start border-success border-4">
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 11px;">Paid Amount</div>
+                                        <div class="h5 fw-bold text-success mb-0 mt-1" id="disp_mining_paid_val">₹ {{ number_format((float)($prefillData['paid_amount'] ?? 0), 2) }}</div>
+                                        <small class="text-muted" style="font-size: 11px;">Received Advance</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-3 bg-white border rounded-3 shadow-xs h-100 border-start border-danger border-4">
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 11px;">Pending Balance</div>
+                                        <div class="h5 fw-bold text-danger mb-0 mt-1" id="disp_mining_pending_val">₹ {{ number_format((float)($prefillData['pending_amount'] ?? 0), 2) }}</div>
+                                        <small class="text-muted" style="font-size: 11px;">Auto-calculated balance</small>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-3 bg-white border rounded-3 shadow-xs h-100 border-start border-info border-4">
+                                        <div class="text-muted small fw-semibold text-uppercase" style="font-size: 11px;">Settlement Status</div>
+                                        <div class="mt-1" id="disp_mining_status_badge">
+                                            @php
+                                                $curStatus = $prefillData['payment_status'] ?? 'pending';
+                                            @endphp
+                                            @if($curStatus === 'paid')
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">🟢 Paid (Settled)</span>
+                                            @elseif($curStatus === 'partial')
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">🟡 Partial Payment</span>
+                                            @else
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">🔴 Pending Full Due</span>
+                                            @endif
+                                        </div>
+                                        <small class="text-muted" style="font-size: 11px;">Ledger category</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Inputs -->
+                            <div class="card p-4 rounded-3 border shadow-sm bg-white mb-3">
+                                <h6 class="fw-bold text-navy mb-3"><i class="bi bi-wallet2 text-success me-2"></i>Payment Breakdown &amp; Status</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Product / Service Value (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                                            <input type="number" step="0.01" min="0" class="form-control fw-bold text-navy" 
+                                                   id="mining_product_value" name="product_value" 
+                                                   value="{{ old('product_value', $prefillData['product_value'] ?? '0.00') }}" placeholder="0.00" required>
+                                        </div>
+                                        <div class="form-text" style="font-size:11px;">Total statutory project charges.</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Paid Amount (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                                            <input type="number" step="0.01" min="0" class="form-control fw-bold text-success" 
+                                                   id="mining_paid_amount" name="paid_amount" 
+                                                   value="{{ old('paid_amount', $prefillData['paid_amount'] ?? '0.00') }}" placeholder="0.00" required>
+                                        </div>
+                                        <div class="form-text" style="font-size:11px;">Advance or amount paid so far.</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-semibold">Pending Balance (₹)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light fw-bold text-muted">₹</span>
+                                            <input type="number" step="0.01" class="form-control fw-bold text-danger bg-light" 
+                                                   id="mining_pending_amount" name="pending_amount" 
+                                                   value="{{ old('pending_amount', $prefillData['pending_amount'] ?? '0.00') }}" readonly placeholder="0.00">
+                                        </div>
+                                        <div class="form-text text-muted" style="font-size:11px;">Auto-calculated: (Value &minus; Paid).</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Settlement Status <span class="text-danger">*</span></label>
+                                        <select class="form-select fw-semibold" id="mining_payment_status" name="payment_status" required>
+                                            <option value="pending" {{ old('payment_status', $prefillData['payment_status'] ?? 'pending') == 'pending' ? 'selected' : '' }}>Pending (No payment received)</option>
+                                            <option value="partial" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'partial' ? 'selected' : '' }}>Partial (Partially paid, balance pending)</option>
+                                            <option value="paid" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>Paid (Fully settled)</option>
+                                        </select>
+                                        <div class="form-text" style="font-size:11px;">Auto-selects based on amounts, or select manually.</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-semibold">Payment Notes / Transaction Reference</label>
+                                        <input type="text" class="form-control" id="mining_payment_notes" name="payment_notes" 
+                                               placeholder="e.g. Advance paid via NEFT Ref: UTR291840, Cheque #10294" 
+                                               value="{{ old('payment_notes', '') }}">
+                                        <div class="form-text" style="font-size:11px;">Optional transaction details or instrument reference.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ========================================================== --}}
+                        {{-- STEP 9: APPLICATION SUMMARY & SUBMISSION                   --}}
+                        {{-- ========================================================== --}}
+                        <div class="wizard-pane d-none" id="pane_8">
+                            <span class="small-caps-label text-primary fw-semibold"><i class="bi bi-card-checklist me-1"></i>Step <span class="lbl-step-num-preview">9</span> &middot; Review &amp; Launch</span>
                             <h2 class="h5 fw-bold mt-1 mb-2">Application Summary</h2>
                             <p class="text-muted small mb-3">Verify the applicant and project details below before generating the statutory folder dossier.</p>
 
-                            <div class="card-panel mt-3 mb-4 p-4 rounded-3 border" style="background:#f8fafc;">
+                            <div class="card-panel mt-3 mb-3 p-4 rounded-3 border" style="background:#f8fafc;">
                                 <div class="row g-3" style="font-size: 0.9rem;">
                                     <div class="col-md-4">
                                         <span class="text-muted small">Client / Enterprise:</span> <br>
@@ -706,6 +880,50 @@
                                     <div class="col-12 border-top pt-2">
                                         <span class="text-muted small">Site Location Details:</span> <br>
                                         <span class="text-dark" id="prev_location">-</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Team Allocation & Financial Ledger Review Row -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-lg-7">
+                                    <div class="card p-3 rounded-3 border bg-white h-100 shadow-xs">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                            <span class="fw-bold text-navy small"><i class="bi bi-people-fill text-primary me-1"></i>Project Handling Team</span>
+                                            <span class="badge bg-light text-dark border" id="prev_handler_count_badge">0 Members</span>
+                                        </div>
+                                        <div id="prev_handlers_box">
+                                            <span class="text-muted small fst-italic">No handlers assigned</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-5">
+                                    <div class="card p-3 rounded-3 border bg-white h-100 shadow-xs">
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+                                            <span class="fw-bold text-navy small"><i class="bi bi-cash-stack text-success me-1"></i>Financial &amp; Billing Ledger</span>
+                                            <span id="prev_pay_status"><span class="badge bg-secondary">Pending</span></span>
+                                        </div>
+                                        <div class="row g-2 text-center mt-1">
+                                            <div class="col-4">
+                                                <div class="p-2 border rounded bg-light">
+                                                    <span class="text-muted d-block" style="font-size:0.7rem;">Product Value</span>
+                                                    <b class="text-navy" style="font-size:0.85rem;" id="prev_pay_value">₹ 0.00</b>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2 border rounded bg-light">
+                                                    <span class="text-muted d-block" style="font-size:0.7rem;">Paid Amount</span>
+                                                    <b class="text-success" style="font-size:0.85rem;" id="prev_pay_paid">₹ 0.00</b>
+                                                </div>
+                                            </div>
+                                            <div class="col-4">
+                                                <div class="p-2 border rounded bg-light">
+                                                    <span class="text-muted d-block" style="font-size:0.7rem;">Pending Balance</span>
+                                                    <b class="text-danger" style="font-size:0.85rem;" id="prev_pay_pending">₹ 0.00</b>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -954,17 +1172,27 @@
                 document.getElementById('circle_district').textContent = '4';
                 document.getElementById('circle_folders').textContent = '5';
                 document.getElementById('circle_upload').textContent = '6';
-                document.getElementById('circle_preview').textContent = '7';
+                document.getElementById('circle_handlers').textContent = '7';
+                document.getElementById('circle_payment').textContent = '8';
+                document.getElementById('circle_preview').textContent = '9';
+                $('.lbl-step-num-handlers').text('7');
+                $('.lbl-step-num-payment').text('8');
+                $('.lbl-step-num-preview').text('9');
             } else {
                 stepNode2.style.display = 'none';
                 connMineral.style.display = 'none';
                 document.getElementById('circle_district').textContent = '3';
                 document.getElementById('circle_folders').textContent = '4';
                 document.getElementById('circle_upload').textContent = '5';
-                document.getElementById('circle_preview').textContent = '6';
+                document.getElementById('circle_handlers').textContent = '6';
+                document.getElementById('circle_payment').textContent = '7';
+                document.getElementById('circle_preview').textContent = '8';
+                $('.lbl-step-num-handlers').text('6');
+                $('.lbl-step-num-payment').text('7');
+                $('.lbl-step-num-preview').text('8');
             }
 
-            for (var i = 0; i <= 6; i++) {
+            for (var i = 0; i <= 8; i++) {
                 var node = document.getElementById('stepNode_' + i);
                 if (node) {
                     node.classList.remove('active', 'done');
@@ -1001,7 +1229,7 @@
         toggleOtherMineralBox();
 
         function showStep(step) {
-            for (var i = 0; i <= 6; i++) {
+            for (var i = 0; i <= 8; i++) {
                 var p = document.getElementById('pane_' + i);
                 if (p) p.classList.add('d-none');
             }
@@ -1012,8 +1240,8 @@
             updateStepperUI(step);
 
             btnPrev.style.display = step === 0 ? 'none' : 'inline-flex';
-            btnNext.style.display = step === 6 ? 'none' : 'inline-flex';
-            btnSubmit.style.display = step === 6 ? 'inline-flex' : 'none';
+            btnNext.style.display = step === 8 ? 'none' : 'inline-flex';
+            btnSubmit.style.display = step === 8 ? 'inline-flex' : 'none';
         }
 
         function validateCurrentStep(step) {
@@ -1054,6 +1282,33 @@
             if (step === 3) {
                 var did = document.getElementById('district_id').value;
                 if (!did) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a District.', confirmButtonColor: '#0F1E4D' }); return false; }
+            }
+            if (step === 6) {
+                var handlerRows = $('#mining_handlers_tbody tr');
+                var hasInvalidHandler = false;
+                handlerRows.each(function() {
+                    var n = $(this).find('.handler-name-input').val().trim();
+                    var r = $(this).find('.handler-role-input').val().trim();
+                    if ((n && !r) || (!n && r)) {
+                        hasInvalidHandler = true;
+                    }
+                });
+                if (hasInvalidHandler) {
+                    Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please provide both Name and Role for each assigned handling person.', confirmButtonColor: '#0F1E4D' });
+                    return false;
+                }
+            }
+            if (step === 7) {
+                var pVal = parseFloat($('#mining_product_value').val()) || 0;
+                var pPaid = parseFloat($('#mining_paid_amount').val()) || 0;
+                if (pVal < 0 || pPaid < 0) {
+                    Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Product Value and Paid Amount cannot be negative.', confirmButtonColor: '#0F1E4D' });
+                    return false;
+                }
+                if (pPaid > pVal && pVal > 0) {
+                    Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Paid Amount cannot exceed Product Value.', confirmButtonColor: '#0F1E4D' });
+                    return false;
+                }
             }
             return true;
         }
@@ -1227,6 +1482,18 @@
                 if (btn) {
                     btn.innerHTML = '<i class="bi bi-pencil me-1"></i>Change';
                     btn.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-trigger-upload';
+                    var viewLink = row.querySelector('.btn-view-doc');
+                    var blobUrl = URL.createObjectURL(file);
+                    if (!viewLink) {
+                        viewLink = document.createElement('a');
+                        viewLink.className = 'btn btn-sm btn-outline-success py-1 px-2 btn-view-doc me-1';
+                        viewLink.target = '_blank';
+                        viewLink.rel = 'noopener noreferrer';
+                        viewLink.title = 'View attached document in separate page';
+                        viewLink.innerHTML = '<i class="bi bi-eye"></i>';
+                        btn.parentNode.insertBefore(viewLink, btn);
+                    }
+                    viewLink.href = blobUrl;
                 }
                 var removeBtn = row.querySelector('.btn-remove-file');
                 if (removeBtn) {
@@ -1249,6 +1516,10 @@
             }
 
             if (row) {
+                var viewLink = row.querySelector('.btn-view-doc');
+                if (viewLink) {
+                    viewLink.remove();
+                }
                 row.classList.remove('up');
                 var iconBox = row.querySelector('.ci-icon');
                 if (iconBox) {
@@ -1424,6 +1695,9 @@
                         (isMandatory ? 'Mandatory' : 'Optional') +
                     '</span>' +
                     '<span class="badge-status uploaded">Uploaded</span>' +
+                    '<a href="' + URL.createObjectURL(file) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success py-1 px-2 btn-view-doc" title="View attached document in separate page">' +
+                        '<i class="bi bi-eye"></i>' +
+                    '</a>' +
                     '<button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-custom-row" data-custom-id="' + customId + '" title="Remove custom document">' +
                         '<i class="bi bi-trash"></i>' +
                     '</button>' +
@@ -1538,7 +1812,149 @@
             }
             document.getElementById('prev_uploaded_docs').textContent = attachedCount + ' of ' + totalDocs + ' Files Attached';
             document.getElementById('prev_docs_meta').textContent = (totalDocs - attachedCount) + ' files can be uploaded later in dossier';
+
+            // Handlers preview
+            var handlerRows = $('#mining_handlers_tbody tr');
+            var validHandlers = [];
+            handlerRows.each(function() {
+                var hName = $(this).find('.handler-name-input').val().trim();
+                var hRole = $(this).find('.handler-role-input').val().trim();
+                var hNotes = $(this).find('input[name*="[notes]"]').val().trim();
+                if (hName) {
+                    validHandlers.push({ name: hName, role: hRole, notes: hNotes });
+                }
+            });
+
+            $('#prev_handler_count_badge').text(validHandlers.length + ' Members');
+            if (validHandlers.length > 0) {
+                var hHtml = '<table class="table table-sm table-borderless align-middle mb-0" style="font-size:0.83rem;">' +
+                    '<thead class="text-muted border-bottom" style="font-size:0.75rem;">' +
+                    '<tr><th style="width:30px;">#</th><th>Name</th><th>Role</th><th>Notes</th></tr>' +
+                    '</thead><tbody>';
+                validHandlers.forEach(function(h, idx) {
+                    hHtml += '<tr>' +
+                        '<td class="text-muted fw-bold">' + (idx + 1) + '</td>' +
+                        '<td class="fw-semibold text-navy"><i class="bi bi-person-badge text-primary me-1"></i> ' + escapeHtml(h.name) + '</td>' +
+                        '<td><span class="badge bg-secondary-subtle text-secondary border py-1 px-2">' + escapeHtml(h.role || 'Personnel') + '</span></td>' +
+                        '<td class="text-muted small">' + escapeHtml(h.notes || '—') + '</td>' +
+                    '</tr>';
+                });
+                hHtml += '</tbody></table>';
+                $('#prev_handlers_box').html(hHtml);
+            } else {
+                $('#prev_handlers_box').html('<span class="text-muted small fst-italic py-2"><i class="bi bi-info-circle me-1"></i> No project handling personnel assigned.</span>');
+            }
+
+            // Payment preview
+            var pVal = parseFloat($('#mining_product_value').val()) || 0;
+            var pPaid = parseFloat($('#mining_paid_amount').val()) || 0;
+            var pPending = Math.max(0, pVal - pPaid);
+            var pStat = $('#mining_payment_status').val() || 'pending';
+
+            $('#prev_pay_value').text('₹ ' + pVal.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+            $('#prev_pay_paid').text('₹ ' + pPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+            $('#prev_pay_pending').text('₹ ' + pPending.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+
+            var pBadge = '';
+            if (pStat === 'paid') {
+                pBadge = '<span class="badge bg-success text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟢 Paid</span>';
+            } else if (pStat === 'partial') {
+                pBadge = '<span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟡 Partial</span>';
+            } else {
+                pBadge = '<span class="badge bg-danger text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;">🔴 Pending</span>';
+            }
+            $('#prev_pay_status').html(pBadge);
         }
+
+        // ==========================================
+        // 5. STEP 7 & 8: DYNAMIC HANDLERS & REAL-TIME PAYMENT CALCULATION
+        // ==========================================
+        var miningHandlerIndex = {{ (!empty($prefillData['handlers']) && count($prefillData['handlers']) > 0) ? count($prefillData['handlers']) : 0 }};
+
+        function addMiningHandlerRow(name, role, notes) {
+            name = name || '';
+            role = role || '';
+            notes = notes || '';
+            var idx = miningHandlerIndex++;
+            var row = '<tr id="handler_row_' + idx + '">' +
+                '<td class="text-center text-muted fw-semibold handler-idx-col">1</td>' +
+                '<td><input type="text" name="handlers[' + idx + '][name]" class="form-control form-control-sm handler-name-input" placeholder="e.g. Ramesh Kumar" value="' + escapeHtml(name) + '" required></td>' +
+                '<td><input type="text" name="handlers[' + idx + '][role]" class="form-control form-control-sm handler-role-input" placeholder="e.g. Surveyor / Engineer" value="' + escapeHtml(role) + '" required></td>' +
+                '<td><input type="text" name="handlers[' + idx + '][notes]" class="form-control form-control-sm" placeholder="e.g. Field inspection & DGPS logs" value="' + escapeHtml(notes) + '"></td>' +
+                '<td class="text-center">' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-mining-handler" data-idx="' + idx + '" title="Remove Person">' +
+                        '<i class="bi bi-trash"></i>' +
+                    '</button>' +
+                '</td>' +
+            '</tr>';
+            $('#mining_handlers_tbody').append(row);
+            renumberMiningHandlers();
+        }
+
+        function renumberMiningHandlers() {
+            $('#mining_handlers_tbody tr').each(function(i, tr) {
+                $(tr).find('.handler-idx-col').text(i + 1);
+            });
+        }
+
+        $('#btn_add_mining_handler').on('click', function() {
+            addMiningHandlerRow();
+        });
+
+        $(document).on('click', '.btn-remove-mining-handler', function() {
+            $(this).closest('tr').remove();
+            renumberMiningHandlers();
+        });
+
+        // Initialize with 1 empty row if no prefilled handlers
+        if ($('#mining_handlers_tbody tr').length === 0) {
+            addMiningHandlerRow();
+        }
+
+        function calcMiningPayment() {
+            var val = parseFloat($('#mining_product_value').val()) || 0;
+            var paid = parseFloat($('#mining_paid_amount').val()) || 0;
+            var pending = Math.max(0, val - paid);
+
+            $('#mining_pending_amount').val(pending.toFixed(2));
+            $('#disp_mining_product_val').text('₹ ' + val.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+            $('#disp_mining_paid_val').text('₹ ' + paid.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+            $('#disp_mining_pending_val').text('₹ ' + pending.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
+
+            var statusSelect = $('#mining_payment_status');
+            if (val > 0) {
+                if (paid >= val) {
+                    statusSelect.val('paid');
+                } else if (paid > 0) {
+                    statusSelect.val('partial');
+                } else {
+                    statusSelect.val('pending');
+                }
+            }
+
+            var currentStatus = statusSelect.val();
+            var badgeHtml = '';
+            if (currentStatus === 'paid') {
+                badgeHtml = '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">🟢 Paid (Settled)</span>';
+            } else if (currentStatus === 'partial') {
+                badgeHtml = '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">🟡 Partial Payment</span>';
+            } else {
+                badgeHtml = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">🔴 Pending Full Due</span>';
+            }
+            $('#disp_mining_status_badge').html(badgeHtml);
+        }
+
+        $('#mining_product_value, #mining_paid_amount').on('input change', calcMiningPayment);
+        $('#mining_payment_status').on('change', function() {
+            var val = $(this).val();
+            var badgeHtml = val === 'paid' ? '<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">🟢 Paid (Settled)</span>' :
+                           (val === 'partial' ? '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">🟡 Partial Payment</span>' :
+                                                '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">🔴 Pending Full Due</span>');
+            $('#disp_mining_status_badge').html(badgeHtml);
+        });
+
+        // Trigger initial calculation
+        calcMiningPayment();
 
         btnNext.addEventListener('click', function() {
             if (!validateCurrentStep(currentStep)) return;
@@ -1557,8 +1973,13 @@
                 populateDocumentChecklist();
             } else if (currentStep === 5) {
                 currentStep = 6;
+            } else if (currentStep === 6) {
+                currentStep = 7;
+                calcMiningPayment();
+            } else if (currentStep === 7) {
+                currentStep = 8;
                 populateSummary();
-            } else if (currentStep < 6) {
+            } else if (currentStep < 8) {
                 currentStep++;
             }
 

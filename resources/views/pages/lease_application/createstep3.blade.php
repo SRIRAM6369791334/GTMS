@@ -13,11 +13,13 @@
     <div class="sp-step active"><div class="circ">3</div><div class="sp-label">Category</div></div>
     <div class="sp-step"><div class="circ">4</div><div class="sp-label">Folders</div></div>
     <div class="sp-step"><div class="circ">5</div><div class="sp-label">Documents</div></div>
-    <div class="sp-step"><div class="circ">6</div><div class="sp-label">Review</div></div>
+    <div class="sp-step"><div class="circ">6</div><div class="sp-label">Handlers</div></div>
+    <div class="sp-step"><div class="circ">7</div><div class="sp-label">Payment</div></div>
+    <div class="sp-step"><div class="circ">8</div><div class="sp-label">Review</div></div>
   </div>
 
   <div class="wizard-card">
-    <div class="wc-eyebrow">Step 3 of 6</div>
+    <div class="wc-eyebrow">Step 3 of 8</div>
     <h4>Category Under Rule</h4>
     <div class="wc-sub">Select the rule this lease falls under. This determines which documents will be required in Step 5.</div>
 

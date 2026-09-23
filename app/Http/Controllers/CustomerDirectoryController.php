@@ -283,15 +283,29 @@ class CustomerDirectoryController extends Controller
     public function lookupByMimas(Request $request, $mimas_no)
     {
         $mimas_no = trim(urldecode($mimas_no));
+        $cleanDigits = preg_replace('/[^0-9]/', '', $mimas_no);
 
         $customer = Customer::withTrashed()->with(['district', 'mineral'])
-            ->where('mimas_no', $mimas_no)
+            ->where(function ($query) use ($mimas_no, $cleanDigits) {
+                $query->where('mimas_no', $mimas_no)
+                    ->orWhere('id', $mimas_no)
+                    ->orWhere('slug', $mimas_no)
+                    ->orWhere('mimas_number', $mimas_no)
+                    ->orWhere('company_name', 'like', "%{$mimas_no}%")
+                    ->orWhere('customer_name', 'like', "%{$mimas_no}%");
+
+                if (!empty($cleanDigits) && strlen($cleanDigits) >= 10) {
+                    $query->orWhere('mobile_num', 'like', "%{$cleanDigits}%")
+                        ->orWhere('secondary_mobile_num', 'like', "%{$cleanDigits}%")
+                        ->orWhereRaw("REPLACE(REPLACE(COALESCE(aadhaar_no, ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanDigits}%"]);
+                }
+            })
             ->first();
 
         if (!$customer) {
             return response()->json([
                 'status' => 0,
-                'message' => 'No customer found matching MIMAS Number: "' . $mimas_no . '".',
+                'message' => 'No customer found matching Customer Unique ID: "' . $mimas_no . '".',
             ], 404);
         }
 

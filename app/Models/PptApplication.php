@@ -19,17 +19,38 @@ class PptApplication extends Model
         'application_no',
         'customer_id',
         'environment_project_id',
+        'presentation_stage',
         'project_name',
         'district_id',
         'taluk_village',
         'mineral_id',
         'status',
+        'product_value',
+        'paid_amount',
+        'pending_amount',
+        'payment_status',
         'rqp_attending',
         'company_rep_attending',
         'rep_mobile',
         'branch_id',
         'created_by',
     ];
+
+    protected $casts = [
+        'product_value'  => 'decimal:2',
+        'paid_amount'    => 'decimal:2',
+        'pending_amount' => 'decimal:2',
+    ];
+
+    public function handlers(): HasMany
+    {
+        return $this->hasMany(ApplicationHandler::class, 'application_id')->where('application_type', 'ppt')->orderBy('sort_order');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(ApplicationPayment::class, 'application_id')->where('application_type', 'ppt');
+    }
 
     public function customer(): BelongsTo
     {

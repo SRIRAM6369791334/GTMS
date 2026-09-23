@@ -41,7 +41,7 @@ class EnvironmentalB2Controller extends Controller
      */
     public function wizard(int $step)
     {
-        abort_unless($step >= 1 && $step <= 7, 404);
+        abort_unless($step >= 1 && $step <= 9, 404);
 
         $customers = Customer::orderBy('customer_name')->get();
         $districts = District::where('status', 1)->orderBy('name')->get();

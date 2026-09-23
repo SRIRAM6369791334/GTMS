@@ -17,6 +17,8 @@ use App\Models\MiningDocument;
 use App\Models\DocumentField;
 use App\Models\ActivityLog;
 use App\Models\Folder;
+use App\Models\ApplicationHandler;
+use App\Models\ApplicationPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
@@ -534,6 +536,8 @@ class CustomerController extends Controller
             'folder_id'    => $folderId,
             'is_mandatory' => $isMandatory,
             'file_name'    => $fileName,
+            'file_path'    => $uploadSubdir . '/' . $fileName,
+            'file_url'     => asset($uploadSubdir . '/' . $fileName),
             'file_size'    => $this->formatFileSize($fileSize),
             'uploaded'     => $uploadedCount,
             'total'        => $totalItems,
@@ -546,7 +550,7 @@ class CustomerController extends Controller
     // ───────────────────────────────────────
 
     // ───────────────────────────────────────
-    // STEP 6: Review & Submit (GET)
+    // STEP 6: Project Handling Persons (GET & POST)
     // ───────────────────────────────────────
 
     public function step6()
@@ -558,55 +562,211 @@ class CustomerController extends Controller
                 LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 6]);
             }
         }
-        $previewData = $this->buildPreviewData($draft);
-        return view('pages.lease_application.createstep7', compact('draft', 'previewData'));
+
+        $handlers = $draft['handlers'] ?? [];
+        if (empty($handlers) && !empty($draft['application_id'])) {
+            $dbHandlers = ApplicationHandler::where('application_type', 'lease')
+                ->where('application_id', $draft['application_id'])
+                ->orderBy('sort_order')
+                ->get();
+            if ($dbHandlers->isNotEmpty()) {
+                $handlers = $dbHandlers->map(fn($h) => [
+                    'name'  => $h->name,
+                    'role'  => $h->role,
+                    'notes' => $h->notes,
+                ])->toArray();
+                $draft['handlers'] = $handlers;
+                session(['lease_draft' => $draft]);
+            }
+        }
+
+        return view('pages.lease_application.createstep6', compact('draft', 'handlers'));
     }
 
     public function saveStep6(Request $request)
     {
-        $validated = $request->validate([
-            'mimas_user_id' => 'required|string|max:100',
-            'mimas_password' => 'nullable|string|max:255',
-            'mimas_email'    => 'required|email|max:255',
-            'mimas_contact'  => 'required|string|max:15',
+        $request->validate([
+            'handlers'         => 'nullable|array',
+            'handlers.*.name'  => 'nullable|string|max:255',
+            'handlers.*.role'  => 'nullable|string|max:255',
+            'handlers.*.notes' => 'nullable|string|max:1000',
         ]);
 
-        $draft = session('lease_draft', []);
-
-        // If unchanged placeholder or empty, preserve existing password
-        if (empty($validated['mimas_password']) || $validated['mimas_password'] === '__UNCHANGED__') {
-            $existingPassword = $draft['step6']['mimas_password'] ?? null;
-            if (!$existingPassword && !empty($draft['application_id'])) {
-                $cred = MimasCredential::where('lease_application_id', $draft['application_id'])->first();
-                $existingPassword = $cred ? $cred->password : 'MimasPass@2026';
+        $rawHandlers = $request->input('handlers', []);
+        $cleanHandlers = [];
+        if (is_array($rawHandlers)) {
+            foreach ($rawHandlers as $h) {
+                if (!empty($h['name'])) {
+                    $cleanHandlers[] = [
+                        'name'  => trim($h['name']),
+                        'role'  => trim($h['role'] ?? ''),
+                        'notes' => trim($h['notes'] ?? ''),
+                    ];
+                }
             }
-            $validated['mimas_password'] = $existingPassword ?? 'MimasPass@2026';
         }
 
-        $draft['step6'] = $validated;
+        $draft = session('lease_draft', []);
+        $draft['handlers'] = $cleanHandlers;
         session(['lease_draft' => $draft]);
 
         if (!empty($draft['application_id'])) {
-            MimasCredential::updateOrCreate(
-                ['lease_application_id' => $draft['application_id']],
-                [
-                    'user_id'        => $validated['mimas_user_id'],
-                    'password'       => $validated['mimas_password'],
-                    'email'          => $validated['mimas_email'],
-                    'contact_number' => $validated['mimas_contact'],
-                    'portal_status'  => 'verified',
-                ]
-            );
-            LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 6]);
+            ApplicationHandler::where('application_type', 'lease')
+                ->where('application_id', $draft['application_id'])
+                ->delete();
+
+            foreach ($cleanHandlers as $idx => $h) {
+                ApplicationHandler::create([
+                    'application_type' => 'lease',
+                    'application_id'   => $draft['application_id'],
+                    'handlerable_type' => LeaseApplication::class,
+                    'handlerable_id'   => $draft['application_id'],
+                    'name'             => $h['name'],
+                    'role'             => $h['role'],
+                    'notes'            => $h['notes'],
+                    'sort_order'       => $idx,
+                ]);
+            }
+
+            LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => max(6, (int)LeaseApplication::where('id', $draft['application_id'])->value('current_step'))]);
         }
 
         $isExit = $request->boolean('exit') || $request->input('action') === 'exit';
         if ($isExit) {
-            session()->flash('success', 'Draft application saved! MIMAS credentials updated.');
-            return response()->json(['status' => 1, 'message' => 'Draft saved', 'redirect' => '/application']);
+            session()->flash('success', 'Draft application saved! Project handling team updated.');
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['status' => 1, 'message' => 'Draft saved', 'redirect' => '/application']);
+            }
+            return redirect('/application');
         }
 
-        return response()->json(['status' => 1, 'message' => 'Step 6 saved', 'redirect' => '/step6']);
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['status' => 1, 'message' => 'Step 6 saved', 'redirect' => '/step7']);
+        }
+        return redirect()->route('step7');
+    }
+
+    // ───────────────────────────────────────
+    // STEP 7: Payment Details (GET & POST)
+    // ───────────────────────────────────────
+
+    public function step7()
+    {
+        $draft = session('lease_draft', []);
+        if (!empty($draft['application_id'])) {
+            $existingStep = (int)(LeaseApplication::where('id', $draft['application_id'])->value('current_step') ?? 1);
+            if ($existingStep < 7) {
+                LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 7]);
+            }
+        }
+
+        $payment = $draft['payment'] ?? [];
+        if (empty($payment) && !empty($draft['application_id'])) {
+            $leaseApp = LeaseApplication::find($draft['application_id']);
+            if ($leaseApp) {
+                $payment = [
+                    'product_value'  => (float)($leaseApp->product_value ?? 0),
+                    'paid_amount'    => (float)($leaseApp->paid_amount ?? 0),
+                    'pending_amount' => (float)($leaseApp->pending_amount ?? 0),
+                    'payment_status' => $leaseApp->payment_status ?? 'pending',
+                ];
+                $draft['payment'] = $payment;
+                session(['lease_draft' => $draft]);
+            }
+        }
+
+        return view('pages.lease_application.createstep7', compact('draft', 'payment'));
+    }
+
+    public function saveStep7(Request $request)
+    {
+        $validated = $request->validate([
+            'product_value'  => 'required|numeric|min:0',
+            'paid_amount'    => 'required|numeric|min:0',
+            'payment_status' => 'nullable|string|in:paid,partial,pending',
+        ]);
+
+        $productVal = (float)$validated['product_value'];
+        $paidVal = (float)$validated['paid_amount'];
+        $pendingVal = max(0, $productVal - $paidVal);
+        $status = $validated['payment_status'] ?? null;
+
+        if (!$status) {
+            if ($paidVal <= 0) {
+                $status = 'pending';
+            } elseif ($pendingVal <= 0 && $productVal > 0) {
+                $status = 'paid';
+            } else {
+                $status = 'partial';
+            }
+        }
+
+        $paymentData = [
+            'product_value'  => $productVal,
+            'paid_amount'    => $paidVal,
+            'pending_amount' => $pendingVal,
+            'payment_status' => $status,
+        ];
+
+        $draft = session('lease_draft', []);
+        $draft['payment'] = $paymentData;
+        session(['lease_draft' => $draft]);
+
+        if (!empty($draft['application_id'])) {
+            LeaseApplication::where('id', $draft['application_id'])->update([
+                'product_value'  => $productVal,
+                'paid_amount'    => $paidVal,
+                'pending_amount' => $pendingVal,
+                'payment_status' => $status,
+                'current_step'   => max(7, (int)LeaseApplication::where('id', $draft['application_id'])->value('current_step')),
+            ]);
+
+            ApplicationPayment::updateOrCreate(
+                [
+                    'application_type' => 'lease',
+                    'application_id'   => $draft['application_id'],
+                ],
+                [
+                    'payable_type'   => LeaseApplication::class,
+                    'payable_id'     => $draft['application_id'],
+                    'product_value'  => $productVal,
+                    'paid_amount'    => $paidVal,
+                    'pending_amount' => $pendingVal,
+                    'payment_status' => $status,
+                ]
+            );
+        }
+
+        $isExit = $request->boolean('exit') || $request->input('action') === 'exit';
+        if ($isExit) {
+            session()->flash('success', 'Draft application saved! Payment details updated.');
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['status' => 1, 'message' => 'Draft saved', 'redirect' => '/application']);
+            }
+            return redirect('/application');
+        }
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['status' => 1, 'message' => 'Step 7 saved', 'redirect' => '/step8']);
+        }
+        return redirect()->route('step8');
+    }
+
+    // ───────────────────────────────────────
+    // STEP 8: Review & Submit (GET)
+    // ───────────────────────────────────────
+
+    public function step8()
+    {
+        $draft = session('lease_draft', []);
+        if (!empty($draft['application_id'])) {
+            $existingStep = (int)(LeaseApplication::where('id', $draft['application_id'])->value('current_step') ?? 1);
+            if ($existingStep < 8) {
+                LeaseApplication::where('id', $draft['application_id'])->update(['current_step' => 8]);
+            }
+        }
+        $previewData = $this->buildPreviewData($draft);
+        return view('pages.lease_application.createstep8', compact('draft', 'previewData'));
     }
 
     // ───────────────────────────────────────
@@ -615,7 +775,7 @@ class CustomerController extends Controller
 
     public function resumeDraft($id)
     {
-        $app = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'mimasCredentials', 'documents'])->findOrFail($id);
+        $app = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'mimasCredentials', 'documents', 'handlers'])->findOrFail($id);
 
         // Reconstruct lease_draft session from database
         $draft = [
@@ -659,6 +819,17 @@ class CustomerController extends Controller
                 'mimas_email'   => $app->mimasCredentials->first()->email ?? ($app->customer->email ?? ''),
                 'mimas_contact' => $app->mimasCredentials->first()->contact_number ?? ($app->customer->mobile_num ?? ''),
             ],
+            'handlers' => $app->handlers->map(fn($h) => [
+                'name'  => $h->name,
+                'role'  => $h->role,
+                'notes' => $h->notes,
+            ])->toArray(),
+            'payment' => [
+                'product_value'  => (float)($app->product_value ?? 0),
+                'paid_amount'    => (float)($app->paid_amount ?? 0),
+                'pending_amount' => (float)($app->pending_amount ?? 0),
+                'payment_status' => $app->payment_status ?? 'pending',
+            ],
             'uploaded_docs' => [],
         ];
 
@@ -678,17 +849,8 @@ class CustomerController extends Controller
 
         session(['lease_draft' => $draft]);
 
-        $step = $app->current_step ? min(max((int)$app->current_step, 1), 6) : 1;
-        return redirect("/step{$step}")->with('success', "Resumed draft application {$app->application_no} at Step {$step} of 6.");
-    }
-
-    // ───────────────────────────────────────
-    // STEP 7: Legacy Alias (redirects to Step 6 Review)
-    // ───────────────────────────────────────
-
-    public function step7()
-    {
-        return redirect()->route('step6');
+        $step = $app->current_step ? min(max((int)$app->current_step, 1), 8) : 1;
+        return redirect("/step{$step}")->with('success', "Resumed draft application {$app->application_no} at Step {$step} of 8.");
     }
 
     /**
@@ -793,6 +955,41 @@ class CustomerController extends Controller
         $preview['f7_count'] = $f7Count;
         $preview['f8_count'] = $f8Count;
         $preview['f9_count'] = $f9Count;
+
+        // Project Handling Team
+        $handlers = $draft['handlers'] ?? [];
+        if (empty($handlers) && !empty($draft['application_id'])) {
+            $handlers = ApplicationHandler::where('application_type', 'lease')
+                ->where('application_id', $draft['application_id'])
+                ->orderBy('sort_order')
+                ->get()
+                ->map(fn($h) => [
+                    'name'  => $h->name,
+                    'role'  => $h->role,
+                    'notes' => $h->notes,
+                ])->toArray();
+        }
+        $preview['handlers'] = $handlers;
+
+        // Payment Details
+        $payment = $draft['payment'] ?? [];
+        if (empty($payment) && !empty($draft['application_id'])) {
+            $existingApp = LeaseApplication::find($draft['application_id']);
+            if ($existingApp) {
+                $payment = [
+                    'product_value'  => (float)($existingApp->product_value ?? 0),
+                    'paid_amount'    => (float)($existingApp->paid_amount ?? 0),
+                    'pending_amount' => (float)($existingApp->pending_amount ?? 0),
+                    'payment_status' => $existingApp->payment_status ?? 'pending',
+                ];
+            }
+        }
+        $preview['payment'] = [
+            'product_value'  => (float)($payment['product_value'] ?? 0),
+            'paid_amount'    => (float)($payment['paid_amount'] ?? 0),
+            'pending_amount' => (float)($payment['pending_amount'] ?? 0),
+            'payment_status' => $payment['payment_status'] ?? 'pending',
+        ];
 
         return $preview;
     }
@@ -957,6 +1154,56 @@ class CustomerController extends Controller
                     'portal_status'  => 'verified',
                 ]
             );
+
+            // Payment details persistence
+            $payment = $draft['payment'] ?? [];
+            $productVal = (float)($payment['product_value'] ?? 0);
+            $paidVal = (float)($payment['paid_amount'] ?? 0);
+            $pendingVal = max(0, $productVal - $paidVal);
+            $payStatus = $payment['payment_status'] ?? ($paidVal <= 0 ? 'pending' : ($pendingVal <= 0 ? 'paid' : 'partial'));
+
+            $leaseApp->update([
+                'product_value'  => $productVal,
+                'paid_amount'    => $paidVal,
+                'pending_amount' => $pendingVal,
+                'payment_status' => $payStatus,
+                'current_step'   => 8,
+            ]);
+
+            ApplicationPayment::updateOrCreate(
+                [
+                    'application_type' => 'lease',
+                    'application_id'   => $leaseApp->id,
+                ],
+                [
+                    'payable_type'   => LeaseApplication::class,
+                    'payable_id'     => $leaseApp->id,
+                    'product_value'  => $productVal,
+                    'paid_amount'    => $paidVal,
+                    'pending_amount' => $pendingVal,
+                    'payment_status' => $payStatus,
+                ]
+            );
+
+            // Handlers persistence
+            $handlers = $draft['handlers'] ?? [];
+            ApplicationHandler::where('application_type', 'lease')->where('application_id', $leaseApp->id)->delete();
+            if (is_array($handlers)) {
+                foreach ($handlers as $idx => $h) {
+                    if (!empty($h['name'])) {
+                        ApplicationHandler::create([
+                            'application_type' => 'lease',
+                            'application_id'   => $leaseApp->id,
+                            'handlerable_type' => LeaseApplication::class,
+                            'handlerable_id'   => $leaseApp->id,
+                            'name'             => $h['name'],
+                            'role'             => $h['role'] ?? '',
+                            'notes'            => $h['notes'] ?? null,
+                            'sort_order'       => $idx,
+                        ]);
+                    }
+                }
+            }
 
             // Final upload directory
             $uploadSubdir = 'uploads/lease_applications/' . $appNo;

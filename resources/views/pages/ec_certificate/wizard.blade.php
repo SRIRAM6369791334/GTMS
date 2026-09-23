@@ -97,8 +97,12 @@
 }
 @media print {
   body * { visibility: hidden; }
-  .ec-certificate-preview-paper, .ec-certificate-preview-paper * { visibility: visible; }
   .ec-certificate-preview-paper { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
+}
+.field-autofilled {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 </style>
 
@@ -109,7 +113,9 @@
     3 => 'View / Print',
     4 => 'Store Documents',
     5 => 'Communicate',
-    6 => 'Preview & Issue',
+    6 => 'Handling Team',
+    7 => 'Payment',
+    8 => 'Preview & Issue',
   ];
   $s1 = $draft['step1'] ?? [];
   $s2 = $draft['step2'] ?? [];
@@ -233,6 +239,36 @@
         <form method="POST" action="{{ route('ec-certificate.saveStep', 1) }}">
           @csrf
 
+          {{-- CUSTOMER UNIQUE ID LOOKUP CARD --}}
+          <div class="card p-3 mb-3" style="background:#f0f7ff; border:2px dashed #93c5fd; border-radius:14px;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <label class="form-label fw-bold mb-0 text-primary" style="font-size:0.92rem;">
+                <i class="fa fa-fingerprint me-1"></i> Customer Unique ID Lookup
+              </label>
+              <span class="badge bg-primary text-white"><i class="fa fa-bolt me-1"></i> Instant Autofill</span>
+            </div>
+            <p class="text-muted small mb-2">Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.</p>
+            
+            <div class="input-group">
+              <span class="input-group-text bg-white border-primary"><i class="fa fa-search text-primary"></i></span>
+              <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold border-primary" 
+                     placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off">
+              <button class="btn btn-primary px-3 fw-bold" type="button" id="btn_lookup_mimas">
+                <i class="fa fa-sync-alt me-1"></i> Fetch Details
+              </button>
+            </div>
+            
+            <datalist id="mimas_datalist">
+              @if(isset($customers))
+                @foreach($customers as $c)
+                  <option value="{{ $c->mimas_no }}">{{ $c->company_name }} ({{ $c->customer_name }})</option>
+                @endforeach
+              @endif
+            </datalist>
+
+            <div id="mimas_feedback_box" class="mt-2" style="display:none;"></div>
+          </div>
+
           {{-- Quick Customer & Project Select --}}
           <div class="row g-3 mb-4">
             <div class="col-md-12">
@@ -243,7 +279,7 @@
                   </label>
                   <span class="badge bg-primary text-white">Dynamic Binding</span>
                 </div>
-                <select class="form-select border-primary" name="environment_project_id" id="ec_project_select" required onchange="window.location.href='{{ route('ec-certificate.step', 1) }}?project_id=' + this.value;">
+                <select class="form-select border-primary auto-filled-field" name="environment_project_id" id="ec_project_select" required onchange="window.location.href='{{ route('ec-certificate.step', 1) }}?project_id=' + this.value;">
                   <option value="">-- Choose Project --</option>
                   @foreach($approvedProjects as $p)
                     <option value="{{ $p->id }}"
@@ -264,7 +300,7 @@
             {{-- EC Reference Number --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">EC Certificate Reference No. *</label>
-              <input type="text" class="form-control" name="ec_ref_no" required
+              <input type="text" class="form-control auto-filled-field" name="ec_ref_no" id="field_ec_ref_no" required
                 value="{{ old('ec_ref_no', $s1['ec_ref_no'] ?? '') }}"
                 placeholder="e.g. SEIAA-TN/EC/2026/0001">
               <small class="text-muted">Official State Environmental Clearance identifier</small>
@@ -273,7 +309,7 @@
             {{-- Parivesh Application No --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Parivesh Portal Application Reference *</label>
-              <input type="text" class="form-control" name="parivesh_app_no" required
+              <input type="text" class="form-control auto-filled-field" name="parivesh_app_no" id="field_parivesh_app_no" required
                 value="{{ old('parivesh_app_no', $s1['parivesh_app_no'] ?? '') }}"
                 placeholder="e.g. SIA/TN/MIN/10001/2026">
               <small class="text-muted">MoEFCC / Parivesh national tracking number</small>
@@ -282,7 +318,7 @@
             {{-- Applicant Name --}}
             <div class="col-md-6">
               <label class="form-label fw-semibold">Applicant / Company Name *</label>
-              <input type="text" class="form-control" name="applicant_name" id="field_applicant_name" required
+              <input type="text" class="form-control auto-filled-field" name="applicant_name" id="field_applicant_name" required
                 value="{{ old('applicant_name', $s1['applicant_name'] ?? '') }}"
                 placeholder="Full applicant or company legal name">
             </div>
@@ -370,11 +406,60 @@
                         </div>
                       </div>
                     </div>
-                    <span class="badge bg-success-subtle text-success border border-success-subtle">
-                      <i class="fa fa-check me-1"></i> Attached
-                    </span>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge bg-success-subtle text-success border border-success-subtle">
+                        <i class="fa fa-check me-1"></i> Attached
+                      </span>
+                      @if(!empty($s2['file_path']))
+                      <a href="{{ asset($s2['file_path']) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary py-1 px-2" title="View certificate in separate page">
+                        <i class="fa fa-eye me-1"></i> View
+                      </a>
+                      @endif
+                    </div>
                   </div>
                 @endif
+              </div>
+            </div>
+
+            {{-- Supporting Documents Checklist with Add Document --}}
+            <div class="col-12 mt-4">
+              <div class="card border shadow-xs">
+                <div class="card-header bg-light py-2 px-3 d-flex justify-content-between align-items-center">
+                  <div class="fw-bold small text-navy text-uppercase" style="font-size:0.78rem;">
+                    <i class="fa fa-folder-open me-1 text-primary"></i> Supporting Documents &amp; Statutory Annexures
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn_add_ec_support_doc" style="font-size:0.75rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Add Document
+                  </button>
+                </div>
+                <div class="card-body p-2" id="ec_support_docs_container">
+                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-text"></i></div>
+                      <div>
+                        <div class="fw-semibold small">1. SEIAA Minutes Extract</div>
+                        <div class="text-muted" style="font-size:11px;">Official SEIAA meeting clearance record</div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge-status pending">Optional</span>
+                      <input type="file" name="support_doc_1" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
+                    </div>
+                  </div>
+                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-check"></i></div>
+                      <div>
+                        <div class="fw-semibold small">2. District Collector NOC / Gazette</div>
+                        <div class="text-muted" style="font-size:11px;">Gazette notification and district revenue clearance</div>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="badge-status pending">Optional</span>
+                      <input type="file" name="support_doc_2" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -581,16 +666,168 @@
               <i class="fa fa-arrow-left me-1"></i> Back to Step 4
             </a>
             <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Final Review (Step 6) <i class="fa fa-arrow-right ms-1"></i>
+              Continue to Handling Team (Step 6) <i class="fa fa-arrow-right ms-1"></i>
             </button>
           </div>
         </form>
 
         {{-- ========================================================= --}}
-        {{-- STEP 6: PREVIEW & FINAL ISSUANCE                          --}}
+        {{-- STEP 6: HANDLING TEAM & IN-CHARGE PERSONS                --}}
+        {{-- ========================================================= --}}
+        @elseif($step === 6)
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 6) }}">
+          @csrf
+
+          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+            <div>
+              <h5 class="fw-bold mb-1" style="color:#0F1E4D;">Project Handling Team &amp; In-Charge Persons</h5>
+              <div class="text-muted small">Designate environmental officers, clearance specialists, and client liaison officers.</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-navy px-3" id="btn_add_ec_handler" style="background:#0F1E4D; color:#fff;">
+              <i class="fa fa-user-plus me-1 text-warning"></i> + Add Person
+            </button>
+          </div>
+
+          <div class="table-responsive mb-3">
+            <table class="table table-bordered align-middle" id="ec_handlers_table">
+              <thead class="bg-light text-navy" style="font-size:0.85rem;">
+                <tr>
+                  <th style="width: 50px;" class="text-center">#</th>
+                  <th style="width: 30%;">Person Name <span class="text-danger">*</span></th>
+                  <th style="width: 30%;">Role / Designation <span class="text-danger">*</span></th>
+                  <th>Notes &amp; Responsibilities</th>
+                  <th style="width: 70px;" class="text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="ec_handlers_tbody">
+                @php
+                  $existingHandlers = $draft['step6']['handlers'] ?? [
+                    ['person_name' => 'K. Sundaram', 'role' => 'Environmental Officer', 'notes' => 'SEIAA clearance liaison & compliance'],
+                  ];
+                @endphp
+                @foreach($existingHandlers as $hIdx => $h)
+                  <tr>
+                    <td class="text-center fw-bold row-num">{{ $hIdx + 1 }}</td>
+                    <td><input type="text" name="handlers[{{ $hIdx }}][person_name]" class="form-control form-control-sm" value="{{ $h['person_name'] ?? '' }}" placeholder="e.g. K. Sundaram" required></td>
+                    <td><input type="text" name="handlers[{{ $hIdx }}][role]" class="form-control form-control-sm" value="{{ $h['role'] ?? '' }}" placeholder="e.g. Environmental Officer" required></td>
+                    <td><input type="text" name="handlers[{{ $hIdx }}][notes]" class="form-control form-control-sm" value="{{ $h['notes'] ?? '' }}" placeholder="e.g. Liaison & certification verification"></td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-ec-handler {{ count($existingHandlers) === 1 ? 'disabled' : '' }}">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                @endforeach
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-info py-2 px-3 small rounded-2 mb-4" style="background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1;">
+            <i class="fa fa-info-circle me-1"></i> Roles can be freely typed (e.g. <em>Environmental Officer, SEIAA Liaison, Compliance In-Charge</em>).
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="{{ route('ec-certificate.step', 5) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 5
+            </a>
+            <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
+              Continue to Payment (Step 7) <i class="fa fa-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </form>
+
+        {{-- ========================================================= --}}
+        {{-- STEP 7: PAYMENT DETAILS & BILLING LEDGER                  --}}
+        {{-- ========================================================= --}}
+        @elseif($step === 7)
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 7) }}">
+          @csrf
+
+          @php
+            $ecPv = (float)($draft['step7']['product_value'] ?? 0);
+            $ecPa = (float)($draft['step7']['paid_amount'] ?? 0);
+            $ecPe = max(0, $ecPv - $ecPa);
+            $ecPs = $draft['step7']['payment_status'] ?? ($ecPa <= 0 ? 'pending' : ($ecPe <= 0 ? 'paid' : 'partial'));
+          @endphp
+
+          <!-- Real-Time Metric Cards -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#f8fafc; border-left: 4px solid #0F1E4D !important;">
+                <div class="text-muted small fw-semibold text-uppercase">Certificate / Service Fee</div>
+                <div class="h4 fw-bold mb-0 text-navy mt-1" id="disp_ec_val">₹ {{ number_format($ecPv, 2) }}</div>
+                <small class="text-muted" style="font-size:11px;">Official clearance processing fee</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#f0fdf4; border-left: 4px solid #10b981 !important;">
+                <div class="text-success small fw-semibold text-uppercase">Paid Amount</div>
+                <div class="h4 fw-bold mb-0 text-success mt-1" id="disp_ec_paid">₹ {{ number_format($ecPa, 2) }}</div>
+                <small class="text-muted" style="font-size:11px;">Collected receipt amount</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 border" style="background:#fff7ed; border-left: 4px solid #f97316 !important;">
+                <div class="text-warning-emphasis small fw-semibold text-uppercase">Pending Balance Due</div>
+                <div class="h4 fw-bold mb-0 text-danger mt-1" id="disp_ec_pending">₹ {{ number_format($ecPe, 2) }}</div>
+                <small class="text-muted" style="font-size:11px;">Auto-calculated outstanding</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-3 bg-light border-0 rounded-3 mb-4">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">Product / Fee Value (₹) *</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white fw-bold">₹</span>
+                  <input type="number" step="0.01" min="0" name="product_value" id="field_ec_val" class="form-control fw-bold" placeholder="0.00" value="{{ $ecPv > 0 ? $ecPv : '' }}" required>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">Paid Amount (₹) *</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white fw-bold text-success">₹</span>
+                  <input type="number" step="0.01" min="0" name="paid_amount" id="field_ec_paid" class="form-control fw-bold text-success" placeholder="0.00" value="{{ $ecPa > 0 ? $ecPa : '' }}" required>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy small mb-1">Pending Balance (₹)</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light text-muted">₹</span>
+                  <input type="number" step="0.01" name="pending_amount" id="field_ec_pending" class="form-control bg-light fw-bold text-danger" placeholder="0.00" readonly value="{{ $ecPe > 0 ? $ecPe : '0.00' }}">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy small mb-1">Settlement Status *</label>
+                <select class="form-select" name="payment_status" id="field_ec_status">
+                  <option value="pending" @selected($ecPs === 'pending')>Pending (Full Balance Due)</option>
+                  <option value="partial" @selected($ecPs === 'partial')>Partial Payment Received</option>
+                  <option value="paid" @selected($ecPs === 'paid')>Paid (Fully Settled)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy small mb-1">Transaction Reference / Notes</label>
+                <input type="text" class="form-control" name="payment_notes" placeholder="e.g. SPCB chalan / NEFT transaction ref" value="{{ $draft['step7']['notes'] ?? '' }}">
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+            <a href="{{ route('ec-certificate.step', 6) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 6
+            </a>
+            <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
+              Continue to Final Review (Step 8) <i class="fa fa-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </form>
+
+        {{-- ========================================================= --}}
+        {{-- STEP 8: PREVIEW & FINAL ISSUANCE                          --}}
         {{-- ========================================================= --}}
         @else
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 6) }}">
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 8) }}">
           @csrf
 
           <div class="alert alert-success py-3 mb-4 d-flex align-items-center gap-3">
@@ -598,6 +835,55 @@
             <div>
               <h6 class="fw-bold mb-1">Verification Complete &bull; Ready for Official Issuance</h6>
               <p class="small mb-0">Review the consolidated details below. Submitting will register the Environmental Clearance certificate, advance the project lifecycle, and record the statutory audit log.</p>
+            </div>
+          </div>
+
+          {{-- Financial & Handlers Cards in Review --}}
+          @php
+            $rPv = (float)($draft['step7']['product_value'] ?? 0);
+            $rPa = (float)($draft['step7']['paid_amount'] ?? 0);
+            $rPe = max(0, $rPv - $rPa);
+            $rPs = $draft['step7']['payment_status'] ?? 'pending';
+          @endphp
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <div class="p-3 border rounded bg-white h-100">
+                <h6 class="fw-bold text-navy mb-2"><i class="fa fa-receipt text-success me-1"></i> Financial Summary</h6>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                  <span class="text-muted">Total Quoted Fee:</span>
+                  <strong class="text-navy">₹ {{ number_format($rPv, 2) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                  <span class="text-muted">Paid Amount:</span>
+                  <strong class="text-success">₹ {{ number_format($rPa, 2) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-1 border-bottom small">
+                  <span class="text-muted">Pending Balance:</span>
+                  <strong class="text-danger">₹ {{ number_format($rPe, 2) }}</strong>
+                </div>
+                <div class="d-flex justify-content-between pt-2 small">
+                  <span class="text-muted">Settlement Status:</span>
+                  <span class="badge bg-{{ $rPs === 'paid' ? 'success' : ($rPs === 'partial' ? 'warning' : 'danger') }}">{{ ucfirst($rPs) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="p-3 border rounded bg-white h-100">
+                <h6 class="fw-bold text-navy mb-2"><i class="fa fa-users text-primary me-1"></i> Designated Handling Personnel</h6>
+                @php $rHandlers = $draft['step6']['handlers'] ?? []; @endphp
+                @if(!empty($rHandlers))
+                  <ul class="list-unstyled mb-0 small">
+                    @foreach($rHandlers as $rh)
+                      <li class="py-1 border-bottom d-flex justify-content-between">
+                        <b>{{ $rh['person_name'] ?? '' }}</b>
+                        <span class="text-muted">{{ $rh['role'] ?? 'Environmental Officer' }}</span>
+                      </li>
+                    @endforeach
+                  </ul>
+                @else
+                  <span class="text-muted small">Default team assigned automatically.</span>
+                @endif
+              </div>
             </div>
           </div>
 
@@ -647,8 +933,8 @@
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 5) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 5
+            <a href="{{ route('ec-certificate.step', 7) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 7
             </a>
             <button type="submit" class="btn btn-success px-5 fw-bold" style="background:#059669; border-color:#059669;">
               <i class="fa fa-check-double me-1"></i> Confirm &amp; Finalize EC Certificate
@@ -662,4 +948,244 @@
 
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Step 2: Add Supporting Document dynamically
+  const btnAddSupportDoc = document.getElementById('btn_add_ec_support_doc');
+  const supportDocsContainer = document.getElementById('ec_support_docs_container');
+  if (btnAddSupportDoc && supportDocsContainer) {
+    btnAddSupportDoc.addEventListener('click', function() {
+      const docName = prompt('Enter Document Name / Description:');
+      if (!docName || !docName.trim()) return;
+      const count = supportDocsContainer.querySelectorAll('.checklist-row').length + 1;
+      const row = document.createElement('div');
+      row.className = 'checklist-row p-2 d-flex align-items-center justify-content-between border-bottom';
+      row.innerHTML = `
+        <div class="d-flex align-items-center gap-2">
+          <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-plus"></i></div>
+          <div>
+            <div class="fw-semibold small">${count}. ${docName.trim()}</div>
+            <div class="text-muted" style="font-size:11px;">Custom Supporting Attachment</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge-status pending">Optional</span>
+          <input type="file" name="custom_support_doc_${count}" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
+        </div>
+      `;
+      supportDocsContainer.appendChild(row);
+    });
+  }
+
+  // Step 6: Handlers dynamic row logic
+  const btnAdd = document.getElementById('btn_add_ec_handler');
+  const tbody = document.getElementById('ec_handlers_tbody');
+
+  function reindexEcHandlers() {
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach((r, idx) => {
+      const numCell = r.querySelector('.row-num');
+      if (numCell) numCell.textContent = idx + 1;
+      const inputs = r.querySelectorAll('input');
+      inputs.forEach(inp => {
+        if (inp.name.includes('[person_name]')) inp.name = `handlers[${idx}][person_name]`;
+        if (inp.name.includes('[role]')) inp.name = `handlers[${idx}][role]`;
+        if (inp.name.includes('[notes]')) inp.name = `handlers[${idx}][notes]`;
+      });
+      const rmBtn = r.querySelector('.btn-remove-ec-handler');
+      if (rmBtn) {
+        if (rows.length === 1) {
+          rmBtn.classList.add('disabled');
+        } else {
+          rmBtn.classList.remove('disabled');
+        }
+      }
+    });
+  }
+
+  if (btnAdd && tbody) {
+    btnAdd.addEventListener('click', function() {
+      const count = tbody.querySelectorAll('tr').length;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="text-center fw-bold row-num">${count + 1}</td>
+        <td><input type="text" name="handlers[${count}][person_name]" class="form-control form-control-sm" placeholder="e.g. Ramesh Kumar" required></td>
+        <td><input type="text" name="handlers[${count}][role]" class="form-control form-control-sm" placeholder="e.g. Environmental Officer" required></td>
+        <td><input type="text" name="handlers[${count}][notes]" class="form-control form-control-sm" placeholder="e.g. Compliance"></td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-remove-ec-handler">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      reindexEcHandlers();
+    });
+
+    tbody.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-remove-ec-handler');
+      if (btn && !btn.classList.contains('disabled')) {
+        const row = btn.closest('tr');
+        if (row && tbody.querySelectorAll('tr').length > 1) {
+          row.remove();
+          reindexEcHandlers();
+        }
+      }
+    });
+  }
+
+  // Step 7: Payment calculation logic
+  const ecVal = document.getElementById('field_ec_val');
+  const ecPaid = document.getElementById('field_ec_paid');
+  const ecPending = document.getElementById('field_ec_pending');
+  const ecStatus = document.getElementById('field_ec_status');
+
+  const dispVal = document.getElementById('disp_ec_val');
+  const dispPaid = document.getElementById('disp_ec_paid');
+  const dispPending = document.getElementById('disp_ec_pending');
+
+  function calcEcPayment() {
+    const val = parseFloat(ecVal ? ecVal.value : 0) || 0;
+    const paid = parseFloat(ecPaid ? ecPaid.value : 0) || 0;
+    const pending = Math.max(0, val - paid);
+
+    if (ecPending) ecPending.value = pending.toFixed(2);
+    if (dispVal) dispVal.textContent = '₹ ' + val.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (dispPaid) dispPaid.textContent = '₹ ' + paid.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    if (dispPending) dispPending.textContent = '₹ ' + pending.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+
+    if (ecStatus && val > 0) {
+      if (paid >= val) {
+        ecStatus.value = 'paid';
+      } else if (paid > 0) {
+        ecStatus.value = 'partial';
+      } else {
+        ecStatus.value = 'pending';
+      }
+    }
+  }
+
+  if (ecVal && ecPaid) {
+    ecVal.addEventListener('input', calcEcPayment);
+    ecPaid.addEventListener('input', calcEcPayment);
+    calcEcPayment();
+  }
+
+  // Step 1: Customer Unique ID Lookup & Instant Autofill
+  const mimasSearchInput = document.getElementById('mimas_search_input');
+  const btnLookupMimas = document.getElementById('btn_lookup_mimas');
+  const feedbackBox = document.getElementById('mimas_feedback_box');
+
+  function applyEcCustomerAutofill(c) {
+    if (!c) return;
+    const applicantInput = document.getElementById('field_applicant_name');
+    const ecRefInput = document.getElementById('field_ec_ref_no');
+    const pariveshInput = document.getElementById('field_parivesh_app_no');
+    const projectSelect = document.getElementById('ec_project_select');
+
+    if (applicantInput) {
+      applicantInput.value = c.company_name ? (c.company_name + ' (' + c.customer_name + ')') : c.customer_name;
+    }
+
+    // Try matching customer in approved project dropdown
+    if (projectSelect) {
+      for (let i = 0; i < projectSelect.options.length; i++) {
+        const opt = projectSelect.options[i];
+        const mimas = (opt.dataset.mimas || '').toUpperCase();
+        const client = (opt.dataset.client || '').toUpperCase();
+        const queryMimas = (c.mimas_no || '').toUpperCase();
+        const queryName = (c.customer_name || '').toUpperCase();
+        const queryCompany = (c.company_name || '').toUpperCase();
+
+        if ((queryMimas && mimas === queryMimas) || (queryCompany && client.includes(queryCompany)) || (queryName && client.includes(queryName))) {
+          projectSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+
+    // Visual cue on all autofilled fields
+    document.querySelectorAll('.auto-filled-field').forEach(el => {
+      el.classList.add('field-autofilled');
+      setTimeout(() => el.classList.remove('field-autofilled'), 3000);
+    });
+
+    if (feedbackBox) {
+      feedbackBox.style.display = 'block';
+      feedbackBox.innerHTML = `
+        <div class="alert alert-success py-2 px-3 mb-0 small d-flex align-items-center justify-content-between">
+          <div>
+            <i class="fa fa-check-circle me-1 text-success"></i>
+            <strong>Customer Profile Loaded:</strong> ${c.company_name || c.customer_name}
+            &middot; <span class="text-muted">${c.district_name || 'District'}</span>
+            &middot; <span class="badge bg-success-subtle text-success border border-success ms-1">Customer ID: ${c.mimas_no || c.id}</span>
+          </div>
+          <span class="badge bg-success text-white">All details populated</span>
+        </div>
+      `;
+    }
+  }
+
+  function performEcMimasLookup() {
+    const val = mimasSearchInput ? mimasSearchInput.value.trim() : '';
+    if (!val) {
+      if (feedbackBox) {
+        feedbackBox.style.display = 'block';
+        feedbackBox.innerHTML = '<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-exclamation-triangle me-1"></i> Please enter or select a Customer Unique ID first.</div>';
+      }
+      return;
+    }
+
+    if (btnLookupMimas) {
+      btnLookupMimas.disabled = true;
+      btnLookupMimas.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Searching...';
+    }
+    if (feedbackBox) feedbackBox.style.display = 'none';
+
+    fetch('/customers/lookup-mimas/' + encodeURIComponent(val))
+      .then(res => res.json())
+      .then(res => {
+        if (btnLookupMimas) {
+          btnLookupMimas.disabled = false;
+          btnLookupMimas.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
+        }
+        if (res.status === 1 && res.data) {
+          applyEcCustomerAutofill(res.data);
+        } else {
+          if (feedbackBox) {
+            feedbackBox.style.display = 'block';
+            feedbackBox.innerHTML = `<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-info-circle me-1"></i> ${res.message || 'No customer found.'}</div>`;
+          }
+        }
+      })
+      .catch(err => {
+        if (btnLookupMimas) {
+          btnLookupMimas.disabled = false;
+          btnLookupMimas.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
+        }
+        if (feedbackBox) {
+          feedbackBox.style.display = 'block';
+          feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="fa fa-times-circle me-1"></i> Customer not found. You can enter details manually below.</div>';
+        }
+      });
+  }
+
+  if (btnLookupMimas) btnLookupMimas.addEventListener('click', performEcMimasLookup);
+  if (mimasSearchInput) {
+    mimasSearchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        performEcMimasLookup();
+      }
+    });
+    mimasSearchInput.addEventListener('change', function() {
+      if (this.value.trim().length >= 3) {
+        performEcMimasLookup();
+      }
+    });
+  }
+});
+</script>
 @endsection

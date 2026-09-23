@@ -1,6 +1,109 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 5.21 — GLOBAL PAGINATION UI RESOLUTION & BOOTSTRAP 5 STANDARDIZATION (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 5.25 — UNIVERSAL CUSTOMER UNIQUE ID LOOKUP & INSTANT AUTOFILL ACROSS ALL 7 APPLICATIONS (+ EC COMPLIANCE) (COMPLETED & VERIFIED) ✅
+- **Status:** Implemented and standardized the **Customer Unique ID Lookup & Instant Autofill** card component (`#mimas_search_input`, `#mimas_datalist`, `#btn_lookup_mimas`, `#mimas_feedback_box`) across **ALL 7 GTMS REGULATORY APPLICATIONS** (plus the 8th EC Half-Yearly Compliance Monitoring module), providing instant retrieval of customer profile records and automatic form pre-population with green visual cues (`.field-autofilled`):
+  1. **Lease Application (`createstep1.blade.php`):** Verified existing lookup component, instant prefill of client name, company name, district, address, mobile, email, PAN, and Aadhaar.
+  2. **Mining Plan (`newapplication.blade.php`):** Verified existing lookup component, instant prefill of applicant details, company name, and district binding.
+  3. **Environment Clearance Unified & B2 (`eviron/create.blade.php` & `enviro_b2/wizard.blade.php`):**
+     - Injected lookup card with `customer_datalist` & `mimas_datalist`.
+     - Standardized `@php ... @endphp` syntax blocks in `enviro_b2/wizard.blade.php` to prevent Blade compiler parse errors.
+     - Auto-populates `client_name`, `company_name`, `project_name`, `district_id`, `contact_phone`, `contact_email`, and `location`.
+  4. **EC Certificate (`ec_certificate/wizard.blade.php` & `EcCertificateController.php`):**
+     - Injected lookup card into Step 1.
+     - Updated `EcCertificateController@wizard` to pass registered `$customers` to view.
+     - Auto-selects matching approved environmental project in `#ec_project_select` and populates `applicant_name`.
+  5. **PPT Department (`ppt_department/wizard.blade.php`):**
+     - Injected lookup card into Step 1.
+     - Added `@stack('scripts')` to `layouts/app.blade.php` so child pushed scripts render reliably.
+     - Auto-selects registered client in `#select_ppt_customer` and populates `project_name` and `mobile`.
+  6. **DGPS Land Survey (`dgps_survey/wizard.blade.php`):**
+     - Injected lookup card into Step 1.
+     - Auto-selects registered client in `#select_dgps_customer` and populates `location` and `lease_area`.
+  7. **Drone Volumetric Survey (`drone_survey/wizard.blade.php` & `DroneSurveyController.php`):**
+     - Upgraded `DroneSurveyController@wizard` from stub to complete handler providing `$customers`, `$districts`, and `$draft`.
+     - Injected lookup card into Step 1.
+     - Auto-populates `applicant_name`, `lease_area`, and `location`.
+  8. **EC Half-Yearly Compliance (`ec_compliance/wizard.blade.php`):**
+     - Injected lookup card into Step 1.
+     - Auto-selects registered client in `#select_comp_customer` and populates `project_name`.
+  9. **Backend Lookup Engine (`CustomerDirectoryController@lookupByMimas`):**
+     - Expanded multi-identifier lookup to match `mimas_no`, `id`, `slug`, `mimas_number`, `company_name`, `customer_name`, `mobile_num`, and clean-digit normalized `aadhaar_no`.
+  10. **Automated Testing & Live Browser Verification:**
+      - Ran full automated test suite: 43 tests passing (252 assertions), 0 failures, 100% clean English verification passing.
+      - Conducted Playwright live browser verification across all applications on `http://127.0.0.1:8002`, capturing 9 high-resolution artifact screenshots.
+- **Last Updated:** 2026-09-23
+
+## Previous Phase: PHASE 5.24 — UNIVERSAL STANDARDIZED DOCUMENT UPLOAD CHECKLIST & SEPARATE-PAGE VIEW ICON ACROSS ALL 7 APPLICATIONS (COMPLETED & VERIFIED) ✅
+- **Status:** Standardized the Document Upload Checklist pattern (matching Lease Application Step 5) across all 7 GTMS applications, ensuring folder-wise categorization, overall completion counter with real-time progress bar, custom document additions (`+ Add Document`), and separate-page view icons (`👁️ View` with `target="_blank"`) across all client-side and server-side document flows:
+  1. **Lease Application (`createstep5.blade.php` & `CustomerController.php`):**
+     - Updated Folders 1, 2, and 3 to render high-contrast View icon (`<a href="{{ $docUrl }}" target="_blank" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i> View</a>`).
+     - Updated AJAX file upload handler (`step5.upload`) to return `file_url` and dynamically inject View icon into uploaded rows.
+     - Updated custom document modal to include View icon upon file selection.
+  2. **Mining Plan (`newapplication.blade.php`):**
+     - Attached files display dedicated View icon (`<a href="..." target="_blank" class="btn btn-sm btn-outline-success">`).
+     - Dynamic file input change triggers `URL.createObjectURL(file)` and injects `btn-view-doc` (`target="_blank"`) immediately before form submission.
+     - Custom document modal appends View icon with blob URL preview.
+  3. **Environment Clearance B1 / B2 (`eviron/show.blade.php` & `EnverionsoneController.php`):**
+     - Added `[+ Add Document]` button on every folder panel header triggering `#modalAddEnviroDoc`.
+     - Implemented `POST /eviron/{id}/documents/add` in `EnverionsoneController@addDocument` supporting custom file uploads to `EnvironmentDocument`.
+     - Added View Icon (`<a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank"><i class="fa fa-eye"></i></a>`) in actions column opening documents in separate tabs.
+  4. **EC Certificate (`ec_certificate/wizard.blade.php`):**
+     - Step 2 certificate upload box equipped with View Icon (`target="_blank"`).
+     - Added "Supporting Documents & Statutory Annexures" checklist with `+ Add Document` button (`#btn_add_ec_support_doc`) and dynamic row creation.
+  5. **PPT Department (`ppt_department/wizard.blade.php`):**
+     - Upgraded Step 5 to full Document Checklist: Overall Document Completion counter (`0 / 11 uploaded`) and progress bar.
+     - Added `+ Add Document` button on folder headers and interactive upload with dynamic View Icon (`target="_blank"`) via `URL.createObjectURL(file)`.
+  6. **DGPS Land Survey (`dgps_survey/wizard.blade.php`):**
+     - Upgraded Step 3 to full Document Upload Checklist (Raw RINEX Base/Rover data, Benchmark fixation sheet, Pillar coordinates CSV, Cadastral FMB overlay, Boundary KML/KMZ, Field traverse log).
+     - Added Overall Completion counter (`0 / 6 uploaded`), progress bar, folder header with `+ Add Document` button (`#btn_add_dgps_doc`), and dynamic View Icon (`target="_blank"`).
+     - Added Step 4 "View Report" button opening preview in separate blank page (`target="_blank"`).
+  7. **Drone Volumetric Survey (`drone_survey/wizard.blade.php`):**
+     - Upgraded Step 3 to full Deliverables Checklist (Flight log & RPC certificate, GCP coordinates sheet, Orthomosaic map GeoTIFF/JPG, DSM/DTM elevation, 3D point cloud LAS/PLY, Volumetric calculation report PDF).
+     - Added Overall Completion counter (`0 / 6 uploaded`), progress bar, folder header with `+ Add Document` button (`#btn_add_drone_doc`), and dynamic View Icon (`target="_blank"`).
+     - Added Step 4 "View Deliverables" button opening preview in separate blank page (`target="_blank"`).
+  8. **Architectural & Parser Hardening:**
+     - Replaced inline `@php(...)` directives with `@php ... @endphp` blocks across DGPS, Drone, and PPT wizard Blade templates to ensure 100% clean compilation.
+     - Verified with 6/6 passing PHPUnit feature tests (68 assertions) and full Playwright browser verification with screenshots.
+- **Last Updated:** 2026-09-23
+
+## Previous Phase: PHASE 5.23 — 7-APPLICATION COMPREHENSIVE HANDLING TEAM & PAYMENT WIZARDS INTEGRATION + PIXEL-PERFECT PROFORMA & TAX INVOICES (COMPLETED & VERIFIED) ✅
+- **Status:** Completed end-to-end integration across all 7 GTMS statutory applications with dedicated Handling Persons and Real-Time Payment steps before review/preview, plus connected pixel-perfect Proforma Invoice (2-page A4) and Tax Invoice (1-page A4) on the Customer 360 Tracking Portal:
+  1. **All 7 Applications Standardized with Handling Team & Payment Steps:**
+     - **Lease Application**: Steps 6 (Handlers), 7 (Payment), 8 (Review).
+     - **Mining Plan**: Panes 6 (Handlers), 7 (Payment), 8 (Review).
+     - **Environment Clearance (B1/B2)**: Interactive Handling Team & Payment ledger in intake, dossier (`eviron/show.blade.php`), and B2 wizard (`enviro_b2/wizard.blade.php`).
+     - **EC Certificate**: Expanded wizard to 8 steps (Step 6 Handlers, Step 7 Payment, Step 8 Preview).
+     - **PPT Department**: Expanded wizard to 9 steps (Step 7 Handlers, Step 8 Payment, Step 9 Preview).
+     - **DGPS Land Survey**: Expanded wizard to 8 steps (Step 6 Handlers, Step 7 Payment, Step 8 Preview).
+     - **Drone Volumetric Survey**: Expanded wizard to 8 steps (Step 6 Handlers, Step 7 Payment, Step 8 Preview).
+  2. **Database & Polymorphic Architecture:**
+     - `application_handlers` and `application_payments` polymorphic tables active with cascade delete and compound indices.
+     - Added payment fields (`product_value`, `paid_amount`, `pending_amount`, `payment_status`) to `environment_projects`, `ec_certificates`, `ppt_applications`, `dgps_surveys`, and `drone_surveys`.
+     - Updated all Eloquent models (`EnvironmentProject`, `EcCertificate`, `PptApplication`, `DgpsSurvey`, `DroneSurvey`, `LeaseApplication`, `MiningApplication`) with `$fillable`, `$casts`, and `handlers()`, `payments()` relations.
+  3. **Pixel-Perfect Consolidated Proforma & Tax Invoices:**
+     - Extracted high-resolution branding assets (`gtms_logo.png`, `gtms_stamp.png`, `gtms_pi_banner.png`) to `public/images/invoices/`.
+     - Built `tax_invoice.blade.php` (Single-Page A4 matching `Reference TI.pdf`) with HSN 9983, GST breakdown (CGST+SGST or IGST), Indian currency words converter, bank RTGS details, and authorized seal.
+     - Built `proforma_invoice.blade.php` (2-Page A4 matching `reference PI.pdf`) with Commercial Terms, 3-Stage Milestone Payment Schedule, and consolidated multi-application product items.
+     - Added `CustomerTrackingController@proformaInvoice` and `@taxInvoice` aggregating live finances across all 7 applications for any customer.
+     - Added `routes/web.php` endpoints: `/customer-tracking/{customer}/proforma-invoice` and `/customer-tracking/{customer}/tax-invoice`.
+     - Integrated toolbar action buttons `[ 📄 Proforma Invoice ]` and `[ 🧾 Tax Invoice ]` on the Customer 360 Tracking Portal (`/customer-tracking/{slug}`).
+  4. **Verification & Testing:**
+     - Verified all routes and steps via automated feature tests and Playwright live browser sessions with full screenshots.
+- **Last Updated:** 2026-09-23
+
+## Previous Phase: PHASE 5.22 — DYNAMIC MULTI-USER HANDLING PERSONS & REAL-TIME PAYMENT LEDGER STEPS (COMPLETED & VERIFIED) ✅
+- **Status:** Integrated two new interactive steps before the preview/review step across all applications in GTMS (Lease Applications and Mining Plan Applications):
+  1. **Handling Persons Step**: Dynamic multi-user allocation table (`+ Add Person` button) capturing Name, Role (manual free-text typing input), and Notes/Responsibilities.
+  2. **Payment Details Step**: Product Value, Paid Amount, Pending Amount (real-time auto-calculation: `Product Value - Paid Amount`), and Settlement Status (`paid`, `partial`, `pending`).
+  - Added migrations `2026_09_22_000001_create_application_handlers_table.php` and `2026_09_22_000002_add_payment_fields_to_applications_tables.php`.
+  - Created polymorphic models `ApplicationHandler` and `ApplicationPayment`, and wired relations to `LeaseApplication` and `MiningApplication`.
+  - Upgraded Lease Application wizard to 8 steps (`step6`, `step7`, `step8`).
+  - Upgraded Mining Application intake wizard to 9 nodes (`pane_6`, `pane_7`, `pane_8`) with real-time math, handlers table, and review summaries.
+  - Upgraded official dossier views (`viewapplication.blade.php` and `projectfolder.blade.php`) to display the Project Handling Team and Financial & Billing Ledger cards.
+  - Verified with comprehensive automated PHPUnit test suite (`tests/Feature/ApplicationHandlersAndPaymentsTest.php` - 6 tests, 68 assertions passing 100%).
+- **Last Updated:** 2026-09-22
+
+## Previous Phase: PHASE 5.21 — GLOBAL PAGINATION UI RESOLUTION & BOOTSTRAP 5 STANDARDIZATION (COMPLETED & VERIFIED) ✅
 - **Status:** Resolved global pagination layout defect where Laravel 12 defaulted to unstyled Tailwind CSS templates, rendering gigantic raw SVG arrow chevrons (`<` and `>`) and stacked mobile/desktop pagination controls. Configured `Paginator::useBootstrapFive()` in `AppServiceProvider.php`, published and customized clean, responsive `bootstrap-5.blade.php` template with flexbox space-between layout (`w-100`, zero bottom margins), added universal `.pagination` and `.dataTables_paginate` CSS polish with GTMS Navy branding (`#0F1E4D`) in `app.blade.php`, standardized all pagination containers across `eviron/index.blade.php`, `ec_certificate/index.blade.php`, `enviro_b2/index.blade.php`, and mining portal index views, and appended `withQueryString()` to all paginated controller queries. Tested and verified via CLI rendering tests.
 - **Last Updated:** 2026-09-21
 - **Delivered Capabilities & Fixes:**
