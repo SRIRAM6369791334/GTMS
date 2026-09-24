@@ -264,9 +264,14 @@
                                 </td>
                                 <td>
                                     <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
-                                        <span class="badge bg-light text-dark border" title="PAN">{{ $customer->pan }}</span>
+                                        @if($customer->pan)
+                                            <span class="badge bg-light text-dark border" title="PAN">{{ $customer->pan }}</span>
+                                        @endif
                                         @if($customer->aadhaar_no)
                                             <span class="badge badge-aadhaar" title="Aadhaar"><i class="fa fa-id-card me-1"></i>{{ $customer->aadhaar_no }}</span>
+                                        @endif
+                                        @if(!$customer->pan && !$customer->aadhaar_no && !$customer->gstin)
+                                            <span class="text-muted small">N/A</span>
                                         @endif
                                     </div>
                                     @if($customer->gstin)
@@ -385,8 +390,8 @@
                         <span class="text-danger error-text customer_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">Company / Quarry Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="company_name" placeholder="Company Name" required>
+                        <label class="form-label">Company <span class="text-muted small">(Optional)</span></label>
+                        <input type="text" class="form-control" name="company_name" placeholder="Company Name">
                         <span class="text-danger error-text company_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
@@ -447,15 +452,15 @@
                         <span class="text-danger error-text area_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">PAN Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control text-uppercase" name="pan" placeholder="AAACS1234F" required>
+                        <label class="form-label">PAN Number <span class="text-muted small">(Optional)</span></label>
+                        <input type="text" class="form-control text-uppercase" name="pan" placeholder="AAACS1234F">
                         <span class="text-danger error-text pan_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">Aadhaar Number <span class="text-danger">*</span></label>
+                        <label class="form-label">Aadhaar Number <span class="text-muted small">(Optional)</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-card text-primary"></i></span>
-                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" placeholder="9876-5432-1012" maxlength="14" required>
+                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" placeholder="9876-5432-1012" maxlength="14">
                         </div>
                         <span class="text-danger error-text aadhaar_no_error"></span>
                     </div>
@@ -574,8 +579,8 @@
                         <span class="text-danger error-text edit_customer_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">Company / Quarry Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="company_name" id="edit_company_name" required>
+                        <label class="form-label">Company <span class="text-muted small">(Optional)</span></label>
+                        <input type="text" class="form-control" name="company_name" id="edit_company_name">
                         <span class="text-danger error-text edit_company_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
@@ -636,15 +641,15 @@
                         <span class="text-danger error-text edit_area_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">PAN Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control text-uppercase" name="pan" id="edit_pan" required>
+                        <label class="form-label">PAN Number <span class="text-muted small">(Optional)</span></label>
+                        <input type="text" class="form-control text-uppercase" name="pan" id="edit_pan">
                         <span class="text-danger error-text edit_pan_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
-                        <label class="form-label">Aadhaar Number <span class="text-danger">*</span></label>
+                        <label class="form-label">Aadhaar Number <span class="text-muted small">(Optional)</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-card text-primary"></i></span>
-                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" id="edit_aadhaar_no" maxlength="14" required>
+                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" id="edit_aadhaar_no" maxlength="14">
                         </div>
                         <span class="text-danger error-text edit_aadhaar_no_error"></span>
                     </div>

@@ -126,7 +126,7 @@ class EnvironmentClearanceTest extends TestCase
      */
     public function test_ec_certificate_show_displays_authentic_certificate(): void
     {
-        $cert = EcCertificate::first();
+        $cert = EcCertificate::whereHas('environmentProject')->first();
         if (!$cert) {
             $project = EnvironmentProject::first();
             $cert = EcCertificate::create([

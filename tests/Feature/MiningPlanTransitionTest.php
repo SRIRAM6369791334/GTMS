@@ -57,7 +57,7 @@ class MiningPlanTransitionTest extends TestCase
         $mineral = Mineral::first() ?? Mineral::create(['name' => 'Rough Stone', 'status' => 1]);
 
         $year = date('Y');
-        $randomSeq = str_pad((string)rand(9000, 9999), 4, '0', STR_PAD_LEFT);
+        $randomSeq = (string)rand(10000, 99999) . rand(100, 999);
         $appNo = "LA-{$year}-{$randomSeq}";
         $commonId = "GTMS-{$year}-{$randomSeq}";
 

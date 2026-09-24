@@ -1,6 +1,67 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 5.26 — CATEGORY B1 SEQUENTIAL 2-STAGE STATUTORY LIFECYCLE & PPT DEPARTMENT APPROVAL GATES (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 5.29 — CUSTOMER DIRECTORY FIELD LABELS & OPTIONAL STATUS MODERNIZATION (COMPLETED & VERIFIED) ✅
+- **Status:** Modernized Customer Directory field requirements across intake and edit modals:
+  1. **Field Label & Requirement Changes:**
+     - Renamed "Company / Quarry Name *" to **"Company"** and switched from required to optional (`<span class="text-muted small">(Optional)</span>`).
+     - Switched **PAN Number** and **Aadhaar Number** from required to optional across both Add Customer (`#modalAddCustomer`) and Edit Customer (`#modalEditCustomer`) modals.
+  2. **Backend Validation & Normalization (`CustomerDirectoryController.php`):**
+     - Updated `store()` and `update()` validation rules: `company_name`, `pan`, and `aadhaar_no` are now `nullable`.
+     - Added robust input sanitization casting empty inputs to `null` to ensure `unique` database constraints are preserved without collision.
+     - Ensured auto-generated customer slugs fall back cleanly to `customer_name` when `company_name` is omitted.
+  3. **Database Schema Alignment:**
+     - Created and ran migration `2026_09_24_000001_make_pan_nullable_in_customers_table.php` converting `pan` column to nullable in MySQL `customers` table.
+  4. **UI Resilience & Testing:**
+     - Standardized Tax & Identity column rendering in `customers.blade.php` to display badges only when PAN or Aadhaar is present, displaying `N/A` if neither exists.
+     - Full PHPUnit test suite passing: **50 passed (390 assertions), 0 failures**.
+- **Last Updated:** 2026-09-24
+
+## Previous Phase: PHASE 5.28 — CUSTOMER 360 TRACKING MULTI-FACETED FILTERS & SEARCH ENHANCEMENTS (COMPLETED & VERIFIED) ✅
+- **Status:** Successfully implemented and thoroughly verified multi-faceted filters and search modernization on the **Customer 360 Dossier & Application Tracking Portal** (`/customer-tracking`):
+  1. **Purged MIMAS Branding from Search UI:**
+     - Removed all user-facing "MIMAS Number" labels, input placeholders, quick-search pills, and customer badge labels.
+     - Standardized user-facing master identifier as **"Customer Unique ID"** (e.g. `TN-MMS-SLM-001`, `CUST-0001`), preserving backward-compatible DB columns.
+  2. **Multi-Faceted Filter Architecture (`CustomerTrackingController.php` & `index.blade.php`):**
+     - **District Filter (`district_id`):** Dropdown populated from all 38 Tamil Nadu districts via `District::orderBy('name')->get()`, cross-filtering customer profiles and associated module applications.
+     - **Application Type Filter (`app_type`):** Dropdown filtering customers by regulatory module: Lease Application, Mining Plan, Environment Clearance (B1 / B2), EC Certificate, PPT Department, DGPS Survey, Drone Survey, and EC Half-Yearly Compliance.
+     - **Date-wise Creation Range (`date_from` & `date_to`):** HTML5 date inputs filtering applications by their creation timestamp (`created_at`) within the selected application module or across all statutory applications.
+     - **Dual Phone Numbers Search:** Universal lookup and live autocomplete search matching across both Primary Mobile (`mobile_num`) and Secondary / Site In-Charge Mobile (`secondary_mobile_num`).
+     - **Company / Quarry Name Filter:** Full-text matching across `company_name`, `project_name`, `location`, `taluk`, and `village`.
+  3. **Visual UI Enhancements:**
+     - Glassmorphism Filter Toolbar (`.ct-filter-bar`) integrated seamlessly into the Hero Search card.
+     - Active Filters Summary Bar (`.ct-active-filter-chip`) showing applied criteria, result counter, and one-click `[ ⊗ Clear All Filters ]`.
+     - Modernized Quick Search pills: `Customer Unique ID`, `Company / Quarry`, `Phone Numbers`, `Aadhaar No`, `Env Project`, `Mining Plan`.
+     - Customer cards equipped with Primary and Secondary phone numbers, Unique ID badges, and all 7 module count chips.
+  4. **Automated Testing & Compliance:**
+     - Dedicated Feature Test Suite `tests/Feature/CustomerTrackingFilterTest.php` created: 6 tests passing (97 assertions).
+     - Full PHPUnit test suite: **50 passed (390 assertions), 0 failures**.
+     - Strict English rule verified: `test_codebase_contains_zero_tamil_characters` passes across the entire codebase.
+     - Playwright live browser verification confirmed on `http://127.0.0.1:8002/customer-tracking`, capturing artifacts `customer_tracking_new_filters.png`, `customer_tracking_filtered_view.png`, and `customer_tracking_dossier_view.png`.
+- **Last Updated:** 2026-09-24
+
+## Previous Phase: PHASE 5.27 — COMPREHENSIVE ROUTE AUDIT ACROSS ALL WEB.PHP ROUTES & DATABASE SCHEMA REPAIR (COMPLETED & VERIFIED) ✅
+- **Status:** Investigated and resolved the `SQLSTATE[42S02]: Table 'gtms_data.environment_projects' doesn't exist` error reported on `/customer-tracking`, and conducted a complete audit of all registered routes across `routes/web.php`:
+  1. **Root Cause Analysis:**
+     - A local MariaDB crash occurred during morning system boot, resulting in corrupted InnoDB tablespaces in `C:\xampp\mysql\data_corrupted_backup_2026_09_24`. During the subsequent manual restore to `C:\xampp\mysql\data\gtms_data`, `environment_projects` was omitted, causing `QueryException: Table doesn't exist` when `/customer-tracking` queried `EnvironmentProject::count()`.
+  2. **Database Reconstruction & Schema Alignment:**
+     - Cleanly dropped orphaned artifacts and recreated `environment_projects` in `gtms_data` with all required columns, indices, and foreign keys:
+       - Polymorphic payment ledger fields (`product_value`, `paid_amount`, `pending_amount`, `payment_status`).
+       - B1 statutory workflow fields (`b1_stage` nullable, `ppt_stage_1_id`, `ppt_stage_2_id`).
+       - Nullable `customer_id` for backward-compatible test fixtures and ad-hoc intake flows.
+       - Re-linked foreign keys from `environment_documents` and `ec_certificates` to `environment_projects`.
+  3. **Comprehensive Web Route Audit (`scratch/test_all_routes_http.php`):**
+     - Audited all 60 registered GET routes in `routes/web.php` against the live local application server (`http://127.0.0.1:8002`) with authenticated admin session:
+       - **Total Routes Checked:** 60
+       - **Passed (200 OK):** 53
+       - **Redirects (302/301):** 6 (expected authentication and multistep wizards)
+       - **Failures (5xx Internal Server Error):** **ZERO (0)**
+  4. **Automated Testing & Browser Verification:**
+     - Ran full automated PHPUnit test suite: **44 passed (293 assertions), 0 failures**.
+     - Verified `test_codebase_contains_zero_tamil_characters` passes (100% clean English).
+     - Captured live screenshot `customer_tracking_fixed.png` verifying the Customer 360 Tracking Portal renders all KPI statistics and customer cards error-free.
+- **Last Updated:** 2026-09-24
+
+## Previous Phase: PHASE 5.26 — CATEGORY B1 SEQUENTIAL 2-STAGE STATUTORY LIFECYCLE & PPT DEPARTMENT APPROVAL GATES (COMPLETED & VERIFIED) ✅
 - **Status:** Implemented and thoroughly verified the sequential statutory lifecycle for **Category B1 Environment Clearance** applications with strict two-stage approval gates via the **PPT Department (கருத்துக்காட்சி அனுமதி துறை)**:
   1. **Intake Screen (`eviron/create.blade.php`):**
      - When **Category B1** is selected, user is presented exclusively with **Sub Category 1 (SC1: ToR & Mining Documents — 5 Folders)** as the active Stage 1 intake option.

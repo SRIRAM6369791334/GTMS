@@ -3,10 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\District;
 use App\Models\EcCertificate;
 use App\Models\EnvironmentProject;
 use App\Models\LeaseApplication;
 use App\Models\MiningApplication;
+use App\Models\PptApplication;
+use App\Models\DgpsSurvey;
+use App\Models\DroneSurvey;
+use App\Models\EcCompliance;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -18,9 +23,16 @@ class CustomerTrackingController extends Controller
     public function index(Request $request)
     {
         $query = trim($request->input('q', ''));
+        $districtId = $request->input('district_id');
+        $appType = $request->input('app_type');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $isFiltered = !empty($query) || !empty($districtId) || !empty($appType) || !empty($dateFrom) || !empty($dateTo);
         $customer = null;
 
-        if (!empty($query)) {
+        // If a direct keyword lookup was submitted without conflicting multi-select filters, test for direct customer match
+        if (!empty($query) && empty($districtId) && empty($appType) && empty($dateFrom) && empty($dateTo)) {
             $customer = $this->findCustomerByUniversalQuery($query);
         }
 
@@ -33,12 +45,220 @@ class CustomerTrackingController extends Controller
             'total_ec_certs'   => EcCertificate::count(),
         ];
 
-        // Recent Active Customers for quick-select cards
-        $recentCustomers = Customer::with(['district', 'mineral'])
-            ->withCount(['leaseApplications', 'miningApplications', 'environmentProjects', 'ecCertificates'])
-            ->latest()
-            ->take(6)
-            ->get();
+        // All districts for dropdown
+        $districts = District::orderBy('name')->get();
+
+        // Application types for dropdown
+        $appTypes = [
+            'lease'          => 'Lease Application',
+            'mining'         => 'Mining Plan',
+            'environment'    => 'Environment Clearance (B1 / B2)',
+            'ec_certificate' => 'EC Certificate',
+            'ppt'            => 'PPT Department',
+            'dgps'           => 'DGPS Land Survey',
+            'drone'          => 'Drone Volumetric Survey',
+            'ec_compliance'  => 'EC Half-Yearly Compliance',
+        ];
+
+        // Query customers list with filters
+        $customersQuery = Customer::with(['district', 'mineral'])
+            ->withCount([
+                'leaseApplications',
+                'miningApplications',
+                'environmentProjects',
+                'ecCertificates',
+                'pptApplications',
+                'dgpsSurveys',
+                'droneSurveys',
+                'ecCompliances',
+            ]);
+
+        // 1. Text Query Filter (Customer Unique ID, Name, Aadhaar, PAN, All Phone Numbers, Quarry Name, App No)
+        if (!empty($query)) {
+            $cleanDigits = preg_replace('/[^0-9]/', '', $query);
+            $cleanAlphanumeric = preg_replace('/[^a-zA-Z0-9]/', '', $query);
+
+            $customersQuery->where(function ($subQ) use ($query, $cleanDigits, $cleanAlphanumeric) {
+                $subQ->where('customer_name', 'like', "%{$query}%")
+                    ->orWhere('company_name', 'like', "%{$query}%")
+                    ->orWhere('mimas_no', 'like', "%{$query}%")
+                    ->orWhere('aadhaar_no', 'like', "%{$query}%")
+                    ->orWhere('pan', 'like', "%{$query}%")
+                    ->orWhere('mobile_num', 'like', "%{$query}%")
+                    ->orWhere('secondary_mobile_num', 'like', "%{$query}%");
+
+                if (!empty($cleanDigits) && strlen($cleanDigits) >= 4) {
+                    $subQ->orWhereRaw("REPLACE(REPLACE(COALESCE(aadhaar_no, ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanDigits}%"]);
+                    if (strlen($cleanDigits) === 12) {
+                        $dashed = substr($cleanDigits, 0, 4) . '-' . substr($cleanDigits, 4, 4) . '-' . substr($cleanDigits, 8, 4);
+                        $spaced = substr($cleanDigits, 0, 4) . ' ' . substr($cleanDigits, 4, 4) . ' ' . substr($cleanDigits, 8, 4);
+                        $subQ->orWhere('aadhaar_no', $dashed)->orWhere('aadhaar_no', $spaced);
+                    }
+                }
+
+                if (!empty($cleanDigits) && strlen($cleanDigits) >= 5) {
+                    $subQ->orWhereRaw("REPLACE(REPLACE(REPLACE(COALESCE(mobile_num, ''), '-', ''), ' ', ''), '+91', '') LIKE ?", ["%{$cleanDigits}%"])
+                        ->orWhereRaw("REPLACE(REPLACE(REPLACE(COALESCE(secondary_mobile_num, ''), '-', ''), ' ', ''), '+91', '') LIKE ?", ["%{$cleanDigits}%"]);
+                    if (strlen($cleanDigits) >= 10) {
+                        $last10 = substr($cleanDigits, -10);
+                        $subQ->orWhere('mobile_num', 'like', "%{$last10}%")
+                            ->orWhere('secondary_mobile_num', 'like', "%{$last10}%");
+                    }
+                }
+
+                if (!empty($cleanAlphanumeric) && strlen($cleanAlphanumeric) >= 3) {
+                    $subQ->orWhereRaw("REPLACE(REPLACE(COALESCE(mimas_no, ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanAlphanumeric}%"]);
+                }
+
+                $subQ->orWhereHas('leaseApplications', function ($lq) use ($query) {
+                    $lq->where('application_no', 'like', "%{$query}%")
+                        ->orWhere('common_id', 'like', "%{$query}%")
+                        ->orWhere('village', 'like', "%{$query}%")
+                        ->orWhere('taluk', 'like', "%{$query}%")
+                        ->orWhere('other_mineral_name', 'like', "%{$query}%");
+                })
+                ->orWhereHas('miningApplications', function ($mq) use ($query) {
+                    $mq->where('application_no', 'like', "%{$query}%")
+                        ->orWhere('common_id', 'like', "%{$query}%")
+                        ->orWhere('village', 'like', "%{$query}%")
+                        ->orWhere('taluk', 'like', "%{$query}%")
+                        ->orWhere('other_mineral_name', 'like', "%{$query}%");
+                })
+                ->orWhereHas('environmentProjects', function ($eq) use ($query) {
+                    $eq->where('project_code', 'like', "%{$query}%")
+                        ->orWhere('project_name', 'like', "%{$query}%")
+                        ->orWhere('location', 'like', "%{$query}%");
+                })
+                ->orWhereHas('ecCertificates', function ($cq) use ($query) {
+                    $cq->where('ec_ref_no', 'like', "%{$query}%")
+                        ->orWhere('parivesh_app_no', 'like', "%{$query}%")
+                        ->orWhere('applicant_name', 'like', "%{$query}%");
+                })
+                ->orWhereHas('pptApplications', function ($pq) use ($query) {
+                    $pq->where('application_no', 'like', "%{$query}%")
+                        ->orWhere('project_name', 'like', "%{$query}%");
+                })
+                ->orWhereHas('dgpsSurveys', function ($dq) use ($query) {
+                    $dq->where('survey_no', 'like', "%{$query}%")
+                        ->orWhere('location', 'like', "%{$query}%");
+                })
+                ->orWhereHas('droneSurveys', function ($drq) use ($query) {
+                    $drq->where('survey_no', 'like', "%{$query}%")
+                        ->orWhere('location', 'like', "%{$query}%");
+                })
+                ->orWhereHas('ecCompliances', function ($ecq) use ($query) {
+                    $ecq->where('compliance_no', 'like', "%{$query}%")
+                        ->orWhere('project_name', 'like', "%{$query}%");
+                });
+            });
+        }
+
+        // 2. District Filter
+        if (!empty($districtId)) {
+            $customersQuery->where(function ($dq) use ($districtId) {
+                $dq->where('district_id', $districtId)
+                    ->orWhereHas('leaseApplications', fn($l) => $l->where('district_id', $districtId))
+                    ->orWhereHas('miningApplications', fn($m) => $m->where('district_id', $districtId))
+                    ->orWhereHas('environmentProjects', fn($e) => $e->where('district_id', $districtId));
+            });
+        }
+
+        // 3. Application Type Filter
+        if (!empty($appType)) {
+            switch ($appType) {
+                case 'lease':
+                    $customersQuery->whereHas('leaseApplications');
+                    break;
+                case 'mining':
+                    $customersQuery->whereHas('miningApplications');
+                    break;
+                case 'environment':
+                    $customersQuery->whereHas('environmentProjects');
+                    break;
+                case 'ec_certificate':
+                    $customersQuery->whereHas('ecCertificates');
+                    break;
+                case 'ppt':
+                    $customersQuery->whereHas('pptApplications');
+                    break;
+                case 'dgps':
+                    $customersQuery->whereHas('dgpsSurveys');
+                    break;
+                case 'drone':
+                    $customersQuery->whereHas('droneSurveys');
+                    break;
+                case 'ec_compliance':
+                    $customersQuery->whereHas('ecCompliances');
+                    break;
+            }
+        }
+
+        // 4. Date-wise Filter (application created time)
+        if (!empty($dateFrom) || !empty($dateTo)) {
+            $fromDate = !empty($dateFrom) ? Carbon::parse($dateFrom)->startOfDay() : null;
+            $toDate = !empty($dateTo) ? Carbon::parse($dateTo)->endOfDay() : null;
+
+            $applyDateRange = function ($builder) use ($fromDate, $toDate) {
+                if ($fromDate && $toDate) {
+                    $builder->whereBetween('created_at', [$fromDate, $toDate]);
+                } elseif ($fromDate) {
+                    $builder->where('created_at', '>=', $fromDate);
+                } elseif ($toDate) {
+                    $builder->where('created_at', '<=', $toDate);
+                }
+            };
+
+            if (!empty($appType)) {
+                switch ($appType) {
+                    case 'lease':
+                        $customersQuery->whereHas('leaseApplications', $applyDateRange);
+                        break;
+                    case 'mining':
+                        $customersQuery->whereHas('miningApplications', $applyDateRange);
+                        break;
+                    case 'environment':
+                        $customersQuery->whereHas('environmentProjects', $applyDateRange);
+                        break;
+                    case 'ec_certificate':
+                        $customersQuery->whereHas('ecCertificates', $applyDateRange);
+                        break;
+                    case 'ppt':
+                        $customersQuery->whereHas('pptApplications', $applyDateRange);
+                        break;
+                    case 'dgps':
+                        $customersQuery->whereHas('dgpsSurveys', $applyDateRange);
+                        break;
+                    case 'drone':
+                        $customersQuery->whereHas('droneSurveys', $applyDateRange);
+                        break;
+                    case 'ec_compliance':
+                        $customersQuery->whereHas('ecCompliances', $applyDateRange);
+                        break;
+                }
+            } else {
+                $customersQuery->where(function ($sub) use ($applyDateRange) {
+                    $applyDateRange($sub);
+                    $sub->orWhereHas('leaseApplications', $applyDateRange)
+                        ->orWhereHas('miningApplications', $applyDateRange)
+                        ->orWhereHas('environmentProjects', $applyDateRange)
+                        ->orWhereHas('ecCertificates', $applyDateRange)
+                        ->orWhereHas('pptApplications', $applyDateRange)
+                        ->orWhereHas('dgpsSurveys', $applyDateRange)
+                        ->orWhereHas('droneSurveys', $applyDateRange)
+                        ->orWhereHas('ecCompliances', $applyDateRange);
+                });
+            }
+        }
+
+        // Fetch matching customer list (paginate if filtered, or latest 6 if initial landing)
+        $limit = $isFiltered ? 12 : 6;
+        $customersList = $customersQuery->latest()->paginate($limit)->withQueryString();
+        $recentCustomers = $customersList;
+
+        // If only 1 customer found in a filtered search, or user searched a specific ID, build dossier
+        if (!$customer && $isFiltered && $customersList->total() === 1 && !empty($query)) {
+            $customer = $customersList->items()[0];
+        }
 
         $dossierData = null;
         if ($customer) {
@@ -48,8 +268,16 @@ class CustomerTrackingController extends Controller
         return view('pages.customer_tracking.index', compact(
             'customer',
             'query',
+            'districtId',
+            'appType',
+            'dateFrom',
+            'dateTo',
+            'districts',
+            'appTypes',
             'stats',
+            'customersList',
             'recentCustomers',
+            'isFiltered',
             'dossierData'
         ));
     }
@@ -78,11 +306,29 @@ class CustomerTrackingController extends Controller
             'total_ec_certs'   => EcCertificate::count(),
         ];
 
-        $recentCustomers = Customer::with(['district', 'mineral'])
-            ->withCount(['leaseApplications', 'miningApplications', 'environmentProjects', 'ecCertificates'])
+        $districts = District::orderBy('name')->get();
+        $appTypes = [
+            'lease'          => 'Lease Application',
+            'mining'         => 'Mining Plan',
+            'environment'    => 'Environment Clearance (B1 / B2)',
+            'ec_certificate' => 'EC Certificate',
+            'ppt'            => 'PPT Department',
+            'dgps'           => 'DGPS Land Survey',
+            'drone'          => 'Drone Volumetric Survey',
+            'ec_compliance'  => 'EC Half-Yearly Compliance',
+        ];
+
+        $isFiltered = false;
+        $districtId = null;
+        $appType = null;
+        $dateFrom = null;
+        $dateTo = null;
+
+        $customersList = Customer::with(['district', 'mineral'])
+            ->withCount(['leaseApplications', 'miningApplications', 'environmentProjects', 'ecCertificates', 'pptApplications', 'dgpsSurveys', 'droneSurveys', 'ecCompliances'])
             ->latest()
-            ->take(6)
-            ->get();
+            ->paginate(6);
+        $recentCustomers = $customersList;
 
         $dossierData = $this->buildCustomerDossier($customer);
         $query = $customer->mimas_no ?: $customer->customer_name;
@@ -90,8 +336,16 @@ class CustomerTrackingController extends Controller
         return view('pages.customer_tracking.index', compact(
             'customer',
             'query',
+            'districtId',
+            'appType',
+            'dateFrom',
+            'dateTo',
+            'districts',
+            'appTypes',
             'stats',
+            'customersList',
             'recentCustomers',
+            'isFiltered',
             'dossierData'
         ));
     }
@@ -132,7 +386,7 @@ class CustomerTrackingController extends Controller
                     }
                 }
 
-                // Normalized Mobile search (+91, spaces, dashes)
+                // Normalized Mobile search across primary and secondary (+91, spaces, dashes)
                 if (!empty($cleanDigits) && strlen($cleanDigits) >= 5) {
                     $query->orWhereRaw("REPLACE(REPLACE(REPLACE(COALESCE(mobile_num, ''), '-', ''), ' ', ''), '+91', '') LIKE ?", ["%{$cleanDigits}%"])
                           ->orWhereRaw("REPLACE(REPLACE(REPLACE(COALESCE(secondary_mobile_num, ''), '-', ''), ' ', ''), '+91', '') LIKE ?", ["%{$cleanDigits}%"]);
@@ -144,27 +398,52 @@ class CustomerTrackingController extends Controller
                     }
                 }
 
-                // Normalized MIMAS / PAN
+                // Normalized Unique ID (mimas_no) / PAN
                 if (!empty($cleanAlphanumeric) && strlen($cleanAlphanumeric) >= 3) {
                     $query->orWhereRaw("REPLACE(REPLACE(COALESCE(mimas_no, ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanAlphanumeric}%"])
                           ->orWhereRaw("REPLACE(REPLACE(COALESCE(pan, ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanAlphanumeric}%"]);
                 }
 
-                // Related Applications matching
+                // Related Applications and Project Name matching
                 $query->orWhereHas('leaseApplications', function ($lq) use ($q) {
                     $lq->where('application_no', 'like', "%{$q}%")
-                        ->orWhere('common_id', 'like', "%{$q}%");
+                        ->orWhere('common_id', 'like', "%{$q}%")
+                        ->orWhere('village', 'like', "%{$q}%")
+                        ->orWhere('taluk', 'like', "%{$q}%")
+                        ->orWhere('other_mineral_name', 'like', "%{$q}%");
                 })
                 ->orWhereHas('miningApplications', function ($mq) use ($q) {
                     $mq->where('application_no', 'like', "%{$q}%")
-                        ->orWhere('common_id', 'like', "%{$q}%");
+                        ->orWhere('common_id', 'like', "%{$q}%")
+                        ->orWhere('village', 'like', "%{$q}%")
+                        ->orWhere('taluk', 'like', "%{$q}%")
+                        ->orWhere('other_mineral_name', 'like', "%{$q}%");
                 })
                 ->orWhereHas('environmentProjects', function ($eq) use ($q) {
-                    $eq->where('project_code', 'like', "%{$q}%");
+                    $eq->where('project_code', 'like', "%{$q}%")
+                        ->orWhere('project_name', 'like', "%{$q}%")
+                        ->orWhere('location', 'like', "%{$q}%");
                 })
                 ->orWhereHas('ecCertificates', function ($cq) use ($q) {
                     $cq->where('ec_ref_no', 'like', "%{$q}%")
-                        ->orWhere('parivesh_app_no', 'like', "%{$q}%");
+                        ->orWhere('parivesh_app_no', 'like', "%{$q}%")
+                        ->orWhere('applicant_name', 'like', "%{$q}%");
+                })
+                ->orWhereHas('pptApplications', function ($pq) use ($q) {
+                    $pq->where('application_no', 'like', "%{$q}%")
+                        ->orWhere('project_name', 'like', "%{$q}%");
+                })
+                ->orWhereHas('dgpsSurveys', function ($dq) use ($q) {
+                    $dq->where('survey_no', 'like', "%{$q}%")
+                        ->orWhere('location', 'like', "%{$q}%");
+                })
+                ->orWhereHas('droneSurveys', function ($drq) use ($q) {
+                    $drq->where('survey_no', 'like', "%{$q}%")
+                        ->orWhere('location', 'like', "%{$q}%");
+                })
+                ->orWhereHas('ecCompliances', function ($ecq) use ($q) {
+                    $ecq->where('compliance_no', 'like', "%{$q}%")
+                        ->orWhere('project_name', 'like', "%{$q}%");
                 });
             })
             ->take(8)
@@ -173,14 +452,22 @@ class CustomerTrackingController extends Controller
         $results = $customers->map(function ($c) {
             // Determine active stage
             $stage = 'Profile Registered';
-            if ($c->ecCertificates()->exists()) {
+            if ($c->ecCompliances()->exists()) {
+                $stage = 'EC Compliance Active';
+            } elseif ($c->ecCertificates()->exists()) {
                 $stage = 'EC Certificate Issued';
+            } elseif ($c->pptApplications()->exists()) {
+                $stage = 'PPT Department';
             } elseif ($c->environmentProjects()->exists()) {
                 $stage = 'Environment Clearance';
             } elseif ($c->miningApplications()->exists()) {
                 $stage = 'Mining Plan';
             } elseif ($c->leaseApplications()->exists()) {
                 $stage = 'Lease Application';
+            } elseif ($c->dgpsSurveys()->exists()) {
+                $stage = 'DGPS Survey';
+            } elseif ($c->droneSurveys()->exists()) {
+                $stage = 'Drone Survey';
             }
 
             $maskedAadhaar = null;
@@ -194,15 +481,17 @@ class CustomerTrackingController extends Controller
             }
 
             return [
-                'id'           => $c->id,
-                'name'         => $c->customer_name,
-                'company'      => $c->company_name ?: 'Individual Applicant',
-                'mimas_no'     => $c->mimas_no,
-                'mobile'       => $c->mobile_num,
-                'aadhaar'      => $maskedAadhaar,
-                'district'     => $c->district?->name ?: 'N/A',
-                'active_stage' => $stage,
-                'url'          => route('customer-tracking.show', $c->slug ?? $c->id),
+                'id'               => $c->id,
+                'name'             => $c->customer_name,
+                'company'          => $c->company_name ?: 'Individual Applicant',
+                'unique_id'        => $c->mimas_no ?: ('CUST-' . str_pad($c->id, 4, '0', STR_PAD_LEFT)),
+                'mimas_no'         => $c->mimas_no,
+                'mobile'           => $c->mobile_num,
+                'secondary_mobile' => $c->secondary_mobile_num,
+                'aadhaar'          => $maskedAadhaar,
+                'district'         => $c->district?->name ?: 'N/A',
+                'active_stage'     => $stage,
+                'url'              => route('customer-tracking.show', $c->slug ?? $c->id),
             ];
         });
 
@@ -242,32 +531,37 @@ class CustomerTrackingController extends Controller
             if ($cAadhaar) return $cAadhaar;
         }
 
-        // 3. Mobile match: handles 10 digits, +91, leading 0, or formatted numbers
+        // 3. Mobile match: handles 10 digits, +91, leading 0, or formatted numbers across BOTH primary and secondary
         if (!empty($cleanDigits) && strlen($cleanDigits) >= 10) {
             $last10 = substr($cleanDigits, -10);
-            $cMobile = Customer::where('mobile_num', $q)
-                ->orWhere('mobile_num', $cleanDigits)
-                ->orWhere('mobile_num', $last10)
-                ->orWhere('secondary_mobile_num', $last10)
-                ->orWhereRaw("RIGHT(REPLACE(REPLACE(REPLACE(COALESCE(mobile_num, ''), '-', ''), ' ', ''), '+91', ''), 10) = ?", [$last10])
-                ->first();
+            $cMobile = Customer::where(function ($mq) use ($q, $cleanDigits, $last10) {
+                $mq->where('mobile_num', $q)
+                   ->orWhere('mobile_num', $cleanDigits)
+                   ->orWhere('mobile_num', $last10)
+                   ->orWhere('secondary_mobile_num', $q)
+                   ->orWhere('secondary_mobile_num', $cleanDigits)
+                   ->orWhere('secondary_mobile_num', $last10)
+                   ->orWhereRaw("RIGHT(REPLACE(REPLACE(REPLACE(COALESCE(mobile_num, ''), '-', ''), ' ', ''), '+91', ''), 10) = ?", [$last10])
+                   ->orWhereRaw("RIGHT(REPLACE(REPLACE(REPLACE(COALESCE(secondary_mobile_num, ''), '-', ''), ' ', ''), '+91', ''), 10) = ?", [$last10]);
+            })->first();
+
             if ($cMobile) return $cMobile;
         }
 
-        // 4. MIMAS, PAN, or exact raw match
+        // 4. Customer Unique ID (mimas_no), PAN, or exact raw match
         $c = Customer::where('mimas_no', $q)
             ->orWhere('pan', $q)
             ->first();
         if ($c) return $c;
 
         if (!empty($cleanAlphanumeric)) {
-            $cMimas = Customer::whereRaw("REPLACE(REPLACE(COALESCE(mimas_no, ''), '-', ''), ' ', '') = ?", [$cleanAlphanumeric])
+            $cUnique = Customer::whereRaw("REPLACE(REPLACE(COALESCE(mimas_no, ''), '-', ''), ' ', '') = ?", [$cleanAlphanumeric])
                 ->orWhereRaw("REPLACE(REPLACE(COALESCE(pan, ''), '-', ''), ' ', '') = ?", [$cleanAlphanumeric])
                 ->first();
-            if ($cMimas) return $cMimas;
+            if ($cUnique) return $cUnique;
         }
 
-        // 5. Match via Application No / Common ID
+        // 5. Match via Application No / Common ID / Project Code across all modules
         $lease = LeaseApplication::where('application_no', $q)->orWhere('common_id', $q)->first();
         if ($lease && $lease->customer) return $lease->customer;
 
@@ -280,11 +574,31 @@ class CustomerTrackingController extends Controller
         $cert = EcCertificate::where('ec_ref_no', $q)->orWhere('parivesh_app_no', $q)->first();
         if ($cert && $cert->customer) return $cert->customer;
 
-        // 6. Fuzzy search fallback by name, company, mimas, mobile, or aadhaar
+        $ppt = PptApplication::where('application_no', $q)->first();
+        if ($ppt && $ppt->customer) return $ppt->customer;
+
+        $dgps = DgpsSurvey::where('survey_no', $q)->first();
+        if ($dgps && $dgps->customer) return $dgps->customer;
+
+        $drone = DroneSurvey::where('survey_no', $q)->first();
+        if ($drone && $drone->customer) return $drone->customer;
+
+        $comp = EcCompliance::where('compliance_no', $q)->first();
+        if ($comp && $comp->customer) return $comp->customer;
+
+        // 6. Match via Project Name / Location in applications
+        $envProj = EnvironmentProject::where('project_name', 'like', "%{$q}%")->orWhere('location', 'like', "%{$q}%")->first();
+        if ($envProj && $envProj->customer) return $envProj->customer;
+
+        $pptApp = PptApplication::where('project_name', 'like', "%{$q}%")->first();
+        if ($pptApp && $pptApp->customer) return $pptApp->customer;
+
+        // 7. Fuzzy search fallback by customer_name, company_name, mimas_no, mobile numbers, or aadhaar
         return Customer::where('customer_name', 'like', "%{$q}%")
             ->orWhere('company_name', 'like', "%{$q}%")
             ->orWhere('mimas_no', 'like', "%{$q}%")
             ->orWhere('mobile_num', 'like', "%{$q}%")
+            ->orWhere('secondary_mobile_num', 'like', "%{$q}%")
             ->orWhere('aadhaar_no', 'like', "%{$q}%")
             ->first();
     }
@@ -309,6 +623,7 @@ class CustomerTrackingController extends Controller
             'pptApplications',
             'dgpsSurveys',
             'droneSurveys',
+            'ecCompliances',
         ]);
 
         $leaseApp = $customer->leaseApplications->first();

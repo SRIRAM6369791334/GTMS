@@ -61,15 +61,15 @@ class CustomerDirectoryController extends Controller
             'mimas_status'             => 'nullable|string|max:100',
             'customer_name'            => 'required|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
-            'company_name'             => 'required|string|max:255',
+            'company_name'             => 'nullable|string|max:255',
             'mobile_num'               => 'required|string|max:15',
             'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
             'area'                     => 'nullable|numeric|min:0',
-            'pan'                      => 'required|string|max:10',
-            'aadhaar_no'               => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
+            'pan'                      => 'nullable|string|max:10',
+            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
             'gstin'                    => 'nullable|string|max:15',
             'address'                  => 'nullable|string',
             'status'                   => 'required|in:0,1',
@@ -88,10 +88,13 @@ class CustomerDirectoryController extends Controller
 
         $data = $validator->validated();
         $data['mimas_no'] = trim($data['mimas_no']);
-        $data['aadhaar_no'] = trim($data['aadhaar_no']);
-        $data['pan'] = strtoupper($data['pan']);
+        $data['company_name'] = !empty($data['company_name']) ? trim($data['company_name']) : null;
+        $data['aadhaar_no'] = !empty($data['aadhaar_no']) ? trim($data['aadhaar_no']) : null;
+        $data['pan'] = !empty($data['pan']) ? strtoupper(trim($data['pan'])) : null;
         if (!empty($data['gstin'])) {
-            $data['gstin'] = strtoupper($data['gstin']);
+            $data['gstin'] = strtoupper(trim($data['gstin']));
+        } else {
+            $data['gstin'] = null;
         }
         $data['created_by'] = Auth::id();
 
@@ -108,18 +111,20 @@ class CustomerDirectoryController extends Controller
         if ($trashedCustomer) {
             $trashedCustomer->restore();
             $trashedCustomer->update($data);
+            $displayName = $trashedCustomer->company_name ?: $trashedCustomer->customer_name;
             return response()->json([
                 'status'  => 1,
-                'message' => 'Archived customer "' . $trashedCustomer->company_name . '" has been restored and updated successfully!',
+                'message' => 'Archived customer "' . $displayName . '" has been restored and updated successfully!',
                 'data'    => $trashedCustomer,
             ]);
         }
 
         $customer = Customer::create($data);
+        $displayName = $customer->company_name ?: $customer->customer_name;
 
         return response()->json([
             'status'  => 1,
-            'message' => 'Customer "' . $customer->company_name . '" created successfully!',
+            'message' => 'Customer "' . $displayName . '" created successfully!',
             'data'    => $customer,
         ]);
     }
@@ -215,15 +220,15 @@ class CustomerDirectoryController extends Controller
             'mimas_status'             => 'nullable|string|max:100',
             'customer_name'            => 'required|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
-            'company_name'             => 'required|string|max:255',
+            'company_name'             => 'nullable|string|max:255',
             'mobile_num'               => 'required|string|max:15',
             'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
             'area'                     => 'nullable|numeric|min:0',
-            'pan'                      => 'required|string|max:10',
-            'aadhaar_no'               => ['required', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
+            'pan'                      => 'nullable|string|max:10',
+            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
             'gstin'                    => 'nullable|string|max:15',
             'address'                  => 'nullable|string',
             'status'                   => 'required|in:0,1',
@@ -242,10 +247,13 @@ class CustomerDirectoryController extends Controller
 
         $data = $validator->validated();
         $data['mimas_no'] = trim($data['mimas_no']);
-        $data['aadhaar_no'] = trim($data['aadhaar_no']);
-        $data['pan'] = strtoupper($data['pan']);
+        $data['company_name'] = !empty($data['company_name']) ? trim($data['company_name']) : null;
+        $data['aadhaar_no'] = !empty($data['aadhaar_no']) ? trim($data['aadhaar_no']) : null;
+        $data['pan'] = !empty($data['pan']) ? strtoupper(trim($data['pan'])) : null;
         if (!empty($data['gstin'])) {
-            $data['gstin'] = strtoupper($data['gstin']);
+            $data['gstin'] = strtoupper(trim($data['gstin']));
+        } else {
+            $data['gstin'] = null;
         }
 
         // Check if conflict with an existing archived/soft-deleted record
@@ -260,19 +268,21 @@ class CustomerDirectoryController extends Controller
             ->first();
 
         if ($trashedConflict) {
+            $conflictName = $trashedConflict->company_name ?: $trashedConflict->customer_name;
             return response()->json([
                 'status' => 0,
                 'errors' => [
-                    'mimas_no' => ['This MIMAS or Aadhaar number is currently reserved by an archived customer ("' . $trashedConflict->company_name . '"). Please restore that customer or use a different number.']
+                    'mimas_no' => ['This MIMAS or Aadhaar number is currently reserved by an archived customer ("' . $conflictName . '"). Please restore that customer or use a different number.']
                 ]
             ], 422);
         }
 
         $customer->update($data);
+        $displayName = $customer->company_name ?: $customer->customer_name;
 
         return response()->json([
             'status'  => 1,
-            'message' => 'Customer "' . $customer->company_name . '" updated successfully!',
+            'message' => 'Customer "' . $displayName . '" updated successfully!',
             'data'    => $customer,
         ]);
     }
