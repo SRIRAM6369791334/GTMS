@@ -1,0 +1,25 @@
+# Worker Remediate Progress
+Last visited: 2026-09-24T13:18:00Z
+- [x] Initialized BRIEFING.md and DISPATCH.md
+- [x] Investigate ground truth in codebase and existing documents
+  - Verified `php artisan test`: 50 tests (49 Feature, 1 Unit), 388 assertions (48 passed, 2 failed due to Active Filters vs Active Criteria mismatch)
+  - Verified `CustomerController@moveToMining`: no beginTransaction/commit, no handlers/payments copy, checks idempotency, clones files with @copy(), creates MiningDocument records, redirects
+  - Verified database schema: `users.user_id`, `categories.cat_code`/`cat_name`, `products.discount_1..3`
+- [x] Plan exact reconciliation edits
+- [x] Edit `docs/16-testing.md` and `README.md`
+  - Reconciled test metrics to 50 total (49 feature, 1 unit), 388 assertions, baseline 48 passed, 2 failed
+  - Detailed the 48/48 core domain pass and view label sensitivity under `docs/22-unknowns-risks.md § TEST-01`
+  - Updated README.md badge, tech stack table, and Verified Test Results console block
+- [x] Edit `docs/19-data-flows.md`
+  - Replaced fictional `moveToMining` diagram with exact controller logic: lease status verification, idempotency check, generation of app no, `@copy()` file cloning, `MiningDocument` creation, customer/lease linking, and redirect
+  - Removed fictional `DB::beginTransaction()` / `DB::commit()` and fictional handlers/payments sync
+- [x] Edit `docs/03-database.md`
+  - Added `user_id` to Table 1 (`users`)
+  - Updated Table 57 (`categories`) to `cat_code`, `cat_name`
+  - Added `discount_1`, `discount_2`, `discount_3` to Table 58 (`products`)
+  - Updated prototype tables 61 & 62 (`environmental_projects`, `environmental_documents`)
+- [x] Verify changes
+  - Verified zero source code modified
+  - Verified zero secrets exposed
+- [x] Write `handoff.md`
+- [x] Notify parent

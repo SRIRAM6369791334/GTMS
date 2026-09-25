@@ -1,0 +1,1589 @@
+{
+    "AuthController.php": {
+        "class": "App\\Http\\Controllers\\AuthController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 55,
+        "methods": [
+            {
+                "name": "showLogin",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 11,
+                "endLine": 17,
+                "docComment": null
+            },
+            {
+                "name": "login",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 19,
+                "endLine": 53,
+                "docComment": null
+            },
+            {
+                "name": "logout",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 55,
+                "endLine": 62,
+                "docComment": null
+            }
+        ]
+    },
+    "BranchController.php": {
+        "class": "App\\Http\\Controllers\\BranchController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 74,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 10,
+                "endLine": 14,
+                "docComment": null
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 16,
+                "endLine": 41,
+                "docComment": null
+            },
+            {
+                "name": "update",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 43,
+                "endLine": 68,
+                "docComment": null
+            },
+            {
+                "name": "destroy",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 70,
+                "endLine": 80,
+                "docComment": null
+            }
+        ]
+    },
+    "CategoryController.php": {
+        "class": "App\\Http\\Controllers\\CategoryController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 73,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 10,
+                "endLine": 14,
+                "docComment": null
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 16,
+                "endLine": 33,
+                "docComment": null
+            },
+            {
+                "name": "update",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 35,
+                "endLine": 59,
+                "docComment": null
+            },
+            {
+                "name": "destroy",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 61,
+                "endLine": 79,
+                "docComment": null
+            }
+        ]
+    },
+    "Controller.php": {
+        "class": "App\\Http\\Controllers\\Controller",
+        "parent": null,
+        "isAbstract": true,
+        "totalLines": 4,
+        "methods": []
+    },
+    "CustomerController.php": {
+        "class": "App\\Http\\Controllers\\CustomerController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 1824,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 33,
+                "endLine": 47,
+                "docComment": null
+            },
+            {
+                "name": "step1",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 53,
+                "endLine": 63,
+                "docComment": null
+            },
+            {
+                "name": "saveStep1",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 65,
+                "endLine": 216,
+                "docComment": null
+            },
+            {
+                "name": "step2",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 222,
+                "endLine": 226,
+                "docComment": null
+            },
+            {
+                "name": "saveStep2",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 228,
+                "endLine": 294,
+                "docComment": null
+            },
+            {
+                "name": "step3",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 300,
+                "endLine": 305,
+                "docComment": null
+            },
+            {
+                "name": "saveStep3",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 307,
+                "endLine": 331,
+                "docComment": null
+            },
+            {
+                "name": "step4",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 337,
+                "endLine": 354,
+                "docComment": null
+            },
+            {
+                "name": "step5",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 360,
+                "endLine": 407,
+                "docComment": null
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 413,
+                "endLine": 546,
+                "docComment": "/**\n     * Handle real file upload for individual document items.\n     * Persists directly to database (Milestone Document Saving).\n     */"
+            },
+            {
+                "name": "step6",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 556,
+                "endLine": 584,
+                "docComment": null
+            },
+            {
+                "name": "saveStep6",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 586,
+                "endLine": 647,
+                "docComment": null
+            },
+            {
+                "name": "step7",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 653,
+                "endLine": 679,
+                "docComment": null
+            },
+            {
+                "name": "saveStep7",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 681,
+                "endLine": 753,
+                "docComment": null
+            },
+            {
+                "name": "step8",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 759,
+                "endLine": 770,
+                "docComment": null
+            },
+            {
+                "name": "resumeDraft",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 776,
+                "endLine": 854,
+                "docComment": null
+            },
+            {
+                "name": "buildPreviewData",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "array $draft"
+                ],
+                "startLine": 859,
+                "endLine": 995,
+                "docComment": "/**\n     * Build a structured preview from session draft data.\n     */"
+            },
+            {
+                "name": "submit",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 997,
+                "endLine": 1402,
+                "docComment": null
+            },
+            {
+                "name": "viewApplication",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 1408,
+                "endLine": 1433,
+                "docComment": null
+            },
+            {
+                "name": "validateApplication",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 1439,
+                "endLine": 1472,
+                "docComment": null
+            },
+            {
+                "name": "updateDocumentStatus",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 1478,
+                "endLine": 1518,
+                "docComment": null
+            },
+            {
+                "name": "approveApplication",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 1524,
+                "endLine": 1543,
+                "docComment": null
+            },
+            {
+                "name": "rejectApplication",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 1549,
+                "endLine": 1568,
+                "docComment": null
+            },
+            {
+                "name": "generateReport",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 1574,
+                "endLine": 1587,
+                "docComment": null
+            },
+            {
+                "name": "logActivity",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "int $referenceId",
+                    "string $action",
+                    "string $description"
+                ],
+                "startLine": 1593,
+                "endLine": 1610,
+                "docComment": null
+            },
+            {
+                "name": "moveToMining",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 1615,
+                "endLine": 1794,
+                "docComment": "/**\n     * Cross-Module Transition: Promote Lease Application to Mining Plan under Universal Common ID.\n     */"
+            },
+            {
+                "name": "generateDraftAppNumber",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 1800,
+                "endLine": 1817,
+                "docComment": null
+            },
+            {
+                "name": "generateOfficialAppNumber",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 1819,
+                "endLine": 1838,
+                "docComment": null
+            },
+            {
+                "name": "formatFileSize",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "int $bytes"
+                ],
+                "startLine": 1844,
+                "endLine": 1849,
+                "docComment": null
+            }
+        ]
+    },
+    "CustomerDirectoryController.php": {
+        "class": "App\\Http\\Controllers\\CustomerDirectoryController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 384,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 18,
+                "endLine": 41,
+                "docComment": "/**\n     * Display a listing of customers with KPI stats and filter dropdowns.\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 46,
+                "endLine": 130,
+                "docComment": "/**\n     * Store a newly created customer in storage.\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$slug"
+                ],
+                "startLine": 135,
+                "endLine": 192,
+                "docComment": "/**\n     * Return single customer data for View modal (AJAX) or 360\u00b0 Profile Dossier Page (Web).\n     */"
+            },
+            {
+                "name": "update",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 197,
+                "endLine": 288,
+                "docComment": "/**\n     * Update the specified customer in storage.\n     */"
+            },
+            {
+                "name": "lookupByMimas",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$mimas_no"
+                ],
+                "startLine": 293,
+                "endLine": 349,
+                "docComment": "/**\n     * Universal Master Lookup: Fetch customer by unique MIMAS number for cross-application autofill.\n     */"
+            },
+            {
+                "name": "destroy",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 354,
+                "endLine": 395,
+                "docComment": "/**\n     * Soft delete the specified customer with active dependency protection.\n     */"
+            }
+        ]
+    },
+    "CustomerTrackingController.php": {
+        "class": "App\\Http\\Controllers\\CustomerTrackingController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 1098,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 23,
+                "endLine": 283,
+                "docComment": "/**\n     * Display the Customer 360 Tracking Portal\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$customer"
+                ],
+                "startLine": 288,
+                "endLine": 351,
+                "docComment": "/**\n     * Show tracking dossier for a specific customer\n     */"
+            },
+            {
+                "name": "search",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 356,
+                "endLine": 499,
+                "docComment": "/**\n     * AJAX Live Autocomplete Search Endpoint\n     */"
+            },
+            {
+                "name": "findCustomerByUniversalQuery",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "string $q"
+                ],
+                "startLine": 504,
+                "endLine": 604,
+                "docComment": "/**\n     * Resolve Customer record by universal keyword\n     */"
+            },
+            {
+                "name": "buildCustomerDossier",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "App\\Models\\Customer $customer"
+                ],
+                "startLine": 609,
+                "endLine": 781,
+                "docComment": "/**\n     * Build comprehensive 360-degree Dossier Data for Customer\n     */"
+            },
+            {
+                "name": "proformaInvoice",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$customer"
+                ],
+                "startLine": 786,
+                "endLine": 791,
+                "docComment": "/**\n     * Render the official consolidated Proforma Invoice\n     */"
+            },
+            {
+                "name": "taxInvoice",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$customer"
+                ],
+                "startLine": 796,
+                "endLine": 801,
+                "docComment": "/**\n     * Render the official Tax Invoice\n     */"
+            },
+            {
+                "name": "resolveCustomer",
+                "visibility": "protected",
+                "isStatic": false,
+                "parameters": [
+                    "$customer"
+                ],
+                "startLine": 806,
+                "endLine": 821,
+                "docComment": "/**\n     * Resolve Customer model from slug, ID, or Aadhaar\n     */"
+            },
+            {
+                "name": "buildInvoiceData",
+                "visibility": "protected",
+                "isStatic": false,
+                "parameters": [
+                    "App\\Models\\Customer $customer",
+                    "string $type"
+                ],
+                "startLine": 826,
+                "endLine": 1050,
+                "docComment": "/**\n     * Assemble dynamic invoice data aggregated across all 7 applications\n     */"
+            },
+            {
+                "name": "numberToWords",
+                "visibility": "protected",
+                "isStatic": false,
+                "parameters": [
+                    "float $number"
+                ],
+                "startLine": 1055,
+                "endLine": 1104,
+                "docComment": "/**\n     * Convert currency number into formal Indian wording (Rupees & Paise)\n     */"
+            },
+            {
+                "name": "convertTwoDigits",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [
+                    "int $n",
+                    "array $words"
+                ],
+                "startLine": 1106,
+                "endLine": 1114,
+                "docComment": null
+            }
+        ]
+    },
+    "DgpsSurveyController.php": {
+        "class": "App\\Http\\Controllers\\DgpsSurveyController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 281,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 20,
+                "endLine": 62,
+                "docComment": "/**\n     * Master Index Listing (Dynamic Database Records & KPI Cards)\n     */"
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 67,
+                "endLine": 107,
+                "docComment": "/**\n     * Step-by-Step Interactive Wizard\n     */"
+            },
+            {
+                "name": "saveStep",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 112,
+                "endLine": 160,
+                "docComment": "/**\n     * Save Step in Wizard Draft\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 165,
+                "endLine": 247,
+                "docComment": "/**\n     * Final Submission & Database Persistence\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 252,
+                "endLine": 256,
+                "docComment": "/**\n     * Show Survey Dossier\n     */"
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 261,
+                "endLine": 294,
+                "docComment": "/**\n     * Upload Document via AJAX\n     */"
+            }
+        ]
+    },
+    "DroneSurveyController.php": {
+        "class": "App\\Http\\Controllers\\DroneSurveyController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 18,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 12,
+                "endLine": 15,
+                "docComment": null
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 17,
+                "endLine": 26,
+                "docComment": null
+            }
+        ]
+    },
+    "EcCertificateController.php": {
+        "class": "App\\Http\\Controllers\\EcCertificateController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 513,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 23,
+                "endLine": 52,
+                "docComment": "/**\n     * List all issued Environmental Clearance Certificates with dynamic KPI metrics\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $id"
+                ],
+                "startLine": 57,
+                "endLine": 61,
+                "docComment": "/**\n     * View authentic details of an already issued EC Certificate\n     */"
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 66,
+                "endLine": 150,
+                "docComment": "/**\n     * 6-Step Dynamic EC Issuance Wizard\n     */"
+            },
+            {
+                "name": "getMaxUnlockedStep",
+                "visibility": "protected",
+                "isStatic": false,
+                "parameters": [
+                    "array $draft"
+                ],
+                "startLine": 155,
+                "endLine": 180,
+                "docComment": "/**\n     * Compute highest unlocked step based on verified session progress\n     */"
+            },
+            {
+                "name": "saveStep",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $step"
+                ],
+                "startLine": 185,
+                "endLine": 349,
+                "docComment": "/**\n     * Handle state persistence across wizard steps\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 354,
+                "endLine": 529,
+                "docComment": "/**\n     * Finalize and Commit EC Certificate to Database\n     */"
+            }
+        ]
+    },
+    "EcComplianceController.php": {
+        "class": "App\\Http\\Controllers\\EcComplianceController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 353,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 23,
+                "endLine": 66,
+                "docComment": "/**\n     * Master Listing & Live KPI Statistics\n     */"
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 71,
+                "endLine": 161,
+                "docComment": "/**\n     * Interactive Multi-Step Compliance Flow Wizard (Matching Diagram)\n     */"
+            },
+            {
+                "name": "saveStep",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 166,
+                "endLine": 225,
+                "docComment": "/**\n     * Save Step in Session Draft\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 230,
+                "endLine": 319,
+                "docComment": "/**\n     * Store Final Compliance Record\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 324,
+                "endLine": 329,
+                "docComment": "/**\n     * Show Compliance Dossier\n     */"
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 334,
+                "endLine": 369,
+                "docComment": "/**\n     * Upload Document via AJAX\n     */"
+            }
+        ]
+    },
+    "EnverionsoneController.php": {
+        "class": "App\\Http\\Controllers\\EnverionsoneController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 604,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 29,
+                "endLine": 74,
+                "docComment": "/**\n     * UNIFIED Landing Page \u2014 lists all Environment Clearance projects (B1 + B2)\n     * with real dynamic KPI cards from DB (no static numbers).\n     */"
+            },
+            {
+                "name": "create",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 79,
+                "endLine": 89,
+                "docComment": "/**\n     * Category Selection Wizard (GET) \u2014 Step 1: Pick B1/B2, Step 2: Project Details\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 94,
+                "endLine": 226,
+                "docComment": "/**\n     * Store new Environment Project (POST) \u2014 handles B1-SC1, B1-SC2, B2\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $id"
+                ],
+                "startLine": 232,
+                "endLine": 274,
+                "docComment": "/**\n     * UNIFIED Project Show \u2014 dynamic folder tabs based on category + sub_category.\n     * Works for B1/SC1, B1/SC2, and B2.\n     */"
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $id",
+                    "int $document"
+                ],
+                "startLine": 279,
+                "endLine": 302,
+                "docComment": "/**\n     * Upload a document for an eviron project.\n     */"
+            },
+            {
+                "name": "addDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $id"
+                ],
+                "startLine": 307,
+                "endLine": 336,
+                "docComment": "/**\n     * Add and upload a custom document to an environment project folder.\n     */"
+            },
+            {
+                "name": "reviewDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $id",
+                    "int $document"
+                ],
+                "startLine": 341,
+                "endLine": 358,
+                "docComment": "/**\n     * Review a document (approve / request revision).\n     */"
+            },
+            {
+                "name": "updateStatus",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $id"
+                ],
+                "startLine": 363,
+                "endLine": 386,
+                "docComment": "/**\n     * Update overall project status (validation \u2192 approved \u2192 reported).\n     */"
+            },
+            {
+                "name": "downloadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $document"
+                ],
+                "startLine": 391,
+                "endLine": 401,
+                "docComment": "/**\n     * Download a document file.\n     */"
+            },
+            {
+                "name": "index1",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 409,
+                "endLine": 431,
+                "docComment": "/**\n     * Sub Category 1 (Site & Mining Documentation \u2014 5 Folders)\n     * Now: if project_id given \u2192 redirect to unified show page\n     *       if no project \u2192 redirect to create wizard\n     */"
+            },
+            {
+                "name": "index2",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 438,
+                "endLine": 459,
+                "docComment": "/**\n     * Sub Category 2 (EIA & TNPCB Submission \u2014 6 Folders)\n     * Now: redirects to unified show page.\n     */"
+            },
+            {
+                "name": "submitSc1ToPpt",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $id"
+                ],
+                "startLine": 464,
+                "endLine": 518,
+                "docComment": "/**\n     * Submit Sub Category 1 (SC1) to PPT Department for Stage 1 ToR Presentation.\n     */"
+            },
+            {
+                "name": "submitSc2ToPpt",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $id"
+                ],
+                "startLine": 523,
+                "endLine": 577,
+                "docComment": "/**\n     * Submit Sub Category 2 (SC2) to PPT Department for Stage 2 Final EC Presentation.\n     */"
+            },
+            {
+                "name": "autoGenerateDocumentSlots",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "App\\Models\\EnvironmentProject $project"
+                ],
+                "startLine": 585,
+                "endLine": 617,
+                "docComment": "/**\n     * Auto-generate EnvironmentDocument slots for every document_field\n     * belonging to the correct folders for this project's category + sub_category.\n     */"
+            },
+            {
+                "name": "generateSlots",
+                "visibility": "public",
+                "isStatic": true,
+                "parameters": [
+                    "App\\Models\\EnvironmentProject $project"
+                ],
+                "startLine": 619,
+                "endLine": 622,
+                "docComment": null
+            }
+        ]
+    },
+    "EnvironmentalB2Controller.php": {
+        "class": "App\\Http\\Controllers\\EnvironmentalB2Controller",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 309,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 21,
+                "endLine": 37,
+                "docComment": "/**\n     * Display listing of B2 Clearance Applications with real KPI metrics\n     */"
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step"
+                ],
+                "startLine": 42,
+                "endLine": 51,
+                "docComment": "/**\n     * Display Step-by-step Wizard\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 56,
+                "endLine": 171,
+                "docComment": "/**\n     * Store newly initiated B2 Project and auto-generate 6-folder document checklist\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "App\\Models\\EnvironmentProject $project"
+                ],
+                "startLine": 176,
+                "endLine": 197,
+                "docComment": "/**\n     * Display B2 Project Dossier & Folder Management View\n     */"
+            },
+            {
+                "name": "upload",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "App\\Models\\EnvironmentDocument $document"
+                ],
+                "startLine": 202,
+                "endLine": 249,
+                "docComment": "/**\n     * Upload real document file against checklist item\n     */"
+            },
+            {
+                "name": "review",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "App\\Models\\EnvironmentDocument $document"
+                ],
+                "startLine": 254,
+                "endLine": 281,
+                "docComment": "/**\n     * Review/Validate document (Validation Loop)\n     */"
+            },
+            {
+                "name": "updateStatus",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "App\\Models\\EnvironmentProject $project"
+                ],
+                "startLine": 286,
+                "endLine": 313,
+                "docComment": "/**\n     * Update project stage lifecycle (draft -> validation -> approved -> reported -> archived)\n     */"
+            },
+            {
+                "name": "download",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "App\\Models\\EnvironmentDocument $document"
+                ],
+                "startLine": 318,
+                "endLine": 323,
+                "docComment": "/**\n     * Download document file\n     */"
+            }
+        ]
+    },
+    "MiningController.php": {
+        "class": "App\\Http\\Controllers\\MiningController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 974,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 29,
+                "endLine": 48,
+                "docComment": "/**\n     * 1. Mining Plan - Master Applications Table\n     */"
+            },
+            {
+                "name": "newApplication",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 53,
+                "endLine": 184,
+                "docComment": "/**\n     * New Application Intake Wizard\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 189,
+                "endLine": 552,
+                "docComment": "/**\n     * Store newly created Mining Application\n     */"
+            },
+            {
+                "name": "projectFolder",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 557,
+                "endLine": 614,
+                "docComment": "/**\n     * 2. Project Folders - Table List (when no ?id=) OR Full Dossier (when ?id=X)\n     */"
+            },
+            {
+                "name": "Document",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 619,
+                "endLine": 664,
+                "docComment": "/**\n     * Document Upload and Management View\n     */"
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 669,
+                "endLine": 703,
+                "docComment": "/**\n     * Upload single document file against checklist item\n     */"
+            },
+            {
+                "name": "Process",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 708,
+                "endLine": 769,
+                "docComment": "/**\n     * 3. Process Flow - Table List (when no ?id=) OR Full Stage Workflow (when ?id=X)\n     */"
+            },
+            {
+                "name": "validateDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 774,
+                "endLine": 799,
+                "docComment": "/**\n     * Review / Validate individual document (Validation Loop)\n     */"
+            },
+            {
+                "name": "advanceStage",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 804,
+                "endLine": 823,
+                "docComment": "/**\n     * Advance stage (6.1 -> 6.2 -> 6.3 -> 6.4 -> 6.5)\n     */"
+            },
+            {
+                "name": "generateMiningAppNumber",
+                "visibility": "private",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 829,
+                "endLine": 855,
+                "docComment": "/**\n     * Helper: Concurrency-safe atomic application number & Common ID generator for Mining Applications\n     * Returns: [$applicationNo, $commonId]\n     */"
+            },
+            {
+                "name": "moveToEnvironment",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "$id"
+                ],
+                "startLine": 860,
+                "endLine": 996,
+                "docComment": "/**\n     * Advance / Transition Mining Plan to Environment Clearance (B1 or B2) with physical document carry-over\n     */"
+            }
+        ]
+    },
+    "PptDepartmentController.php": {
+        "class": "App\\Http\\Controllers\\PptDepartmentController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 321,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 22,
+                "endLine": 64,
+                "docComment": "/**\n     * Master Index Listing (Dynamic Database Records & KPI Cards)\n     */"
+            },
+            {
+                "name": "wizard",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 69,
+                "endLine": 111,
+                "docComment": "/**\n     * Step-by-Step Interactive Wizard\n     */"
+            },
+            {
+                "name": "saveStep",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "int $step",
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 116,
+                "endLine": 167,
+                "docComment": "/**\n     * Save Step in Wizard Draft\n     */"
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 172,
+                "endLine": 249,
+                "docComment": "/**\n     * Final Submission & Database Persistence\n     */"
+            },
+            {
+                "name": "show",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 254,
+                "endLine": 258,
+                "docComment": "/**\n     * Show Application Dossier\n     */"
+            },
+            {
+                "name": "uploadDocument",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 263,
+                "endLine": 298,
+                "docComment": "/**\n     * Upload Document via AJAX\n     */"
+            },
+            {
+                "name": "approvePresentation",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request",
+                    "int $id"
+                ],
+                "startLine": 303,
+                "endLine": 336,
+                "docComment": "/**\n     * Approve presentation and advance linked Environment Clearance Project stage.\n     */"
+            }
+        ]
+    },
+    "ProductController.php": {
+        "class": "App\\Http\\Controllers\\ProductController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 79,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 13,
+                "endLine": 20,
+                "docComment": null
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 22,
+                "endLine": 88,
+                "docComment": null
+            }
+        ]
+    },
+    "ProductStockController.php": {
+        "class": "App\\Http\\Controllers\\ProductStockController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 10,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 10,
+                "endLine": 16,
+                "docComment": null
+            }
+        ]
+    },
+    "RolesController.php": {
+        "class": "App\\Http\\Controllers\\RolesController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 119,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 12,
+                "endLine": 43,
+                "docComment": null
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 45,
+                "endLine": 69,
+                "docComment": null
+            },
+            {
+                "name": "getPermissions",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "$id"
+                ],
+                "startLine": 71,
+                "endLine": 79,
+                "docComment": null
+            },
+            {
+                "name": "update",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 81,
+                "endLine": 107,
+                "docComment": null
+            },
+            {
+                "name": "destroy",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 109,
+                "endLine": 127,
+                "docComment": null
+            }
+        ]
+    },
+    "UnitController.php": {
+        "class": "App\\Http\\Controllers\\UnitController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 8,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 10,
+                "endLine": 14,
+                "docComment": null
+            }
+        ]
+    },
+    "UserController.php": {
+        "class": "App\\Http\\Controllers\\UserController",
+        "parent": "App\\Http\\Controllers\\Controller",
+        "isAbstract": false,
+        "totalLines": 152,
+        "methods": [
+            {
+                "name": "index",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [],
+                "startLine": 13,
+                "endLine": 19,
+                "docComment": null
+            },
+            {
+                "name": "store",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 21,
+                "endLine": 71,
+                "docComment": null
+            },
+            {
+                "name": "update",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 73,
+                "endLine": 125,
+                "docComment": null
+            },
+            {
+                "name": "destroy",
+                "visibility": "public",
+                "isStatic": false,
+                "parameters": [
+                    "Illuminate\\Http\\Request $request"
+                ],
+                "startLine": 127,
+                "endLine": 160,
+                "docComment": null
+            }
+        ]
+    }
+}

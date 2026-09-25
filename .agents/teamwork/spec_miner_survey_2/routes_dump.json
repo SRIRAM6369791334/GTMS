@@ -1,0 +1,1619 @@
+[
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "up",
+        "name": null,
+        "action": "Closure",
+        "middleware": []
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "/",
+        "name": "login",
+        "action": "App\\Http\\Controllers\\AuthController@showLogin",
+        "middleware": [
+            "web",
+            "guest"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "login",
+        "name": null,
+        "action": "App\\Http\\Controllers\\AuthController@showLogin",
+        "middleware": [
+            "web",
+            "guest"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "login",
+        "name": "login.post",
+        "action": "App\\Http\\Controllers\\AuthController@login",
+        "middleware": [
+            "web",
+            "guest"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "logout",
+        "name": "logout",
+        "action": "App\\Http\\Controllers\\AuthController@logout",
+        "middleware": [
+            "web",
+            "auth"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "dashboard",
+        "name": "dashboard",
+        "action": "Closure",
+        "middleware": [
+            "web",
+            "auth"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customers",
+        "name": "customers.index",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customers/{slug}",
+        "name": "customers.show",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customer-tracking",
+        "name": "customer-tracking.index",
+        "action": "App\\Http\\Controllers\\CustomerTrackingController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customer-tracking/search",
+        "name": "customer-tracking.search",
+        "action": "App\\Http\\Controllers\\CustomerTrackingController@search",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customer-tracking/{customer}",
+        "name": "customer-tracking.show",
+        "action": "App\\Http\\Controllers\\CustomerTrackingController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customer-tracking/{customer}/proforma-invoice",
+        "name": "customer-tracking.proforma-invoice",
+        "action": "App\\Http\\Controllers\\CustomerTrackingController@proformaInvoice",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customer-tracking/{customer}/tax-invoice",
+        "name": "customer-tracking.tax-invoice",
+        "action": "App\\Http\\Controllers\\CustomerTrackingController@taxInvoice",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "customers/lookup-mimas/{mimas_no}",
+        "name": "customers.lookup.mimas",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@lookupByMimas",
+        "middleware": [
+            "web",
+            "auth"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "customeradd",
+        "name": "customeradd",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "customeredit",
+        "name": "customeredit",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@update",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "customerdelete",
+        "name": "customerdelete",
+        "action": "App\\Http\\Controllers\\CustomerDirectoryController@destroy",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:customer.delete"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "roles",
+        "name": "roles.index",
+        "action": "App\\Http\\Controllers\\RolesController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:roles.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "roles/{id}/permissions",
+        "name": "roles.permissions",
+        "action": "App\\Http\\Controllers\\RolesController@getPermissions",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:roles.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "roleadd",
+        "name": "roleadd",
+        "action": "App\\Http\\Controllers\\RolesController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:roles.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "roleupdate",
+        "name": "roleupdate",
+        "action": "App\\Http\\Controllers\\RolesController@update",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:roles.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "roledelete",
+        "name": "roledelete",
+        "action": "App\\Http\\Controllers\\RolesController@destroy",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:roles.delete"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "user",
+        "name": "user.index",
+        "action": "App\\Http\\Controllers\\UserController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:users.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "useradd",
+        "name": "useradd",
+        "action": "App\\Http\\Controllers\\UserController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:users.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "useredit",
+        "name": "useredit",
+        "action": "App\\Http\\Controllers\\UserController@update",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:users.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "userdelete",
+        "name": "userdelete",
+        "action": "App\\Http\\Controllers\\UserController@destroy",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:users.delete"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "branch",
+        "name": "branch.index",
+        "action": "App\\Http\\Controllers\\BranchController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:branch.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "branchadd",
+        "name": "branchadd",
+        "action": "App\\Http\\Controllers\\BranchController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:branch.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "branchedit",
+        "name": "branchedit",
+        "action": "App\\Http\\Controllers\\BranchController@update",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:branch.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "branchdelete",
+        "name": "branchdelete",
+        "action": "App\\Http\\Controllers\\BranchController@destroy",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:branch.delete"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "category",
+        "name": "category.index",
+        "action": "App\\Http\\Controllers\\CategoryController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:category.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "categoryadd",
+        "name": "categoryadd",
+        "action": "App\\Http\\Controllers\\CategoryController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:category.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "categoryedit",
+        "name": "categoryedit",
+        "action": "App\\Http\\Controllers\\CategoryController@update",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:category.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "categorydelete",
+        "name": "categorydelete",
+        "action": "App\\Http\\Controllers\\CategoryController@destroy",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:category.delete"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "unit",
+        "name": "unit.index",
+        "action": "App\\Http\\Controllers\\UnitController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:unit.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "product",
+        "name": "product.index",
+        "action": "App\\Http\\Controllers\\ProductController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:product.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "productadd",
+        "name": "productadd",
+        "action": "App\\Http\\Controllers\\ProductController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:product.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "productstock",
+        "name": "productstock.index",
+        "action": "App\\Http\\Controllers\\ProductStockController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:product.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "application",
+        "name": "application.index",
+        "action": "App\\Http\\Controllers\\CustomerController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "viewapplication",
+        "name": "viewapplication",
+        "action": "App\\Http\\Controllers\\CustomerController@viewApplication",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step1",
+        "name": "step1",
+        "action": "App\\Http\\Controllers\\CustomerController@step1",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step1",
+        "name": "step1.save",
+        "action": "App\\Http\\Controllers\\CustomerController@saveStep1",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step2",
+        "name": "step2",
+        "action": "App\\Http\\Controllers\\CustomerController@step2",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step2",
+        "name": "step2.save",
+        "action": "App\\Http\\Controllers\\CustomerController@saveStep2",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step3",
+        "name": "step3",
+        "action": "App\\Http\\Controllers\\CustomerController@step3",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step3",
+        "name": "step3.save",
+        "action": "App\\Http\\Controllers\\CustomerController@saveStep3",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step4",
+        "name": "step4",
+        "action": "App\\Http\\Controllers\\CustomerController@step4",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step5",
+        "name": "step5",
+        "action": "App\\Http\\Controllers\\CustomerController@step5",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step5/upload",
+        "name": "step5.upload",
+        "action": "App\\Http\\Controllers\\CustomerController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step6",
+        "name": "step6",
+        "action": "App\\Http\\Controllers\\CustomerController@step6",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step6",
+        "name": "step6.save",
+        "action": "App\\Http\\Controllers\\CustomerController@saveStep6",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step7",
+        "name": "step7",
+        "action": "App\\Http\\Controllers\\CustomerController@step7",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "step7",
+        "name": "step7.save",
+        "action": "App\\Http\\Controllers\\CustomerController@saveStep7",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "step8",
+        "name": "step8",
+        "action": "App\\Http\\Controllers\\CustomerController@step8",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/submit",
+        "name": "application.submit",
+        "action": "App\\Http\\Controllers\\CustomerController@submit",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "application/{id}/resume",
+        "name": "application.resume",
+        "action": "App\\Http\\Controllers\\CustomerController@resumeDraft",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/{id}/validate",
+        "name": "application.validate",
+        "action": "App\\Http\\Controllers\\CustomerController@validateApplication",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/{id}/approve",
+        "name": "application.approve",
+        "action": "App\\Http\\Controllers\\CustomerController@approveApplication",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/{id}/reject",
+        "name": "application.reject",
+        "action": "App\\Http\\Controllers\\CustomerController@rejectApplication",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/{id}/move-to-mining",
+        "name": "application.moveToMining",
+        "action": "App\\Http\\Controllers\\CustomerController@moveToMining",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "application/document/{id}/status",
+        "name": "application.document.status",
+        "action": "App\\Http\\Controllers\\CustomerController@updateDocumentStatus",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.edit"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "application/{id}/report",
+        "name": "application.report",
+        "action": "App\\Http\\Controllers\\CustomerController@generateReport",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:application.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "miningplan",
+        "name": "miningplan.index",
+        "action": "App\\Http\\Controllers\\MiningController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "projectfolder",
+        "name": "projectfolder",
+        "action": "App\\Http\\Controllers\\MiningController@projectFolder",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "document",
+        "name": "document",
+        "action": "App\\Http\\Controllers\\MiningController@Document",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "process",
+        "name": "process",
+        "action": "App\\Http\\Controllers\\MiningController@Process",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "newapplication",
+        "name": "newapplication",
+        "action": "App\\Http\\Controllers\\MiningController@newApplication",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "newapplication",
+        "name": "newapplication.store",
+        "action": "App\\Http\\Controllers\\MiningController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "mining/document/upload",
+        "name": "mining.document.upload",
+        "action": "App\\Http\\Controllers\\MiningController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "mining/document/{id}/validate",
+        "name": "mining.document.validate",
+        "action": "App\\Http\\Controllers\\MiningController@validateDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "mining/application/{id}/stage",
+        "name": "mining.application.stage",
+        "action": "App\\Http\\Controllers\\MiningController@advanceStage",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.edit"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "mining/application/{id}/move-to-environment",
+        "name": "mining.application.moveToEnvironment",
+        "action": "App\\Http\\Controllers\\MiningController@moveToEnvironment",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:mining.edit"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "eviron",
+        "name": "eviron.index",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "eviron/{id}",
+        "name": "eviron.show",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "eviron/create",
+        "name": "eviron.create",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@create",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environstage1",
+        "name": "environstage1",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@index1",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environstage2",
+        "name": "environstage2",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@index2",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environment-b2",
+        "name": "environment-b2.index",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environment-b2/step/{step}",
+        "name": "environment-b2.step",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environment-b2/{project}",
+        "name": "environment-b2.show",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "environment-b2/documents/{document}/download",
+        "name": "environment-b2.documents.download",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@download",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "eviron/documents/{document}/download",
+        "name": "eviron.documents.download",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@downloadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron",
+        "name": "eviron.store",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "environment-b2",
+        "name": "environment-b2.store",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.create"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/documents/{document}/upload",
+        "name": "eviron.documents.upload",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.upload"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/documents/add",
+        "name": "eviron.documents.add",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@addDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.upload"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "environment-b2/documents/{document}/upload",
+        "name": "environment-b2.documents.upload",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@upload",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.upload"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/status",
+        "name": "eviron.status",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@updateStatus",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/submit-sc1-ppt",
+        "name": "eviron.submitSc1ToPpt",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@submitSc1ToPpt",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/submit-sc2-ppt",
+        "name": "eviron.submitSc2ToPpt",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@submitSc2ToPpt",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "eviron/{id}/documents/{document}/review",
+        "name": "eviron.documents.review",
+        "action": "App\\Http\\Controllers\\EnverionsoneController@reviewDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "environment-b2/{project}/status",
+        "name": "environment-b2.status",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@updateStatus",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "environment-b2/documents/{document}/review",
+        "name": "environment-b2.documents.review",
+        "action": "App\\Http\\Controllers\\EnvironmentalB2Controller@review",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.b2.review"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-certificate",
+        "name": "ec-certificate.index",
+        "action": "App\\Http\\Controllers\\EcCertificateController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-certificate/{id}",
+        "name": "ec-certificate.show",
+        "action": "App\\Http\\Controllers\\EcCertificateController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-certificate/step/{step}",
+        "name": "ec-certificate.step",
+        "action": "App\\Http\\Controllers\\EcCertificateController@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ec-certificate/step/{step}",
+        "name": "ec-certificate.saveStep",
+        "action": "App\\Http\\Controllers\\EcCertificateController@saveStep",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ec-certificate",
+        "name": "ec-certificate.store",
+        "action": "App\\Http\\Controllers\\EcCertificateController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ppt-department",
+        "name": "ppt-department.index",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ppt-department/step/{step}",
+        "name": "ppt-department.step",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ppt-department/step/{step}",
+        "name": "ppt-department.saveStep",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@saveStep",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ppt-department",
+        "name": "ppt-department.store",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ppt-department/{id}",
+        "name": "ppt-department.show",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ppt-department/{id}/approve-stage",
+        "name": "ppt-department.approveStage",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@approvePresentation",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ppt-department/upload",
+        "name": "ppt-department.upload",
+        "action": "App\\Http\\Controllers\\PptDepartmentController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:ppt.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "dgps-survey",
+        "name": "dgps-survey.index",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "dgps-survey/step/{step}",
+        "name": "dgps-survey.step",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "dgps-survey/step/{step}",
+        "name": "dgps-survey.saveStep",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@saveStep",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "dgps-survey",
+        "name": "dgps-survey.store",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "dgps-survey/{id}",
+        "name": "dgps-survey.show",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "dgps-survey/upload",
+        "name": "dgps-survey.upload",
+        "action": "App\\Http\\Controllers\\DgpsSurveyController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:dgps.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "drone-survey",
+        "name": "drone-survey.index",
+        "action": "App\\Http\\Controllers\\DroneSurveyController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:drone.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "drone-survey/step/{step}",
+        "name": "drone-survey.step",
+        "action": "App\\Http\\Controllers\\DroneSurveyController@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:drone.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-compliance",
+        "name": "ec-compliance.index",
+        "action": "App\\Http\\Controllers\\EcComplianceController@index",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-compliance/step/{step}",
+        "name": "ec-compliance.step",
+        "action": "App\\Http\\Controllers\\EcComplianceController@wizard",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ec-compliance/step/{step}",
+        "name": "ec-compliance.saveStep",
+        "action": "App\\Http\\Controllers\\EcComplianceController@saveStep",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ec-compliance",
+        "name": "ec-compliance.store",
+        "action": "App\\Http\\Controllers\\EcComplianceController@store",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "ec-compliance/{id}",
+        "name": "ec-compliance.show",
+        "action": "App\\Http\\Controllers\\EcComplianceController@show",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "POST"
+        ],
+        "uri": "ec-compliance/upload",
+        "name": "ec-compliance.upload",
+        "action": "App\\Http\\Controllers\\EcComplianceController@uploadDocument",
+        "middleware": [
+            "web",
+            "auth",
+            "permission:environment.view"
+        ]
+    },
+    {
+        "methods": [
+            "GET",
+            "HEAD"
+        ],
+        "uri": "storage/{path}",
+        "name": "storage.local",
+        "action": "Closure",
+        "middleware": []
+    },
+    {
+        "methods": [
+            "PUT"
+        ],
+        "uri": "storage/{path}",
+        "name": "storage.local.upload",
+        "action": "Closure",
+        "middleware": []
+    }
+]
