@@ -28,6 +28,7 @@ class EcCertificate extends Model
         'certificate_file',
         'conditions_summary',
         'status',
+        'status_notes',
         'product_value',
         'paid_amount',
         'pending_amount',

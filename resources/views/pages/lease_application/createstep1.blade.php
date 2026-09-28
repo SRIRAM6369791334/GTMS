@@ -158,8 +158,8 @@
         </div>
 
         <div class="col-md-6">
-          <label class="form-label">Mobile Number <span class="text-danger">*</span></label>
-          <input type="text" class="form-control auto-filled-field" id="field_mobile_num" name="mobile_num" placeholder="10-digit mobile number" required>
+          <label class="form-label">Primary Phone Number <span class="text-danger">*</span></label>
+          <input type="text" class="form-control auto-filled-field" id="field_mobile_num" name="mobile_num" placeholder="10-digit primary phone number" required>
         </div>
 
         <div class="col-md-6">
@@ -173,8 +173,8 @@
         </div>
 
         <div class="col-md-6">
-          <label class="form-label">Secondary Mobile Number <span class="text-muted small">(Optional)</span></label>
-          <input type="text" class="form-control auto-filled-field" id="field_secondary_mobile_num" name="secondary_mobile_num" placeholder="10-digit Alternate Mobile" maxlength="15">
+          <label class="form-label">Secondary Phone Number <span class="text-muted small">(Optional)</span></label>
+          <input type="text" class="form-control auto-filled-field" id="field_secondary_mobile_num" name="secondary_mobile_num" placeholder="10-digit secondary phone number" maxlength="15">
         </div>
 
         <div class="col-md-6">

@@ -71,9 +71,9 @@
                       <div class="p-3 rounded border" id="pill_sc1" style="background:#f0fdf4; border-color:#86efac !important;">
                         <div class="d-flex align-items-center justify-content-between">
                           <div class="d-flex align-items-center gap-2">
-                            <input type="radio" name="sub_category" value="SC1" id="radio_sc1" class="form-check-input mt-0" checked required>
+                            <input type="radio" name="sub_category" value="TOR" id="radio_sc1" class="form-check-input mt-0" checked required>
                             <div>
-                              <span class="small fw-bold text-success">Sub Category 1 (SC1)</span>
+                              <span class="small fw-bold text-success">TOR</span>
                               <div class="text-muted" style="font-size:0.75rem;">ToR &amp; Mining Documents (5 Folders)</div>
                             </div>
                           </div>
@@ -81,7 +81,7 @@
                         </div>
                       </div>
                       <div class="alert alert-info py-2 px-3 small mt-2 mb-0" style="font-size:0.78rem; background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1;">
-                        <i class="fa fa-info-circle me-1"></i> <strong>Sequential B1 Workflow:</strong> All B1 applications start exclusively at <strong>Sub Category 1</strong>. Once SC1 is completed and approved by the <strong>PPT Department (ToR Presentation)</strong>, Sub Category 2 will unlock automatically.
+                        <i class="fa fa-info-circle me-1"></i> <strong>Sequential B1 Workflow:</strong> All B1 applications start exclusively at <strong>TOR</strong>. Once TOR is completed and approved by the <strong>PPT Department (ToR Presentation)</strong>, ETA will unlock automatically.
                       </div>
                     </div>
 
@@ -204,19 +204,31 @@
             </div>
 
             {{-- Contact Person --}}
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Contact Person</label>
               <input type="text" class="form-control auto-filled-field" name="contact_name" id="contact_name" value="{{ old('contact_name') }}" placeholder="Authorized representative">
             </div>
 
-            {{-- Contact Phone --}}
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Contact Mobile Number *</label>
-              <input type="text" class="form-control auto-filled-field" name="contact_phone" id="contact_phone" value="{{ old('contact_phone') }}" required maxlength="15" placeholder="10-digit mobile number">
+            {{-- Secondary Contact Person --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Secondary Contact Person <span class="text-muted small">(Optional)</span></label>
+              <input type="text" class="form-control auto-filled-field" name="secondary_contact_person" id="secondary_contact_person" value="{{ old('secondary_contact_person') }}" placeholder="Site supervisor / alternate contact">
+            </div>
+
+            {{-- Primary Phone Number --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Primary Phone Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control auto-filled-field" name="contact_phone" id="contact_phone" value="{{ old('contact_phone') }}" required maxlength="15" placeholder="10-digit primary phone number">
+            </div>
+
+            {{-- Secondary Phone Number --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Secondary Phone Number <span class="text-muted small">(Optional)</span></label>
+              <input type="text" class="form-control auto-filled-field" name="secondary_phone" id="secondary_phone" value="{{ old('secondary_phone') }}" maxlength="15" placeholder="10-digit secondary phone number">
             </div>
 
             {{-- Contact Email --}}
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label fw-semibold">Contact Email</label>
               <input type="email" class="form-control auto-filled-field" name="contact_email" id="contact_email" value="{{ old('contact_email') }}" placeholder="applicant@example.com">
             </div>
@@ -447,7 +459,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const clientNameInput = document.getElementById('client_name');
     const companyNameInput = document.getElementById('company_name');
     const contactNameInput = document.getElementById('contact_name');
+    const secondaryContactPersonInput = document.getElementById('secondary_contact_person');
     const contactPhoneInput = document.getElementById('contact_phone');
+    const secondaryPhoneInput = document.getElementById('secondary_phone');
     const contactEmailInput = document.getElementById('contact_email');
     const mimasNoInput = document.getElementById('mimas_no');
     const districtSelect = document.getElementById('district_id');
@@ -457,8 +471,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (customerIdInput) customerIdInput.value = c.id || '';
     if (clientNameInput) clientNameInput.value = c.customer_name || '';
     if (companyNameInput) companyNameInput.value = c.company_name || '';
-    if (contactNameInput) contactNameInput.value = c.secondary_contact_person || c.customer_name || '';
+    if (contactNameInput) contactNameInput.value = c.customer_name || '';
+    if (secondaryContactPersonInput) secondaryContactPersonInput.value = c.secondary_contact_person || '';
     if (contactPhoneInput) contactPhoneInput.value = c.mobile_num || '';
+    if (secondaryPhoneInput) secondaryPhoneInput.value = c.secondary_mobile_num || '';
     if (contactEmailInput) contactEmailInput.value = c.email || '';
     if (mimasNoInput) mimasNoInput.value = c.mimas_no || '';
     if (districtSelect && c.district_id) districtSelect.value = c.district_id;

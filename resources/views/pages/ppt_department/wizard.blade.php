@@ -89,6 +89,7 @@ $folders = [
                       data-company="{{ $c->company_name }}"
                       data-contact="{{ $c->contact_name }}"
                       data-mobile="{{ $c->mobile_num }}"
+                      data-secondary-mobile="{{ $c->secondary_mobile_num }}"
                       data-mimas="{{ $c->mimas_no }}"
                       {{ ($draft['customer_id'] ?? '') == $c->id ? 'selected' : ($loop->first && empty($draft['customer_id']) ? 'selected' : '') }}>
                       {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
@@ -107,9 +108,14 @@ $folders = [
                   value="{{ $draft['project_name'] ?? 'Kaveri Rough Stone & Gravel Quarry' }}" required>
               </div>
               <div class="col-md-6">
-                <label class="form-label fw-bold text-navy">Representative Mobile Number</label>
-                <input class="form-control auto-filled-field" id="field_ppt_mobile" placeholder="Mobile number"
-                  value="{{ $customers->first()?->mobile_num ?? '9842109876' }}" readonly>
+                <label class="form-label fw-bold text-navy">Primary Phone Number <span class="text-danger">*</span></label>
+                <input class="form-control auto-filled-field" name="primary_phone" id="field_ppt_mobile" placeholder="10-digit primary phone number"
+                  value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '') }}" required maxlength="15">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
+                <input class="form-control auto-filled-field" name="secondary_phone" id="field_ppt_secondary_mobile" placeholder="10-digit secondary phone number"
+                  value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" maxlength="15">
               </div>
             </div>
 
@@ -203,7 +209,8 @@ $folders = [
 
             <div class="folder-checklist-box" id="ppt_checklist_container">
               @foreach($folders as $fIdx => [$name, $detail])
-                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-ppt-row="{{ $fIdx }}">
+                @php $isM = ($fIdx < 3); @endphp
+                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-ppt-row="{{ $fIdx }}" data-mandatory="{{ $isM ? '1' : '0' }}">
                   <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
                     <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
                       <i class="bi bi-file-earmark"></i>
@@ -214,7 +221,11 @@ $folders = [
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-                    <span class="badge-status {{ $fIdx < 3 ? 'mandatory' : 'pending' }}">{{ $fIdx < 3 ? 'Mandatory' : 'Optional' }}</span>
+                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isM ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                            name="ppt_doc_req[{{ $fIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                      <option value="mandatory" {{ $isM ? 'selected' : '' }}>Mandatory</option>
+                      <option value="optional" {{ !$isM ? 'selected' : '' }}>Optional</option>
+                    </select>
                     <input type="file" class="d-none ppt-file-input" data-row-idx="{{ $fIdx }}" accept=".pdf,.ppt,.pptx,.kml,.kmz,.jpg,.png">
                     <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
                       <i class="bi bi-upload me-1"></i>Upload
@@ -574,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const count = container.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
+      row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -588,7 +600,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-          <span class="badge-status pending">Optional</span>
+          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                  name="ppt_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
+            <option value="mandatory">Mandatory</option>
+            <option value="optional" selected>Optional</option>
+          </select>
           <input type="file" class="d-none ppt-file-input" accept=".pdf,.ppt,.pptx,.kml,.kmz,.jpg,.png">
           <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
             <i class="bi bi-upload me-1"></i>Upload
@@ -597,6 +613,45 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       container.appendChild(row);
       updatePptDocProgress();
+      bindPptDocReqListeners();
+    });
+  }
+
+  function bindPptDocReqListeners() {
+    document.querySelectorAll('#ppt_checklist_container .doc-req-select').forEach(function(sel) {
+      sel.onchange = function() {
+        const row = this.closest('.checklist-row');
+        const isMandatory = this.value === 'mandatory';
+        if (row) {
+          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+        }
+        if (isMandatory) {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        } else {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        }
+      };
+    });
+  }
+  bindPptDocReqListeners();
+
+  // PPT Step 5: Relaxed vs Mandatory validation on form submission
+  const pptForm = document.getElementById('pptWizardForm');
+  if (pptForm && @json($step === 5)) {
+    pptForm.addEventListener('submit', function(e) {
+      let missingMandatory = [];
+      document.querySelectorAll('#ppt_checklist_container .checklist-row').forEach(function(row) {
+        const isMandatory = row.getAttribute('data-mandatory') === '1';
+        const isUploaded = row.classList.contains('up');
+        if (isMandatory && !isUploaded) {
+          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Document';
+          missingMandatory.push(docName);
+        }
+      });
+      if (missingMandatory.length > 0) {
+        e.preventDefault();
+        alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
+      }
     });
   }
 
@@ -727,6 +782,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
+    const fMobile = document.getElementById('field_ppt_mobile');
+    const fSecMobile = document.getElementById('field_ppt_secondary_mobile');
+
     if (fProject) {
       const entity = c.company_name || c.customer_name || 'Presentation';
       fProject.value = entity + ' Presentation Concession';
@@ -734,6 +792,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (fMobile) {
       fMobile.value = c.mobile_num || '';
+    }
+    if (fSecMobile) {
+      fSecMobile.value = c.secondary_mobile_num || '';
     }
 
     // Visual cue on all autofilled fields
@@ -800,6 +861,21 @@ document.addEventListener('DOMContentLoaded', function() {
           feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="fa fa-times-circle me-1"></i> Customer not found. You can enter details manually below.</div>';
         }
       });
+  }
+
+  const selectPptCustomer = document.getElementById('select_ppt_customer');
+  if (selectPptCustomer) {
+    selectPptCustomer.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const fMobile = document.getElementById('field_ppt_mobile');
+      const fSecMobile = document.getElementById('field_ppt_secondary_mobile');
+      if (opt && fMobile) {
+        fMobile.value = opt.dataset.mobile || '';
+      }
+      if (opt && fSecMobile) {
+        fSecMobile.value = opt.dataset.secondaryMobile || '';
+      }
+    });
   }
 
   if (btnLookupMimas) btnLookupMimas.addEventListener('click', performPptMimasLookup);

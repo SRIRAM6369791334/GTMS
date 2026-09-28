@@ -21,25 +21,25 @@
         <div class="col-6 col-lg-3">
           <div class="surface stat-card">
             <div class="ic" style="background:var(--navy-100); color:var(--navy-800);"><i class="fa fa-folder"></i></div>
-            <div><div class="val">128</div><div class="lbl">Active applications</div><div class="delta text-success">▲ 6 this week</div></div>
+            <div><div class="val">{{ $activeCount }}</div><div class="lbl">Active applications</div><div class="delta text-success">Updated just now</div></div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="surface stat-card">
             <div class="ic" style="background:var(--warn-bg); color:var(--warn);"><i class="fa fa-hourglass-half"></i></div>
-            <div><div class="val">23</div><div class="lbl">Pending validation</div><div class="delta text-warning-emphasis">4 overdue</div></div>
+            <div><div class="val">{{ $pendingCount }}</div><div class="lbl">Pending validation</div><div class="delta text-warning-emphasis">Awaiting review</div></div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="surface stat-card">
             <div class="ic" style="background:var(--ok-bg); color:var(--ok);"><i class="fa fa-check-circle"></i></div>
-            <div><div class="val">86</div><div class="lbl">Approved &amp; verified</div><div class="delta text-success">▲ 12 this month</div></div>
+            <div><div class="val">{{ $approvedCount }}</div><div class="lbl">Approved &amp; verified</div><div class="delta text-success">All time</div></div>
           </div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="surface stat-card">
             <div class="ic" style="background:var(--f-others-bg); color:var(--f-others);"><i class="fa fa-cloud-upload"></i></div>
-            <div><div class="val">19</div><div class="lbl">Archived &amp; backed up</div><div class="delta" style="color:var(--ink-500);">Last run 6:00 AM</div></div>
+            <div><div class="val">{{ $archivedCount }}</div><div class="lbl">Archived &amp; backed up</div><div class="delta" style="color:var(--ink-500);">Safely stored</div></div>
           </div>
         </div>
       </div>
@@ -56,76 +56,33 @@
               <table class="table table-clean align-middle mb-0">
                 <thead><tr><th>Client</th><th>District</th><th>Mineral</th><th>Plan type</th><th>Stage</th><th></th></tr></thead>
                 <tbody>
+                  @forelse($recentApplications as $app)
                   <tr>
-                    <td><span class="fw-semibold">Sri Bala Traders</span></td>
-                    <td>Salem</td>
-                    <td>Granite</td>
-                    <td>Mining Plan</td>
-                    <td><span class="chip chip-warn"><i class="bi bi-hourglass-split"></i> Validating</span></td>
+                    <td><span class="fw-semibold">{{ $app->client }}</span></td>
+                    <td>{{ $app->district }}</td>
+                    <td>{{ $app->mineral }}</td>
+                    <td>{{ $app->plan_type }}</td>
+                    <td><span class="chip chip-{{ $app->status_class }}"><i class="bi bi-{{ $app->icon }}"></i> {{ $app->stage }}</span></td>
                     <td class="text-end"><a href="#" class="btn btn-sm btn-outline-navy">Open</a></td>
                   </tr>
+                  @empty
                   <tr>
-                    <td><span class="fw-semibold">M. Elumalai &amp; Sons</span></td>
-                    <td>Namakkal</td>
-                    <td>Rough Stone</td>
-                    <td>Revised Mining Plan</td>
-                    <td><span class="chip chip-ok"><i class="bi bi-check2"></i> Approved</span></td>
-                    <td class="text-end"><a href="#" class="btn btn-sm btn-outline-navy">Open</a></td>
+                    <td colspan="6" class="text-center text-muted py-4">No recent applications found.</td>
                   </tr>
-                  <tr>
-                    <td><span class="fw-semibold">Kaveri Minerals Pvt Ltd</span></td>
-                    <td>Erode</td>
-                    <td>Lime Stone</td>
-                    <td>Scheme of Mining Plan</td>
-                    <td><span class="chip chip-navy"><i class="bi bi-cloud-arrow-up"></i> Uploading</span></td>
-                    <td class="text-end"><a href="#" class="btn btn-sm btn-outline-navy">Open</a></td>
-                  </tr>
-                  <tr>
-                    <td><span class="fw-semibold">Velan Fire Clay Works</span></td>
-                    <td>Coimbatore</td>
-                    <td>Fire Clay</td>
-                    <td>Modified Mining Plan</td>
-                    <td><span class="chip chip-danger"><i class="bi bi-exclamation-triangle"></i> Correction needed</span></td>
-                    <td class="text-end"><a href="#" class="btn btn-sm btn-outline-navy">Open</a></td>
-                  </tr>
-                  <tr>
-                    <td><span class="fw-semibold">SR Gravel Suppliers</span></td>
-                    <td>Tiruppur</td>
-                    <td>Gravel</td>
-                    <td>Mining Plan</td>
-                    <td><span class="chip chip-ok"><i class="bi bi-cloud-check"></i> Archived</span></td>
-                    <td class="text-end"><a href="#" class="btn btn-sm btn-outline-navy">Open</a></td>
-                  </tr>
+                  @endforelse
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- Pipeline snapshot -->
+        <!-- Applications Breakdown Chart -->
         <div class="col-lg-4">
-          <div class="surface p-3 p-lg-4 h-100">
-            <h2 class="h6 fw-bold mb-3">Process pipeline</h2>
-            <div class="d-flex flex-column gap-3">
-              <div>
-                <div class="d-flex justify-content-between small mb-1"><span>Upload &amp; store</span><span class="text-mono fw-semibold">44</span></div>
-                <div class="prog" style="height:6px;border-radius:5px;background:var(--ink-100);overflow:hidden;"><span style="display:block;height:100%;width:88%;background:var(--navy-700);"></span></div>
-              </div>
-              <div>
-                <div class="d-flex justify-content-between small mb-1"><span>Validate data</span><span class="text-mono fw-semibold">23</span></div>
-                <div class="prog" style="height:6px;border-radius:5px;background:var(--ink-100);overflow:hidden;"><span style="display:block;height:100%;width:46%;background:var(--gold-500);"></span></div>
-              </div>
-              <div>
-                <div class="d-flex justify-content-between small mb-1"><span>Approve data</span><span class="text-mono fw-semibold">86</span></div>
-                <div class="prog" style="height:6px;border-radius:5px;background:var(--ink-100);overflow:hidden;"><span style="display:block;height:100%;width:70%;background:var(--f-plan);"></span></div>
-              </div>
-              <div>
-                <div class="d-flex justify-content-between small mb-1"><span>Archive &amp; backup</span><span class="text-mono fw-semibold">19</span></div>
-                <div class="prog" style="height:6px;border-radius:5px;background:var(--ink-100);overflow:hidden;"><span style="display:block;height:100%;width:30%;background:var(--f-others);"></span></div>
-              </div>
+          <div class="surface p-3 p-lg-4 h-100 d-flex flex-column">
+            <h2 class="h6 fw-bold mb-3">Applications Breakdown</h2>
+            <div class="flex-grow-1" style="position: relative; min-height: 250px;">
+                <canvas id="appBreakdownChart"></canvas>
             </div>
-            <hr class="my-3">
-            <a href="#" class="btn btn-outline-navy w-100"><i class="bi bi-diagram-3 me-1"></i>Open process flow</a>
           </div>
         </div>
       </div>
@@ -134,15 +91,80 @@
       <div class="surface p-3 p-lg-4 mt-3">
         <h2 class="h6 fw-bold mb-3">Applications by district</h2>
         <div class="row g-3 text-center">
-          <div class="col-6 col-md-3"><div class="p-3 rounded-3" style="background:var(--paper);"><div class="fw-bold fs-5" style="font-family:'Sora';">34</div><div class="small text-muted">Salem</div></div></div>
-          <div class="col-6 col-md-3"><div class="p-3 rounded-3" style="background:var(--paper);"><div class="fw-bold fs-5" style="font-family:'Sora';">28</div><div class="small text-muted">Coimbatore</div></div></div>
-          <div class="col-6 col-md-3"><div class="p-3 rounded-3" style="background:var(--paper);"><div class="fw-bold fs-5" style="font-family:'Sora';">21</div><div class="small text-muted">Namakkal</div></div></div>
-          <div class="col-6 col-md-3"><div class="p-3 rounded-3" style="background:var(--paper);"><div class="fw-bold fs-5" style="font-family:'Sora';">17</div><div class="small text-muted">Erode</div></div></div>
+          @forelse($districtStats as $stat)
+          <div class="col-6 col-md-3">
+            <div class="p-3 rounded-3" style="background:var(--paper);">
+              <div class="fw-bold fs-5" style="font-family:'Sora';">{{ $stat->total }}</div>
+              <div class="small text-muted">{{ $stat->name }}</div>
+            </div>
+          </div>
+          @empty
+          <div class="col-12"><div class="p-3 rounded-3 text-muted text-center">No data available</div></div>
+          @endforelse
+        </div>
+      </div>
+
+      <!-- Financial Snapshot -->
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-lg-6">
+          <div class="surface p-3 p-lg-4">
+            <div class="d-flex align-items-center">
+              <div class="ic me-3" style="background:var(--ok-bg); color:var(--ok); font-size: 1.5rem; width: 48px; height: 48px; display:flex; align-items:center; justify-content:center; border-radius: 8px;"><i class="bi bi-cash-stack"></i></div>
+              <div>
+                <div class="small text-muted">Total Paid Amount</div>
+                <div class="fw-bold fs-4" style="font-family:'Sora';">₹{{ number_format($totalPaid, 2) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-lg-6">
+          <div class="surface p-3 p-lg-4">
+            <div class="d-flex align-items-center">
+              <div class="ic me-3" style="background:var(--warn-bg); color:var(--warn); font-size: 1.5rem; width: 48px; height: 48px; display:flex; align-items:center; justify-content:center; border-radius: 8px;"><i class="bi bi-hourglass-split"></i></div>
+              <div>
+                <div class="small text-muted">Total Pending Amount</div>
+                <div class="fw-bold fs-4" style="font-family:'Sora';">₹{{ number_format($totalPending, 2) }}</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
             </div>
         </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('appBreakdownChart').getContext('2d');
+    var chartData = {!! json_encode($chartData) !!};
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: [
+                    '#0B2B5E', // navy
+                    '#D4AF37', // gold
+                    '#2E7D32', // ok
+                    '#1976D2', // light blue
+                    '#7B1FA2'  // purple
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            cutout: '70%'
+        }
+    });
+});
+</script>
 
 @endsection

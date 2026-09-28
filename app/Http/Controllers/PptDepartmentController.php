@@ -11,6 +11,8 @@ use App\Models\Mineral;
 use App\Models\EnvironmentProject;
 use App\Models\ApplicationHandler;
 use App\Models\ApplicationPayment;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -95,7 +97,7 @@ class PptDepartmentController extends Controller
             }
         }
 
-        $customers = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'company_name', 'mimas_no', 'mobile_num']);
+        $customers = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'company_name', 'mimas_no', 'mobile_num', 'secondary_mobile_num']);
         $districts = District::orderBy('name')->get(['id', 'name']);
         $minerals = Mineral::orderBy('name')->get(['id', 'name']);
         $envProjects = EnvironmentProject::orderBy('project_name')->get(['id', 'project_name', 'customer_id']);
@@ -121,9 +123,11 @@ class PptDepartmentController extends Controller
 
         // Step 1: Client & Basic Info
         if ($step === 1) {
-            $draft['customer_id']    = $request->input('customer_id');
-            $draft['project_name']   = $request->input('project_name', 'Presentation Project');
-            $draft['application_no'] = $request->input('application_no', 'PPT-' . date('Y') . '-' . sprintf('%04d', PptApplication::count() + 1));
+            $draft['customer_id']     = $request->input('customer_id');
+            $draft['project_name']    = $request->input('project_name', 'Presentation Project');
+            $draft['application_no']  = $request->input('application_no', 'PPT-' . date('Y') . '-' . sprintf('%04d', PptApplication::count() + 1));
+            $draft['primary_phone']   = $request->input('primary_phone');
+            $draft['secondary_phone'] = $request->input('secondary_phone');
         }
 
         // Step 2: District
@@ -194,10 +198,12 @@ class PptDepartmentController extends Controller
                 'taluk_village'  => $request->input('taluk_village', $draft['taluk_village'] ?? 'Local Village & Taluk'),
                 'mineral_id'     => $mineralId,
                 'status'         => 'agenda_scheduled',
-                'product_value'  => $val,
-                'paid_amount'    => $paid,
-                'pending_amount' => $pending,
-                'payment_status' => $pStatus,
+                'product_value'         => $val,
+                'paid_amount'           => $paid,
+                'pending_amount'        => $pending,
+                'payment_status'        => $pStatus,
+                'rep_mobile'            => $request->input('primary_phone', $draft['primary_phone'] ?? null),
+                'rep_secondary_mobile'  => $request->input('secondary_phone', $draft['secondary_phone'] ?? null),
             ]);
 
             // Save Handlers
@@ -309,17 +315,17 @@ class PptDepartmentController extends Controller
             $project = EnvironmentProject::find($ppt->environment_project_id);
             if ($project && $project->category === 'B1') {
                 if ($ppt->presentation_stage === 'tor_presentation') {
-                    // Advance to SC2
+                    // Advance to ETA
                     $project->update([
-                        'sub_category' => 'SC2',
+                        'sub_category' => 'ETA',
                         'b1_stage'     => 'sc2_prep',
                         'status'       => 'draft',
                     ]);
 
-                    // Generate SC2 document slots
+                    // Generate ETA document slots
                     EnverionsoneController::generateSlots($project);
 
-                    return redirect()->back()->with('success', "Stage 1 ToR Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} has advanced to Sub Category 2 (EIA Study & TNPCB Submission).");
+                    return redirect()->back()->with('success', "Stage 1 ToR Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} has advanced to ETA (EIA Study & TNPCB Submission).");
                 } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
                     // Complete B1 Environmental Clearance
                     $project->update([
@@ -333,5 +339,56 @@ class PptDepartmentController extends Controller
         }
 
         return redirect()->back()->with('success', "PPT Application {$ppt->application_no} status updated to Approved.");
+    }
+
+    /**
+     * Update PPT Application Status (standard or custom manual status).
+     */
+    public function updateStatus(Request $request, int $id)
+    {
+        $request->validate([
+            'status'       => 'required|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $ppt = PptApplication::findOrFail($id);
+        $cleanStatus = trim($request->status);
+
+        $updateData = ['status' => $cleanStatus];
+        if ($request->has('status_notes')) {
+            $updateData['status_notes'] = $request->status_notes;
+        }
+        $ppt->update($updateData);
+
+        // If approved via standard workflow and linked to environment project, execute approval hook
+        if (strtolower($cleanStatus) === 'approved' && $ppt->environment_project_id) {
+            $project = EnvironmentProject::find($ppt->environment_project_id);
+            if ($project && $project->category === 'B1') {
+                if ($ppt->presentation_stage === 'tor_presentation') {
+                    $project->update([
+                        'sub_category' => 'ETA',
+                        'b1_stage'     => 'sc2_prep',
+                        'status'       => 'draft',
+                    ]);
+                    EnverionsoneController::generateSlots($project);
+                } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
+                    $project->update([
+                        'b1_stage' => 'completed',
+                        'status'   => 'approved',
+                    ]);
+                }
+            }
+        }
+
+        $noteLog = !empty($request->status_notes) ? " Notes: {$request->status_notes}" : '';
+        ActivityLog::create([
+            'loggable_type' => PptApplication::class,
+            'loggable_id'   => $ppt->id,
+            'action'        => 'status_updated',
+            'description'   => "PPT Application status updated to '{$cleanStatus}'.{$noteLog}",
+            'user_id'       => Auth::id() ?? 1,
+        ]);
+
+        return redirect()->back()->with('success', "Status updated to '{$cleanStatus}' successfully.");
     }
 }

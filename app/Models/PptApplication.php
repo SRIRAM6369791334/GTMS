@@ -25,6 +25,7 @@ class PptApplication extends Model
         'taluk_village',
         'mineral_id',
         'status',
+        'status_notes',
         'product_value',
         'paid_amount',
         'pending_amount',
@@ -32,6 +33,7 @@ class PptApplication extends Model
         'rqp_attending',
         'company_rep_attending',
         'rep_mobile',
+        'rep_secondary_mobile',
         'branch_id',
         'created_by',
     ];

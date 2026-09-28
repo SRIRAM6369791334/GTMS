@@ -95,29 +95,35 @@ class EnverionsoneController extends Controller
     {
         $validated = $request->validate([
             'category'      => 'required|in:B1,B2',
-            'sub_category'  => 'nullable|in:SC1,SC2',
+            'sub_category'  => 'nullable|in:TOR,ETA,SC1,SC2',
             'customer_id'   => 'nullable|integer|exists:customers,id',
             'client_name'   => 'required|string|max:255',
             'company_name'  => 'nullable|string|max:255',
             'project_name'  => 'required|string|max:255',
             'district_id'   => 'required|exists:districts,id',
-            'location'      => 'nullable|string|max:255',
-            'contact_name'  => 'nullable|string|max:255',
-            'contact_phone' => 'required|string|max:20',
-            'contact_email' => 'nullable|email|max:255',
-            'mimas_no'      => 'nullable|string|max:50',
+            'location'                 => 'nullable|string|max:255',
+            'contact_name'             => 'nullable|string|max:255',
+            'secondary_contact_person' => 'nullable|string|max:255',
+            'contact_phone'            => 'required|string|max:20',
+            'secondary_phone'          => 'nullable|string|max:20',
+            'contact_email'            => 'nullable|email|max:255',
+            'mimas_no'                 => 'nullable|string|max:50',
         ]);
 
         // B1 must have sub_category
         if ($validated['category'] === 'B1' && empty($validated['sub_category'])) {
-            return back()->withErrors(['sub_category' => 'B1 Category requires a Sub Category selection (SC1).'])
+            return back()->withErrors(['sub_category' => 'B1 Category requires a Sub Category selection (TOR).'])
                 ->withInput();
         }
 
         return DB::transaction(function () use ($validated, $request) {
             $year = date('Y');
             $cat  = $validated['category'];
-            $sc   = ($cat === 'B1') ? ($validated['sub_category'] ?? 'SC1') : null;
+            $sc   = null;
+            if ($cat === 'B1') {
+                $rawSc = $validated['sub_category'] ?? 'TOR';
+                $sc    = in_array($rawSc, ['ETA', 'SC2']) ? 'ETA' : 'TOR';
+            }
 
             // Generate unique project code
             $prefix      = "ENV-{$cat}-{$year}-";
@@ -139,12 +145,14 @@ class EnverionsoneController extends Controller
                     $customerId = $customer->id;
                 } else {
                     $customer = Customer::create([
-                        'customer_name' => $validated['client_name'],
-                        'company_name'  => $validated['company_name'] ?? null,
-                        'mobile_num'    => $validated['contact_phone'],
-                        'email'         => $validated['contact_email'] ?? null,
-                        'mimas_no'      => $validated['mimas_no'] ?? null,
-                        'branch_id'     => auth()->user()->branch_id ?? 1,
+                        'customer_name'            => $validated['client_name'],
+                        'company_name'             => $validated['company_name'] ?? null,
+                        'mobile_num'               => $validated['contact_phone'],
+                        'secondary_mobile_num'     => $validated['secondary_phone'] ?? null,
+                        'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
+                        'email'                    => $validated['contact_email'] ?? null,
+                        'mimas_no'                 => $validated['mimas_no'] ?? null,
+                        'branch_id'                => auth()->user()->branch_id ?? 1,
                     ]);
                     $customerId = $customer->id;
                 }
@@ -157,24 +165,26 @@ class EnverionsoneController extends Controller
 
             // Create environment project
             $project = EnvironmentProject::create([
-                'project_code'   => $code,
-                'customer_id'    => $customerId,
-                'category'       => $cat,
-                'sub_category'   => $sc,
-                'b1_stage'       => ($cat === 'B1') ? 'sc1_prep' : null,
-                'project_name'   => $validated['project_name'],
-                'district_id'    => $validated['district_id'],
-                'location'       => $validated['location'] ?? null,
-                'contact_name'   => $validated['contact_name'] ?? $validated['client_name'],
-                'contact_phone'  => $validated['contact_phone'],
-                'contact_email'  => $validated['contact_email'] ?? null,
-                'product_value'  => $pv,
-                'paid_amount'    => $pa,
-                'pending_amount' => $pe,
-                'payment_status' => $status,
-                'status'         => 'draft',
-                'branch_id'      => auth()->user()->branch_id ?? 1,
-                'created_by'     => Auth::id(),
+                'project_code'             => $code,
+                'customer_id'              => $customerId,
+                'category'                 => $cat,
+                'sub_category'             => $sc,
+                'b1_stage'                 => ($cat === 'B1') ? 'sc1_prep' : null,
+                'project_name'             => $validated['project_name'],
+                'district_id'              => $validated['district_id'],
+                'location'                 => $validated['location'] ?? null,
+                'contact_name'             => $validated['contact_name'] ?? $validated['client_name'],
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
+                'contact_phone'            => $validated['contact_phone'],
+                'secondary_phone'          => $validated['secondary_phone'] ?? null,
+                'contact_email'            => $validated['contact_email'] ?? null,
+                'product_value'            => $pv,
+                'paid_amount'              => $pa,
+                'pending_amount'           => $pe,
+                'payment_status'           => $status,
+                'status'                   => 'draft',
+                'branch_id'                => auth()->user()->branch_id ?? 1,
+                'created_by'               => Auth::id(),
             ]);
 
             // Save Application Handlers
@@ -358,31 +368,41 @@ class EnverionsoneController extends Controller
     }
 
     /**
-     * Update overall project status (validation → approved → reported).
+     * Update overall project status (standard or custom manual status).
      */
     public function updateStatus(Request $request, int $id)
     {
-        $request->validate(['status' => 'required|in:draft,validation,approved,reported,archived']);
+        $request->validate([
+            'status'       => 'required|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
+        ]);
 
         $project = EnvironmentProject::findOrFail($id);
-        $project->update(['status' => $request->status]);
+        $cleanStatus = trim($request->status);
+
+        $updateData = ['status' => $cleanStatus];
+        if ($request->has('status_notes')) {
+            $updateData['status_notes'] = $request->status_notes;
+        }
+        $project->update($updateData);
 
         // Auto-upgrade uploaded documents to validated when approving
-        if ($request->status === 'approved') {
+        if (strtolower($cleanStatus) === 'approved') {
             EnvironmentDocument::where('environment_project_id', $id)
                 ->where('status', 'uploaded')
                 ->update(['status' => 'validated']);
         }
 
+        $noteLog = !empty($request->status_notes) ? " Notes: {$request->status_notes}" : '';
         ActivityLog::create([
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $project->id,
             'action'        => 'status_updated',
-            'description'   => "Project status changed to {$request->status}.",
-            'user_id'       => Auth::id(),
+            'description'   => "Project status changed to '{$cleanStatus}'.{$noteLog}",
+            'user_id'       => Auth::id() ?? 1,
         ]);
 
-        return back()->with('success', "Project status updated to '{$request->status}' successfully.");
+        return back()->with('success', "Project status updated to '{$cleanStatus}' successfully.");
     }
 
     /**
@@ -417,22 +437,22 @@ class EnverionsoneController extends Controller
             }
         }
 
-        // No project id → pick first B1/SC1 project or redirect to create
+        // No project id → pick first B1/TOR project or redirect to create
         $project = EnvironmentProject::where('category', 'B1')
-            ->where('sub_category', 'SC1')
+            ->whereIn('sub_category', ['TOR', 'SC1'])
             ->latest()->first();
 
         if (!$project) {
-            return redirect()->route('eviron.create', ['category' => 'B1', 'sub_category' => 'SC1'])
-                ->with('info', 'No B1 Sub Category 1 application found. Please create a new one.');
+            return redirect()->route('eviron.create', ['category' => 'B1', 'sub_category' => 'TOR'])
+                ->with('info', 'No B1 TOR application found. Please create a new one.');
         }
 
         return redirect()->route('eviron.show', $project->id);
     }
 
-    // ─── BACKWARD COMPATIBLE: B1 Sub Category 2 view ─────────────────────
+    // ─── BACKWARD COMPATIBLE: B1 ETA view ─────────────────────────────────
     /**
-     * Sub Category 2 (EIA & TNPCB Submission — 6 Folders)
+     * ETA (EIA & TNPCB Submission — 6 Folders)
      * Now: redirects to unified show page.
      */
     public function index2(Request $request)
@@ -447,12 +467,12 @@ class EnverionsoneController extends Controller
         }
 
         $project = EnvironmentProject::where('category', 'B1')
-            ->where('sub_category', 'SC2')
+            ->whereIn('sub_category', ['ETA', 'SC2'])
             ->latest()->first();
 
         if (!$project) {
-            return redirect()->route('eviron.create', ['category' => 'B1', 'sub_category' => 'SC2'])
-                ->with('info', 'No B1 Sub Category 2 application found. Please create a new one.');
+            return redirect()->route('eviron.create', ['category' => 'B1', 'sub_category' => 'ETA'])
+                ->with('info', 'No B1 ETA application found. Please create a new one.');
         }
 
         return redirect()->route('eviron.show', $project->id);
@@ -509,21 +529,21 @@ class EnverionsoneController extends Controller
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $project->id,
             'action'        => 'sc1_submitted_to_ppt',
-            'description'   => "Sub Category 1 completed and submitted to PPT Department for ToR Presentation ({$ppt->application_no}).",
+            'description'   => "TOR completed and submitted to PPT Department for ToR Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
         ]);
 
         return redirect()->route('eviron.show', $project->id)
-            ->with('success', "Stage 1 (SC1) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.");
+            ->with('success', "Stage 1 (TOR) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.");
     }
 
     /**
-     * Submit Sub Category 2 (SC2) to PPT Department for Stage 2 Final EC Presentation.
+     * Submit ETA to PPT Department for Stage 2 Final EC Presentation.
      */
     public function submitSc2ToPpt(int $id)
     {
         $project = EnvironmentProject::findOrFail($id);
-        abort_unless($project->category === 'B1' && $project->sub_category === 'SC2', 400, 'Project must be in Sub Category 2.');
+        abort_unless($project->category === 'B1' && in_array($project->sub_category, ['ETA', 'SC2']), 400, 'Project must be in ETA stage.');
 
         $ppt = $project->pptStage2;
         if (!$ppt) {
@@ -568,12 +588,12 @@ class EnverionsoneController extends Controller
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $project->id,
             'action'        => 'sc2_submitted_to_ppt',
-            'description'   => "Sub Category 2 completed and submitted to PPT Department for Final EC Presentation ({$ppt->application_no}).",
+            'description'   => "ETA completed and submitted to PPT Department for Final EC Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
         ]);
 
         return redirect()->route('eviron.show', $project->id)
-            ->with('success', "Stage 2 (SC2) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.");
+            ->with('success', "Stage 2 (ETA) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.");
     }
 
     // ─── DOCUMENT SLOTS GENERATOR ────────────────────────────────────────

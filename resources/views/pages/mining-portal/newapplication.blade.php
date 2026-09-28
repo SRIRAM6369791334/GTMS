@@ -198,7 +198,7 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-semibold">Primary Mobile Number <span class="text-danger">*</span></label>
+                                    <label class="form-label small fw-semibold">Primary Phone Number <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="field_mobile_num" name="mobile_num" 
                                            placeholder="10-digit mobile number" value="{{ old('mobile_num', $prefillData['mobile_num'] ?? '') }}" required>
                                 </div>
@@ -211,9 +211,9 @@
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label class="form-label small fw-semibold">Secondary Mobile Number (Optional)</label>
+                                    <label class="form-label small fw-semibold">Secondary Phone Number (Optional)</label>
                                     <input type="text" class="form-control" id="field_secondary_mobile_num" name="secondary_mobile_num" 
-                                           placeholder="10-digit alternative number" value="{{ old('secondary_mobile_num', $prefillData['secondary_mobile_num'] ?? '') }}">
+                                           placeholder="10-digit secondary phone number" value="{{ old('secondary_mobile_num', $prefillData['secondary_mobile_num'] ?? '') }}">
                                 </div>
 
                                 <div class="col-md-6">
@@ -609,7 +609,7 @@
                                                                     }
                                                                     $hasDoc = $matchedDoc && !empty($matchedDoc->file_path);
                                                                 @endphp
-                                                                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom {{ $hasDoc ? 'up' : '' }}" id="row_field_{{ $field->id }}" data-field-id="{{ $field->id }}">
+                                                                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom {{ $hasDoc ? 'up' : '' }}" id="row_field_{{ $field->id }}" data-field-id="{{ $field->id }}" data-mandatory="{{ $field->required ? '1' : '0' }}">
                                                                     <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
                                                                         <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; background:{{ $hasDoc ? '#ecfdf5' : '#f1f5f9' }}; color:{{ $hasDoc ? '#10b981' : '#64748b' }};">
                                                                             <i class="bi {{ $hasDoc ? 'bi-check2-circle' : 'bi-file-earmark' }} ci-status-icon"></i>
@@ -627,6 +627,14 @@
                                                                     </div>
 
                                                                     <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0">
+                                                                        <select class="form-select form-select-sm doc-req-select {{ $field->required ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                                                                                name="doc_requirements[{{ $field->id }}]"
+                                                                                data-field-id="{{ $field->id }}"
+                                                                                style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                                                                                title="Set requirement status (Mandatory or Optional)">
+                                                                            <option value="mandatory" {{ $field->required ? 'selected' : '' }}>Mandatory</option>
+                                                                            <option value="optional" {{ !$field->required ? 'selected' : '' }}>Optional</option>
+                                                                        </select>
                                                                         @if($hasDoc)
                                                                             <span class="badge bg-success-subtle text-success border border-success-subtle" id="badge_field_{{ $field->id }}">
                                                                                 <i class="bi bi-check-lg me-1"></i>Attached
@@ -638,9 +646,6 @@
                                                                                 <i class="bi bi-pencil me-1"></i>Change
                                                                             </button>
                                                                         @else
-                                                                            <span class="badge-status {{ $field->required ? 'mandatory' : 'pending' }}" id="badge_field_{{ $field->id }}">
-                                                                                {{ $field->required ? 'Mandatory' : 'Optional' }}
-                                                                            </span>
                                                                             <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-trigger-upload" data-field-id="{{ $field->id }}">
                                                                                 <i class="bi bi-upload me-1"></i>Upload
                                                                             </button>
@@ -1283,6 +1288,28 @@
                 var did = document.getElementById('district_id').value;
                 if (!did) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a District.', confirmButtonColor: '#0F1E4D' }); return false; }
             }
+            if (step === 5) {
+                var missingMandatory = [];
+                $('#pane_5 .checklist-row').each(function() {
+                    var isUp = $(this).hasClass('up');
+                    var isMandatory = $(this).attr('data-mandatory') === '1';
+                    if (isMandatory && !isUp) {
+                        var name = $(this).find('.ci-name').text().trim() || 'Mandatory Document';
+                        missingMandatory.push(name);
+                    }
+                });
+
+                if (missingMandatory.length > 0) {
+                    var docList = missingMandatory.slice(0, 3).join(', ') + (missingMandatory.length > 3 ? (' (+' + (missingMandatory.length - 3) + ' more)') : '');
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Mandatory Documents Required',
+                        text: 'Please upload all mandatory documents before continuing: ' + docList + '. You may change document status to "Optional" if not required.',
+                        confirmButtonColor: '#0F1E4D'
+                    });
+                    return false;
+                }
+            }
             if (step === 6) {
                 var handlerRows = $('#mining_handlers_tbody tr');
                 var hasInvalidHandler = false;
@@ -1675,7 +1702,7 @@
                 return;
             }
 
-            var rowHtml = '<div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom up" id="row_custom_' + customId + '" data-custom-id="' + customId + '">' +
+            var rowHtml = '<div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom up" id="row_custom_' + customId + '" data-custom-id="' + customId + '" data-mandatory="' + (isMandatory ? '1' : '0') + '">' +
                 '<div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">' +
                     '<div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; background:#dcfce7; color:#16a34a;">' +
                         '<i class="bi bi-check-lg ci-status-icon"></i>' +
@@ -1691,9 +1718,10 @@
                     '</div>' +
                 '</div>' +
                 '<div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0">' +
-                    '<span class="badge-status ' + (isMandatory ? 'mandatory' : 'pending') + '">' +
-                        (isMandatory ? 'Mandatory' : 'Optional') +
-                    '</span>' +
+                    '<select class="form-select form-select-sm doc-req-select ' + (isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light') + ' me-1" name="custom_docs[' + customId + '][requirement]" data-custom-id="' + customId + '" style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;" title="Set requirement status (Mandatory or Optional)">' +
+                        '<option value="mandatory" ' + (isMandatory ? 'selected' : '') + '>Mandatory</option>' +
+                        '<option value="optional" ' + (!isMandatory ? 'selected' : '') + '>Optional</option>' +
+                    '</select>' +
                     '<span class="badge-status uploaded">Uploaded</span>' +
                     '<a href="' + URL.createObjectURL(file) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success py-1 px-2 btn-view-doc" title="View attached document in separate page">' +
                         '<i class="bi bi-eye"></i>' +
@@ -1703,7 +1731,7 @@
                     '</button>' +
                     '<input type="hidden" name="custom_docs[' + customId + '][folder_id]" value="' + folderId + '">' +
                     '<input type="hidden" name="custom_docs[' + customId + '][name]" value="' + escapeHtml(docName) + '">' +
-                    '<input type="hidden" name="custom_docs[' + customId + '][required]" value="' + (isMandatory ? '1' : '0') + '">' +
+                    '<input type="hidden" name="custom_docs[' + customId + '][required]" class="custom-doc-required-input" value="' + (isMandatory ? '1' : '0') + '">' +
                     '<input type="file" name="custom_doc_files[' + customId + ']" id="file_custom_' + customId + '" class="doc-file-input d-none" data-custom-id="' + customId + '">' +
                 '</div>' +
             '</div>';
@@ -1724,6 +1752,22 @@
             updateUploadProgress();
             if (typeof toastr !== 'undefined') {
                 toastr.success('Document "' + docName + '" attached to ' + folderName);
+            }
+        });
+
+        // Toggle doc-req-select requirement status
+        $(document).on('change', '.doc-req-select', function() {
+            var select = $(this);
+            var val = select.val();
+            var isMandatory = val === 'mandatory';
+            var row = select.closest('.checklist-row');
+            row.attr('data-mandatory', isMandatory ? '1' : '0');
+            row.find('.custom-doc-required-input').val(isMandatory ? '1' : '0');
+
+            if (isMandatory) {
+                select.removeClass('border-secondary-subtle text-muted bg-light').addClass('border-danger-subtle text-danger bg-danger-subtle');
+            } else {
+                select.removeClass('border-danger-subtle text-danger bg-danger-subtle').addClass('border-secondary-subtle text-muted bg-light');
             }
         });
 

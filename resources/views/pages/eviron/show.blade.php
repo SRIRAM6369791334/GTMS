@@ -96,17 +96,18 @@
                 Category: {{ $project->category_badge }}
               </span>
               @php
-                $statusColors = [
-                  'draft'      => ['#64748b', '#f1f5f9', '#e2e8f0'],
-                  'validation' => ['#b45309', '#fef3c7', '#fde68a'],
-                  'approved'   => ['#15803d', '#ecfdf5', '#86efac'],
-                  'reported'   => ['#1d4ed8', '#eff6ff', '#bfdbfe'],
-                  'archived'   => ['#7c3aed', '#f5f3ff', '#ddd6fe'],
-                ];
-                $stCol = $statusColors[$project->status] ?? ['#64748b', '#f1f5f9', '#e2e8f0'];
+                $st = strtolower(trim($project->status));
+                $stStyle = match(true) {
+                  in_array($st, ['approved', 'completed']) => 'background:#ecfdf5; color:#15803d; border:1px solid #86efac;',
+                  in_array($st, ['validation', 'reported']) => 'background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;',
+                  in_array($st, ['call not picked', 'client not responding', 'rejected']) => 'background:#fef2f2; color:#b91c1c; border:1px solid #fecaca;',
+                  in_array($st, ['draft']) => 'background:#f8fafc; color:#64748b; border:1px solid #cbd5e1;',
+                  in_array($st, ['archived']) => 'background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe;',
+                  default => 'background:#fefce8; color:#a16207; border:1px solid #fef08a;'
+                };
               @endphp
-              <span class="badge" style="background:{{ $stCol[1] }}; color:{{ $stCol[0] }}; border:1px solid {{ $stCol[2] }}; font-size:.82rem;">
-                {{ ucfirst($project->status) }}
+              <span class="badge" style="{{ $stStyle }} font-size:.82rem;">
+                {{ ucwords(str_replace('_', ' ', $project->status)) }}
               </span>
             </div>
             <div class="text-muted small">
@@ -120,17 +121,25 @@
               <i class="fa fa-layer-group me-1"></i> {{ $project->sub_category_label }}
             </div>
             @endif
+            @if($project->status_notes)
+            <div class="mt-2 p-2 bg-light rounded text-muted small border">
+              <i class="fa fa-comment-dots text-warning me-1"></i> <strong>Status Note:</strong> {{ $project->status_notes }}
+            </div>
+            @endif
           </div>
 
           {{-- Stage Action Buttons --}}
           <div class="d-flex gap-2 align-items-center">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalUpdateStatus">
+              <i class="fa fa-pen me-1"></i> Update Status
+            </button>
             @if($project->category === 'B1')
               {{-- B1 Sequential Statutory Stage Buttons --}}
               @if($project->b1_stage === 'sc1_prep')
-                <form method="POST" action="{{ route('eviron.submitSc1ToPpt', $project->id) }}" onsubmit="return confirm('Submit SC1 (ToR & Mining Documents) to PPT Department for Stage 1 ToR Presentation?');">
+                <form method="POST" action="{{ route('eviron.submitSc1ToPpt', $project->id) }}" onsubmit="return confirm('Submit TOR (ToR & Mining Documents) to PPT Department for Stage 1 ToR Presentation?');">
                   @csrf
                   <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="fa fa-paper-plane me-1"></i> Submit SC1 to PPT Department (Stage 1 Gate)
+                    <i class="fa fa-paper-plane me-1"></i> Submit TOR to PPT Department (Stage 1 Gate)
                   </button>
                 </form>
               @elseif($project->b1_stage === 'sc1_ppt_review')
@@ -143,10 +152,10 @@
                   </a>
                 @endif
               @elseif($project->b1_stage === 'sc2_prep')
-                <form method="POST" action="{{ route('eviron.submitSc2ToPpt', $project->id) }}" onsubmit="return confirm('Submit SC2 (EIA Study & TNPCB Submission) to PPT Department for Stage 2 Final EC Presentation?');">
+                <form method="POST" action="{{ route('eviron.submitSc2ToPpt', $project->id) }}" onsubmit="return confirm('Submit ETA (EIA Study & TNPCB Submission) to PPT Department for Stage 2 Final EC Presentation?');">
                   @csrf
                   <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="fa fa-paper-plane me-1"></i> Submit SC2 to PPT Department (Stage 2 Gate)
+                    <i class="fa fa-paper-plane me-1"></i> Submit ETA to PPT Department (Stage 2 Gate)
                   </button>
                 </form>
               @elseif($project->b1_stage === 'sc2_ppt_review')
@@ -237,7 +246,7 @@
                 <span class="badge rounded-circle {{ $isStep1Active ? 'bg-white text-primary' : ($isStep1Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
                   @if($isStep1Done)<i class="fa fa-check"></i>@else 1 @endif
                 </span>
-                <span class="fw-bold small {{ $isStep1Active ? 'text-white' : ($isStep1Done ? 'text-success' : 'text-dark') }}">Stage 1: SC1 Intake</span>
+                <span class="fw-bold small {{ $isStep1Active ? 'text-white' : ($isStep1Done ? 'text-success' : 'text-dark') }}">Stage 1: TOR Intake</span>
               </div>
               <div class="small {{ $isStep1Active ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
                 ToR &amp; Mining Documents (5 Folders)
@@ -267,7 +276,7 @@
                 <span class="badge rounded-circle {{ $isStep3Active ? 'bg-white text-primary' : ($isStep3Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
                   @if($isStep3Done)<i class="fa fa-check"></i>@else 3 @endif
                 </span>
-                <span class="fw-bold small {{ $isStep3Active ? 'text-white' : ($isStep3Done ? 'text-success' : 'text-dark') }}">Stage 2: SC2 Unlocked</span>
+                <span class="fw-bold small {{ $isStep3Active ? 'text-white' : ($isStep3Done ? 'text-success' : 'text-dark') }}">Stage 2: ETA Unlocked</span>
               </div>
               <div class="small {{ $isStep3Active ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
                 EIA Study &amp; TNPCB Submission (6 Folders)
@@ -296,7 +305,7 @@
             <div class="small">
               <i class="fa fa-info-circle me-1"></i>
               <strong>Stage 1 In Progress:</strong> This application is currently under review in the PPT Department (Dossier: <strong>{{ $project->pptStage1->application_no }}</strong>).
-              Once PPT Department approves the ToR Presentation, Sub Category 2 (SC2) will automatically unlock here with 6 new document folders.
+              Once PPT Department approves the ToR Presentation, ETA will automatically unlock here with 6 new document folders.
             </div>
             <a href="{{ route('ppt-department.show', $project->pptStage1->id) }}" class="btn btn-sm btn-navy text-nowrap ms-2" style="background:#0F1E4D; color:#fff;">
               <i class="fa fa-tv me-1"></i> Go to PPT Review
@@ -538,6 +547,7 @@
                 <tr>
                   <th style="width:36px;">#</th>
                   <th>Document Name</th>
+                  <th style="width:115px;">Requirement</th>
                   <th>Status</th>
                   <th>Uploaded File</th>
                   <th>Uploaded At</th>
@@ -547,6 +557,7 @@
               <tbody>
                 @forelse($docs as $dIdx => $doc)
                 @php
+                  $isMandatory = $doc->documentField ? (bool)$doc->documentField->required : false;
                   $statusBadgeClass = match($doc->status) {
                     'approved'          => 'bg-success text-white',
                     'validated'         => 'bg-info text-white',
@@ -555,7 +566,7 @@
                     default             => 'bg-secondary text-white',
                   };
                 @endphp
-                <tr>
+                <tr class="checklist-row" data-mandatory="{{ $isMandatory ? '1' : '0' }}">
                   <td class="text-muted small">{{ $dIdx + 1 }}</td>
                   <td>
                     <span class="row-mod-dot" style="background:{{ $fPalette[0] }};"></span>
@@ -565,6 +576,14 @@
                         <i class="fa fa-info-circle me-1"></i> {{ $doc->review_note }}
                       </div>
                     @endif
+                  </td>
+                  <td>
+                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                            style="font-size:0.75rem; width:105px; border-radius:6px;"
+                            data-doc-id="{{ $doc->id }}">
+                      <option value="mandatory" {{ $isMandatory ? 'selected' : '' }}>Mandatory</option>
+                      <option value="optional" {{ !$isMandatory ? 'selected' : '' }}>Optional</option>
+                    </select>
                   </td>
                   <td>
                     <span class="badge {{ $statusBadgeClass }}" style="font-size:0.75rem;">
@@ -623,7 +642,7 @@
                 </tr>
                 @empty
                 <tr>
-                  <td colspan="6" class="text-center py-4 text-muted">
+                  <td colspan="7" class="text-center py-4 text-muted">
                     No document checklist items found in this folder.
                   </td>
                 </tr>
@@ -726,6 +745,424 @@
   </div>
 </div>
 
+{{-- Dynamic Update Project Status Modal (UI/UX Pro Max Enhanced) --}}
+<style>
+  #modalUpdateStatus .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 25px 50px -12px rgba(15, 30, 77, 0.25);
+    overflow: hidden;
+  }
+  #modalUpdateStatus .modal-header {
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 1.25rem 1.5rem 1rem;
+    position: relative;
+  }
+  #modalUpdateStatus .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0F1E4D 0%, #3B82F6 50%, #10B981 100%);
+  }
+  #modalUpdateStatus .status-icon-wrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(15, 30, 77, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0F1E4D;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  #modalUpdateStatus .preset-status-btn {
+    font-size: 0.76rem;
+    font-weight: 500;
+    padding: 0.32rem 0.65rem;
+    border-radius: 8px;
+    transition: all 0.15s ease-in-out;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+  }
+  #modalUpdateStatus .preset-status-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  }
+  #modalUpdateStatus .preset-status-btn.active-preset {
+    background: #0F1E4D !important;
+    color: #ffffff !important;
+    border-color: #0F1E4D !important;
+    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.25) !important;
+  }
+  #modalUpdateStatus .preset-status-btn.active-preset i {
+    color: #ffffff !important;
+  }
+  #modalUpdateStatus .quick-note-chip {
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }
+  #modalUpdateStatus .quick-note-chip:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0F1E4D;
+  }
+  #modalUpdateStatus .form-control:focus {
+    border-color: #0F1E4D;
+    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.12);
+  }
+  #modalUpdateStatus .btn-save-status {
+    background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%);
+    border: none;
+    color: #ffffff;
+    font-weight: 600;
+    padding: 0.5rem 1.4rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  #modalUpdateStatus .btn-save-status:hover {
+    background: linear-gradient(135deg, #162a6b 0%, #2563eb 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.2);
+  }
+</style>
+
+<div class="modal fade" id="modalUpdateStatus" tabindex="-1" aria-labelledby="modalUpdateStatusLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" id="formShowUpdateStatus" action="{{ route('eviron.status', $project->id) }}">
+        @csrf
+        
+        {{-- Modal Header --}}
+        <div class="modal-header align-items-start">
+          <div class="d-flex align-items-center gap-3">
+            <div class="status-icon-wrapper">
+              <i class="fa fa-pen-to-square"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-1" id="modalUpdateStatusLabel" style="color:#0F1E4D; font-size:1.15rem;">
+                Update Project Status
+              </h5>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge font-monospace px-2 py-1" style="background:#f1f5f9; color:#0F1E4D; border:1px solid #e2e8f0; font-size:0.75rem;">
+                  <i class="fa fa-hashtag me-1 opacity-50"></i>{{ $project->project_code }}
+                </span>
+                <span class="text-muted small fw-medium text-truncate" style="max-width:260px; font-size:0.75rem;">
+                  <i class="fa fa-building me-1 opacity-50"></i>{{ $project->customer?->company_name ?: ($project->customer?->customer_name ?: 'Applicant') }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        {{-- Modal Body --}}
+        <div class="modal-body p-4 pt-3">
+          
+          {{-- Live Status Badge Preview Card --}}
+          <div class="p-3 mb-3 rounded-3 border" style="background:#f8fafc; border-color:#e2e8f0 !important;">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="text-uppercase fw-bold text-muted" style="font-size:0.68rem; letter-spacing:0.05em;">
+                <i class="fa fa-eye me-1 text-primary"></i>Live Badge Preview
+              </span>
+              <span class="text-muted" style="font-size:0.7rem;">Real-time dossier appearance</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span id="show_live_status_badge" class="badge px-3 py-2 fw-bold shadow-sm" style="font-size:0.85rem; border-radius:8px;">
+                {{ ucwords(str_replace('_', ' ', $project->status)) }}
+              </span>
+              <span class="text-muted small ms-auto" id="show_live_status_category_hint" style="font-size:0.72rem;">Current Status</span>
+            </div>
+          </div>
+
+          {{-- Status Input & Suggestions --}}
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label for="show_status_input" class="form-label fw-bold small text-dark mb-0">
+                Status Value <span class="text-danger">*</span>
+              </label>
+              <span class="text-muted" style="font-size:0.72rem;">Type custom or click below</span>
+            </div>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0 text-muted" style="border-color:#cbd5e1;">
+                <i class="fa fa-tag"></i>
+              </span>
+              <input type="text" name="status" id="show_status_input" class="form-control border-start-0 ps-1"
+                     list="show_status_suggestions" value="{{ $project->status }}" placeholder="e.g. call not picked, validation, approved..."
+                     required autocomplete="off" style="border-color:#cbd5e1; font-weight:500;">
+              <button class="btn btn-outline-secondary border-start-0 bg-white text-muted" type="button" id="show_btn_clear_status" title="Clear input" style="border-color:#cbd5e1;">
+                <i class="fa fa-xmark"></i>
+              </button>
+            </div>
+            <datalist id="show_status_suggestions">
+              <option value="draft">Draft</option>
+              <option value="validation">Validation</option>
+              <option value="approved">Approved</option>
+              <option value="reported">Reported</option>
+              <option value="call not picked">Call Not Picked</option>
+              <option value="client not responding">Client Not Responding</option>
+              <option value="site inspection pending">Site Inspection Pending</option>
+              <option value="documents pending">Documents Pending</option>
+              <option value="waiting for patta">Waiting for Patta</option>
+              <option value="archived">Archived</option>
+            </datalist>
+          </div>
+
+          {{-- Categorized Preset Pills --}}
+          <div class="mb-3">
+            {{-- Workflow Milestones --}}
+            <div class="mb-2">
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-semibold text-muted" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">
+                  <i class="fa fa-diagram-project me-1 text-primary"></i>Standard Workflow Stages
+                </span>
+              </div>
+              <div class="d-flex flex-wrap gap-1" id="show_group_workflow_presets">
+                <button type="button" class="preset-status-btn" data-value="draft">
+                  <i class="fa fa-file-pen text-secondary"></i>Draft
+                </button>
+                <button type="button" class="preset-status-btn" data-value="validation">
+                  <i class="fa fa-magnifying-glass text-info"></i>Validation
+                </button>
+                <button type="button" class="preset-status-btn" data-value="approved">
+                  <i class="fa fa-circle-check text-success"></i>Approved
+                </button>
+                <button type="button" class="preset-status-btn" data-value="reported">
+                  <i class="fa fa-file-invoice text-primary"></i>Reported
+                </button>
+                <button type="button" class="preset-status-btn" data-value="archived">
+                  <i class="fa fa-box-archive text-muted"></i>Archived
+                </button>
+              </div>
+            </div>
+
+            {{-- Operational Delays & Follow-ups --}}
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="fw-semibold text-muted" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em;">
+                  <i class="fa fa-phone-slash me-1 text-danger"></i>Operational Follow-ups & Delays
+                </span>
+              </div>
+              <div class="d-flex flex-wrap gap-1" id="show_group_operational_presets">
+                <button type="button" class="preset-status-btn" data-value="call not picked">
+                  <i class="fa fa-phone-slash text-danger"></i>Call Not Picked
+                </button>
+                <button type="button" class="preset-status-btn" data-value="client not responding">
+                  <i class="fa fa-user-clock text-warning"></i>Client Not Responding
+                </button>
+                <button type="button" class="preset-status-btn" data-value="site inspection pending">
+                  <i class="fa fa-map-location-dot text-primary"></i>Site Inspection Pending
+                </button>
+                <button type="button" class="preset-status-btn" data-value="documents pending">
+                  <i class="fa fa-folder-open text-warning"></i>Documents Pending
+                </button>
+                <button type="button" class="preset-status-btn" data-value="waiting for patta">
+                  <i class="fa fa-file-signature text-secondary"></i>Waiting for Patta
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {{-- Follow-up Remarks & Call Log --}}
+          <div class="mb-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
+              <label for="show_status_notes" class="form-label fw-bold small text-dark mb-0">
+                Status Remarks & Follow-up Notes <span class="text-muted fw-normal">(Optional)</span>
+              </label>
+              <span class="text-muted small" id="show_notes_counter" style="font-size:0.72rem;">{{ strlen($project->status_notes ?? '') }} / 1000</span>
+            </div>
+            <textarea name="status_notes" id="show_status_notes" class="form-control" rows="3" maxlength="1000"
+                      placeholder="Enter follow-up remarks, client call logs, reason for delay, next follow-up date..."
+                      style="border-color:#cbd5e1; font-size:0.86rem; line-height:1.5;">{{ $project->status_notes }}</textarea>
+
+            {{-- Quick Chip Inserts for Notes --}}
+            <div class="mt-2 d-flex flex-wrap align-items-center gap-1">
+              <span class="text-muted small me-1" style="font-size:0.7rem;"><i class="fa fa-bolt me-1 text-warning"></i>Quick log:</span>
+              <button type="button" class="quick-note-chip" data-text="Called applicant; line was busy. Scheduled follow-up.">+ Call Busy</button>
+              <button type="button" class="quick-note-chip" data-text="Client requested 2 working days to submit pending documents.">+ Need 2 Days</button>
+              <button type="button" class="quick-note-chip" data-text="Site inspection postponed due to weather conditions.">+ Inspection Postponed</button>
+              <button type="button" class="quick-note-chip" data-text="Parivesh government portal under scheduled maintenance.">+ Portal Down</button>
+            </div>
+          </div>
+
+        </div>
+
+        {{-- Modal Footer --}}
+        <div class="modal-footer border-0 pt-0 pb-4 px-4 bg-transparent d-flex justify-content-between align-items-center">
+          <div class="text-muted small" style="font-size:0.72rem;">
+            <kbd style="background:#e2e8f0; color:#475569; padding:2px 5px; border-radius:4px; font-size:0.68rem;">Ctrl</kbd> + <kbd style="background:#e2e8f0; color:#475569; padding:2px 5px; border-radius:4px; font-size:0.68rem;">Enter</kbd> to save
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light border px-3" data-bs-dismiss="modal" style="font-weight:500; font-size:0.85rem;">Cancel</button>
+            <button type="submit" class="btn btn-save-status shadow-sm" id="show_btn_submit_status">
+              <i class="fa fa-floppy-disk me-1"></i> Update Status
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modalShowStatus = document.getElementById('modalUpdateStatus');
+  const formShowStatus = document.getElementById('formShowUpdateStatus');
+  const inputStatus = document.getElementById('show_status_input');
+  const textareaNotes = document.getElementById('show_status_notes');
+  const liveBadge = document.getElementById('show_live_status_badge');
+  const liveCategoryHint = document.getElementById('show_live_status_category_hint');
+  const notesCounter = document.getElementById('show_notes_counter');
+  const btnClear = document.getElementById('show_btn_clear_status');
+  const btnSubmit = document.getElementById('show_btn_submit_status');
+  const presetButtons = document.querySelectorAll('#modalUpdateStatus .preset-status-btn');
+  const noteChips = document.querySelectorAll('#modalUpdateStatus .quick-note-chip');
+
+  function renderShowLiveStatus(rawStatus) {
+    if (!liveBadge) return;
+    const s = (rawStatus || '').trim().toLowerCase();
+    const formatted = s ? s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Draft';
+    
+    liveBadge.textContent = formatted;
+
+    if (['approved', 'completed', 'active', 'verified', 'passed'].includes(s)) {
+      liveBadge.style.background = '#dcfce7';
+      liveBadge.style.color = '#166534';
+      liveBadge.style.border = '1px solid #86efac';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Milestone: Approved';
+    } 
+    else if (['validation', 'uploaded', 'presented', 'agenda_scheduled', 'uploaded_to_parivesh'].includes(s)) {
+      liveBadge.style.background = '#dbeafe';
+      liveBadge.style.color = '#1e40af';
+      liveBadge.style.border = '1px solid #93c5fd';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Milestone: In Progress';
+    } 
+    else if (['call not picked', 'client not responding', 'rejected', 'revision_required', 'expired', 'surrendered', 'revoked'].includes(s)) {
+      liveBadge.style.background = '#fee2e2';
+      liveBadge.style.color = '#991b1b';
+      liveBadge.style.border = '1px solid #fca5a5';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Alert: Follow-up Required';
+    } 
+    else if (['site inspection pending', 'documents pending', 'waiting for patta'].includes(s)) {
+      liveBadge.style.background = '#fef3c7';
+      liveBadge.style.color = '#92400e';
+      liveBadge.style.border = '1px solid #fcd34d';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Action: Pending Step';
+    } 
+    else if (['draft', 'archived'].includes(s)) {
+      liveBadge.style.background = '#f1f5f9';
+      liveBadge.style.color = '#475569';
+      liveBadge.style.border = '1px solid #cbd5e1';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Milestone: Standard';
+    } 
+    else {
+      liveBadge.style.background = '#fef3c7';
+      liveBadge.style.color = '#92400e';
+      liveBadge.style.border = '1px solid #fcd34d';
+      if (liveCategoryHint) liveCategoryHint.textContent = 'Custom Status';
+    }
+
+    presetButtons.forEach(btn => {
+      if (btn.dataset.value.toLowerCase() === s) {
+        btn.classList.add('active-preset');
+      } else {
+        btn.classList.remove('active-preset');
+      }
+    });
+  }
+
+  function updateShowNotesCounter() {
+    if (textareaNotes && notesCounter) {
+      notesCounter.textContent = textareaNotes.value.length + ' / 1000';
+    }
+  }
+
+  if (inputStatus) {
+    renderShowLiveStatus(inputStatus.value);
+    inputStatus.addEventListener('input', function() {
+      renderShowLiveStatus(this.value);
+    });
+  }
+
+  if (modalShowStatus) {
+    modalShowStatus.addEventListener('shown.bs.modal', function() {
+      if (inputStatus) inputStatus.focus();
+    });
+  }
+
+  if (btnClear && inputStatus) {
+    btnClear.addEventListener('click', function() {
+      inputStatus.value = '';
+      inputStatus.focus();
+      renderShowLiveStatus('');
+    });
+  }
+
+  presetButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (inputStatus) {
+        inputStatus.value = this.dataset.value;
+        renderShowLiveStatus(this.dataset.value);
+        inputStatus.focus();
+      }
+    });
+  });
+
+  noteChips.forEach(chip => {
+    chip.addEventListener('click', function() {
+      const textToAppend = this.dataset.text;
+      if (textareaNotes) {
+        if (textareaNotes.value.trim() === '') {
+          textareaNotes.value = textToAppend;
+        } else {
+          textareaNotes.value = textareaNotes.value.trim() + ' ' + textToAppend;
+        }
+        updateShowNotesCounter();
+        textareaNotes.focus();
+      }
+    });
+  });
+
+  if (textareaNotes) {
+    textareaNotes.addEventListener('input', updateShowNotesCounter);
+  }
+
+  if (formShowStatus) {
+    formShowStatus.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (btnSubmit) btnSubmit.click();
+      }
+    });
+
+    formShowStatus.addEventListener('submit', function() {
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Saving...';
+      }
+    });
+  }
+});
+</script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Dynamic Folder Tabs Switcher
@@ -782,7 +1219,21 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('review_modal_note').value = btn.dataset.reviewNote || '';
       }
     });
-  }
+  // Dynamic Document Requirement (Mandatory / Optional) Toggle
+  document.querySelectorAll('.doc-req-select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      const row = this.closest('tr');
+      const isMandatory = this.value === 'mandatory';
+      if (row) {
+        row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+      }
+      if (isMandatory) {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+      } else {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+      }
+    });
+  });
 });
 </script>
 @endsection

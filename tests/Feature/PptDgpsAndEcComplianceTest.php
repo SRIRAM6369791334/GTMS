@@ -11,6 +11,8 @@ use App\Models\PptApplication;
 use App\Models\DgpsSurvey;
 use App\Models\EcCompliance;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class PptDgpsAndEcComplianceTest extends TestCase
 {
@@ -143,19 +145,87 @@ class PptDgpsAndEcComplianceTest extends TestCase
      */
     public function test_ec_compliance_wizard_steps(): void
     {
+        Storage::fake('public');
+
         for ($i = 1; $i <= 8; $i++) {
             $res = $this->actingAs($this->user)->get(route('ec-compliance.step', $i));
             $res->assertStatus(200);
         }
 
-        // Test saving step 1
+        // Verify Step 1 renders manual input box for environment project, certificate upload, and cycle/year selectors
+        $step1View = $this->actingAs($this->user)->get(route('ec-compliance.step', 1));
+        $step1View->assertSee('name="environment_project_name"', false);
+        $step1View->assertSee('name="ec_certificate_file"', false);
+        $step1View->assertSee('name="primary_contact_person"', false);
+        $step1View->assertSee('name="secondary_contact_person"', false);
+        $step1View->assertSee('id="select_compliance_cycle"', false);
+        $step1View->assertSee('id="select_compliance_year"', false);
+        $step1View->assertSee('id="field_compliance_period"', false);
+        $step1View->assertSee('April – September (H1 Period)', false);
+        $step1View->assertSee('October – March (H2 Period)', false);
+        $step1View->assertSee('type="file"', false);
+
+        // Test saving step 1 with manual project name and uploaded certificate file
+        $fakeCert = UploadedFile::fake()->create('prior_ec_clearance_order.pdf', 200, 'application/pdf');
+
         $saveRes = $this->actingAs($this->user)->post(route('ec-compliance.saveStep', 1), [
-            'customer_id'         => $this->customer->id,
-            'project_name'        => 'Test EC Half Yearly Compliance Project',
-            'compliance_period'   => 'April 2026 - September 2026',
-            'submission_due_date' => '2026-12-01',
-            'compliance_no'       => 'HYC-2026-TEST-' . rand(100, 999),
+            'customer_id'              => $this->customer->id,
+            'primary_contact_person'   => 'R. Sundararajan',
+            'primary_phone'            => '9876543210',
+            'secondary_contact_person' => 'K. Manickam',
+            'secondary_phone'          => '9123456780',
+            'environment_project_name' => 'Kaveri Rough Stone EC Project Phase 2',
+            'ec_certificate_file'      => $fakeCert,
+            'project_name'             => 'Test EC Half Yearly Compliance Project',
+            'compliance_period'        => 'October 2026 - March 2027',
+            'compliance_year'          => '2026',
+            'submission_due_date'      => '2027-06-01',
+            'compliance_no'            => 'HYC-2026-TEST-' . rand(100, 999),
         ]);
         $saveRes->assertRedirect(route('ec-compliance.step', 2));
+
+        // Verify draft in session
+        $draft = session('ec_compliance_wizard');
+        $this->assertEquals('R. Sundararajan', $draft['primary_contact_person']);
+        $this->assertEquals('9876543210', $draft['primary_phone']);
+        $this->assertEquals('K. Manickam', $draft['secondary_contact_person']);
+        $this->assertEquals('9123456780', $draft['secondary_phone']);
+        $this->assertEquals('October 2026 - March 2027', $draft['compliance_period']);
+        $this->assertEquals('2026', $draft['compliance_year']);
+        $this->assertEquals('2027-06-01', $draft['submission_due_date']);
+        $this->assertEquals('Kaveri Rough Stone EC Project Phase 2', $draft['environment_project_name']);
+        $this->assertNotEmpty($draft['ec_certificate_file']);
+        $this->assertEquals('prior_ec_clearance_order.pdf', $draft['ec_certificate_name']);
+        Storage::disk('public')->assertExists($draft['ec_certificate_file']);
+
+        // Test store saves to database
+        $storeRes = $this->actingAs($this->user)->post(route('ec-compliance.store'), [
+            'customer_id'              => $this->customer->id,
+            'primary_contact_person'   => 'R. Sundararajan',
+            'primary_phone'            => '9876543210',
+            'secondary_contact_person' => 'K. Manickam',
+            'secondary_phone'          => '9123456780',
+            'environment_project_name' => 'Kaveri Rough Stone EC Project Phase 2',
+            'project_name'             => 'Final Test EC Compliance Project',
+        ]);
+
+        $created = EcCompliance::where('project_name', 'Final Test EC Compliance Project')->latest()->first();
+        $this->assertNotNull($created);
+        $this->assertEquals('R. Sundararajan', $created->primary_contact_person);
+        $this->assertEquals('9876543210', $created->primary_phone);
+        $this->assertEquals('K. Manickam', $created->secondary_contact_person);
+        $this->assertEquals('9123456780', $created->secondary_phone);
+        $this->assertEquals('October 2026 - March 2027', $created->compliance_period);
+        $this->assertEquals('2026', $created->compliance_year);
+        $this->assertEquals('Kaveri Rough Stone EC Project Phase 2', $created->environment_project_name);
+        $this->assertNotNull($created->ec_certificate_file);
+        $this->assertEquals('prior_ec_clearance_order.pdf', $created->ec_certificate_name);
+
+        // Verify document entry was also created in ec_compliance_documents
+        $this->assertDatabaseHas('ec_compliance_documents', [
+            'ec_compliance_id' => $created->id,
+            'document_name'    => 'Prior Environmental Clearance (EC) Certificate',
+            'file_name'        => 'prior_ec_clearance_order.pdf',
+        ]);
     }
 }

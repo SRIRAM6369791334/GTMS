@@ -89,8 +89,13 @@ $labels = ['Applicant','B2 Category','Folders','Documents','Validation','Approva
           </div>
 
           <div class="col-md-6">
-            <label class="form-label">Contact Number *</label>
-            <input class="form-control auto-filled-field" name="contact_phone" id="contact_phone" required placeholder="10-digit mobile number">
+            <label class="form-label">Primary Phone Number <span class="text-danger">*</span></label>
+            <input class="form-control auto-filled-field" name="contact_phone" id="contact_phone" required placeholder="10-digit primary phone number">
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Secondary Phone Number <span class="text-muted small">(Optional)</span></label>
+            <input class="form-control auto-filled-field" name="secondary_phone" id="secondary_phone" placeholder="10-digit secondary phone number">
           </div>
 
           <div class="col-md-6">
@@ -192,9 +197,10 @@ $labels = ['Applicant','B2 Category','Folders','Documents','Validation','Approva
       @php
         $items = ['500m Radius Letter','Existing Pit Letter','Approved Mining Plan Book','DGPS Photograph','Pre-feasibility Report','GIS Data','Signed Reports','Common Application Form','Payment Receipt'];
       @endphp
-      <div class="mt-4">
+      <div class="mt-4" id="enviro_b2_docs_container">
         @foreach($items as $item)
-          <div class="checklist-row d-flex align-items-center justify-content-between p-2 border-bottom">
+          @php $isM = ($loop->iteration < 4); @endphp
+          <div class="checklist-row d-flex align-items-center justify-content-between p-2 border-bottom" data-mandatory="{{ $isM ? '1' : '0' }}">
             <div class="d-flex align-items-center">
               <i class="fa fa-file-pdf text-danger me-3 fa-lg"></i>
               <div>
@@ -202,13 +208,17 @@ $labels = ['Applicant','B2 Category','Folders','Documents','Validation','Approva
                 <small class="text-muted">Folder item</small>
               </div>
             </div>
-            <span class="badge badge-{{ $loop->iteration < 4 ? 'danger' : 'secondary' }}">{{ $loop->iteration < 4 ? 'Mandatory' : 'Required' }}</span>
+            <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isM ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                    style="font-size:0.75rem; width:110px; border-radius:6px;">
+              <option value="mandatory" {{ $isM ? 'selected' : '' }}>Mandatory</option>
+              <option value="optional" {{ !$isM ? 'selected' : '' }}>Optional</option>
+            </select>
           </div>
         @endforeach
       </div>
       <div class="wizard-actions mt-4 d-flex justify-content-between">
         <a href="{{ route('environment-b2.step', 3) }}" class="btn btn-outline-secondary btn-sm"><i class="fa fa-arrow-left"></i> Back</a>
-        <a href="{{ route('environment-b2.step', 5) }}" class="btn btn-primary px-4">Continue <i class="fa fa-arrow-right"></i></a>
+        <a href="{{ route('environment-b2.step', 5) }}" class="btn btn-primary px-4 btn-enviro-b2-continue">Continue <i class="fa fa-arrow-right"></i></a>
       </div>
 
     @elseif($step === 5)
@@ -395,6 +405,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const clientNameInput = document.getElementById('client_name');
     const projectNameInput = document.getElementById('project_name');
     const contactPhoneInput = document.getElementById('contact_phone');
+    const secondaryPhoneInput = document.getElementById('secondary_phone');
     const contactEmailInput = document.getElementById('contact_email');
     const districtSelect = document.getElementById('district_id');
     const locationInput = document.getElementById('location');
@@ -407,6 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
       projectNameInput.value = entity + ' Quarry Project';
     }
     if (contactPhoneInput) contactPhoneInput.value = c.mobile_num || '';
+    if (secondaryPhoneInput) secondaryPhoneInput.value = c.secondary_mobile_num || '';
     if (contactEmailInput) contactEmailInput.value = c.email || '';
     if (districtSelect && c.district_id) districtSelect.value = c.district_id;
     if (locationInput) locationInput.value = c.address || '';
@@ -499,6 +511,26 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+});
+@endif
+
+@if($step === 4)
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.doc-req-select').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      const row = this.closest('.checklist-row');
+      const isMandatory = this.value === 'mandatory';
+      if (row) {
+        row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+      }
+      if (isMandatory) {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+      } else {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+      }
+    });
+  });
 });
 </script>
 @endif

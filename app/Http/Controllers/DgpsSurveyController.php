@@ -95,7 +95,12 @@ class DgpsSurveyController extends Controller
             }
         }
 
-        $customers = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'company_name', 'mimas_no', 'mobile_num']);
+        if ($step === 1 && $request->filled('customer_id') && empty($draft['customer_id'])) {
+            $draft['customer_id'] = (int) $request->input('customer_id');
+            session(['dgps_wizard' => $draft]);
+        }
+
+        $customers = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'company_name', 'mimas_no', 'mobile_num', 'secondary_mobile_num']);
         $leaseApps = LeaseApplication::orderBy('application_no')->get(['id', 'application_no', 'customer_id', 'area_extent_acres']);
 
         return view('pages.dgps_survey.wizard', compact(
@@ -122,6 +127,8 @@ class DgpsSurveyController extends Controller
             $draft['lease_area_ha']        = $request->input('lease_area_ha', 3.85);
             $draft['location']             = $request->input('location', 'Salem / Semmandapatti');
             $draft['survey_no']            = $request->input('survey_no', 'DGPS-' . date('Y') . '-' . sprintf('%04d', DgpsSurvey::count() + 1));
+            $draft['primary_phone']        = $request->input('primary_phone');
+            $draft['secondary_phone']      = $request->input('secondary_phone');
         }
 
         // Step 2: Field Survey

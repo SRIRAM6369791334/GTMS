@@ -89,6 +89,7 @@ $labels = ['Request','Field Survey','Process & Upload','Report','GTM Upload','Ha
                     <option value="{{ $c->id }}"
                       data-company="{{ $c->company_name }}"
                       data-mobile="{{ $c->mobile_num }}"
+                      data-secondary-mobile="{{ $c->secondary_mobile_num }}"
                       data-mimas="{{ $c->mimas_no }}"
                       {{ ($draft['customer_id'] ?? '') == $c->id ? 'selected' : ($loop->first && empty($draft['customer_id']) ? 'selected' : '') }}>
                       {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
@@ -108,11 +109,21 @@ $labels = ['Request','Field Survey','Process & Upload','Report','GTM Upload','Ha
                 </select>
               </div>
               <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Primary Phone Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control auto-filled-field" name="primary_phone" id="field_dgps_primary_phone"
+                  value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '') }}" placeholder="10-digit primary phone number" required maxlength="15">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
+                <input type="text" class="form-control auto-filled-field" name="secondary_phone" id="field_dgps_secondary_phone"
+                  value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" placeholder="10-digit secondary phone number" maxlength="15">
+              </div>
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-navy">Lease Area (Ha) *</label>
                 <input type="number" step="0.01" class="form-control auto-filled-field" name="lease_area_ha" id="field_dgps_area" placeholder="Area in hectares"
                   value="{{ $draft['lease_area_ha'] ?? '3.85' }}" required>
               </div>
-              <div class="col-md-12">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-navy">Location / Village / Taluk *</label>
                 <input class="form-control auto-filled-field" name="location" id="field_dgps_location" placeholder="e.g. Semmandapatti Village, Omalur Taluk, Salem District"
                   value="{{ $draft['location'] ?? 'Salem / Semmandapatti' }}" required>
@@ -171,7 +182,7 @@ $labels = ['Request','Field Survey','Process & Upload','Report','GTM Upload','Ha
 
             <div class="folder-checklist-box" id="dgps_checklist_container">
               @foreach($dgpsDocs as $dIdx => $dItem)
-                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-dgps-row="{{ $dIdx }}">
+                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-dgps-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                   <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
                     <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
                       <i class="bi bi-file-earmark"></i>
@@ -182,7 +193,11 @@ $labels = ['Request','Field Survey','Process & Upload','Report','GTM Upload','Ha
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-                    <span class="badge-status {{ $dItem['mandatory'] ? 'mandatory' : 'pending' }}">{{ $dItem['mandatory'] ? 'Mandatory' : 'Optional' }}</span>
+                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                            name="dgps_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                      <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
+                      <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
+                    </select>
                     <input type="file" class="d-none dgps-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat">
                     <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-dgps-item" style="font-size:.72rem;">
                       <i class="bi bi-upload me-1"></i>Upload
@@ -515,6 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const count = container.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
+      row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -529,7 +545,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-          <span class="badge-status pending">Optional</span>
+          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                  name="dgps_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
+            <option value="mandatory">Mandatory</option>
+            <option value="optional" selected>Optional</option>
+          </select>
           <input type="file" class="d-none dgps-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat">
           <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-dgps-item" style="font-size:.72rem;">
             <i class="bi bi-upload me-1"></i>Upload
@@ -538,6 +558,45 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       container.appendChild(row);
       updateDgpsDocProgress();
+      bindDgpsDocReqListeners();
+    });
+  }
+
+  function bindDgpsDocReqListeners() {
+    document.querySelectorAll('#dgps_checklist_container .doc-req-select').forEach(function(sel) {
+      sel.onchange = function() {
+        const row = this.closest('.checklist-row');
+        const isMandatory = this.value === 'mandatory';
+        if (row) {
+          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+        }
+        if (isMandatory) {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        } else {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        }
+      };
+    });
+  }
+  bindDgpsDocReqListeners();
+
+  // DGPS Step 3: Relaxed vs Mandatory validation on form submission
+  const dgpsForm = document.getElementById('dgpsWizardForm');
+  if (dgpsForm && @json($step === 3)) {
+    dgpsForm.addEventListener('submit', function(e) {
+      let missingMandatory = [];
+      document.querySelectorAll('#dgps_checklist_container .checklist-row').forEach(function(row) {
+        const isMandatory = row.getAttribute('data-mandatory') === '1';
+        const isUploaded = row.classList.contains('up');
+        if (isMandatory && !isUploaded) {
+          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Document';
+          missingMandatory.push(docName);
+        }
+      });
+      if (missingMandatory.length > 0) {
+        e.preventDefault();
+        alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
+      }
     });
   }
 
@@ -677,6 +736,15 @@ document.addEventListener('DOMContentLoaded', function() {
       fLoc.value = (c.address || '') + (c.district_name ? ', ' + c.district_name : '');
     }
 
+    const fPrimaryPhone = document.getElementById('field_dgps_primary_phone');
+    const fSecondaryPhone = document.getElementById('field_dgps_secondary_phone');
+    if (fPrimaryPhone) {
+      fPrimaryPhone.value = c.mobile_num || '';
+    }
+    if (fSecondaryPhone) {
+      fSecondaryPhone.value = c.secondary_mobile_num || '';
+    }
+
     // Try matching customer in lease dropdown
     if (selLease) {
       for (let i = 0; i < selLease.options.length; i++) {
@@ -752,6 +820,21 @@ document.addEventListener('DOMContentLoaded', function() {
           feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="fa fa-times-circle me-1"></i> Customer not found. You can enter details manually below.</div>';
         }
       });
+  }
+
+  const selectDgpsCustomer = document.getElementById('select_dgps_customer');
+  if (selectDgpsCustomer) {
+    selectDgpsCustomer.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const fPrimaryPhone = document.getElementById('field_dgps_primary_phone');
+      const fSecondaryPhone = document.getElementById('field_dgps_secondary_phone');
+      if (opt && fPrimaryPhone) {
+        fPrimaryPhone.value = opt.dataset.mobile || '';
+      }
+      if (opt && fSecondaryPhone) {
+        fSecondaryPhone.value = opt.dataset.secondaryMobile || '';
+      }
+    });
   }
 
   if (btnLookupMimas) btnLookupMimas.addEventListener('click', performDgpsMimasLookup);

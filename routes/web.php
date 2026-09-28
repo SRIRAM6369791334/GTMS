@@ -36,7 +36,75 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/dashboard', function () {
-        return view('pages.index');
+        // Active applications (not draft, not approved)
+        $leaseActive = \App\Models\LeaseApplication::whereNotIn('status', ['draft', 'approved'])->count();
+        $miningActive = \App\Models\MiningApplication::whereNotIn('status', ['draft', 'approved'])->count();
+        $activeCount = $leaseActive + $miningActive;
+
+        // Pending validation
+        $pendingCount = \App\Models\LeaseApplication::where('status', 'under_scrutiny')->count() 
+                      + \App\Models\MiningApplication::where('status', 'scrutiny')->count();
+
+        // Approved & verified
+        $approvedCount = \App\Models\LeaseApplication::where('status', 'approved')->count() 
+                       + \App\Models\MiningApplication::where('status', 'approved')->count();
+
+        // Archived
+        $archivedCount = \App\Models\LeaseApplication::onlyTrashed()->count() 
+                       + \App\Models\MiningApplication::onlyTrashed()->count();
+
+        // Recent applications
+        $recentLeases = \App\Models\LeaseApplication::with(['customer', 'district', 'mineral'])->orderBy('created_at', 'desc')->take(5)->get();
+        $recentApplications = $recentLeases->map(function($lease) {
+            return (object)[
+                'client' => $lease->customer->company_name ?? $lease->customer->customer_name ?? 'N/A',
+                'district' => $lease->district->name ?? 'N/A',
+                'mineral' => $lease->mineral->name ?? 'N/A',
+                'plan_type' => 'Lease Application',
+                'stage' => ucwords(str_replace('_', ' ', $lease->status)),
+                'status_class' => match($lease->status) {
+                    'approved' => 'ok',
+                    'under_scrutiny', 'scrutiny' => 'warn',
+                    'revision_required' => 'danger',
+                    default => 'navy'
+                },
+                'icon' => match($lease->status) {
+                    'approved' => 'check2',
+                    'under_scrutiny', 'scrutiny' => 'hourglass-split',
+                    'revision_required' => 'exclamation-triangle',
+                    default => 'cloud-arrow-up'
+                }
+            ];
+        });
+
+        // Applications by district
+        $districtStats = \App\Models\LeaseApplication::join('districts', 'lease_applications.district_id', '=', 'districts.id')
+            ->select('districts.name', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
+            ->groupBy('districts.name')
+            ->orderByDesc('total')
+            ->take(4)
+            ->get();
+
+        // Financial Snapshot
+        $totalPaid = \App\Models\ApplicationPayment::sum('paid_amount') ?? 0;
+        $totalPending = \App\Models\ApplicationPayment::sum('pending_amount') ?? 0;
+
+        // Breakdown for Chart
+        $chartData = [
+            'labels' => ['Lease', 'Mining', 'Environment', 'DGPS', 'Drone'],
+            'data' => [
+                \App\Models\LeaseApplication::count() ?? 0,
+                \App\Models\MiningApplication::count() ?? 0,
+                \App\Models\EnvironmentProject::count() ?? 0,
+                \App\Models\DgpsSurvey::count() ?? 0,
+                \App\Models\DroneSurvey::count() ?? 0
+            ]
+        ];
+
+        return view('pages.index', compact(
+            'activeCount', 'pendingCount', 'approvedCount', 'archivedCount', 'recentApplications', 'districtStats',
+            'totalPaid', 'totalPending', 'chartData'
+        ));
     })->name('dashboard');
 
     // Customer Directory (Live Dynamic CRUD)
@@ -111,6 +179,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/step4', [CustomerController::class, 'step4'])->name('step4');
         Route::get('/step5', [CustomerController::class, 'step5'])->name('step5');
         Route::post('/step5/upload', [CustomerController::class, 'uploadDocument'])->name('step5.upload');
+        Route::post('/step5/requirement', [CustomerController::class, 'saveDocumentRequirement'])->name('step5.requirement');
         Route::get('/step6', [CustomerController::class, 'step6'])->name('step6');
         Route::post('/step6', [CustomerController::class, 'saveStep6'])->name('step6.save');
         Route::get('/step7', [CustomerController::class, 'step7'])->name('step7');
@@ -211,6 +280,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:environment.view')->group(function () {
         Route::get('/ec-certificate', [EcCertificateController::class, 'index'])->name('ec-certificate.index');
         Route::get('/ec-certificate/{id}', [EcCertificateController::class, 'show'])->whereNumber('id')->name('ec-certificate.show');
+        Route::post('/ec-certificate/{id}/status', [EcCertificateController::class, 'updateStatus'])->whereNumber('id')->name('ec-certificate.status');
         Route::get('/ec-certificate/step/{step}', [EcCertificateController::class, 'wizard'])->whereNumber('step')->name('ec-certificate.step');
         Route::post('/ec-certificate/step/{step}', [EcCertificateController::class, 'saveStep'])->whereNumber('step')->name('ec-certificate.saveStep');
         Route::post('/ec-certificate', [EcCertificateController::class, 'store'])->name('ec-certificate.store');
@@ -224,6 +294,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ppt-department/step/{step}', [PptDepartmentController::class, 'saveStep'])->whereNumber('step')->name('ppt-department.saveStep');
         Route::post('/ppt-department', [PptDepartmentController::class, 'store'])->name('ppt-department.store');
         Route::get('/ppt-department/{id}', [PptDepartmentController::class, 'show'])->whereNumber('id')->name('ppt-department.show');
+        Route::post('/ppt-department/{id}/status', [PptDepartmentController::class, 'updateStatus'])->whereNumber('id')->name('ppt-department.status');
         Route::post('/ppt-department/{id}/approve-stage', [PptDepartmentController::class, 'approvePresentation'])->whereNumber('id')->name('ppt-department.approveStage');
         Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
     });
@@ -242,6 +313,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:drone.view')->group(function () {
         Route::get('/drone-survey', [DroneSurveyController::class, 'index'])->name('drone-survey.index');
         Route::get('/drone-survey/step/{step}', [DroneSurveyController::class, 'wizard'])->whereNumber('step')->name('drone-survey.step');
+        Route::post('/drone-survey/step/{step}', [DroneSurveyController::class, 'saveStep'])->whereNumber('step')->name('drone-survey.saveStep');
+        Route::post('/drone-survey', [DroneSurveyController::class, 'store'])->name('drone-survey.store');
+        Route::get('/drone-survey/{id}', [DroneSurveyController::class, 'show'])->whereNumber('id')->name('drone-survey.show');
     });
 
     // EC Compliance (Half Yearly Compliance)
@@ -251,6 +325,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ec-compliance/step/{step}', [EcComplianceController::class, 'saveStep'])->whereNumber('step')->name('ec-compliance.saveStep');
         Route::post('/ec-compliance', [EcComplianceController::class, 'store'])->name('ec-compliance.store');
         Route::get('/ec-compliance/{id}', [EcComplianceController::class, 'show'])->whereNumber('id')->name('ec-compliance.show');
+        Route::post('/ec-compliance/{id}/status', [EcComplianceController::class, 'updateStatus'])->whereNumber('id')->name('ec-compliance.status');
         Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
     });
 

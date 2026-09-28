@@ -29,6 +29,12 @@
         <a href="{{ route('dgps-survey.step', ['step' => 1, 'resume' => $survey->id]) }}" class="btn btn-navy">
           <i class="bi bi-pencil-square me-1"></i> Edit Survey
         </a>
+        <a href="{{ route('drone-survey.step', 1) }}" 
+           class="btn btn-sm" 
+           style="background: linear-gradient(135deg, #7c2d12 0%, #f97316 100%); color: #fff; border: none;"
+           title="Initiate Drone Volumetric Survey for this quarry site">
+          <i class="bi bi-camera-video-fill me-1"></i> Start Drone Survey
+        </a>
       </div>
     </div>
 
@@ -183,6 +189,28 @@
                 <div class="text-dark">{{ $survey->payments->first()->notes }}</div>
               </div>
             @endif
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Workflow Promotion: Stage 7 → 8 (Drone Survey) --}}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius:12px; background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%); border-left: 4px solid #f97316 !important;">
+          <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:48px; height:48px; background:#f97316; color:#fff;">
+                <i class="bi bi-camera-video-fill fs-5"></i>
+              </div>
+              <div>
+                <h6 class="fw-bold mb-0" style="color:#7c2d12;">Next Stage: Drone Volumetric Survey</h6>
+                <p class="text-muted small mb-0">Capture aerial photogrammetry, generate orthomosaic map, DSM/DTM contours, and 3D excavation volume calculation report.</p>
+              </div>
+            </div>
+            <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-sm px-4 shadow-sm" style="background:#f97316; color:#fff;">
+              <i class="bi bi-arrow-right me-1"></i> Start Drone Survey
+            </a>
           </div>
         </div>
       </div>

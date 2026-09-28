@@ -1,6 +1,338 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 6.0 — COMPREHENSIVE 24-FILE KNOWLEDGE TRANSFER DOCUMENTATION SUITE DEPLOYED & AUDITED (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 7.3 — CUSTOMER 360 ENTERPRISE WORKSPACE & ONBOARDING LAUNCHPAD (COMPLETED & VERIFIED) ✅
+- **Status:** Re-architected and fixed the page flow of Customer Tracking (`/customer-tracking/{slug}`) using `/junior-to-senior` staff-engineer principles, solving user flow challenges for both zero-application onboarding clients (`raja-mining-works-6202`) and high-volume 20+ to 108 quarry clients (`sri-bala-traders`):
+  1. **Clean Viewport & Elimination of Duplicate Clutter:**
+     - Guarded global 5-card KPI bar and giant search hero with `@if(!$customer)`, hiding them completely when viewing a customer dossier.
+     - Spliced in a sleek Compact Customer Navigation Bar (`← Back to Customer Directory`, Customer Name, Unique ID pill badge, quick switch search input, and print trigger).
+     - Reduced initial vertical scroll fatigue from 3,500px down to a structured ~700px viewport.
+  2. **Actionable Onboarding Launchpad for Zero-Data Clients:**
+     - For accounts with 0 leases and 0 standalone services (e.g. `raja-mining-works-6202`, Customer ID 287), replaced dead ends and empty tables with a high-conversion Onboarding Launchpad.
+     - **Pathway A (Full Quarry Concession Lifecycle):** Dedicated CTA button linking to `{{ route('step1') }}?customer_id={{ $customer->id }}` with auto-filled profile and contact info in Step 1.
+     - **Pathway B (Standalone Technical Services):** Direct service cards for DGPS Survey (`/dgps-survey/step/1?customer_id=X`), Drone Survey (`/drone-survey/step/1?customer_id=X`), EC Compliance (`/ec-compliance/step/1?customer_id=X`), and Mining Plan.
+     - Updated controllers (`CustomerController`, `DgpsSurveyController`, `DroneSurveyController`, `EcComplianceController`) to accept `?customer_id=X` and automatically populate wizard sessions.
+  3. **4-Tab Enterprise Workspace (`[ 🗺️ Concessions Portfolio ] | [ 🔄 8-Stage Lifecycle Tracker ] | [ ⚡ Standalone Services ] | [ 📁 Document Vault ]`):**
+     - **Tab 1 (Concessions Portfolio):** High-density searchable table displaying all registered quarry concessions (e.g. 108 for Sri Bala Traders) with district filter pills (`All Districts (108)`, `Ariyalur 104`, `Salem 4`), live search input (`filterPortfolioTable`), and direct `[ Track Lifecycle ➔ ]` actions.
+     - **Tab 2 (8-Stage Lifecycle Tracker):** Canonical 8-stage stepper (`1. Lease → 8. Drone`) with rich quarry dropdown switcher, ToR ↔ EIA loop badge for B1 projects, and 8 Application Pillars.
+     - **Tab 3 (Standalone Services Hub):** Independent service cards grid with category filter chips (`All Services`, `DGPS Surveys`, `Drone Surveys`, `EC Compliances`, `Mining Plans`, `Environment`).
+     - **Tab 4 (Document Vault):** Consolidated repository of files across all 8 modules with live category filter chips and direct dark-canvas download buttons.
+  4. **Dynamic Active Tab Resolution & Deep Linking:**
+     - `CustomerTrackingController::buildCustomerDossier()` dynamically resolves `$activeTab` based on `?tab=` query parameter or client concession density (multi-quarry clients default to `portfolio`, single concession clients default to `lifecycle`).
+     - Bootstrap tab activation synchronizes the URL in real time via `history.replaceState()`.
+  5. **Verification & Testing:**
+     - Verified live with Playwright on `http://127.0.0.1:8002/customer-tracking/raja-mining-works-6202` (Actionable Onboarding Launchpad rendered cleanly without global search clutter).
+     - Verified live with Playwright on `http://127.0.0.1:8002/customer-tracking/sri-bala-traders` (Concessions Portfolio, live search filtering to Salem, one-click `Track Lifecycle ->` transition to Tab 2, Tab 3 Standalone Services, and Tab 4 Document Vault).
+     - Blade template cache compilation (`php artisan view:cache`) 100% clean.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 7.2 — DUAL-CATEGORY APPLICATION SEPARATION & HIGH-DENSITY MULTI-DISTRICT CONCESSION DIRECTORY (COMPLETED & VERIFIED) ✅
+- **Status:** Resolved the customer multi-application architectural challenge by establishing a strict, elegant domain separation between **Type 1: Full Quarry Lifecycle Chains (1. Lease -> 8. Drone)** and **Type 2: Standalone / Single Service Filings (Direct Technical Services)**:
+  1. **Dual Category Master Navigation:**
+     - High-visibility dual-segmented selector at the top of the Customer 360 Dossier (`?tab=full_cycle` vs `?tab=standalone`).
+     - Type 1 Tab displays total registered quarry concessions count (e.g. `108 Quarries`), active districts count, and total land extent in Hectares (`356.80 Ha`).
+     - Type 2 Tab displays standalone direct services count (e.g. `27 Services`) with dedicated badges.
+  2. **District-Wise Concession Grouping & Multi-District Filter:**
+     - Dynamic district filter pill bar (`All Districts (108)`, `Ariyalur 104 (300.0 Ha)`, `Salem 4 (56.8 Ha)`) allows enterprise clients and admins managing 20+ to 100+ quarries to filter down instantly to any district.
+     - Switcher `<select id="quarryChainSelect">` neatly categorizes options by `<optgroup label="📍 {District} ({Count} Quarries)">`.
+  3. **High-Density Quarry Directory Modal (`#browseConcessionsModal`):**
+     - "Browse Directory (108)" modal with live search input filtering by SF No, Village, Taluk, Mineral, or Application No in real-time.
+     - Searchable table columns: District | Application & Common ID | Village & Taluk | SF No | Mineral | Extent | Current Stage | Action [Track ->].
+     - Clicking "Track" instantaneously switches the active quarry dossier.
+  4. **Dedicated Standalone Services Hub (Type 2):**
+     - Completely removes the confusing 8-stage stepper for standalone direct entries.
+     - Interactive filter chips: `All Services`, `DGPS Surveys`, `Drone Surveys`, `EC Compliances`, `Mining Plans`, `Environment Projects`.
+     - Rich service cards grid featuring service icon box, ref no, location, district, status badge, execution date, and direct action CTA button (`[ ↗ View & Manage Service -> ]`).
+  5. **Verification & Testing:**
+     - Verified live with Playwright on `http://127.0.0.1:8002/customer-tracking/sri-bala-traders` (108 concessions, 27 standalone services).
+     - Verified modal live search filtering down to Salem concessions.
+     - Verified standalone services grid with category chip counters.
+     - Blade template cache compilation (`php artisan view:cache`) 100% clean.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 7.1 — CUSTOMER 360 MULTI-APPLICATION QUARRY SWITCHER & 8-STAGE LIFECYCLE INTEGRATION (COMPLETED & VERIFIED) ✅
+- **Status:** Resolved the customer multi-application handling limitation on `/customer-tracking/{slug}` (supporting customers with 10+ applications, multiple quarries, or direct walk-in entries) and aligned the portal with the full 8-module canonical chain:
+  1. **Multi-Application & Quarry Concession Switcher:**
+     - `CustomerTrackingController::buildCustomerDossier()` now loops over all customer applications, aggregating primary lease chains and standalone direct entries into `$applicationChains`.
+     - Supports customers like Sri Bala Traders (108 leases) with an Enterprise Switcher Dropdown on the tracking dashboard (`?chain=lease-X`).
+     - Detects direct walk-in entries (e.g. standalone EC Compliance, direct DGPS, or direct Drone) and displays `<span class="badge bg-info">Direct Entry (Stage X)</span>`.
+  2. **Canonical 8-Stage Lifecycle Stepper:**
+     - Upgraded from the legacy 5-stage stepper to the complete 8-stage sequence:
+       `1. Lease → 2. Mining Plan → 3. Environment Clearance (B1/B2) → 4. PPT Department (ToR ↔ EIA Loop) → 5. EC Certificate → 6. EC Compliance → 7. DGPS Survey → 8. Drone Volumetric Survey`.
+     - Category B1 projects dynamically render the ToR ↔ EIA 2-round SEAC presentation loop badge (`<i class="bi bi-arrow-repeat"></i> ToR ↔ EIA Loop`).
+     - Responsive horizontal scroll container (`min-width: 1040px`) prevents cramped layout on smaller screens.
+  3. **8 Application Detail Cards (Pillars):**
+     - Expanded from 4 pillars to 8 full-featured cards with direct deep links, status badges, handler allocation, and deliverable summaries.
+  4. **Consolidated 8-Module Document Vault:**
+     - Unified vault now aggregates documents across all 8 modules (Lease, Mining, Environment, PPT, EC Certificate, EC Compliance, DGPS, Drone).
+     - Filter tab chips for each module with live count badges and instant client-side filtering.
+  5. **Verification & Testing:**
+     - Tested live with Playwright on `http://127.0.0.1:8002/customer-tracking/sri-bala-traders`.
+     - Verified dynamic quarry switching via `?chain=lease-2` (Kadayampatti Rough Stone Quarry).
+     - All routes verified and view compilation (`php artisan view:cache`) 100% clean.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 7.0 — COMPLETE 8-MODULE WORKFLOW CHAIN IMPLEMENTATION (1→2→3↔4→5→6→7→8) (COMPLETED & VERIFIED) ✅
+- **Status:** Implemented the full sequential workflow promotion chain across all 8 GTMS application modules, enabling one-click stage advancement and completing the Drone Survey backend:
+  1. **Stage 5→6 (EC Certificate → EC Compliance):**
+     - Added "Start Half-Yearly Compliance" gradient button in EC Certificate show page top action bar.
+     - Added sidebar promotion card with workflow guidance and CTA linking to `/ec-compliance/step/1`.
+  2. **Stage 6→7 (EC Compliance → DGPS Survey):**
+     - Added "Start DGPS Survey" gradient button in EC Compliance show page top action bar.
+     - Added full-width workflow promotion card with indigo theme linking to `/dgps-survey/step/1`.
+  3. **Stage 7→8 (DGPS Survey → Drone Survey):**
+     - Added "Start Drone Survey" gradient button in DGPS Survey show page top action bar.
+     - Added full-width workflow promotion card with amber/orange theme linking to `/drone-survey/step/1`.
+  4. **Drone Survey Backend (App 8) — Complete Implementation:**
+     - Added 3 missing routes: `POST /drone-survey/step/{step}` (saveStep), `POST /drone-survey` (store), `GET /drone-survey/{id}` (show).
+     - Implemented `DroneSurveyController` with 5 methods: `index()`, `show()`, `wizard()`, `saveStep()`, `store()`.
+     - `store()` uses DB transaction with `DroneSurvey::create()`, `ApplicationHandler::create()`, `ApplicationPayment::create()`.
+     - Created `drone_survey/show.blade.php` with orange/amber branding, survey details, volumetric data, team table, and payment ledger.
+  5. **Previously Existing Chain Links (Verified in Codebase):**
+     - Stage 1→2: `CustomerController::moveToMining()` — auto-creates MiningApplication with document cloning.
+     - Stage 2→3: `MiningController::moveToEnvironment()` — auto-creates EnvironmentProject with map cloning.
+     - Stage 3↔4: `EnverionsoneController::submitSc1ToPpt()` / `submitSc2ToPpt()` + `PptDepartmentController::approvePresentation()` — 2-round SEAC loop.
+     - Stage 4→5: "Issue EC Certificate" button on eviron show/index pages linking to `/ec-certificate/step/1?project_id=X`.
+  6. **Compilation & Verification:**
+     - `php artisan view:clear` + `php artisan view:cache` — 100% clean compilation.
+     - `php artisan route:list --name=drone` — all 5 drone routes registered correctly.
+     - All source code verified 100% English with zero Tamil characters.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 6.7 — UI/UX PRO MAX ENTERPRISE STATUS MODAL REDESIGN & MULTI-MODULE POLISH (COMPLETED & VERIFIED) ✅
+- **Status:** Upgraded the status update popup modal experience across all EC and PPT modules (`eviron`, `ppt_department`, `ec_compliance`, `ec_certificate` index & show views) using `/ui-ux-pro-max` design intelligence principles:
+  1. **Visual Hierarchy & Header Elevation:**
+     - Branded top gradient line (`#0F1E4D` GTMS Navy, `#3B82F6` Royal Blue, `#10B981` Emerald).
+     - Distinctive icon container badge (44x44px rounded 12px pill) tailored to each module.
+     - Project Code formatted in a monospace badge pill alongside the client company/individual name with an entity icon.
+  2. **Real-time Live Badge Preview Box:**
+     - Added an interactive dynamic badge preview card inside the modal showing exact table appearance in real time.
+     - Dynamically transitions color schemes on user input or preset click:
+       - Emerald Green (`#dcfce7` / `#166534`) for Approved / Completed / Active stages.
+       - Royal Blue (`#dbeafe` / `#1e40af`) for Active / In-Progress milestones.
+       - Crimson / Coral (`#fee2e2` / `#991b1b`) for Call Not Picked / Delays / Alerts.
+       - Warm Amber / Gold (`#fef3c7` / `#92400e`) for Pending Steps and arbitrary custom-typed statuses.
+       - Slate Neutral (`#f1f5f9` / `#475569`) for Draft / Archived.
+  3. **Categorized Preset Pills & Active Highlighting:**
+     - Grouped presets into two distinct cognitive tiers:
+       - **Standard Workflow Stages:** Official departmental lifecycle milestones (`Draft`, `Validation`, `Approved`, `Reported`, `Archived`, etc.).
+       - **Operational Delays & Follow-ups:** Everyday real-world follow-ups (`Call Not Picked`, `Client Not Responding`, `Site Inspection Pending`, `Documents Pending`, `Waiting for Patta`, etc.).
+     - Real-time active preset highlighting with a sleek dark navy fill, white text, and shadow.
+  4. **Status Input Enhancements:**
+     - Tag icon prefix and instant Clear (`×`) button.
+     - Preserved HTML5 `<datalist>` suggestions for seamless keyboard typing.
+  5. **Quick-Insert Log Chips & Character Counter for Remarks:**
+     - Real-time character counter (`X / 1000`) for `status_notes`.
+     - 4 one-click quick-log chips (`+ Call Busy`, `+ Need 2 Days`, `+ Inspection Postponed`, `+ Portal Down`) that automatically append to the remarks textarea.
+  6. **Modal Actions & Keyboard Navigation:**
+     - Keyboard shortcut: `Ctrl + Enter` submits the form instantly.
+     - Submit button loading spinner (`<i class="fa fa-spinner fa-spin"></i> Saving...`) and double-submit prevention.
+  7. **Cross-Module Synchronization:**
+     - Replicated across all 8 Index and Show views (`eviron/index.blade.php`, `eviron/show.blade.php`, `ppt_department/index.blade.php`, `ppt_department/show.blade.php`, `ec_compliance/index.blade.php`, `ec_compliance/show.blade.php`, `ec_certificate/index.blade.php`, `ec_certificate/show.blade.php`).
+     - Verified with Playwright live browser automation and captured screenshots.
+     - 100% clean English source code with zero Tamil characters.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 6.6 — DYNAMIC CUSTOM STATUS ENTRY & AUTOCOMPLETE ACROSS ALL EC & PPT MODULES (COMPLETED & VERIFIED) ✅
+- **Status:** Transformed static ENUM status columns into flexible, dynamic manual input fields with autocomplete suggestions across all 4 EC and PPT departmental modules (`environment_projects`, `ppt_applications`, `ec_compliances`, `ec_certificates`):
+  1. **Database Schema Transformation (`database/migrations/2026_09_26_100000_make_status_flexible_across_ec_and_ppt_tables.php`):**
+     - Altered `status` columns from rigid `ENUM(...)` to `VARCHAR(100)` in `environment_projects`, `ec_certificates`, `ec_compliances`, and `ppt_applications`, completely removing SQL enum exception barriers when arbitrary statuses (e.g. `'call not picked'`, `'client not responding'`) are saved.
+     - Added `status_notes` (`TEXT NULL`) column to all 4 tables to capture operational follow-up remarks, client call logs, and postponement reasons.
+  2. **Model Fillable Attributes:**
+     - Added `'status_notes'` to `$fillable` array in:
+       - `App\Models\EnvironmentProject`
+       - `App\Models\PptApplication`
+       - `App\Models\EcCompliance`
+       - `App\Models\EcCertificate`
+  3. **Backend Status Routing & Relaxed Validation:**
+     - Registered routes in `routes/web.php`:
+       - `POST /eviron/{id}/status` -> `EnverionsoneController@updateStatus`
+       - `POST /ppt-department/{id}/status` -> `PptDepartmentController@updateStatus`
+       - `POST /ec-compliance/{id}/status` -> `EcComplianceController@updateStatus`
+       - `POST /ec-certificate/{id}/status` -> `EcCertificateController@updateStatus`
+     - Relaxed validation in all controllers (`EnverionsoneController`, `EnvironmentalB2Controller`, `PptDepartmentController`, `EcComplianceController`, `EcCertificateController`) to `'status' => 'required|string|max:100'` and `'status_notes' => 'nullable|string|max:1000'`.
+     - Automatically logs state changes with user ID and notes into `ActivityLog`.
+  4. **Interactive UI & Autocomplete Suggestion Modal:**
+     - Added "Update Status" action buttons across Show/Dossier views opening clean modals with:
+       - `<input type="text" name="status" list="...">`: Allows typing any arbitrary custom status or picking from HTML5 `<datalist>` suggestions.
+       - Quick Clickable Preset Pills: Enables one-click selection of standard lifecycle stages and common operational follow-ups (`draft`, `validation`, `approved`, `call not picked`, `client not responding`, `site inspection pending`, etc.).
+       - Status Notes textarea: Captures operational follow-up context.
+     - Enhanced dynamic badge styling across both Show and Index views:
+       - Standard successes (`approved`, `completed`, `active`) render vibrant emerald green.
+       - Progress stages (`validation`, `agenda_scheduled`, `uploaded_to_parivesh`) render soft primary blue.
+       - Alert follow-ups (`call not picked`, `client not responding`, `rejected`) render soft crimson red.
+       - Custom user-entered statuses render stylish warm amber badges.
+  5. **Verification & Testing:**
+     - Executed direct automated model verification script testing custom status update and note persistence across all 4 models: 100% SUCCESS.
+     - All routes verified via `php artisan route:list --name=status`.
+     - `php artisan view:clear` and `php artisan view:cache` compiled cleanly with zero Blade errors.
+     - Scanned all modified files verifying 100% clean English with zero Tamil characters in code.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 6.5 — EC CERTIFICATE ISSUANCE WIZARD STREAMLINING (REMOVED REDUNDANT VIEW/PRINT & STORE DOCUMENTS STEPS) (COMPLETED & VERIFIED) ✅
+- **Status:** Streamlined `http://127.0.0.1:8002/ec-certificate/step/` wizard from 8 steps to 6 focused steps by removing redundant intermediate preview and folder info steps:
+  1. **Document & Dependency Verification:**
+     - Verified that **Step 3 (View / Print)** was merely a client-side HTML/CSS preview paper with a `window.print()` button, creating/saving zero actual documents.
+     - Verified that **Step 4 (Store Documents)** was purely informational static folder metadata with an archival confirmation checkbox, storing zero new uploaded files (actual uploads occur in Step 2 into `public/uploads/ec_certificates/{project_code}/`).
+     - Verified that all permanent document storage, view, and print functionalities remain fully available via:
+       - **Step 2 (Upload EC PDF):** Direct file upload and instant "View" link.
+       - **Show View (`/ec-certificate/{id}`):** Permanent post-issuance dossier with full digital preview, PDF download, and browser print.
+  2. **Streamlined 6-Step Workflow:**
+     - **Step 1:** Parivesh Details (`step1`)
+     - **Step 2:** Upload EC PDF (`step2`) -> Advances directly to Communicate (`step 3`)
+     - **Step 3:** Communicate (`step3`, previously Step 5) -> Back to Step 2, Advances to Handling Team (`step 4`)
+     - **Step 4:** Handling Team (`step4`, previously Step 6) -> Back to Step 3, Advances to Payment (`step 5`)
+     - **Step 5:** Payment & Billing Ledger (`step5`, previously Step 7) -> Back to Step 4, Advances to Final Review (`step 6`)
+     - **Step 6:** Preview & Final Issuance (`step6`, previously Step 8) -> Back to Step 5, Submits to DB via `store()`
+  3. **Backend Controller Updates (`EcCertificateController.php`):**
+     - Step validation range updated: `abort_unless($step >= 1 && $step <= 6, 404);`
+     - Updated `getMaxUnlockedStep()` to enforce step unlock progression 1 through 6.
+     - Realigned `saveStep()` switch-case for steps 1..6 with corresponding redirects and flash messages.
+     - Updated `store()` to read payment from `step5` (with fallback to `step7`) and handlers from `step4` (with fallback to `step6`), and redirect to Step 6 on error.
+  4. **View Updates (`wizard.blade.php`):**
+     - Updated `$labels` array to 6 steps.
+     - Updated `$completedSteps` and step title indicator (`Step X of 6`).
+     - Removed redundant `@media print` preview paper and folder cards.
+     - Updated form actions, back buttons, and next button route parameters across all steps.
+     - Updated final review checklist items and script comments.
+  5. **Verification & Testing:**
+     - `php artisan view:clear` and `php artisan view:cache` passed 100% cleanly without Blade compiler errors.
+     - PHP syntax check passed cleanly (`No syntax errors detected in app/Http/Controllers/EcCertificateController.php`).
+     - Zero Tamil characters in source code files.
+- **Last Updated:** 2026-09-26
+
+## Previous Phase: PHASE 6.4 — EC HALF-YEARLY COMPLIANCE STEP 1 FIELD ENHANCEMENTS (MANUAL PROJECT NAME & CERTIFICATE FILE UPLOAD) (COMPLETED & VERIFIED) ✅
+- **Status:** Enhanced `http://127.0.0.1:8002/ec-compliance/step/1` by replacing previous `<select>` dropdowns with tailored user controls:
+  1. **Linked Environment Project (Optional):**
+     - Converted from `<select name="environment_project_id">` to manual text input `<input type="text" name="environment_project_name" id="field_comp_env_project">` enabling users to type custom project names or proposal numbers freely.
+     - Added column `environment_project_name` (`VARCHAR(255) NULL`) to `ec_compliances` table via migration `2026_09_25_165017_add_project_name_and_ec_certificate_file_to_ec_compliances_table.php`.
+     - Added `environment_project_name` to `EcCompliance` model `$fillable`.
+  2. **Linked EC Certificate (Optional):**
+     - Converted from `<select name="ec_certificate_id">` to file upload component `<input type="file" name="ec_certificate_file" id="field_comp_ec_cert_file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">`.
+     - Added `enctype="multipart/form-data"` to the wizard `<form>`.
+     - Added instant visual selection feedback badge in JS displaying selected file name and KB size.
+     - Added columns `ec_certificate_file` (`VARCHAR(255) NULL`) and `ec_certificate_name` (`VARCHAR(255) NULL`) to `ec_compliances` table.
+     - Automatically saves uploaded files to `storage/app/public/uploads/compliance/` and populates draft session.
+     - Automatically creates corresponding record in `ec_compliance_documents` (folder: `documents`, status: `uploaded`, is_mandatory: `false`).
+  3. **Primary & Secondary Contact Person Names:**
+     - Added `Primary Contact Person Name *` (`primary_contact_person`) alongside `Primary Phone Number *`.
+     - Added `Secondary Contact Person Name (Optional)` (`secondary_contact_person`) alongside `Secondary Phone Number (Optional)`.
+     - Added columns `primary_contact_person`, `primary_phone`, `secondary_contact_person`, `secondary_phone` to `ec_compliances` table via migration `2026_09_25_170055_add_contact_persons_and_phones_to_ec_compliances_table.php`.
+     - Added fields to `EcCompliance` model `$fillable`.
+     - Wired real-time customer autofill via MIMAS lookup and customer dropdown `change` event with `data-name` and `data-secondary-person` data bindings.
+  4. **Compliance Period Cycle + Year Selectors with MoEFCC Due Date Auto-Sync (Idea 1):**
+     - Replaced monolithic hardcoded string period dropdown with dual linked selectors:
+       - Half-Yearly Cycle: `April - September (H1 Period)` vs `October - March (H2 Period)`
+       - Financial Year: Dynamic 7-year fiscal year range (`FY 2028 - 2029` down to `FY 2022 - 2023`).
+     - Real-time JavaScript synchronization composing the full period string (`April 2026 - September 2026` or `October 2026 - March 2027`) and dynamically calculating the statutory filing due date:
+       - H1 Cycle (`April – September`): Auto-sets due date to **1st December [Year]** (`[Year]-12-01`).
+       - H2 Cycle (`October – March`): Auto-sets due date to **1st June [Next Year]** (`[NextYear]-06-01`).
+     - Maintains synchronized hidden inputs `compliance_period` and `compliance_year` with live preview pill.
+     - Updated `EcComplianceController@saveStep` and `store()` to persist both `compliance_period` and dynamic `compliance_year`.
+  5. **Step 8 Summary & Dossier Show View Integration:**
+     - Step 8 review card displays Primary Contact Name & Phone, Secondary Contact Name & Phone, manually entered Environment Project, and uploaded EC Certificate file link with badge.
+     - Dossier (`show.blade.php`) features updated Client metric card and dedicated "Statutory EC Linkage & Certificate" card displaying Primary & Secondary Contact Persons with phone numbers, project name, and a direct view/download button for the uploaded EC Certificate.
+  6. **Automated Testing & Compliance:**
+     - Updated `tests/Feature/PptDgpsAndEcComplianceTest.php` to verify Step 1 manual project input, file upload with `UploadedFile::fake()`, contact person rendering and submission, cycle/year selectors, session persistence, DB creation, and document record generation.
+     - All 6 tests in `PptDgpsAndEcComplianceTest` passed (82 assertions).
+     - Verified zero Tamil characters in source code; Blade templates compiled cleanly (`view:cache`).
+- **Last Updated:** 2026-09-25
+
+## Previous Phase: PHASE 6.3 — DYNAMIC DOCUMENT REQUIREMENT SELECTION (MANDATORY / OPTIONAL) ACROSS ALL 8 APPLICATIONS (COMPLETED & VERIFIED) ✅
+- **Status:** Implemented interactive and dynamic **Mandatory / Optional** document requirement selection dropdowns (`.doc-req-select`) across all 8 GTMS statutory applications (both default checklist rows and dynamically added custom documents), with relaxed validation allowing users to proceed when items are switched to "Optional", and strict validation enforcing upload when set to "Mandatory":
+  1. **App 1: Lease Application (`createstep5.blade.php`, `CustomerController.php`, `routes/web.php`):**
+     - Added endpoint `POST /step5/requirement` -> `CustomerController@saveDocumentRequirement` persisting overrides to `$draft['doc_requirements']`.
+     - Replaced static status pills across Folders 1, 2, 3, and custom documents with `.doc-req-select` dropdown with dynamic visual tinting (`border-danger-subtle text-danger bg-danger-subtle` vs `border-secondary-subtle text-muted bg-light`).
+     - Added `data-mandatory="1"` and `data-mandatory="0"`.
+     - Wired continue button validation inspecting all rows: if mandatory and unuploaded, halts and alerts user; if all mandatory attached or switched to optional, smoothly advances to Step 6 (Handling Team).
+  2. **App 2: Mining Plan (`newapplication.blade.php`):**
+     - Updated Step 6 checklist rows for statutory folders with `doc-req-select` (`name="doc_requirements[{{ $field->id }}]"`).
+     - Added `doc-req-select` to dynamic custom document addition modal.
+     - Updated `validateCurrentStep(step)` for Step 6: enforces upload only for rows with `data-mandatory="1"`.
+  3. **App 3: Environment Clearance (`eviron/show.blade.php` & `enviro_b2/wizard.blade.php`):**
+     - In dossier (`eviron/show.blade.php`), added `Requirement` table column with `.doc-req-select` per document item and wired live toggle event listener.
+     - In B2 Wizard (`enviro_b2/wizard.blade.php`), updated Step 4 document checklist rows with `.doc-req-select` and dynamic event handlers.
+  4. **App 4: EC Certificate (`ec_certificate/wizard.blade.php`):**
+     - In Step 2, added requirement dropdown on certificate dropzone and across Supporting Documents & Statutory Annexures.
+     - Updated dynamic custom support document generator (`#btn_add_ec_support_doc`) to inject `.doc-req-select`.
+  5. **App 5: PPT Department (`ppt_department/wizard.blade.php`):**
+     - In Step 5, upgraded all 11 statutory presentation rows from static badges to `.doc-req-select` dropdowns.
+     - Updated `#btn_add_ppt_doc` to inject `.doc-req-select` on custom rows.
+     - Wired `#pptWizardForm` submit listener enforcing upload only for rows with `data-mandatory="1"`.
+  6. **App 6: DGPS Land Survey (`dgps_survey/wizard.blade.php`):**
+     - In Step 3, upgraded 6 survey deliverable rows with `.doc-req-select`.
+     - Updated `#btn_add_dgps_doc` custom document generator to include `.doc-req-select`.
+     - Wired `#dgpsWizardForm` submit listener enforcing upload only for mandatory deliverables.
+  7. **App 7: Drone Volumetric Survey (`drone_survey/wizard.blade.php`):**
+     - In Step 3, upgraded 6 volumetric deliverable rows with `.doc-req-select`.
+     - Updated `#btn_add_drone_doc` custom deliverable generator with `.doc-req-select`.
+     - Wired Step 3 navigation validation enforcing upload for mandatory deliverables.
+  8. **App 8: EC Half-Yearly Compliance (`ec_compliance/wizard.blade.php`):**
+     - In Step 2, upgraded 19 statutory attachment rows with `.doc-req-select`.
+     - Updated `#btn_add_comp_doc` custom attachment generator with `.doc-req-select`.
+     - Wired `#ecComplianceWizardForm` submit listener enforcing upload for mandatory attachments.
+  9. **Automated Testing & Compliance:**
+     - Created dedicated feature test `tests/Feature/DocumentRequirementToggleTest.php` with 11 tests (45 assertions) covering all 8 applications — 100% passing.
+     - `php artisan view:clear; php artisan view:cache`: Cached and verified 100% cleanly without Blade compiler errors.
+     - Codebase English verification: `test_codebase_contains_zero_tamil_characters` verified 100% clean (0 Tamil characters in source code).
+- **Last Updated:** 2026-09-25
+
+## Previous Phase: PHASE 6.2 — UNIVERSAL STANDARDIZED PRIMARY & SECONDARY PHONE NUMBERS ACROSS ALL 8 STATUTORY APPLICATION WIZARDS (COMPLETED & VERIFIED) ✅
+- **Status:** Standardized **Primary Phone Number** and **Secondary Phone Number** intake across **Step 1 (First Step / Intake)** of all 8 GTMS statutory applications, populating them directly from Customer details (`customers.mobile_num` and `customers.secondary_mobile_num`), with full database schema support, model attributes, controller validation/persistence, customer dropdown data-binding, and MIMAS lookup autofill:
+  1. **Database Schema & Data Migration (`2026_09_25_000002_add_secondary_phone_to_applications_tables.php`):**
+     - Added `secondary_phone` (`VARCHAR(25) NULL`) and `secondary_contact_person` (`VARCHAR(255) NULL`) to `environment_projects`.
+     - Added `rep_secondary_mobile` (`VARCHAR(25) NULL`) to `ppt_applications`.
+     - Verified `customers` (`mobile_num`, `secondary_mobile_num`) and `lease_applications` (`mobile_num`, `secondary_contact_mobile`) schema support.
+  2. **Eloquent Model Architecture:**
+     - Updated `EnvironmentProject.php`: Added `'secondary_phone'` and `'secondary_contact_person'` to `$fillable`.
+     - Updated `PptApplication.php`: Added `'rep_secondary_mobile'` to `$fillable`.
+  3. **Controllers (Step 1 Intake, Data Loading, & Session Persistence):**
+     - `PptDepartmentController.php`: Eager-loads `secondary_mobile_num` in `wizard()`; saves `primary_phone` & `secondary_phone` in `saveStep(1)`; persists `rep_mobile` & `rep_secondary_mobile` in `PptApplication::create()`.
+     - `DgpsSurveyController.php`: Eager-loads `secondary_mobile_num` in `wizard()`; saves `primary_phone` & `secondary_phone` in `saveStep(1)`.
+     - `EcComplianceController.php`: Eager-loads `secondary_mobile_num` in `wizard()`; saves `primary_phone` & `secondary_phone` in `saveStep(1)`.
+     - `EcCertificateController.php`: Dynamically sets default `primary_phone` and `secondary_phone` in `draft['step1']`; validates and saves both in `saveStep(1)`.
+     - `EnverionsoneController.php`: Validates `secondary_phone` and `secondary_contact_person`; creates customer with `secondary_mobile_num`; creates `EnvironmentProject` with `secondary_phone`.
+     - `EnvironmentalB2Controller.php`: Validates and saves `secondary_phone` and `secondary_contact_person`.
+  4. **Blade Views Standardized Across All 8 Applications:**
+     - **App 1: Lease Application (`createstep1.blade.php`)**: Standardized labels to `Primary Phone Number *` (`#field_mobile_num`) and `Secondary Phone Number (Optional)` (`#field_secondary_mobile_num`).
+     - **App 2: Mining Plan (`newapplication.blade.php`)**: Standardized labels to `Primary Phone Number *` and `Secondary Phone Number (Optional)`.
+     - **App 3: Environment Clearance (`eviron/create.blade.php` & `enviro_b2/wizard.blade.php`)**: Labeled `contact_phone` as `Primary Phone Number *`, added `secondary_phone` (`Secondary Phone Number (Optional)`), wired `applyCustomerAutofill` for both.
+     - **App 4: EC Certificate (`ec_certificate/wizard.blade.php`)**: Added `field_primary_phone` and `field_secondary_phone` in Step 1; added `data-mobile` & `data-secondary-mobile` to options; wired `applyEcCustomerAutofill`.
+     - **App 5: PPT Department (`ppt_department/wizard.blade.php`)**: Upgraded to `field_ppt_mobile` (Primary) and `field_ppt_secondary_mobile` (Secondary); added `data-secondary-mobile` to options; wired dropdown `change` and MIMAS lookup.
+     - **App 6: DGPS Land Survey (`dgps_survey/wizard.blade.php`)**: Added `field_dgps_primary_phone` and `field_dgps_secondary_phone`; added `data-mobile` & `data-secondary-mobile` to options; wired dropdown `change` and MIMAS lookup.
+     - **App 7: Drone Volumetric Survey (`drone_survey/wizard.blade.php`)**: Added `field_drone_primary_phone` and `field_drone_secondary_phone`; wired `applyDroneCustomerAutofill`.
+     - **App 8: EC Half-Yearly Compliance (`ec_compliance/wizard.blade.php`)**: Added `field_comp_primary_phone` and `field_comp_secondary_phone`; added `data-mobile` & `data-secondary-mobile` to options; wired dropdown `change` and MIMAS lookup.
+  5. **Automated Testing & Compliance:**
+     - Created dedicated feature test `tests/Feature/StepOnePhoneNumbersTest.php` with 9 tests (60 assertions) verifying rendering and persistence across all 8 modules — 100% passing.
+     - `php artisan view:clear; php artisan view:cache`: Cached and verified 100% cleanly without Blade compiler errors.
+     - Codebase English verification passing: `test_codebase_contains_zero_tamil_characters` verified 100% clean.
+- **Last Updated:** 2026-09-25
+
+## Previous Phase: PHASE 6.1 — ENVIRONMENT CLEARANCE B1 SUB-CATEGORY TERMINOLOGY MIGRATION (SC1 -> TOR, SC2 -> ETA) (COMPLETED & VERIFIED) ✅
+- **Status:** Successfully updated and verified the renaming of Sub Category 1 (SC1) to **TOR** and Sub Category 2 (SC2) to **ETA** across all database records, schema definitions, backend models, controller actions, views, and automated test suites:
+  1. **Database Schema & Data Migration (`2026_09_25_000001_migrate_environment_subcategories_to_tor_and_eta.php`):**
+     - Altered `environment_projects.sub_category` column from restrictive `ENUM('SC1','SC2')` to `VARCHAR(50) NULL`.
+     - Migrated existing records: `SC1` -> `TOR` and `SC2` -> `ETA`.
+     - Added robust rollback support in `down()`.
+  2. **Eloquent Model Architecture (`EnvironmentProject.php`):**
+     - Updated `getSubCategoryLabelAttribute()`: mapped `'TOR'` & `'SC1'` to `'TOR — Site & Mining Documentation'`, and `'ETA'` & `'SC2'` to `'ETA — EIA & TNPCB Submission'`.
+     - Updated `getFolderNamesAttribute()`: mapped `'TOR'` & `'SC1'` to 5 document folders, and `'ETA'` & `'SC2'` to 6 document folders.
+     - Updated `getCategoryBadgeAttribute()`: displays `B1 · TOR` or `B1 · ETA`.
+  3. **Controllers (`EnverionsoneController.php` & `PptDepartmentController.php`):**
+     - `store()`: accepts `TOR`, `ETA`, `SC1`, `SC2` with normalization to `TOR` / `ETA`.
+     - `index1()` & `index2()`: queries by `whereIn('sub_category', ['TOR', 'SC1'])` and `['ETA', 'SC2']`.
+     - `submitSc1ToPpt()` & `submitSc2ToPpt()`: updated log actions and flash notices.
+     - `PptDepartmentController@approvePresentation`: advances ToR Presentation directly to `sub_category = 'ETA'`.
+  4. **Blade Views (`create.blade.php`, `show.blade.php`, `index.blade.php`, `enviro_b1/`):**
+     - `create.blade.php`: updated intake radio value to `TOR`, label to `TOR`, and sequential explanation note.
+     - `show.blade.php`: updated B1 stepper to `Stage 1: TOR Intake` and `Stage 2: ETA Unlocked`, action buttons to `Submit TOR to PPT Department` and `Submit ETA to PPT Department`.
+     - `index.blade.php`: header subtitle updated to `B1 (TOR & ETA)`.
+     - `enviro_b1/index.blade.php`, `subcat1.blade.php`, `subcat2.blade.php`: panel headers, titles, and breadcrumbs updated to `TOR` and `ETA`.
+  5. **Automated Testing & Compliance:**
+     - `EnvironmentClearanceTest.php`: updated assertions (`assertSee('TOR')`, `assertSee('ETA')`, sequential flow). All 24 tests passing (138 assertions).
+     - Codebase English verification passing: `test_codebase_contains_zero_tamil_characters` verified 100% clean.
+- **Last Updated:** 2026-09-25
+
+## Previous Phase: PHASE 6.0 — COMPREHENSIVE 24-FILE KNOWLEDGE TRANSFER DOCUMENTATION SUITE DEPLOYED & AUDITED (COMPLETED & VERIFIED) ✅
 - **Status:** Complete, production-grade 24-file technical knowledge-transfer documentation system engineered, adversarially audited, reconciled, and independently verified with **VICTORY CONFIRMED**:
   1. **Full 24-File Knowledge Base (`docs/00` to `docs/23`):**
      - Authored 24 comprehensive markdown files totaling **8,045 lines** and **>580 KB** covering all aspects of GTMS (C4 architecture, database dictionary, 47 models, 20 controllers, 121 routes, state machines 6.1-6.6, Spatie RBAC, testing, deployment, risks, and a 7-day onboarding guide).

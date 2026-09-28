@@ -37,7 +37,7 @@ $labels = [
       <div class="wizard-card">
         <div class="wc-eyebrow">Step {{ $step }} of 8 &middot; Environmental Clearance Half-Yearly Compliance Process</div>
 
-        <form method="POST" action="{{ $step === 8 ? route('ec-compliance.store') : route('ec-compliance.saveStep', $step) }}" id="ecComplianceWizardForm">
+        <form method="POST" action="{{ $step === 8 ? route('ec-compliance.store') : route('ec-compliance.saveStep', $step) }}" id="ecComplianceWizardForm" enctype="multipart/form-data">
           @csrf
 
           {{-- STEP 1: BASIC & EC DETAILS --}}
@@ -88,7 +88,10 @@ $labels = [
                   @foreach($customers as $c)
                     <option value="{{ $c->id }}"
                       data-company="{{ $c->company_name }}"
+                      data-name="{{ $c->customer_name }}"
                       data-mobile="{{ $c->mobile_num }}"
+                      data-secondary-person="{{ $c->secondary_contact_person }}"
+                      data-secondary-mobile="{{ $c->secondary_mobile_num }}"
                       data-mimas="{{ $c->mimas_no }}"
                       {{ ($draft['customer_id'] ?? '') == $c->id ? 'selected' : ($loop->first && empty($draft['customer_id']) ? 'selected' : '') }}>
                       {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
@@ -97,40 +100,125 @@ $labels = [
                 </select>
               </div>
               <div class="col-md-6">
-                <label class="form-label fw-bold text-navy">Linked Environment Project (Optional)</label>
-                <select name="environment_project_id" class="form-select">
-                  <option value="">-- Standalone Compliance Filing --</option>
-                  @foreach($envProjects as $env)
-                    <option value="{{ $env->id }}" {{ ($draft['environment_project_id'] ?? '') == $env->id ? 'selected' : '' }}>
-                      {{ $env->project_code }} — {{ $env->project_name }}
+                <label class="form-label fw-bold text-navy">Primary Contact Person Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control auto-filled-field" name="primary_contact_person" id="field_comp_primary_contact"
+                  value="{{ $draft['primary_contact_person'] ?? ($customers->first()?->customer_name ?? '') }}" placeholder="Enter primary contact person name" required maxlength="255">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Primary Phone Number <span class="text-danger">*</span></label>
+                <input type="text" class="form-control auto-filled-field" name="primary_phone" id="field_comp_primary_phone"
+                  value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '') }}" placeholder="10-digit primary phone number" required maxlength="15">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Secondary Contact Person Name <span class="text-muted small fw-normal">(Optional)</span></label>
+                <input type="text" class="form-control auto-filled-field" name="secondary_contact_person" id="field_comp_secondary_contact"
+                  value="{{ $draft['secondary_contact_person'] ?? ($customers->first()?->secondary_contact_person ?? '') }}" placeholder="Enter secondary contact person name" maxlength="255">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
+                <input type="text" class="form-control auto-filled-field" name="secondary_phone" id="field_comp_secondary_phone"
+                  value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" placeholder="10-digit secondary phone number" maxlength="15">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">
+                  <i class="bi bi-diagram-3 me-1 text-primary"></i> Linked Environment Project <span class="text-muted small fw-normal">(Optional)</span>
+                </label>
+                <input type="text" class="form-control auto-filled-field" name="environment_project_name" id="field_comp_env_project"
+                  value="{{ $draft['environment_project_name'] ?? '' }}" placeholder="Enter Environment Project Name / Proposal No. manually">
+                <small class="text-muted" style="font-size:11px;">Type project name or reference code manually if linked to a previous clearance.</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy">
+                  <i class="bi bi-file-earmark-arrow-up me-1 text-primary"></i> Linked EC Certificate <span class="text-muted small fw-normal">(Optional - Upload Image or Document)</span>
+                </label>
+                <div class="input-group">
+                  <input type="file" class="form-control" name="ec_certificate_file" id="field_comp_ec_cert_file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx">
+                  @if(!empty($draft['ec_certificate_file']))
+                    <a href="{{ asset('storage/' . $draft['ec_certificate_file']) }}" target="_blank" class="btn btn-outline-info" title="View Uploaded File">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                  @endif
+                </div>
+                <div class="d-flex align-items-center justify-content-between mt-1">
+                  <small class="text-muted" style="font-size:11px;">
+                    @if(!empty($draft['ec_certificate_file']))
+                      <span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Uploaded: {{ $draft['ec_certificate_name'] ?? basename($draft['ec_certificate_file']) }}</span>
+                    @else
+                      Upload copy of prior EC Clearance order (PDF, PNG, JPG, DOC up to 50MB).
+                    @endif
+                  </small>
+                  <span id="ec_cert_preview_badge" class="badge bg-light text-primary border" style="display:none; font-size:11px;"></span>
+                </div>
+              </div>
+              @php
+                $currentPeriod = $draft['compliance_period'] ?? 'April 2026 - September 2026';
+                $selectedCycle = str_contains($currentPeriod, 'October') ? 'October - March' : 'April - September';
+                preg_match('/(?:April|October)\s+(\d{4})/i', $currentPeriod, $yMatches);
+                $startYear = !empty($yMatches[1]) ? (int)$yMatches[1] : (int)date('Y');
+
+                $baseYear = (int)date('Y');
+                $yearsList = [];
+                for ($y = $baseYear + 2; $y >= $baseYear - 4; $y--) {
+                    $yearsList[] = [
+                        'start_year' => $y,
+                        'end_year'   => $y + 1,
+                        'label'      => $y . ' - ' . ($y + 1),
+                    ];
+                }
+              @endphp
+
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy">
+                  <i class="bi bi-arrow-repeat me-1 text-primary"></i> Half-Yearly Cycle *
+                </label>
+                <select id="select_compliance_cycle" class="form-select" required>
+                  <option value="April - September" {{ $selectedCycle === 'April - September' ? 'selected' : '' }}>
+                    April – September (H1 Period)
+                  </option>
+                  <option value="October - March" {{ $selectedCycle === 'October - March' ? 'selected' : '' }}>
+                    October – March (H2 Period)
+                  </option>
+                </select>
+                <small class="text-muted" style="font-size:11px;">Statutory 6-month compliance cycle</small>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy">
+                  <i class="bi bi-calendar3 me-1 text-primary"></i> Compliance Financial Year *
+                </label>
+                <select id="select_compliance_year" class="form-select" required>
+                  @foreach($yearsList as $yItem)
+                    <option value="{{ $yItem['start_year'] }}" {{ $startYear == $yItem['start_year'] ? 'selected' : '' }}>
+                      FY {{ $yItem['label'] }} ({{ $yItem['start_year'] }})
                     </option>
                   @endforeach
                 </select>
+                <small class="text-muted" style="font-size:11px;">Select compliance audit fiscal year</small>
               </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-navy">Linked EC Certificate (Optional)</label>
-                <select name="ec_certificate_id" class="form-select">
-                  <option value="">-- Choose Issued EC Certificate --</option>
-                  @foreach($ecCertificates as $cert)
-                    <option value="{{ $cert->id }}" {{ ($draft['ec_certificate_id'] ?? '') == $cert->id ? 'selected' : '' }}>
-                      {{ $cert->ec_ref_no }} ({{ $cert->proposal_no ?: 'SEIAA-TN' }})
-                    </option>
-                  @endforeach
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-navy">Half-Yearly Compliance Period *</label>
-                <select name="compliance_period" class="form-select" required>
-                  <option value="April 2026 - September 2026" {{ ($draft['compliance_period'] ?? '') === 'April 2026 - September 2026' ? 'selected' : '' }}>April 2026 - September 2026</option>
-                  <option value="October 2026 - March 2027" {{ ($draft['compliance_period'] ?? '') === 'October 2026 - March 2027' ? 'selected' : '' }}>October 2026 - March 2027</option>
-                  <option value="April 2025 - September 2025" {{ ($draft['compliance_period'] ?? '') === 'April 2025 - September 2025' ? 'selected' : '' }}>April 2025 - September 2025</option>
-                  <option value="October 2025 - March 2026" {{ ($draft['compliance_period'] ?? '') === 'October 2025 - March 2026' ? 'selected' : '' }}>October 2025 - March 2026</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-navy">MoEFCC Submission Due Date *</label>
-                <input type="date" class="form-control" name="submission_due_date"
+
+              <div class="col-md-4">
+                <label class="form-label fw-bold text-navy">
+                  <i class="bi bi-clock-history me-1 text-primary"></i> MoEFCC Submission Due Date *
+                </label>
+                <input type="date" class="form-control" name="submission_due_date" id="field_submission_due_date"
                   value="{{ $draft['submission_due_date'] ?? date('Y-12-01') }}" required>
+                <small class="text-muted" style="font-size:11px;">Statutory portal filing deadline</small>
+              </div>
+
+              {{-- Synchronized Compliance Period & Year Hidden Fields --}}
+              <input type="hidden" name="compliance_period" id="field_compliance_period" value="{{ $currentPeriod }}">
+              <input type="hidden" name="compliance_year" id="field_compliance_year" value="{{ $draft['compliance_year'] ?? $startYear }}">
+
+              <div class="col-md-12 mt-1">
+                <div class="p-2 px-3 bg-light rounded border d-flex align-items-center justify-content-between" style="font-size:0.83rem;">
+                  <div>
+                    <span class="text-muted fw-semibold">Active Compliance Window:</span>
+                    <strong class="text-navy ms-1" id="compliance_period_preview_text">{{ $currentPeriod }}</strong>
+                  </div>
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    <i class="bi bi-info-circle me-1"></i> Auto-synced with statutory deadline
+                  </span>
+                </div>
               </div>
               <div class="col-md-12">
                 <label class="form-label fw-bold text-navy">Quarry Project Title *</label>
@@ -190,7 +278,7 @@ $labels = [
 
             <div class="folder-checklist-box" id="comp_checklist_container" style="max-height: 480px; overflow-y: auto;">
               @foreach($docs19 as $dIdx => $dItem)
-                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-comp-row="{{ $dIdx }}">
+                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-comp-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                   <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
                     <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
                       <i class="bi bi-file-earmark"></i>
@@ -201,7 +289,11 @@ $labels = [
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-                    <span class="badge-status {{ $dItem['mandatory'] ? 'mandatory' : 'pending' }}">{{ $dItem['mandatory'] ? 'Mandatory' : 'Optional' }}</span>
+                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                            name="comp_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                      <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
+                      <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
+                    </select>
                     <input type="file" class="d-none comp-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.jpg,.jpeg,.png,.zip">
                     <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-comp-item" style="font-size:.72rem;">
                       <i class="bi bi-upload me-1"></i>Upload
@@ -479,6 +571,18 @@ $labels = [
                 <div class="col-md-6"><span class="text-muted">Filing Number:</span> <br><b>{{ $draft['compliance_no'] ?? 'HYC-2026-0001' }}</b></div>
                 <div class="col-md-6 mt-2"><span class="text-muted">Compliance Period:</span> <br><b>{{ $draft['compliance_period'] ?? 'April 2026 - September 2026' }}</b></div>
                 <div class="col-md-6 mt-2"><span class="text-muted">Parivesh Ack Ref:</span> <br><b class="font-monospace text-success">{{ $draft['parivesh_acknowledgement_no'] ?? 'SIA/TN/MIN/HYC/2026/0491' }}</b></div>
+                <div class="col-md-6 mt-2"><span class="text-muted">Primary Contact:</span> <br><b>{{ $draft['primary_contact_person'] ?? ($customerObj?->customer_name ?? '—') }} ({{ $draft['primary_phone'] ?? '—' }})</b></div>
+                <div class="col-md-6 mt-2"><span class="text-muted">Secondary Contact:</span> <br><b>{{ $draft['secondary_contact_person'] ?? '—' }} ({{ $draft['secondary_phone'] ?? '—' }})</b></div>
+                <div class="col-md-6 mt-2"><span class="text-muted">Linked Environment Project:</span> <br><b>{{ $draft['environment_project_name'] ?? 'Standalone Compliance Filing' }}</b></div>
+                <div class="col-md-6 mt-2"><span class="text-muted">Linked EC Certificate:</span> <br>
+                  @if(!empty($draft['ec_certificate_file']))
+                    <a href="{{ asset('storage/' . $draft['ec_certificate_file']) }}" target="_blank" class="text-primary fw-bold">
+                      <i class="bi bi-paperclip"></i> {{ $draft['ec_certificate_name'] ?? basename($draft['ec_certificate_file']) }} (Attached)
+                    </a>
+                  @else
+                    <span class="text-muted">None attached</span>
+                  @endif
+                </div>
               </div>
             </div>
 
@@ -641,6 +745,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const count = container.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
+      row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -655,7 +760,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-          <span class="badge-status pending">Optional</span>
+          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                  name="comp_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
+            <option value="mandatory">Mandatory</option>
+            <option value="optional" selected>Optional</option>
+          </select>
           <input type="file" class="d-none comp-file-input" accept=".pdf,.jpg,.jpeg,.png,.zip">
           <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-comp-item" style="font-size:.72rem;">
             <i class="bi bi-upload me-1"></i>Upload
@@ -664,6 +773,45 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       container.appendChild(row);
       updateCompDocProgress();
+      bindCompDocReqListeners();
+    });
+  }
+
+  function bindCompDocReqListeners() {
+    document.querySelectorAll('#comp_checklist_container .doc-req-select').forEach(function(sel) {
+      sel.onchange = function() {
+        const row = this.closest('.checklist-row');
+        const isMandatory = this.value === 'mandatory';
+        if (row) {
+          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+        }
+        if (isMandatory) {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        } else {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        }
+      };
+    });
+  }
+  bindCompDocReqListeners();
+
+  // EC Compliance Step 2: Relaxed vs Mandatory validation on form submission
+  const compForm = document.getElementById('ecComplianceWizardForm');
+  if (compForm && @json($step === 2)) {
+    compForm.addEventListener('submit', function(e) {
+      let missingMandatory = [];
+      document.querySelectorAll('#comp_checklist_container .checklist-row').forEach(function(row) {
+        const isMandatory = row.getAttribute('data-mandatory') === '1';
+        const isUploaded = row.classList.contains('up');
+        if (isMandatory && !isUploaded) {
+          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Document';
+          missingMandatory.push(docName);
+        }
+      });
+      if (missingMandatory.length > 0) {
+        e.preventDefault();
+        alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
+      }
     });
   }
 
@@ -918,6 +1066,23 @@ document.addEventListener('DOMContentLoaded', function() {
       fProject.value = entity + ' Half-Yearly Compliance Monitoring';
     }
 
+    const fPrimaryContact = document.getElementById('field_comp_primary_contact');
+    const fPrimaryPhone = document.getElementById('field_comp_primary_phone');
+    const fSecondaryContact = document.getElementById('field_comp_secondary_contact');
+    const fSecondaryPhone = document.getElementById('field_comp_secondary_phone');
+    if (fPrimaryContact) {
+      fPrimaryContact.value = c.customer_name || '';
+    }
+    if (fPrimaryPhone) {
+      fPrimaryPhone.value = c.mobile_num || '';
+    }
+    if (fSecondaryContact) {
+      fSecondaryContact.value = c.secondary_contact_person || '';
+    }
+    if (fSecondaryPhone) {
+      fSecondaryPhone.value = c.secondary_mobile_num || '';
+    }
+
     // Visual cue on all autofilled fields
     document.querySelectorAll('.auto-filled-field').forEach(el => {
       el.classList.add('field-autofilled');
@@ -984,6 +1149,29 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  const selectCompCustomer = document.getElementById('select_comp_customer');
+  if (selectCompCustomer) {
+    selectCompCustomer.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const fPrimaryContact = document.getElementById('field_comp_primary_contact');
+      const fPrimaryPhone = document.getElementById('field_comp_primary_phone');
+      const fSecondaryContact = document.getElementById('field_comp_secondary_contact');
+      const fSecondaryPhone = document.getElementById('field_comp_secondary_phone');
+      if (opt && fPrimaryContact) {
+        fPrimaryContact.value = opt.dataset.name || '';
+      }
+      if (opt && fPrimaryPhone) {
+        fPrimaryPhone.value = opt.dataset.mobile || '';
+      }
+      if (opt && fSecondaryContact) {
+        fSecondaryContact.value = opt.dataset.secondaryPerson || '';
+      }
+      if (opt && fSecondaryPhone) {
+        fSecondaryPhone.value = opt.dataset.secondaryMobile || '';
+      }
+    });
+  }
+
   if (btnLookupMimas) btnLookupMimas.addEventListener('click', performCompMimasLookup);
   if (mimasSearchInput) {
     mimasSearchInput.addEventListener('keydown', function(e) {
@@ -996,6 +1184,73 @@ document.addEventListener('DOMContentLoaded', function() {
       if (this.value.trim().length >= 3) {
         performCompMimasLookup();
       }
+    });
+  }
+
+  // Step 1: EC Certificate file selection instant feedback
+  const ecCertFileInput = document.getElementById('field_comp_ec_cert_file');
+  const ecCertBadge = document.getElementById('ec_cert_preview_badge');
+  if (ecCertFileInput && ecCertBadge) {
+    ecCertFileInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        const file = this.files[0];
+        const sizeKb = Math.round(file.size / 1024);
+        ecCertBadge.style.display = 'inline-block';
+        ecCertBadge.innerHTML = `<i class="bi bi-paperclip"></i> Selected: ${file.name} (${sizeKb} KB)`;
+      }
+    });
+  }
+
+  // Step 1: Compliance Period Cycle & Year Sync with MoEFCC Due Date
+  const selCycle = document.getElementById('select_compliance_cycle');
+  const selYear = document.getElementById('select_compliance_year');
+  const fieldPeriod = document.getElementById('field_compliance_period');
+  const fieldYear = document.getElementById('field_compliance_year');
+  const fieldDueDate = document.getElementById('field_submission_due_date');
+  const previewBadge = document.getElementById('compliance_period_preview_text');
+
+  function updateCompliancePeriodAndDueDate() {
+    if (!selCycle || !selYear) return;
+    const cycle = selCycle.value;
+    const startYear = parseInt(selYear.value, 10);
+    const nextYear = startYear + 1;
+
+    let fullPeriod = '';
+    let autoDueDate = '';
+
+    if (cycle === 'October - March') {
+      fullPeriod = `October ${startYear} - March ${nextYear}`;
+      autoDueDate = `${nextYear}-06-01`;
+    } else {
+      fullPeriod = `April ${startYear} - September ${startYear}`;
+      autoDueDate = `${startYear}-12-01`;
+    }
+
+    if (fieldPeriod) fieldPeriod.value = fullPeriod;
+    if (fieldYear) fieldYear.value = String(startYear);
+    if (fieldDueDate && !fieldDueDate.dataset.userEdited) {
+      fieldDueDate.value = autoDueDate;
+    }
+    if (previewBadge) {
+      previewBadge.textContent = fullPeriod;
+    }
+  }
+
+  if (selCycle) {
+    selCycle.addEventListener('change', function() {
+      if (fieldDueDate) delete fieldDueDate.dataset.userEdited;
+      updateCompliancePeriodAndDueDate();
+    });
+  }
+  if (selYear) {
+    selYear.addEventListener('change', function() {
+      if (fieldDueDate) delete fieldDueDate.dataset.userEdited;
+      updateCompliancePeriodAndDueDate();
+    });
+  }
+  if (fieldDueDate) {
+    fieldDueDate.addEventListener('change', function() {
+      this.dataset.userEdited = '1';
     });
   }
 });

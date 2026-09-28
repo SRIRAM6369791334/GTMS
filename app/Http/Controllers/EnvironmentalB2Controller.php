@@ -63,7 +63,9 @@ class EnvironmentalB2Controller extends Controller
             'district_id'              => 'required|exists:districts,id',
             'location'                 => 'nullable|string|max:255',
             'contact_name'             => 'nullable|string|max:255',
+            'secondary_contact_person' => 'nullable|string|max:255',
             'contact_phone'            => 'required|string|max:20',
+            'secondary_phone'          => 'nullable|string|max:20',
             'contact_email'            => 'nullable|email|max:255',
             'mimas_no'                 => 'nullable|string|max:50',
             'aadhaar_no'               => 'nullable|string|max:14',
@@ -88,15 +90,17 @@ class EnvironmentalB2Controller extends Controller
                 }
             } else {
                 $customer = Customer::create([
-                    'customer_name' => $validated['client_name'],
-                    'company_name'  => (!empty($validated['company_name'])) ? $validated['company_name'] : ($validated['client_name'] . ' Quarry'),
-                    'mimas_no'      => (!empty($validated['mimas_no'])) ? $validated['mimas_no'] : ('TN-MMS-' . strtoupper(substr(md5(uniqid()), 0, 6))),
-                    'mobile_num'    => $validated['contact_phone'],
-                    'email'         => $validated['contact_email'] ?? null,
-                    'district_id'   => $validated['district_id'],
-                    'address'       => $validated['location'] ?? null,
-                    'status'        => 1,
-                    'created_by'    => Auth::id() ?? 1,
+                    'customer_name'            => $validated['client_name'],
+                    'company_name'             => (!empty($validated['company_name'])) ? $validated['company_name'] : ($validated['client_name'] . ' Quarry'),
+                    'mimas_no'                 => (!empty($validated['mimas_no'])) ? $validated['mimas_no'] : ('TN-MMS-' . strtoupper(substr(md5(uniqid()), 0, 6))),
+                    'mobile_num'               => $validated['contact_phone'],
+                    'secondary_mobile_num'     => $validated['secondary_phone'] ?? null,
+                    'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
+                    'email'                    => $validated['contact_email'] ?? null,
+                    'district_id'              => $validated['district_id'],
+                    'address'                  => $validated['location'] ?? null,
+                    'status'                   => 1,
+                    'created_by'               => Auth::id() ?? 1,
                 ]);
             }
 
@@ -117,18 +121,20 @@ class EnvironmentalB2Controller extends Controller
 
             // 3. Create Environment Project Record
             $project = EnvironmentProject::create([
-                'project_code'  => $projectCode,
-                'customer_id'   => $customer->id,
-                'district_id'   => $validated['district_id'],
-                'category'      => 'B2',
-                'project_name'  => $validated['project_name'],
-                'location'      => $validated['location'] ?? $customer->address,
-                'contact_name'  => $validated['contact_name'] ?? $customer->customer_name,
-                'contact_phone' => $validated['contact_phone'] ?? $customer->mobile_num,
-                'contact_email' => $validated['contact_email'] ?? $customer->email,
-                'status'        => 'draft',
-                'branch_id'     => Auth::user()?->branch_id ?? 1,
-                'created_by'    => Auth::id() ?? 1,
+                'project_code'             => $projectCode,
+                'customer_id'              => $customer->id,
+                'district_id'              => $validated['district_id'],
+                'category'                 => 'B2',
+                'project_name'             => $validated['project_name'],
+                'location'                 => $validated['location'] ?? $customer->address,
+                'contact_name'             => $validated['contact_name'] ?? $customer->customer_name,
+                'secondary_contact_person' => $validated['secondary_contact_person'] ?? $customer->secondary_contact_person,
+                'contact_phone'            => $validated['contact_phone'] ?? $customer->mobile_num,
+                'secondary_phone'          => $validated['secondary_phone'] ?? $customer->secondary_mobile_num,
+                'contact_email'            => $validated['contact_email'] ?? $customer->email,
+                'status'                   => 'draft',
+                'branch_id'                => Auth::user()?->branch_id ?? 1,
+                'created_by'               => Auth::id() ?? 1,
             ]);
 
             // 4. Auto-generate B2 Document Checklist across 6 folders
@@ -286,10 +292,11 @@ class EnvironmentalB2Controller extends Controller
     public function updateStatus(Request $request, EnvironmentProject $project)
     {
         $validated = $request->validate([
-            'status' => 'required|in:draft,validation,approved,reported,archived',
+            'status'       => 'required|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
         ]);
 
-        $status = $validated['status'];
+        $status = trim($validated['status']);
 
         if ($status === 'validation' && $project->documents()->whereIn('status', ['uploaded', 'validated', 'approved'])->doesntExist()) {
             return back()->with('error', 'Upload at least one document before moving to validation.');
@@ -299,14 +306,19 @@ class EnvironmentalB2Controller extends Controller
             return back()->with('error', 'Approve at least one document before marking the project as approved.');
         }
 
-        $project->update(['status' => $status]);
+        $updateData = ['status' => $status];
+        if ($request->has('status_notes')) {
+            $updateData['status_notes'] = $request->status_notes;
+        }
+        $project->update($updateData);
 
+        $noteLog = !empty($request->status_notes) ? " Notes: {$request->status_notes}" : '';
         ActivityLog::create([
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $project->id,
             'user_id'       => Auth::id() ?? 1,
             'action'        => 'Stage Advanced',
-            'description'   => "Project status transitioned to " . ucfirst($status) . ".",
+            'description'   => "Project status transitioned to " . ucfirst($status) . ".{$noteLog}",
         ]);
 
         return back()->with('success', "Project stage updated to " . ucfirst($status) . ".");

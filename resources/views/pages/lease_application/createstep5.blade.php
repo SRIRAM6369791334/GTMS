@@ -23,6 +23,7 @@
 
         @php
           $uploadedDocs = $uploadedDocs ?? session('lease_draft.uploaded_docs', []);
+          $docReqs = $draft['doc_requirements'] ?? session('lease_draft.doc_requirements', []);
           $uploadedCount = count($uploadedDocs);
           $customCount = count(array_filter($uploadedDocs, fn($d) => !empty($d['is_custom'])));
           $totalCount = 19 + $customCount;
@@ -98,8 +99,9 @@
               $doc = $uploadedDocs[$item['id']] ?? null;
               $isUp = !empty($doc);
               $dispSize = $doc ? (is_numeric($doc['file_size']) ? ($doc['file_size'] >= 1048576 ? (round($doc['file_size']/1048576, 1) . ' MB') : (round($doc['file_size']/1024, 0) . ' KB')) : $doc['file_size']) : $item['size'];
+              $isItemMandatory = isset($docReqs[$item['id']]) ? ($docReqs[$item['id']] === 'mandatory') : $item['mandatory'];
             @endphp
-            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="7" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}">
+            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="7" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}" data-mandatory="{{ $isItemMandatory ? '1' : '0' }}">
               <div class="ci-icon">
                 @if($isUp)
                   <i class="bi bi-check-lg" style="color:var(--green);"></i>
@@ -117,29 +119,37 @@
                   @endif
                 </div>
               </div>
-              @if($isUp)
-                <span class="badge-status uploaded">Uploaded</span>
-                @php
-                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
-                @endphp
-                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                  <i class="bi bi-eye"></i> View
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
-              @else
-                <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
-                <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
-              @endif
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isItemMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $item['id'] }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isItemMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isItemMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                @if($isUp)
+                  <span class="badge-status uploaded">Uploaded</span>
+                  @php
+                    $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                  @endphp
+                  <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+                @else
+                  <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
+                @endif
+              </div>
             </div>
           @endforeach
 
           @foreach($f7Custom as $cKey => $cDoc)
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
-              $isMandatory = !empty($cDoc['is_mandatory']);
+              $isCustMandatory = isset($docReqs[$cKey]) ? ($docReqs[$cKey] === 'mandatory') : (!empty($cDoc['is_mandatory']));
               $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
-            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="7" data-is-custom="1">
+            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="7" data-is-custom="1" data-mandatory="{{ $isCustMandatory ? '1' : '0' }}">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
                 <i class="bi bi-check-lg" style="color:var(--green);"></i>
               </div>
@@ -152,12 +162,20 @@
                   <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $cDoc['file_name'] }}</span> &middot; {{ $dispSize }}
                 </div>
               </div>
-              <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
-              <span class="badge-status uploaded">Uploaded</span>
-              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isCustMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $cKey }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isCustMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isCustMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                <span class="badge-status uploaded">Uploaded</span>
+                <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              </div>
             </div>
           @endforeach
         </div>
@@ -198,8 +216,9 @@
               $doc = $uploadedDocs[$item['id']] ?? null;
               $isUp = !empty($doc);
               $dispSize = $doc ? (is_numeric($doc['file_size']) ? ($doc['file_size'] >= 1048576 ? (round($doc['file_size']/1048576, 1) . ' MB') : (round($doc['file_size']/1024, 0) . ' KB')) : $doc['file_size']) : $item['size'];
+              $isItemMandatory = isset($docReqs[$item['id']]) ? ($docReqs[$item['id']] === 'mandatory') : $item['mandatory'];
             @endphp
-            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="8" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}">
+            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="8" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}" data-mandatory="{{ $isItemMandatory ? '1' : '0' }}">
               <div class="ci-icon">
                 @if($isUp)
                   <i class="bi bi-check-lg" style="color:var(--green);"></i>
@@ -217,29 +236,37 @@
                   @endif
                 </div>
               </div>
-              @if($isUp)
-                <span class="badge-status uploaded">Uploaded</span>
-                @php
-                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
-                @endphp
-                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                  <i class="bi bi-eye"></i> View
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
-              @else
-                <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
-                <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
-              @endif
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isItemMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $item['id'] }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isItemMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isItemMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                @if($isUp)
+                  <span class="badge-status uploaded">Uploaded</span>
+                  @php
+                    $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                  @endphp
+                  <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+                @else
+                  <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
+                @endif
+              </div>
             </div>
           @endforeach
 
           @foreach($f8Custom as $cKey => $cDoc)
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
-              $isMandatory = !empty($cDoc['is_mandatory']);
+              $isCustMandatory = isset($docReqs[$cKey]) ? ($docReqs[$cKey] === 'mandatory') : (!empty($cDoc['is_mandatory']));
               $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
-            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="8" data-is-custom="1">
+            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="8" data-is-custom="1" data-mandatory="{{ $isCustMandatory ? '1' : '0' }}">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
                 <i class="bi bi-check-lg" style="color:var(--green);"></i>
               </div>
@@ -252,12 +279,20 @@
                   <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $cDoc['file_name'] }}</span> &middot; {{ $dispSize }}
                 </div>
               </div>
-              <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
-              <span class="badge-status uploaded">Uploaded</span>
-              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isCustMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $cKey }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isCustMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isCustMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                <span class="badge-status uploaded">Uploaded</span>
+                <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              </div>
             </div>
           @endforeach
         </div>
@@ -294,8 +329,9 @@
               $doc = $uploadedDocs[$item['id']] ?? null;
               $isUp = !empty($doc);
               $dispSize = $doc ? (is_numeric($doc['file_size']) ? ($doc['file_size'] >= 1048576 ? (round($doc['file_size']/1048576, 1) . ' MB') : (round($doc['file_size']/1024, 0) . ' KB')) : $doc['file_size']) : $item['size'];
+              $isItemMandatory = isset($docReqs[$item['id']]) ? ($docReqs[$item['id']] === 'mandatory') : $item['mandatory'];
             @endphp
-            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="9" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}">
+            <div class="checklist-row {{ $isUp ? 'up' : '' }}" data-doc-item="{{ $item['id'] }}" data-folder="9" data-default-name="{{ $item['default'] }}" data-default-size="{{ $item['size'] }}" data-mandatory="{{ $isItemMandatory ? '1' : '0' }}">
               <div class="ci-icon">
                 @if($isUp)
                   <i class="bi bi-check-lg" style="color:var(--green);"></i>
@@ -313,29 +349,37 @@
                   @endif
                 </div>
               </div>
-              @if($isUp)
-                <span class="badge-status uploaded">Uploaded</span>
-                @php
-                  $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
-                @endphp
-                <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                  <i class="bi bi-eye"></i> View
-                </a>
-                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
-              @else
-                <span class="badge-status {{ $item['mandatory'] ? 'mandatory' : 'pending' }}">{{ $item['mandatory'] ? 'Mandatory' : 'Pending' }}</span>
-                <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
-              @endif
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isItemMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $item['id'] }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isItemMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isItemMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                @if($isUp)
+                  <span class="badge-status uploaded">Uploaded</span>
+                  @php
+                    $docUrl = !empty($doc['file_path']) ? asset($doc['file_path']) : (!empty($doc['draft_path']) ? asset($doc['draft_path']) : '#');
+                  @endphp
+                  <a href="{{ $docUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+                @else
+                  <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-upload-item" style="font-size:.7rem;">Upload</button>
+                @endif
+              </div>
             </div>
           @endforeach
 
           @foreach($f9Custom as $cKey => $cDoc)
             @php
               $dispSize = is_numeric($cDoc['file_size']) ? ($cDoc['file_size'] >= 1048576 ? (round($cDoc['file_size']/1048576, 1) . ' MB') : (round($cDoc['file_size']/1024, 0) . ' KB')) : ($cDoc['file_size'] ?? 'Attached');
-              $isMandatory = !empty($cDoc['is_mandatory']);
+              $isCustMandatory = isset($docReqs[$cKey]) ? ($docReqs[$cKey] === 'mandatory') : (!empty($cDoc['is_mandatory']));
               $cDocUrl = !empty($cDoc['file_path']) ? asset($cDoc['file_path']) : (!empty($cDoc['draft_path']) ? asset($cDoc['draft_path']) : '#');
             @endphp
-            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="9" data-is-custom="1">
+            <div class="checklist-row up" data-doc-item="{{ $cKey }}" data-folder="9" data-is-custom="1" data-mandatory="{{ $isCustMandatory ? '1' : '0' }}">
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
                 <i class="bi bi-check-lg" style="color:var(--green);"></i>
               </div>
@@ -348,12 +392,20 @@
                   <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $cDoc['file_name'] }}</span> &middot; {{ $dispSize }}
                 </div>
               </div>
-              <span class="badge-status {{ $isMandatory ? 'mandatory' : 'pending' }}">{{ $isMandatory ? 'Mandatory' : 'Optional' }}</span>
-              <span class="badge-status uploaded">Uploaded</span>
-              <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select {{ $isCustMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                        data-doc-item="{{ $cKey }}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" {{ $isCustMandatory ? 'selected' : '' }}>Mandatory</option>
+                  <option value="optional" {{ !$isCustMandatory ? 'selected' : '' }}>Optional</option>
+                </select>
+                <span class="badge-status uploaded">Uploaded</span>
+                <a href="{{ $cDocUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              </div>
             </div>
           @endforeach
         </div>
@@ -623,13 +675,59 @@ document.addEventListener('DOMContentLoaded', function () {
   // Validate mandatory documents before continuing to MIMAS
   if (continueBtn) {
     continueBtn.addEventListener('click', function (e) {
-      const uploaded = parseInt(counterText.innerText.split('/')[0].trim()) || 0;
-      if (uploaded === 0) {
+      const missingMandatory = [];
+      document.querySelectorAll('.checklist-row').forEach(function(row) {
+        const isUp = row.classList.contains('up');
+        const isMandatory = row.getAttribute('data-mandatory') === '1';
+        if (isMandatory && !isUp) {
+          const nameEl = row.querySelector('.ci-name');
+          const name = nameEl ? nameEl.innerText.trim() : 'Mandatory Document';
+          missingMandatory.push(name);
+        }
+      });
+
+      if (missingMandatory.length > 0) {
         e.preventDefault();
-        showSweetAlert('warning', 'Mandatory Documents Required', 'Please upload at least the mandatory regulatory documents before continuing to Review.');
+        const docList = missingMandatory.slice(0, 3).join(', ') + (missingMandatory.length > 3 ? (' (+' + (missingMandatory.length - 3) + ' more)') : '');
+        showSweetAlert('warning', 'Mandatory Documents Required', 'Please upload all mandatory documents before continuing: ' + docList + '. You may change document status to "Optional" if not required.');
+        return false;
       }
     });
   }
+
+  // Handle change of doc-req-select (Mandatory vs Optional)
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.classList.contains('doc-req-select')) {
+      const select = e.target;
+      const val = select.value;
+      const docItem = select.getAttribute('data-doc-item');
+      const row = select.closest('.checklist-row');
+      const isMandatory = val === 'mandatory';
+
+      if (row) {
+        row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+      }
+
+      if (isMandatory) {
+        select.className = 'form-select form-select-sm doc-req-select border-danger-subtle text-danger bg-danger-subtle me-1';
+      } else {
+        select.className = 'form-select form-select-sm doc-req-select border-secondary-subtle text-muted bg-light me-1';
+      }
+
+      fetch('{{ route('step5.requirement') }}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': '{{ csrf_token() }}',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+          doc_item: docItem,
+          requirement: val
+        })
+      }).catch(err => console.log('Requirement save notice:', err));
+    }
+  });
 
   // Dropzone click & drag handlers
   if (btnSelectFiles) {
@@ -759,6 +857,7 @@ document.addEventListener('DOMContentLoaded', function () {
             rowDiv.setAttribute('data-doc-item', data.doc_item);
             rowDiv.setAttribute('data-folder', folderId);
             rowDiv.setAttribute('data-is-custom', '1');
+            rowDiv.setAttribute('data-mandatory', data.is_mandatory ? '1' : '0');
 
             rowDiv.innerHTML = `
               <div class="ci-icon" style="background:var(--green-soft, #e6f4ea);">
@@ -773,12 +872,20 @@ document.addEventListener('DOMContentLoaded', function () {
                   <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${data.file_name}</span> &middot; ${data.file_size}
                 </div>
               </div>
-              <span class="badge-status ${data.is_mandatory ? 'mandatory' : 'pending'}">${data.is_mandatory ? 'Mandatory' : 'Optional'}</span>
-              <span class="badge-status uploaded">Uploaded</span>
-              <a href="${data.file_url || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
-                <i class="bi bi-eye"></i> View
-              </a>
-              <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                <select class="form-select form-select-sm doc-req-select ${data.is_mandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light'} me-1"
+                        data-doc-item="${data.doc_item}"
+                        style="width: auto; min-width: 95px; font-size: .72rem; padding: 2px 20px 2px 6px; height: 26px; font-weight: 600; cursor: pointer;"
+                        title="Set requirement status (Mandatory or Optional)">
+                  <option value="mandatory" ${data.is_mandatory ? 'selected' : ''}>Mandatory</option>
+                  <option value="optional" ${!data.is_mandatory ? 'selected' : ''}>Optional</option>
+                </select>
+                <span class="badge-status uploaded">Uploaded</span>
+                <a href="${data.file_url || '#'}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item me-1" style="font-size:.7rem;" title="View document in separate page">
+                  <i class="bi bi-eye"></i> View
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:.7rem;"><i class="bi bi-arrow-repeat"></i> Change</button>
+              </div>
             `;
             targetContainer.appendChild(rowDiv);
           }

@@ -50,7 +50,7 @@ class CustomerController extends Controller
     // STEP 1: Lease Application (GET & POST)
     // ───────────────────────────────────────
 
-    public function step1()
+    public function step1(Request $request)
     {
         $districts = District::where('status', 1)->orderBy('name')->get();
         $customers = Customer::select('id', 'mimas_no', 'company_name', 'customer_name', 'mineral_id')->get();
@@ -59,6 +59,29 @@ class CustomerController extends Controller
             $minerals = Mineral::orderBy('name')->get();
         }
         $draft = session('lease_draft', []);
+
+        if ($request->filled('customer_id') && empty($draft['step1']['customer_id'])) {
+            $cust = Customer::find($request->input('customer_id'));
+            if ($cust) {
+                $draft['step1'] = array_merge($draft['step1'] ?? [], [
+                    'customer_id'              => $cust->id,
+                    'mimas_no'                 => $cust->mimas_no,
+                    'client_name'              => $cust->customer_name,
+                    'company_name'             => $cust->company_name ?: $cust->customer_name,
+                    'district_id'              => $cust->district_id,
+                    'mineral_ids'              => $cust->mineral_id ? [$cust->mineral_id] : [],
+                    'mobile_num'               => $cust->mobile_num,
+                    'secondary_mobile_num'     => $cust->secondary_mobile_num,
+                    'secondary_contact_person' => $cust->secondary_contact_person,
+                    'aadhaar_no'               => $cust->aadhaar_no,
+                    'pan'                      => $cust->pan,
+                    'address'                  => $cust->address,
+                    'email'                    => $cust->email,
+                ]);
+                session(['lease_draft' => $draft]);
+            }
+        }
+
         return view('pages.lease_application.createstep1', compact('districts', 'customers', 'minerals', 'draft'));
     }
 
@@ -542,6 +565,30 @@ class CustomerController extends Controller
             'uploaded'     => $uploadedCount,
             'total'        => $totalItems,
             'percent'      => min(100, round(($uploadedCount / $totalItems) * 100)),
+        ]);
+    }
+
+    /**
+     * Save document requirement status (mandatory or optional) into session draft.
+     */
+    public function saveDocumentRequirement(Request $request)
+    {
+        $request->validate([
+            'doc_item'    => 'required',
+            'requirement' => 'required|in:mandatory,optional',
+        ]);
+
+        $draft = session('lease_draft', []);
+        $docReqs = $draft['doc_requirements'] ?? [];
+        $docReqs[$request->input('doc_item')] = $request->input('requirement');
+        $draft['doc_requirements'] = $docReqs;
+        session(['lease_draft' => $draft]);
+
+        return response()->json([
+            'status'      => 1,
+            'success'     => true,
+            'doc_item'    => $request->input('doc_item'),
+            'requirement' => $request->input('requirement'),
         ]);
     }
 

@@ -29,11 +29,14 @@ class EnvironmentProject extends Model
         'district_id',
         'location',
         'contact_name',
+        'secondary_contact_person',
         'contact_phone',
+        'secondary_phone',
         'contact_email',
         'public_hearing_date',
         'public_hearing_minutes_file',
         'status',
+        'status_notes',
         'product_value',
         'paid_amount',
         'pending_amount',
@@ -52,8 +55,8 @@ class EnvironmentProject extends Model
     {
         if ($this->category === 'B1') {
             return match ($this->sub_category) {
-                'SC1' => 'Sub Category 1 — Site & Mining Documentation',
-                'SC2' => 'Sub Category 2 — EIA & TNPCB Submission',
+                'TOR', 'SC1' => 'TOR — Site & Mining Documentation',
+                'ETA', 'SC2' => 'ETA — EIA & TNPCB Submission',
                 default => null,
             };
         }
@@ -66,10 +69,10 @@ class EnvironmentProject extends Model
      */
     public function getFolderNamesAttribute(): array
     {
-        if ($this->category === 'B1' && $this->sub_category === 'SC1') {
+        if ($this->category === 'B1' && in_array($this->sub_category, ['TOR', 'SC1'])) {
             return ['Documents', 'Report', 'GIS & Maps', 'Signed Reports', 'PARIVESH Acknowledgements'];
         }
-        if ($this->category === 'B1' && $this->sub_category === 'SC2') {
+        if ($this->category === 'B1' && in_array($this->sub_category, ['ETA', 'SC2'])) {
             return [
                 'Documents (ToR Letter)',
                 'Baseline Study',
@@ -96,7 +99,7 @@ class EnvironmentProject extends Model
     public function getCategoryBadgeAttribute(): string
     {
         if ($this->category === 'B1') {
-            $sc = $this->sub_category === 'SC2' ? 'SC2' : 'SC1';
+            $sc = in_array($this->sub_category, ['ETA', 'SC2']) ? 'ETA' : 'TOR';
             return "B1 · {$sc}";
         }
         return 'B2';

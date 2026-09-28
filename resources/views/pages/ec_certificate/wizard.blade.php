@@ -110,16 +110,16 @@
   $labels = [
     1 => 'Parivesh Details',
     2 => 'Upload EC PDF',
-    3 => 'View / Print',
-    4 => 'Store Documents',
-    5 => 'Communicate',
-    6 => 'Handling Team',
-    7 => 'Payment',
-    8 => 'Preview & Issue',
+    3 => 'Communicate',
+    4 => 'Handling Team',
+    5 => 'Payment',
+    6 => 'Preview & Issue',
   ];
   $s1 = $draft['step1'] ?? [];
   $s2 = $draft['step2'] ?? [];
-  $s5 = $draft['step5'] ?? [];
+  $s3 = $draft['step3'] ?? $draft['step5'] ?? [];
+  $s4 = $draft['step4'] ?? $draft['step6'] ?? [];
+  $s5 = $draft['step5'] ?? $draft['step7'] ?? [];
 @endphp
 
 <div class="content-body default-height">
@@ -172,9 +172,9 @@
       $completedSteps = [
         1 => !empty($draft['step1']['completed']),
         2 => !empty($draft['step2']),
-        3 => !empty($draft['step3']['preview_verified']),
-        4 => !empty($draft['step4']['storage_confirmed']),
-        5 => !empty($draft['step5']['recipient_email']),
+        3 => !empty($draft['step3']['recipient_email']),
+        4 => isset($draft['step4']),
+        5 => isset($draft['step5']),
         6 => false,
       ];
       $maxAllowed = $maxUnlockedStep ?? 1;
@@ -216,9 +216,9 @@
           <h5 class="card-title mb-0 fw-bold" style="color:#0F1E4D; font-family:'Sora',sans-serif;">
             @if($step === 1) 1. Parivesh Portal Approval Details
             @elseif($step === 2) 2. Download &amp; Upload EC Certificate PDF
-            @elseif($step === 3) 3. View &amp; Print Official EC Certificate
-            @elseif($step === 4) 4. Store Documents in Project Repository
-            @elseif($step === 5) 5. Communicate EC Grant / Decision to Applicant
+            @elseif($step === 3) 3. Communicate EC Grant / Decision to Applicant
+            @elseif($step === 4) 4. Project Handling Team &amp; In-Charge Persons
+            @elseif($step === 5) 5. Payment Details &amp; Billing Ledger
             @else 6. Verification Summary &amp; Official Issuance
             @endif
           </h5>
@@ -287,6 +287,8 @@
                       data-code="{{ $p->project_code }}"
                       data-district="{{ $p->district?->name }}"
                       data-mimas="{{ $p->customer?->mimas_no }}"
+                      data-mobile="{{ $p->customer?->mobile_num ?? $p->contact_phone }}"
+                      data-secondary-mobile="{{ $p->customer?->secondary_mobile_num ?? $p->secondary_phone }}"
                       @selected($selectedProject && $selectedProject->id === $p->id)>
                       {{ $p->project_code }} — {{ $p->project_name }} ({{ $p->customer?->company_name ?: $p->customer?->customer_name }}) [{{ $p->category_badge }}]
                     </option>
@@ -321,6 +323,22 @@
               <input type="text" class="form-control auto-filled-field" name="applicant_name" id="field_applicant_name" required
                 value="{{ old('applicant_name', $s1['applicant_name'] ?? '') }}"
                 placeholder="Full applicant or company legal name">
+            </div>
+
+            {{-- Primary Phone Number --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Primary Phone Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control auto-filled-field" name="primary_phone" id="field_primary_phone" required
+                value="{{ old('primary_phone', $s1['primary_phone'] ?? ($selectedProject?->customer?->mobile_num ?? $selectedProject?->contact_phone ?? '')) }}"
+                placeholder="10-digit primary phone number" maxlength="15">
+            </div>
+
+            {{-- Secondary Phone Number --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Secondary Phone Number <span class="text-muted small">(Optional)</span></label>
+              <input type="text" class="form-control auto-filled-field" name="secondary_phone" id="field_secondary_phone"
+                value="{{ old('secondary_phone', $s1['secondary_phone'] ?? ($selectedProject?->customer?->secondary_mobile_num ?? $selectedProject?->secondary_phone ?? '')) }}"
+                placeholder="10-digit secondary phone number" maxlength="15">
             </div>
 
             {{-- Approval / Issue Date --}}
@@ -392,7 +410,14 @@
               <div class="p-4 border rounded text-center" style="background:#f8fafc; border-style:dashed !important; border-width:2px !important; border-color:#cbd5e1 !important;">
                 <i class="fa fa-cloud-arrow-up fa-3x text-primary mb-3"></i>
                 <h5 class="fw-bold mb-1">Upload Environmental Clearance Certificate (PDF)</h5>
-                <p class="text-muted small mb-3">Drag &amp; drop or click to upload the official signed certificate (PDF, max 25MB)</p>
+                <p class="text-muted small mb-2">Drag &amp; drop or click to upload the official signed certificate (PDF, max 25MB)</p>
+                <div class="d-flex justify-content-center align-items-center gap-2 mb-3">
+                  <label class="small fw-bold text-muted mb-0">Requirement:</label>
+                  <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle" name="certificate_file_req" id="field_certificate_file_req" style="width:115px; font-size:0.75rem; border-radius:6px;">
+                    <option value="mandatory" selected>Mandatory</option>
+                    <option value="optional">Optional</option>
+                  </select>
+                </div>
                 <input type="file" name="certificate_file" class="form-control w-75 mx-auto" accept=".pdf,.doc,.docx,.jpg,.png">
 
                 @if(!empty($s2['file_name']))
@@ -433,7 +458,7 @@
                   </button>
                 </div>
                 <div class="card-body p-2" id="ec_support_docs_container">
-                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between border-bottom">
+                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between border-bottom" data-mandatory="0">
                     <div class="d-flex align-items-center gap-2">
                       <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-text"></i></div>
                       <div>
@@ -442,11 +467,15 @@
                       </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                      <span class="badge-status pending">Optional</span>
+                      <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                              name="support_doc_1_req" style="font-size:0.75rem; width:105px; border-radius:6px;">
+                        <option value="mandatory">Mandatory</option>
+                        <option value="optional" selected>Optional</option>
+                      </select>
                       <input type="file" name="support_doc_1" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
                     </div>
                   </div>
-                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between">
+                  <div class="checklist-row p-2 d-flex align-items-center justify-content-between" data-mandatory="0">
                     <div class="d-flex align-items-center gap-2">
                       <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-check"></i></div>
                       <div>
@@ -455,7 +484,11 @@
                       </div>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                      <span class="badge-status pending">Optional</span>
+                      <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                              name="support_doc_2_req" style="font-size:0.75rem; width:105px; border-radius:6px;">
+                        <option value="mandatory">Mandatory</option>
+                        <option value="optional" selected>Optional</option>
+                      </select>
                       <input type="file" name="support_doc_2" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
                     </div>
                   </div>
@@ -469,154 +502,16 @@
               <i class="fa fa-arrow-left me-1"></i> Back to Step 1
             </a>
             <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Save &amp; Continue to View/Print (Step 3) <i class="fa fa-arrow-right ms-1"></i>
+              Save &amp; Continue to Communication (Step 3) <i class="fa fa-arrow-right ms-1"></i>
             </button>
           </div>
         </form>
 
         {{-- ========================================================= --}}
-        {{-- STEP 3: VIEW & PRINT OFFICIAL EC CERTIFICATE              --}}
+        {{-- STEP 3: COMMUNICATE TO APPLICANT                          --}}
         {{-- ========================================================= --}}
         @elseif($step === 3)
         <form method="POST" action="{{ route('ec-certificate.saveStep', 3) }}">
-          @csrf
-
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="small text-muted"><i class="fa fa-certificate text-warning me-1"></i> Official Government Document Preview</span>
-            <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.print();">
-              <i class="fa fa-print me-1"></i> Print / Save as PDF
-            </button>
-          </div>
-
-          {{-- Official Certificate Paper Document --}}
-          <div class="ec-certificate-preview-paper mb-4">
-            <div class="ec-watermark">GOVERNMENT OF TAMIL NADU</div>
-
-            <div class="text-center pb-3 border-bottom mb-4">
-              <h4 class="fw-bold mb-1" style="letter-spacing:1px;">STATE ENVIRONMENT IMPACT ASSESSMENT AUTHORITY</h4>
-              <h6 class="text-muted mb-0">Government of Tamil Nadu &bull; Panagal Building, Saidapet, Chennai - 600 015</h6>
-              <div class="badge bg-dark text-white mt-2 px-3 py-1">ENVIRONMENTAL CLEARANCE (EC)</div>
-            </div>
-
-            <div class="row g-2 mb-3 small">
-              <div class="col-6">
-                <strong>Letter No:</strong> {{ $s1['ec_ref_no'] ?? 'SEIAA-TN/EC/2026/0001' }}
-              </div>
-              <div class="col-6 text-end">
-                <strong>Date:</strong> {{ date('d F Y', strtotime($s1['issue_date'] ?? date('Y-m-d'))) }}
-              </div>
-              <div class="col-6">
-                <strong>Parivesh Proposal No:</strong> {{ $s1['parivesh_app_no'] ?? 'SIA/TN/MIN/10001/2026' }}
-              </div>
-              <div class="col-6 text-end">
-                <strong>Validity:</strong> {{ $s1['validity_years'] ?? 5 }} Years (Exp: {{ date('d F Y', strtotime('+'.($s1['validity_years'] ?? 5).' years')) }})
-              </div>
-            </div>
-
-            <div class="p-3 bg-light rounded mb-4" style="font-size:0.92rem; line-height:1.6;">
-              <p class="mb-2"><strong>To:</strong><br>
-                M/s {{ $s1['applicant_name'] ?? 'Authorized Applicant' }}<br>
-                {{ $selectedProject?->location ?? 'Quarry Concession Site' }}, District: {{ $selectedProject?->district?->name ?? 'Tamil Nadu' }}.
-              </p>
-              <p class="mb-2">
-                <strong>Subject:</strong> Grant of Environmental Clearance for the proposed {{ $selectedProject?->project_name ?? 'Mining Quarry Project' }} under Category {{ $selectedProject?->category_badge ?? 'B2' }} of EIA Notification 2006.
-              </p>
-              <p class="mb-0 text-muted" style="font-size:0.85rem;">
-                {{ $s1['conditions_summary'] ?? 'Clearance is granted subject to strict environmental management plan implementation, ground water safeguards, and continuous air quality monitoring.' }}
-              </p>
-            </div>
-
-            <div class="row align-items-end pt-4 mt-4 border-top">
-              <div class="col-6">
-                <div class="p-2 border rounded d-inline-block bg-white text-center" style="width:100px;">
-                  <i class="fa fa-qrcode fa-3x text-dark"></i>
-                  <div style="font-size:0.65rem;" class="mt-1">SEIAA DIGITAL VERIFIED</div>
-                </div>
-              </div>
-              <div class="col-6 text-end">
-                <div class="fw-bold">Member Secretary</div>
-                <div class="small text-muted">SEIAA - Tamil Nadu</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 2) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 2
-            </a>
-            <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Store Documents (Step 4) <i class="fa fa-arrow-right ms-1"></i>
-            </button>
-          </div>
-        </form>
-
-        {{-- ========================================================= --}}
-        {{-- STEP 4: STORE DOCUMENTS IN PROJECT REPOSITORY             --}}
-        {{-- ========================================================= --}}
-        @elseif($step === 4)
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 4) }}">
-          @csrf
-
-          <div class="alert alert-info py-2 mb-4">
-            <i class="fa fa-check-circle me-1"></i> The Environmental Clearance certificate and its associated technical documents will be stored in the following secure digital folders:
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-6">
-              <div class="card p-3 border h-100" style="border-left: 4px solid #0F1E4D !important;">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                  <div class="rounded-circle p-2 bg-light text-navy"><i class="fa fa-certificate fa-2x" style="color:#0F1E4D;"></i></div>
-                  <div>
-                    <h6 class="fw-bold mb-0">Folder: EC Certificate &amp; Statutory Grants</h6>
-                    <small class="text-muted">Target Path: public/uploads/ec_certificates/{{ $selectedProject?->project_code }}/</small>
-                  </div>
-                </div>
-                <div class="d-flex justify-content-between small text-muted mt-2 pt-2 border-top">
-                  <span>Status: <strong class="text-success">Allocated &amp; Ready</strong></span>
-                  <span>Access: <strong>Restricted Admin</strong></span>
-                </div>
-              </div>
-            </div>
-
-            <div class="col-md-6">
-              <div class="card p-3 border h-100" style="border-left: 4px solid #059669 !important;">
-                <div class="d-flex align-items-center gap-3 mb-2">
-                  <div class="rounded-circle p-2 bg-light text-success"><i class="fa fa-folder-tree fa-2x text-success"></i></div>
-                  <div>
-                    <h6 class="fw-bold mb-0">Folder: Final EIA &amp; Environmental Reports</h6>
-                    <small class="text-muted">Linked to Project Code: {{ $selectedProject?->project_code }}</small>
-                  </div>
-                </div>
-                <div class="d-flex justify-content-between small text-muted mt-2 pt-2 border-top">
-                  <span>Status: <strong class="text-success">Synchronized</strong></span>
-                  <span>Module: <strong>Environment Clearance</strong></span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-check p-3 bg-light rounded border mb-4">
-            <input class="form-check-input ms-0 me-2" type="checkbox" checked id="chk_auto_archive" required>
-            <label class="form-check-label fw-semibold" for="chk_auto_archive">
-              Confirm automatic linkage of this certificate to the project audit trail and client document dossier.
-            </label>
-          </div>
-
-          <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 3) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 3
-            </a>
-            <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Communication (Step 5) <i class="fa fa-arrow-right ms-1"></i>
-            </button>
-          </div>
-        </form>
-
-        {{-- ========================================================= --}}
-        {{-- STEP 5: COMMUNICATE TO APPLICANT                          --}}
-        {{-- ========================================================= --}}
-        @elseif($step === 5)
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 5) }}">
           @csrf
 
           <div class="row g-3 mb-4">
@@ -632,13 +527,13 @@
             <div class="col-md-6">
               <label class="form-label fw-semibold">Applicant Contact Email *</label>
               <input type="email" class="form-control" name="recipient_email" required
-                value="{{ old('recipient_email', $s5['recipient_email'] ?? ($selectedProject?->customer?->email ?: 'applicant@example.com')) }}">
+                value="{{ old('recipient_email', $s3['recipient_email'] ?? ($selectedProject?->customer?->email ?: 'applicant@example.com')) }}">
             </div>
 
             <div class="col-md-6">
               <label class="form-label fw-semibold">Contact Mobile (SMS &amp; WhatsApp Alerts)</label>
               <input type="text" class="form-control" name="recipient_phone"
-                value="{{ old('recipient_phone', $s5['recipient_phone'] ?? ($selectedProject?->customer?->mobile_num ?: $selectedProject?->contact_phone)) }}" placeholder="10-digit mobile number">
+                value="{{ old('recipient_phone', $s3['recipient_phone'] ?? ($selectedProject?->customer?->mobile_num ?: $selectedProject?->contact_phone)) }}" placeholder="10-digit mobile number">
             </div>
 
             <div class="col-md-6">
@@ -657,25 +552,25 @@
 
             <div class="col-md-12">
               <label class="form-label fw-semibold">Dispatch Note &amp; Remarks</label>
-              <textarea class="form-control" name="communication_note" rows="4">{{ old('communication_note', $s5['communication_note'] ?? 'Dear Applicant, Your Environmental Clearance for '.$selectedProject?->project_name.' has been formally granted and approved by SEIAA. The signed certificate has been deposited into your compliance dossier.') }}</textarea>
+              <textarea class="form-control" name="communication_note" rows="4">{{ old('communication_note', $s3['communication_note'] ?? 'Dear Applicant, Your Environmental Clearance for '.$selectedProject?->project_name.' has been formally granted and approved by SEIAA. The signed certificate has been deposited into your compliance dossier.') }}</textarea>
             </div>
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 4) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 4
+            <a href="{{ route('ec-certificate.step', 2) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 2
             </a>
             <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Handling Team (Step 6) <i class="fa fa-arrow-right ms-1"></i>
+              Continue to Handling Team (Step 4) <i class="fa fa-arrow-right ms-1"></i>
             </button>
           </div>
         </form>
 
         {{-- ========================================================= --}}
-        {{-- STEP 6: HANDLING TEAM & IN-CHARGE PERSONS                --}}
+        {{-- STEP 4: HANDLING TEAM & IN-CHARGE PERSONS                --}}
         {{-- ========================================================= --}}
-        @elseif($step === 6)
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 6) }}">
+        @elseif($step === 4)
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 4) }}">
           @csrf
 
           <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
@@ -701,7 +596,7 @@
               </thead>
               <tbody id="ec_handlers_tbody">
                 @php
-                  $existingHandlers = $draft['step6']['handlers'] ?? [
+                  $existingHandlers = $s4['handlers'] ?? [
                     ['person_name' => 'K. Sundaram', 'role' => 'Environmental Officer', 'notes' => 'SEIAA clearance liaison & compliance'],
                   ];
                 @endphp
@@ -727,27 +622,27 @@
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 5) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 5
+            <a href="{{ route('ec-certificate.step', 3) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 3
             </a>
             <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Payment (Step 7) <i class="fa fa-arrow-right ms-1"></i>
+              Continue to Payment (Step 5) <i class="fa fa-arrow-right ms-1"></i>
             </button>
           </div>
         </form>
 
         {{-- ========================================================= --}}
-        {{-- STEP 7: PAYMENT DETAILS & BILLING LEDGER                  --}}
+        {{-- STEP 5: PAYMENT DETAILS & BILLING LEDGER                  --}}
         {{-- ========================================================= --}}
-        @elseif($step === 7)
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 7) }}">
+        @elseif($step === 5)
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 5) }}">
           @csrf
 
           @php
-            $ecPv = (float)($draft['step7']['product_value'] ?? 0);
-            $ecPa = (float)($draft['step7']['paid_amount'] ?? 0);
+            $ecPv = (float)($s5['product_value'] ?? 0);
+            $ecPa = (float)($s5['paid_amount'] ?? 0);
             $ecPe = max(0, $ecPv - $ecPa);
-            $ecPs = $draft['step7']['payment_status'] ?? ($ecPa <= 0 ? 'pending' : ($ecPe <= 0 ? 'paid' : 'partial'));
+            $ecPs = $s5['payment_status'] ?? ($ecPa <= 0 ? 'pending' : ($ecPe <= 0 ? 'paid' : 'partial'));
           @endphp
 
           <!-- Real-Time Metric Cards -->
@@ -808,26 +703,26 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold text-navy small mb-1">Transaction Reference / Notes</label>
-                <input type="text" class="form-control" name="payment_notes" placeholder="e.g. SPCB chalan / NEFT transaction ref" value="{{ $draft['step7']['notes'] ?? '' }}">
+                <input type="text" class="form-control" name="payment_notes" placeholder="e.g. SPCB chalan / NEFT transaction ref" value="{{ $s5['notes'] ?? '' }}">
               </div>
             </div>
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 6) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 6
+            <a href="{{ route('ec-certificate.step', 4) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 4
             </a>
             <button type="submit" class="btn btn-navy px-4" style="background:#0F1E4D; color:#fff;">
-              Continue to Final Review (Step 8) <i class="fa fa-arrow-right ms-1"></i>
+              Continue to Final Review (Step 6) <i class="fa fa-arrow-right ms-1"></i>
             </button>
           </div>
         </form>
 
         {{-- ========================================================= --}}
-        {{-- STEP 8: PREVIEW & FINAL ISSUANCE                          --}}
+        {{-- STEP 6: PREVIEW & FINAL ISSUANCE                          --}}
         {{-- ========================================================= --}}
         @else
-        <form method="POST" action="{{ route('ec-certificate.saveStep', 8) }}">
+        <form method="POST" action="{{ route('ec-certificate.saveStep', 6) }}">
           @csrf
 
           <div class="alert alert-success py-3 mb-4 d-flex align-items-center gap-3">
@@ -840,10 +735,10 @@
 
           {{-- Financial & Handlers Cards in Review --}}
           @php
-            $rPv = (float)($draft['step7']['product_value'] ?? 0);
-            $rPa = (float)($draft['step7']['paid_amount'] ?? 0);
+            $rPv = (float)($s5['product_value'] ?? 0);
+            $rPa = (float)($s5['paid_amount'] ?? 0);
             $rPe = max(0, $rPv - $rPa);
-            $rPs = $draft['step7']['payment_status'] ?? 'pending';
+            $rPs = $s5['payment_status'] ?? 'pending';
           @endphp
           <div class="row g-3 mb-4">
             <div class="col-md-6">
@@ -870,7 +765,7 @@
             <div class="col-md-6">
               <div class="p-3 border rounded bg-white h-100">
                 <h6 class="fw-bold text-navy mb-2"><i class="fa fa-users text-primary me-1"></i> Designated Handling Personnel</h6>
-                @php $rHandlers = $draft['step6']['handlers'] ?? []; @endphp
+                @php $rHandlers = $s4['handlers'] ?? []; @endphp
                 @if(!empty($rHandlers))
                   <ul class="list-unstyled mb-0 small">
                     @foreach($rHandlers as $rh)
@@ -925,16 +820,16 @@
             <div class="row g-2">
               <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Parivesh Approval Recorded</div>
               <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Certificate Attachment Verified</div>
-              <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Official SEIAA Letterhead Previewed</div>
-              <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Digital Document Folder Linked</div>
               <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Applicant Communication Configured</div>
+              <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Project Handling Team Assigned</div>
+              <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Payment Ledger Recorded</div>
               <div class="col-md-6"><i class="fa fa-check-circle text-success me-2"></i> Audit Trail Entry Ready</div>
             </div>
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
-            <a href="{{ route('ec-certificate.step', 7) }}" class="btn btn-outline-secondary px-4">
-              <i class="fa fa-arrow-left me-1"></i> Back to Step 7
+            <a href="{{ route('ec-certificate.step', 5) }}" class="btn btn-outline-secondary px-4">
+              <i class="fa fa-arrow-left me-1"></i> Back to Step 5
             </a>
             <button type="submit" class="btn btn-success px-5 fw-bold" style="background:#059669; border-color:#059669;">
               <i class="fa fa-check-double me-1"></i> Confirm &amp; Finalize EC Certificate
@@ -961,6 +856,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const count = supportDocsContainer.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
       row.className = 'checklist-row p-2 d-flex align-items-center justify-content-between border-bottom';
+      row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2">
           <div class="ci-icon rounded bg-light p-2 text-muted"><i class="bi bi-file-earmark-plus"></i></div>
@@ -970,15 +866,38 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <span class="badge-status pending">Optional</span>
+          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                  name="custom_support_doc_${count}_req" style="font-size:0.75rem; width:105px; border-radius:6px;">
+            <option value="mandatory">Mandatory</option>
+            <option value="optional" selected>Optional</option>
+          </select>
           <input type="file" name="custom_support_doc_${count}" class="form-control form-control-sm" style="max-width:200px;" accept=".pdf,.docx,.jpg,.png">
         </div>
       `;
       supportDocsContainer.appendChild(row);
+      bindDocReqListeners();
     });
   }
 
-  // Step 6: Handlers dynamic row logic
+  function bindDocReqListeners() {
+    document.querySelectorAll('.doc-req-select').forEach(function(sel) {
+      sel.onchange = function() {
+        const row = this.closest('.checklist-row');
+        const isMandatory = this.value === 'mandatory';
+        if (row) {
+          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+        }
+        if (isMandatory) {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        } else {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        }
+      };
+    });
+  }
+  bindDocReqListeners();
+
+  // Step 4: Handlers dynamic row logic
   const btnAdd = document.getElementById('btn_add_ec_handler');
   const tbody = document.getElementById('ec_handlers_tbody');
 
@@ -1036,7 +955,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Step 7: Payment calculation logic
+  // Step 5: Payment calculation logic
   const ecVal = document.getElementById('field_ec_val');
   const ecPaid = document.getElementById('field_ec_paid');
   const ecPending = document.getElementById('field_ec_pending');
@@ -1081,12 +1000,20 @@ document.addEventListener('DOMContentLoaded', function() {
   function applyEcCustomerAutofill(c) {
     if (!c) return;
     const applicantInput = document.getElementById('field_applicant_name');
+    const phoneInput = document.getElementById('field_primary_phone');
+    const secPhoneInput = document.getElementById('field_secondary_phone');
     const ecRefInput = document.getElementById('field_ec_ref_no');
     const pariveshInput = document.getElementById('field_parivesh_app_no');
     const projectSelect = document.getElementById('ec_project_select');
 
     if (applicantInput) {
       applicantInput.value = c.company_name ? (c.company_name + ' (' + c.customer_name + ')') : c.customer_name;
+    }
+    if (phoneInput && c.mobile_num) {
+      phoneInput.value = c.mobile_num;
+    }
+    if (secPhoneInput && c.secondary_mobile_num) {
+      secPhoneInput.value = c.secondary_mobile_num;
     }
 
     // Try matching customer in approved project dropdown

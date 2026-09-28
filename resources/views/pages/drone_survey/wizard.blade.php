@@ -82,6 +82,14 @@ $steps = [
               <input class="form-control auto-filled-field" id="field_drone_applicant" name="applicant_name" placeholder="Applicant name" value="Kaveri Granites Pvt Ltd">
             </div>
             <div class="col-md-6">
+              <label class="form-label fw-bold text-navy">Primary Phone Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control auto-filled-field" id="field_drone_primary_phone" name="primary_phone" placeholder="10-digit primary phone number" value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '') }}" required maxlength="15">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
+              <input type="text" class="form-control auto-filled-field" id="field_drone_secondary_phone" name="secondary_phone" placeholder="10-digit secondary phone number" value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" maxlength="15">
+            </div>
+            <div class="col-md-6">
               <label class="form-label fw-bold text-navy">Lease Area (Ha)</label>
               <input class="form-control auto-filled-field" id="field_drone_area" name="lease_area" placeholder="Area in hectares" value="3.85 Hectares">
             </div>
@@ -145,7 +153,7 @@ $steps = [
 
           <div class="folder-checklist-box" id="drone_checklist_container">
             @foreach($droneDocs as $dIdx => $dItem)
-              <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-drone-row="{{ $dIdx }}">
+              <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
                   <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
                     <i class="bi bi-file-earmark"></i>
@@ -156,7 +164,11 @@ $steps = [
                   </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-                  <span class="badge-status {{ $dItem['mandatory'] ? 'mandatory' : 'pending' }}">{{ $dItem['mandatory'] ? 'Mandatory' : 'Optional' }}</span>
+                  <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                          name="drone_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                    <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
+                    <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
+                  </select>
                   <input type="file" class="d-none drone-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
                   <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-drone-item" style="font-size:.72rem;">
                     <i class="bi bi-upload me-1"></i>Upload
@@ -489,6 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const count = container.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
+      row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -503,7 +516,11 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-          <span class="badge-status pending">Optional</span>
+          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+                  name="drone_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
+            <option value="mandatory">Mandatory</option>
+            <option value="optional" selected>Optional</option>
+          </select>
           <input type="file" class="d-none drone-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
           <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-drone-item" style="font-size:.72rem;">
             <i class="bi bi-upload me-1"></i>Upload
@@ -512,6 +529,45 @@ document.addEventListener('DOMContentLoaded', function() {
       `;
       container.appendChild(row);
       updateDroneDocProgress();
+      bindDroneDocReqListeners();
+    });
+  }
+
+  function bindDroneDocReqListeners() {
+    document.querySelectorAll('#drone_checklist_container .doc-req-select').forEach(function(sel) {
+      sel.onchange = function() {
+        const row = this.closest('.checklist-row');
+        const isMandatory = this.value === 'mandatory';
+        if (row) {
+          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+        }
+        if (isMandatory) {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        } else {
+          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        }
+      };
+    });
+  }
+  bindDroneDocReqListeners();
+
+  // Drone Step 3: Relaxed vs Mandatory validation on navigation
+  const btnDroneContinue = document.querySelector('.btn-drone-continue') || document.querySelector('.wizard-actions a.btn-navy');
+  if (btnDroneContinue && @json($step === 3)) {
+    btnDroneContinue.addEventListener('click', function(e) {
+      let missingMandatory = [];
+      document.querySelectorAll('#drone_checklist_container .checklist-row').forEach(function(row) {
+        const isMandatory = row.getAttribute('data-mandatory') === '1';
+        const isUploaded = row.classList.contains('up');
+        if (isMandatory && !isUploaded) {
+          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Document';
+          missingMandatory.push(docName);
+        }
+      });
+      if (missingMandatory.length > 0) {
+        e.preventDefault();
+        alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
+      }
     });
   }
 
@@ -652,6 +708,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (fLoc) {
       fLoc.value = (c.district_name || 'Concession Site') + (c.address ? ' / ' + c.address : '');
+    }
+
+    const fPrimaryPhone = document.getElementById('field_drone_primary_phone');
+    const fSecondaryPhone = document.getElementById('field_drone_secondary_phone');
+    if (fPrimaryPhone) {
+      fPrimaryPhone.value = c.mobile_num || '';
+    }
+    if (fSecondaryPhone) {
+      fSecondaryPhone.value = c.secondary_mobile_num || '';
     }
 
     // Visual cue on all autofilled fields

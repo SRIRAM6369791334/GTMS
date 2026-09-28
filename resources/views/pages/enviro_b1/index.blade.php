@@ -46,7 +46,7 @@
         <div class="col-lg-7">
           <div class="admin-panel mb-4">
             <div class="panel-head">
-              <div><h5>Sub Category 1 &middot; Site &amp; Mining Documentation</h5><p class="sub">5 folders &middot; 24 checklist items</p></div>
+              <div><h5>TOR &middot; Site &amp; Mining Documentation</h5><p class="sub">5 folders &middot; 24 checklist items</p></div>
               @can('environment.view')
               <a href="{{ route('environstage1') }}" class="panel-link">Open <i class="bi bi-arrow-right"></i></a>
               @endcan
@@ -64,7 +64,7 @@
 
           <div class="admin-panel">
             <div class="panel-head">
-              <div><h5>Sub Category 2 &middot; EIA &amp; TNPCB Submission</h5><p class="sub">6 folders &middot; 15 checklist items</p></div>
+              <div><h5>ETA &middot; EIA &amp; TNPCB Submission</h5><p class="sub">6 folders &middot; 15 checklist items</p></div>
               @can('environment.view')
               <a href="{{ route('environstage2') }}" class="panel-link">Open <i class="fa fa-arrow-right"></i></a>
               @endcan
@@ -93,23 +93,23 @@
             <div class="p-3">
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:var(--ok-tint); color:var(--ok);"><i class="fa fa-check-circle" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">GIS Data approved</div><div class="text-muted" style="font-size:.76rem;">Sub Category 1 &middot; 2 hours ago</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">GIS Data approved</div><div class="text-muted" style="font-size:.76rem;">TOR &middot; 2 hours ago</div></div>
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:#e8ecfb; color:var(--c-documents);"><i class="fa fa-cloud-upload" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">ToR Letter uploaded</div><div class="text-muted" style="font-size:.76rem;">Sub Category 2 &middot; 5 hours ago</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">ToR Letter uploaded</div><div class="text-muted" style="font-size:.76rem;">ETA &middot; 5 hours ago</div></div>
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:var(--warn-tint); color:var(--warn);"><i class="fa fa-hourglass-half" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">Baseline Study pending review</div><div class="text-muted" style="font-size:.76rem;">Sub Category 2 &middot; Yesterday</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">Baseline Study pending review</div><div class="text-muted" style="font-size:.76rem;">ETA &middot; Yesterday</div></div>
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:var(--danger-tint); color:var(--danger);"><i class="fa fa-paper-plane" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">Payment Receipt sent back for correction</div><div class="text-muted" style="font-size:.76rem;">Sub Category 1 &middot; 2 days ago</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">Payment Receipt sent back for correction</div><div class="text-muted" style="font-size:.76rem;">TOR &middot; 2 days ago</div></div>
               </div>
               <div class="d-flex gap-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:#f2ecfa; color:var(--c-gis);"><i class="fa fa-globe-americas" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">GIS Data uploaded</div><div class="text-muted" style="font-size:.76rem;">Sub Category 1 &middot; 3 days ago</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">GIS Data uploaded</div><div class="text-muted" style="font-size:.76rem;">TOR &middot; 3 days ago</div></div>
               </div>
             </div>
           </div>

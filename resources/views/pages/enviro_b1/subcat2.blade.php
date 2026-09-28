@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Sub Category 2 — EIA & TNPCB Submission')
+@section('title', 'ETA — EIA & TNPCB Submission')
 @section('main_content')
 <link href="{{ asset('css/style1.css') }}" rel="stylesheet">
 
@@ -10,7 +10,7 @@
             <div class="col-md-6">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{{ route('eviron.index') }}">Environment Clearance B1</a></li>
-                    <li class="breadcrumb-item active"><a href="javascript:void(0)">Sub Category 2</a></li>
+                    <li class="breadcrumb-item active"><a href="javascript:void(0)">ETA</a></li>
                 </ol>
             </div>
             <div class="col-md-6 text-end">

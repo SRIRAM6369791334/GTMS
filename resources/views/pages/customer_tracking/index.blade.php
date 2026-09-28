@@ -569,33 +569,38 @@
     border-color: #CBD5E1;
 }
 
-/* Modern Segmented 5-Stage Stepper */
+/* Modern Segmented 8-Stage Stepper */
 .ct-stepper-container {
-    padding: 24px 10px 10px;
+    padding: 24px 10px 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 .ct-stepper-row {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     position: relative;
+    min-width: 1040px;
 }
 .ct-step-node {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    width: 145px;
+    width: 116px;
     position: relative;
     z-index: 2;
+    flex-shrink: 0;
 }
 .ct-step-bar-connector {
     flex-grow: 1;
     height: 4px;
     background: #E2E8F0;
-    margin: 22px 8px 0;
+    margin: 22px 4px 0;
     position: relative;
     z-index: 1;
     border-radius: 2px;
+    min-width: 16px;
 }
 .ct-step-bar-connector.completed {
     background: #10B981;
@@ -604,14 +609,14 @@
     background: linear-gradient(90deg, #10B981 0%, #1E40AF 100%);
 }
 .ct-step-circle {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     background: #FFFFFF;
     border: 2px solid #CBD5E1;
@@ -636,21 +641,37 @@
     color: #FFFFFF;
     box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.2);
 }
+.ct-step-node.bypassed .ct-step-circle {
+    background: #e0f2fe;
+    border-color: #38bdf8;
+    color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+}
 .ct-step-title {
-    font-size: 13.5px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--ct-dark);
     margin-bottom: 2px;
 }
 .ct-step-code {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--ct-muted);
     font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 135px;
+    max-width: 110px;
+}
+.ct-badge-info {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    display: inline-block;
 }
 
 /* 4-Pillar Application Cards */
@@ -822,6 +843,286 @@
     gap: 4px;
 }
 
+/* Dual Category Switcher */
+.ct-category-switch-wrapper {
+    display: inline-flex;
+    background: #e2e8f0;
+    padding: 5px;
+    border-radius: 14px;
+    gap: 6px;
+}
+.ct-tab-btn {
+    border: none;
+    font-size: 13.5px;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.ct-tab-btn:hover {
+    color: #0F1E4D;
+}
+.district-filter-btn {
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+.district-filter-btn.active {
+    background-color: #0F1E4D !important;
+    color: #ffffff !important;
+    border-color: #0F1E4D !important;
+}
+.ct-service-card {
+    background: #ffffff;
+    border: 1px solid var(--ct-border);
+    border-radius: 16px;
+    padding: 22px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.ct-service-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+.ct-service-icon-box {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+/* 4-Tab Enterprise Workspace Pills & Responsive Grid */
+.custom-enterprise-pills {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+@media (max-width: 991px) {
+    .custom-enterprise-pills {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+@media (max-width: 575px) {
+    .custom-enterprise-pills {
+        grid-template-columns: 1fr !important;
+    }
+}
+.custom-enterprise-pills .nav-item {
+    width: 100% !important;
+}
+.custom-enterprise-pills .nav-link {
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    color: #1e293b;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 12px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 52px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.custom-enterprise-pills .nav-link:hover {
+    background: #f1f5f9;
+    color: #0F1E4D;
+    border-color: #cbd5e1;
+}
+.custom-enterprise-pills .nav-link.active {
+    background: #0F1E4D !important;
+    color: #ffffff !important;
+    border-color: #0F1E4D !important;
+    box-shadow: 0 4px 14px rgba(15, 30, 77, 0.25);
+}
+
+/* WCAG AA Contrast System (7:1 Contrast, Zero Faint Pink) */
+.print-dossier-area .text-secondary,
+.modal .text-secondary,
+.ct-page-header .text-secondary {
+    color: #334155 !important;
+}
+.print-dossier-area .text-muted,
+.modal .text-muted,
+.ct-page-header .text-muted {
+    color: #475569 !important;
+}
+.print-dossier-area .badge.bg-secondary-subtle,
+.modal .badge.bg-secondary-subtle {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+}
+.print-dossier-area .btn-outline-secondary,
+.ct-compact-nav .btn-outline-secondary {
+    border: 1.5px solid #cbd5e1 !important;
+    color: #0F1E4D !important;
+    background-color: #ffffff !important;
+    font-weight: 600 !important;
+}
+.print-dossier-area .btn-outline-secondary:hover,
+.ct-compact-nav .btn-outline-secondary:hover {
+    background-color: #f1f5f9 !important;
+    color: #0F1E4D !important;
+    border-color: #94a3b8 !important;
+}
+.district-filter-btn {
+    border: 1.5px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+}
+.district-filter-btn:hover {
+    background-color: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    color: #0F1E4D !important;
+}
+.district-filter-btn.active {
+    background-color: #0F1E4D !important;
+    color: #ffffff !important;
+    border-color: #0F1E4D !important;
+    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.25) !important;
+}
+.district-filter-btn .badge {
+    background-color: #f1f5f9 !important;
+    color: #0F1E4D !important;
+    border: 1px solid #cbd5e1 !important;
+}
+.district-filter-btn.active .badge {
+    background-color: #f59e0b !important;
+    color: #000000 !important;
+    border-color: #f59e0b !important;
+}
+
+/* High-Contrast Table Headers & Clean Typography */
+#portfolioTable thead th,
+#concessionsModalTable thead th,
+#docVaultTable thead th {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid #cbd5e1 !important;
+    padding-top: 13px !important;
+    padding-bottom: 13px !important;
+}
+.portfolio-concession-row td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    vertical-align: middle;
+}
+.sf-pill-badge {
+    font-family: var(--bs-font-monospace);
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a !important;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+}
+.mineral-pill-badge {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1e293b !important;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 3px 10px;
+    border-radius: 20px;
+    display: inline-block;
+}
+.ct-back-btn {
+    border: 1.5px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    color: #0F1E4D !important;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+.ct-back-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #0F1E4D !important;
+    color: #0F1E4D !important;
+}
+
+/* Pagination Controls */
+.ct-pagination-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 16px 16px;
+}
+.ct-pagination-info {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+}
+.ct-pagination-info strong {
+    color: #0f172a;
+}
+.ct-pagination-btns {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ct-page-btn {
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.ct-page-btn:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #0F1E4D;
+}
+.ct-page-btn.active {
+    background: #0F1E4D !important;
+    color: #ffffff !important;
+    border-color: #0F1E4D !important;
+    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.2);
+}
+.ct-page-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: #f8fafc;
+}
+.ct-page-size-select {
+    padding: 4px 10px;
+    font-size: 12.5px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-weight: 600;
+}
 /* Print CSS */
 @media print {
     body * { visibility: hidden; }
@@ -833,8 +1134,13 @@
         width: 100%;
         background: #FFFFFF;
     }
-    .no-print, .header, .dlabnav, .footer, .ct-hero-card, .btn, .breadcrumb {
+    .no-print, .header, .dlabnav, .footer, .ct-hero-card, .btn, .breadcrumb, .nav-pills {
         display: none !important;
+    }
+    .tab-content > .tab-pane {
+        display: block !important;
+        opacity: 1 !important;
+        visibility: visible !important;
     }
 }
 </style>
@@ -882,6 +1188,7 @@
             </div>
         </div>
 
+        @if(!$customer)
         <!-- Global KPI Metrics Bar (5 Balanced Equal Columns) -->
         <div class="ct-kpi-grid mb-4 no-print">
             <div class="ct-kpi-card kpi-customers">
@@ -1081,9 +1388,8 @@
             </div>
         @endif
 
-        @if(!$customer)
-            <!-- If no customer selected yet: Recent Active Customers Grid & Guides -->
-            <div class="row">
+        <!-- If no customer selected yet: Recent Active Customers Grid & Guides -->
+        <div class="row">
                 <div class="col-12 mb-3">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="fw-bold text-dark mb-0">
@@ -1114,7 +1420,7 @@
                                         </span>
                                     </div>
                                     <small class="text-muted text-truncate d-block mt-1 fs-13">
-                                        <i class="bi bi-building me-1 text-secondary"></i>{{ $rc->company_name ?: 'Individual Licensee' }}
+                                        <i class="bi bi-building me-1 text-primary"></i>{{ $rc->company_name ?: 'Individual Licensee' }}
                                     </small>
                                 </div>
                             </div>
@@ -1242,6 +1548,31 @@
                 </div>
             </div>
         @else
+            <!-- Compact Customer Navigation Bar -->
+            <div class="card border-0 shadow-sm mb-3 no-print" style="border-radius: 14px; background: #ffffff;">
+                <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('customer-tracking.index') }}" class="btn btn-sm ct-back-btn rounded-pill px-3">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Customer Directory
+                        </a>
+                        <span class="text-muted d-none d-sm-inline">/</span>
+                        <span class="fw-bold text-dark fs-14 d-none d-sm-inline">{{ $customer->customer_name }}</span>
+                        <span class="ct-badge-unique-id py-0 px-2 fs-11">
+                            {{ $customer->mimas_no ?: ('CUST-' . str_pad($customer->id, 4, '0', STR_PAD_LEFT)) }}
+                        </span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="position-relative" style="width: 280px;">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light border"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" id="universalSearchInput" class="form-control" placeholder="Quick switch customer..." autocomplete="off">
+                            </div>
+                            <div id="searchResultsDropdown" class="ct-search-dropdown shadow-lg border" style="display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 1050; background: #fff; max-height: 380px; overflow-y: auto; border-radius: 12px; margin-top: 4px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- ═══════════════════════════════════════════════════════════════════ -->
             <!-- CUSTOMER 360 DOSSIER (PRINTABLE INSPECTION AREA)                    -->
             <!-- ═══════════════════════════════════════════════════════════════════ -->
@@ -1346,14 +1677,474 @@
                     </div>
                 </div>
 
-                <!-- 2. Universal 5-Stage Lifecycle Stepper -->
+                @if(count($dossierData['fullCycleChains'] ?? []) === 0 && count($dossierData['standaloneServices'] ?? []) === 0)
+                    <!-- ============================================== -->
+                    <!-- ACTIONABLE ONBOARDING LAUNCHPAD (Zero Data)    -->
+                    <!-- ============================================== -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: 18px; background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%); border-left: 5px solid #0F1E4D !important;">
+                        <div class="card-body p-4 p-md-5">
+                            <div class="row align-items-center mb-4">
+                                <div class="col-lg-8">
+                                    <div class="d-flex align-items-center gap-3 mb-2">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 52px; height: 52px; background: #0F1E4D; color: #fff;">
+                                            <i class="bi bi-rocket-takeoff-fill fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill mb-1">
+                                                <i class="bi bi-sparkles me-1"></i> New Client Account Initialized
+                                            </span>
+                                            <h4 class="fw-bold mb-0 text-dark">Actionable Onboarding Launchpad</h4>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted fs-14 mb-0">
+                                        No active mining leases, environmental clearances, or survey applications have been registered yet for 
+                                        <strong>{{ $customer->customer_name }}</strong>. Select an operational onboarding pathway below to start the filing process.
+                                    </p>
+                                </div>
+                                <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-12">
+                                        <i class="bi bi-shield-check text-success me-1"></i> Client ID: {{ $customer->mimas_no ?: ('CUST-' . str_pad($customer->id, 4, '0', STR_PAD_LEFT)) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Two Primary Onboarding Pathways -->
+                            <div class="row g-4">
+                                <!-- Pathway A: Full Quarry Concession Lifecycle (Chain 1 -> 8) -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; background: #ffffff; border-top: 4px solid #0F1E4D !important;">
+                                        <div class="card-body p-4 d-flex flex-column">
+                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #e0e7ff; color: #0F1E4D;">
+                                                        <i class="bi bi-diagram-3-fill fs-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11 text-uppercase fw-bold">Pathway A</span>
+                                                        <h5 class="fw-bold text-dark mb-0">Full Quarry Concession</h5>
+                                                    </div>
+                                                </div>
+                                                <span class="badge bg-primary text-white rounded-pill px-3 py-1 fs-11">8-Stage Lifecycle</span>
+                                            </div>
+                                            <p class="text-muted fs-13 mb-3">
+                                                Ideal for fresh quarry allocations. Initiates Stage 1 (Lease Application) to sequentially unlock the entire statutory pipeline: 
+                                                <strong>1. Lease &rarr; 2. Mining Plan &rarr; 3. EC Clearance &rarr; 4. PPT Presentation &rarr; 5. EC Order &rarr; 6. Compliance &rarr; 7. DGPS &rarr; 8. Drone Survey</strong>.
+                                            </p>
+                                            <div class="bg-light p-3 rounded-3 mb-4 fs-12">
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> Applicant:</span>
+                                                    <strong class="text-dark">{{ $customer->customer_name }}</strong>
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                                    <span class="text-muted"><i class="bi bi-pin-map me-1 text-primary"></i> District Jurisdiction:</span>
+                                                    <span class="text-dark fw-medium">{{ $customer->district?->name ?: 'To be specified' }}</span>
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <span class="text-muted"><i class="bi bi-gem me-1 text-warning"></i> Mineral:</span>
+                                                    <span class="text-dark fw-medium">{{ $customer->mineral?->name ?: 'Rough Stone / Gravel' }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-auto pt-3 border-top">
+                                                <a href="{{ route('step1') }}?customer_id={{ $customer->id }}" class="btn text-white w-100 rounded-pill py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%);">
+                                                    <i class="bi bi-rocket-takeoff"></i> Launch Lease Application (Stage 1) &rarr;
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pathway B: Standalone / Independent Technical Services -->
+                                <div class="col-lg-6">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: 16px; background: #ffffff; border-top: 4px solid #059669 !important;">
+                                        <div class="card-body p-4 d-flex flex-column">
+                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; background: #dcfce7; color: #059669;">
+                                                        <i class="bi bi-lightning-charge-fill fs-5"></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle fs-11 text-uppercase fw-bold">Pathway B</span>
+                                                        <h5 class="fw-bold text-dark mb-0">Standalone Technical Services</h5>
+                                                    </div>
+                                                </div>
+                                                <span class="badge bg-success text-white rounded-pill px-3 py-1 fs-11">Direct Filings</span>
+                                            </div>
+                                            <p class="text-muted fs-13 mb-3">
+                                                Direct technical engagements for clients with existing offline leases who only require specialized survey or statutory filing services.
+                                            </p>
+                                            <div class="row g-2 mb-4">
+                                                <div class="col-sm-6">
+                                                    <a href="{{ route('dgps-survey.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-primary btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                        <i class="bi bi-geo-alt-fill text-indigo fs-5"></i>
+                                                        <div>
+                                                            <div class="fw-bold fs-12 text-dark">DGPS Survey</div>
+                                                            <div class="text-muted" style="font-size: 11px;">Boundary demarcation</div>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <a href="{{ route('drone-survey.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-warning btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                        <i class="bi bi-camera-video-fill text-warning fs-5"></i>
+                                                        <div>
+                                                            <div class="fw-bold fs-12 text-dark">Drone 3D Survey</div>
+                                                            <div class="text-muted" style="font-size: 11px;">Volumetric mapping</div>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <a href="{{ route('ec-compliance.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-info btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                        <i class="bi bi-clipboard-check text-info fs-5"></i>
+                                                        <div>
+                                                            <div class="fw-bold fs-12 text-dark">EC Compliance</div>
+                                                            <div class="text-muted" style="font-size: 11px;">Half-yearly filing</div>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                                <div class="col-sm-6">
+                                                    <a href="{{ route('newapplication') }}?customer_id={{ $customer->id }}" class="btn btn-outline-dark btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2" style="border-color: #cbd5e1;">
+                                                        <i class="bi bi-hammer text-warning fs-5"></i>
+                                                        <div>
+                                                            <div class="fw-bold fs-12 text-dark">Mining Plan</div>
+                                                            <div class="text-muted" style="font-size: 11px;">Scheme preparation</div>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="mt-auto pt-3 border-top text-center text-muted small">
+                                                <i class="bi bi-info-circle me-1"></i> Standalone jobs automatically appear in the Standalone Services tab upon booking.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                @else
+                    <!-- ============================================== -->
+                    <!-- 4-TAB ENTERPRISE WORKSPACE                     -->
+                    <!-- ============================================== -->
+                    @php
+                        $curTab = $dossierData['activeTab'] ?? (count($dossierData['fullCycleChains']) > 1 ? 'portfolio' : 'lifecycle');
+                    @endphp
+
+                    <!-- 4-Tab Workspace Navigation Bar -->
+                    <div class="card border-0 shadow-sm mb-4 no-print" style="border-radius: 16px; background: #ffffff;">
+                        <div class="card-body p-2">
+                            <ul class="nav nav-pills custom-enterprise-pills" id="customerWorkspaceTabs" role="tablist">
+                                @if(count($dossierData['fullCycleChains']) > 0)
+                                <li class="nav-item text-center" role="presentation">
+                                    <button class="nav-link w-100 fw-bold {{ $curTab === 'portfolio' ? 'active' : '' }}" 
+                                            id="portfolio-tab" 
+                                            data-bs-toggle="pill" 
+                                            data-bs-target="#portfolio-pane" 
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="portfolio-pane" 
+                                            aria-selected="{{ $curTab === 'portfolio' ? 'true' : 'false' }}">
+                                        <i class="bi bi-grid-3x3-gap-fill text-warning"></i>
+                                        <span>Concessions Portfolio</span>
+                                        <span class="badge ms-1 {{ $curTab === 'portfolio' ? 'bg-warning text-dark' : 'bg-light text-dark border' }}">
+                                            {{ count($dossierData['fullCycleChains']) }}
+                                        </span>
+                                    </button>
+                                </li>
+                                <li class="nav-item text-center" role="presentation">
+                                    <button class="nav-link w-100 fw-bold {{ $curTab === 'lifecycle' ? 'active' : '' }}" 
+                                            id="lifecycle-tab" 
+                                            data-bs-toggle="pill" 
+                                            data-bs-target="#lifecycle-pane" 
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="lifecycle-pane" 
+                                            aria-selected="{{ $curTab === 'lifecycle' ? 'true' : 'false' }}">
+                                        <i class="bi bi-arrow-repeat text-primary"></i>
+                                        <span>8-Stage Lifecycle</span>
+                                        @if(!empty($dossierData['selectedChain']['title']))
+                                        <span class="badge ms-1 bg-primary-subtle text-primary border border-primary-subtle d-none d-xxl-inline">
+                                            {{ Str::limit($dossierData['selectedChain']['title'], 14) }}
+                                        </span>
+                                        @endif
+                                    </button>
+                                </li>
+                                @endif
+
+                                <li class="nav-item text-center" role="presentation">
+                                    <button class="nav-link w-100 fw-bold {{ $curTab === 'standalone' ? 'active' : '' }}" 
+                                            id="standalone-tab" 
+                                            data-bs-toggle="pill" 
+                                            data-bs-target="#standalone-pane" 
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="standalone-pane" 
+                                            aria-selected="{{ $curTab === 'standalone' ? 'true' : 'false' }}">
+                                        <i class="bi bi-lightning-charge-fill text-info"></i>
+                                        <span>Standalone Services</span>
+                                        <span class="badge ms-1 {{ $curTab === 'standalone' ? 'bg-info text-white' : 'bg-light text-dark border' }}">
+                                            {{ count($dossierData['standaloneServices']) }}
+                                        </span>
+                                    </button>
+                                </li>
+
+                                <li class="nav-item text-center" role="presentation">
+                                    <button class="nav-link w-100 fw-bold {{ $curTab === 'vault' ? 'active' : '' }}" 
+                                            id="vault-tab" 
+                                            data-bs-toggle="pill" 
+                                            data-bs-target="#vault-pane" 
+                                            type="button" 
+                                            role="tab" 
+                                            aria-controls="vault-pane" 
+                                            aria-selected="{{ $curTab === 'vault' ? 'true' : 'false' }}">
+                                        <i class="bi bi-folder2-open text-success"></i>
+                                        <span>Document Vault</span>
+                                        <span class="badge ms-1 {{ $curTab === 'vault' ? 'bg-success text-white' : 'bg-light text-dark border' }}">
+                                            {{ $dossierData['allDocuments']->count() }}
+                                        </span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="customerWorkspaceContent">
+                        <!-- TAB 1: CONCESSIONS PORTFOLIO PANE -->
+                        @if(count($dossierData['fullCycleChains']) > 0)
+                        <div class="tab-pane fade {{ $curTab === 'portfolio' ? 'show active' : '' }}" id="portfolio-pane" role="tabpanel" aria-labelledby="portfolio-tab">
+                            <!-- Portfolio Header Banner -->
+                            <div class="card border-0 shadow-sm mb-3" style="border-radius: 16px; background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%); color: #fff;">
+                                <div class="card-body p-4">
+                                    <div class="row align-items-center g-3">
+                                        <div class="col-lg-7">
+                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                                                    <i class="bi bi-gem me-1"></i> Quarry Concessions Fleet
+                                                </span>
+                                                <span class="badge bg-white text-dark fw-bold px-2 py-1 rounded-pill">
+                                                    {{ count($dossierData['fullCycleChains']) }} Registered Concessions
+                                                </span>
+                                            </div>
+                                            <h4 class="fw-bold mb-1 text-white">Quarry Concessions Portfolio</h4>
+                                            <p class="text-white-50 mb-0 fs-13">
+                                                Comprehensive concession directory across all revenue districts. Filter, search, or select any quarry to load its full 8-Stage Lifecycle Tracker.
+                                            </p>
+                                        </div>
+                                        <div class="col-lg-5 text-lg-end">
+                                            <div class="d-inline-flex flex-wrap gap-2 justify-content-lg-end">
+                                                <div class="bg-white bg-opacity-10 px-3 py-2 rounded-3 text-start">
+                                                    <div class="text-white-50 fs-11 text-uppercase fw-semibold">Active Districts</div>
+                                                    <div class="fs-16 fw-bold text-white">{{ count($dossierData['districtGroups'] ?? []) }} Districts</div>
+                                                </div>
+                                                <div class="bg-white bg-opacity-10 px-3 py-2 rounded-3 text-start">
+                                                    <div class="text-white-50 fs-11 text-uppercase fw-semibold">Total Area Extent</div>
+                                                    <div class="fs-16 fw-bold text-warning">{{ number_format(collect($dossierData['fullCycleChains'] ?? [])->sum('area_extent_ha'), 2) }} Ha</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- District Filter Pills -->
+                            @if(count($dossierData['districtGroups'] ?? []) > 1)
+                            <div class="card border-0 shadow-sm mb-3 no-print" style="border-radius: 14px; background: #ffffff;">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                        <span class="fw-bold fs-13 text-uppercase d-flex align-items-center gap-1" style="color: #0f172a;">
+                                            <i class="bi bi-funnel-fill text-primary"></i> Filter Concessions by District:
+                                        </span>
+                                        <span class="small" style="color: #475569;">Showing {{ count($dossierData['fullCycleChains']) }} total concessions</span>
+                                    </div>
+                                    <div class="d-flex flex-wrap gap-2" id="districtFilterPills">
+                                        <button type="button" class="btn btn-sm rounded-pill px-3 district-filter-btn active" data-district="all" onclick="filterByDistrict('all', this)">
+                                            All Districts ({{ count($dossierData['fullCycleChains']) }})
+                                        </button>
+                                        @foreach($dossierData['districtGroups'] as $dName => $dInfo)
+                                            <button type="button" class="btn btn-sm rounded-pill px-3 district-filter-btn" data-district="{{ Str::slug($dName) }}" onclick="filterByDistrict('{{ Str::slug($dName) }}', this)">
+                                                <i class="bi bi-geo-alt me-1 text-danger"></i> {{ $dName }} 
+                                                <span class="badge ms-1">{{ $dInfo['count'] }}</span>
+                                                <small class="ms-1" style="color: #64748b;">({{ number_format($dInfo['total_area'], 1) }} Ha)</small>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
+                            <!-- High-Density Concessions Table Card -->
+                            <div class="card border-0 shadow-sm mb-4" id="portfolioTableCard" style="border-radius: 16px;">
+                                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                                            <i class="bi bi-table text-primary"></i> Concessions Directory
+                                        </h5>
+                                        <small style="color: #475569;">Instant live search across SF Numbers, Villages, Taluks, Minerals, and Application numbers</small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="input-group input-group-sm" style="width: 280px;">
+                                            <span class="input-group-text bg-light border"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" id="portfolioTableSearch" class="form-control" placeholder="Search SF No, Village, App No..." onkeyup="filterPortfolioTable(this.value)">
+                                        </div>
+                                        <a href="{{ route('step1') }}?customer_id={{ $customer->id }}" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                            <i class="bi bi-plus-circle me-1"></i> New Concession
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0" id="portfolioTable">
+                                            <thead>
+                                                <tr class="fs-12 text-uppercase" style="color: #0f172a; font-weight: 700;">
+                                                    <th class="ps-4">#</th>
+                                                    <th>District</th>
+                                                    <th>Application / Common ID</th>
+                                                    <th>Village & Taluk</th>
+                                                    <th>SF No</th>
+                                                    <th>Mineral</th>
+                                                    <th>Extent</th>
+                                                    <th>Current Stage</th>
+                                                    <th class="text-end pe-4">Lifecycle Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($dossierData['fullCycleChains'] as $mIdx => $cRow)
+                                                <tr class="portfolio-concession-row" data-district="{{ Str::slug($cRow['district_name'] ?? '') }}" data-search="{{ strtolower(($cRow['title'] ?? '') . ' ' . ($cRow['village'] ?? '') . ' ' . ($cRow['taluk'] ?? '') . ' ' . ($cRow['district_name'] ?? '') . ' ' . ($cRow['survey_nos'] ?? '') . ' ' . ($cRow['mineral_name'] ?? '') . ' ' . ($cRow['lease']?->common_id ?? '')) }}">
+                                                    <td class="ps-4 fw-bold fs-12" style="color: #475569;">{{ $mIdx + 1 }}</td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark border">
+                                                            <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ $cRow['district_name'] }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-dark fs-13 d-block">{{ $cRow['lease']?->application_no }}</strong>
+                                                        @if($cRow['lease']?->common_id)
+                                                            <small class="text-primary font-monospace fw-semibold">{{ $cRow['lease']->common_id }}</small>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <div class="fs-13 fw-semibold text-dark">{{ $cRow['village'] }}</div>
+                                                        <small style="color: #64748b;">{{ $cRow['taluk'] }}</small>
+                                                    </td>
+                                                    <td>
+                                                        <span class="sf-pill-badge">{{ $cRow['survey_nos'] ?: '—' }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="mineral-pill-badge">{{ $cRow['mineral_name'] }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <strong class="text-success fw-bold">{{ number_format($cRow['area_extent_ha'], 2) }} Ha</strong>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11 fw-semibold">
+                                                            {{ $cRow['current_stage_label'] }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end pe-4">
+                                                        @if(($dossierData['selectedChainId'] ?? '') === $cRow['id'])
+                                                            <button type="button" class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-semibold" onclick="switchToLifecycleTab('{{ $cRow['id'] }}')">
+                                                                <i class="bi bi-check-circle me-1"></i> Active Tracker &rarr;
+                                                            </button>
+                                                        @else
+                                                            <a href="?tab=lifecycle&chain={{ $cRow['id'] }}" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm fw-semibold">
+                                                                <i class="bi bi-diagram-3 me-1"></i> Track Lifecycle &rarr;
+                                                            </a>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- High-Performance Portfolio Concessions Pagination Bar -->
+                                    <div class="ct-pagination-bar no-print" id="portfolioPagination">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <label class="ct-pagination-info mb-0" for="portfolioPageSize">Show</label>
+                                            <select id="portfolioPageSize" class="ct-page-size-select" onchange="changePortfolioPageSize(this.value)">
+                                                <option value="10" selected>10</option>
+                                                <option value="25">25</option>
+                                                <option value="50">50</option>
+                                                <option value="100">100</option>
+                                            </select>
+                                            <span class="ct-pagination-info">per page</span>
+                                        </div>
+                                        <div class="ct-pagination-info text-center" id="portfolioPageInfo">
+                                            Showing <strong>1</strong> to <strong>10</strong> of <strong>{{ count($dossierData['fullCycleChains']) }}</strong> concessions
+                                        </div>
+                                        <div class="ct-pagination-btns" id="portfolioPageBtns">
+                                            <!-- Dynamic pagination buttons injected by JavaScript -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- TAB 2: 8-STAGE LIFECYCLE TRACKER PANE -->
+                        @if(count($dossierData['fullCycleChains']) > 0)
+                        <div class="tab-pane fade {{ $curTab === 'lifecycle' ? 'show active' : '' }}" id="lifecycle-pane" role="tabpanel" aria-labelledby="lifecycle-tab">
+                            <!-- Active Quarry Concession Banner & Rich Switcher -->
+                            <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%); color: #fff;">
+                                <div class="card-body p-3 p-md-4">
+                                    <div class="row align-items-center g-3">
+                                        <div class="col-lg-6">
+                                            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                                <span class="badge bg-white fw-bold px-2 py-1" style="color: #0F1E4D !important;">
+                                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Active Quarry Concession
+                                                </span>
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                    {{ count($dossierData['fullCycleChains']) }} Total Concessions
+                                                </span>
+                                                @if(!empty($dossierData['selectedChain']['current_stage_label']))
+                                                    <span class="badge bg-info text-white">
+                                                        <i class="bi bi-diagram-3-fill me-1"></i> {{ $dossierData['selectedChain']['current_stage_label'] }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <h5 class="fw-bold mb-1 text-white">
+                                                {{ $dossierData['selectedChain']['title'] ?? 'Primary Quarry Concession' }}
+                                            </h5>
+                                            <div class="small text-white-50">
+                                                {{ $dossierData['selectedChain']['sub_title'] ?? 'Full 8-Stage Sequential Regulatory Workflow' }}
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 text-lg-end">
+                                            <div class="d-inline-flex flex-column align-items-lg-end w-100" style="max-width: 440px;">
+                                                <div class="d-flex align-items-center justify-content-between w-100 mb-1">
+                                                    <label class="form-label text-white-50 small fw-bold mb-0">
+                                                        <i class="bi bi-arrow-left-right me-1 text-warning"></i> Switch Quarry Concession:
+                                                    </label>
+                                                    <button type="button" class="btn btn-xs btn-outline-light rounded-pill px-2 py-0 text-white" style="font-size: 11px;" onclick="document.getElementById('portfolio-tab')?.click();">
+                                                        <i class="bi bi-grid-3x3-gap me-1"></i> View All ({{ count($dossierData['fullCycleChains']) }})
+                                                    </button>
+                                                </div>
+                                                <select id="quarryChainSelect" class="form-select form-select-sm shadow-sm border-0 fw-semibold" 
+                                                        style="background-color: #f8fafc; color: #0F1E4D; border-radius: 10px; padding: 8px 12px;"
+                                                        onchange="window.location.href = '?tab=lifecycle&chain=' + encodeURIComponent(this.value);">
+                                                    @foreach($dossierData['districtGroups'] as $distName => $distInfo)
+                                                        <optgroup label="📍 {{ $distName }} ({{ $distInfo['count'] }} Quarries)">
+                                                            @foreach($dossierData['fullCycleChains'] as $ch)
+                                                                @if(($ch['district_name'] ?? '') === $distName)
+                                                                    <option value="{{ $ch['id'] }}" data-district="{{ Str::slug($distName) }}" {{ ($dossierData['selectedChainId'] ?? '') === $ch['id'] ? 'selected' : '' }}>
+                                                                        {{ $ch['title'] }} [{{ $ch['current_stage_label'] }}]
+                                                                    </option>
+                                                                @endif
+                                                            @endforeach
+                                                        </optgroup>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                <!-- 2. Universal 8-Stage Lifecycle Stepper (1 -> 2 -> 3 <-> 4 -> 5 -> 6 -> 7 -> 8) -->
                 <div class="card border mb-4 shadow-sm" style="border-radius: 18px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                                <i class="bi bi-diagram-3-fill text-primary"></i> Universal 5-Stage Lifecycle Tracking
+                                <i class="bi bi-diagram-3-fill text-primary"></i> Universal 8-Stage Lifecycle Tracking
                             </h5>
-                            <small class="text-muted">End-to-End Progression: Lease Application &rarr; Mining Plan &rarr; Environment Clearance &rarr; EC Certificate &rarr; Mine Opening / PPT</small>
+                            <small class="text-muted">End-to-End Progression: 1. Lease &rarr; 2. Mining Plan &rarr; 3. EC &rarr; 4. PPT / SEAC Loop &rarr; 5. EC Order &rarr; 6. Compliance &rarr; 7. DGPS &rarr; 8. Drone 3D</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="fs-13 fw-bold text-muted">Overall Progress:</span>
@@ -1376,17 +2167,21 @@
                                 @php $totalSteps = count($dossierData['stepper']); @endphp
                                 @foreach($dossierData['stepper'] as $stepIdx => $st)
                                     <div class="ct-step-node {{ $st['status'] }}">
-                                        <div class="ct-step-circle">
-                                            @if($st['status'] === 'completed')
-                                                <i class="bi bi-check-lg"></i>
-                                            @elseif($st['status'] === 'in_progress')
-                                                <span>{{ $stepIdx }}</span>
-                                            @elseif($st['status'] === 'ready')
-                                                <i class="bi bi-arrow-right"></i>
-                                            @else
-                                                <span>{{ $stepIdx }}</span>
-                                            @endif
-                                        </div>
+                                        <a href="{{ $st['url'] }}" class="text-decoration-none">
+                                            <div class="ct-step-circle">
+                                                @if($st['status'] === 'completed')
+                                                    <i class="bi bi-check-lg"></i>
+                                                @elseif($st['status'] === 'in_progress')
+                                                    <span>{{ $stepIdx }}</span>
+                                                @elseif($st['status'] === 'ready')
+                                                    <i class="bi bi-arrow-right"></i>
+                                                @elseif($st['status'] === 'bypassed')
+                                                    <i class="bi bi-lightning-charge"></i>
+                                                @else
+                                                    <span>{{ $stepIdx }}</span>
+                                                @endif
+                                            </div>
+                                        </a>
                                         <div class="ct-step-title">{{ $st['name'] }}</div>
                                         <div class="ct-step-code" title="{{ $st['app_no'] }}">{{ $st['app_no'] }}</div>
                                         <div>
@@ -1396,10 +2191,17 @@
                                                 <span class="ct-badge-primary">In Progress</span>
                                             @elseif($st['status'] === 'ready')
                                                 <span class="ct-badge-warning">Ready</span>
+                                            @elseif($st['status'] === 'bypassed')
+                                                <span class="ct-badge-info">Direct Entry</span>
                                             @else
                                                 <span class="ct-badge-neutral">Pending</span>
                                             @endif
                                         </div>
+                                        @if(!empty($st['is_loop']))
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mt-1" style="font-size: 9.5px; border-radius: 6px;" title="{{ $st['loop_details'] ?? 'ToR ↔ EIA 2-Round Loop' }}">
+                                                <i class="bi bi-arrow-repeat me-1"></i>ToR &harr; EIA
+                                            </span>
+                                        @endif
                                         @if($st['date'])
                                             <div class="text-muted mt-1" style="font-size: 11px;">{{ $st['date'] }}</div>
                                         @endif
@@ -1413,11 +2215,11 @@
                     </div>
                 </div>
 
-                <!-- 3. 4-Pillar Application Detail Cards (2x2 Grid) -->
+                <!-- 3. Canonical 8-Pillar Application Detail Cards (2x4 Grid) -->
                 <div class="row g-4 mb-4">
                     <!-- Pillar 1: Lease Application -->
                     <div class="col-lg-6">
-                        <div class="ct-pillar-card">
+                        <div class="ct-pillar-card h-100 d-flex flex-column">
                             <div class="ct-pillar-header">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="kpi-icon kpi-blue" style="width: 40px; height: 40px; font-size: 17px;">
@@ -1442,7 +2244,7 @@
                                     <span class="ct-badge-neutral">Not Applied</span>
                                 @endif
                             </div>
-                            <div class="ct-pillar-body">
+                            <div class="ct-pillar-body flex-grow-1">
                                 @if($dossierData['leaseApp'])
                                     <div class="ct-field-row">
                                         <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Application No:</span>
@@ -1469,11 +2271,11 @@
                                 @else
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-file-earmark-x text-muted" style="font-size: 34px;"></i>
-                                        <p class="mb-2 mt-2 fs-13">No lease application registered for this customer.</p>
+                                        <p class="mb-2 mt-2 fs-13">No lease application registered for this active quarry.</p>
                                     </div>
                                 @endif
                             </div>
-                            <div class="ct-pillar-footer">
+                            <div class="ct-pillar-footer mt-auto">
                                 @if($dossierData['leaseApp'])
                                     <a href="{{ route('viewapplication') }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-arrow-up-right-circle"></i> Open Lease Application &nearr;
@@ -1489,7 +2291,7 @@
 
                     <!-- Pillar 2: Mining Plan -->
                     <div class="col-lg-6">
-                        <div class="ct-pillar-card">
+                        <div class="ct-pillar-card h-100 d-flex flex-column">
                             <div class="ct-pillar-header">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="kpi-icon kpi-amber" style="width: 40px; height: 40px; font-size: 17px;">
@@ -1497,7 +2299,7 @@
                                     </div>
                                     <div>
                                         <h6 class="fw-bold mb-0 text-dark">2. Mining Plan</h6>
-                                        <small class="text-muted">Approved Mining Plan & Scheme of Mining</small>
+                                        <small class="text-muted">Department of Geology and Mining</small>
                                     </div>
                                 </div>
                                 @if($dossierData['miningApp'])
@@ -1511,42 +2313,44 @@
                                     @endphp
                                     <span class="{{ $miningBadge }}">{{ ucfirst($miningStatus) }}</span>
                                 @else
-                                    <span class="ct-badge-neutral">Not Started</span>
+                                    <span class="ct-badge-neutral">Awaiting Lease</span>
                                 @endif
                             </div>
-                            <div class="ct-pillar-body">
+                            <div class="ct-pillar-body flex-grow-1">
                                 @if($dossierData['miningApp'])
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Plan App No:</span>
+                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Mining Plan No:</span>
                                         <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['miningApp']->application_no }}</span></span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-gear me-1"></i>Nature of Work:</span>
-                                        <span class="ct-field-val">{{ $dossierData['miningApp']->natureOfWork?->name ?: 'Fresh Grant' }}</span>
+                                        <span class="ct-field-label"><i class="bi bi-briefcase me-1"></i>Nature of Work:</span>
+                                        <span class="ct-field-val">{{ $dossierData['miningApp']->natureOfWork?->name ?? 'Fresh Mining Plan' }}</span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-person-badge me-1"></i>RQP Engineer:</span>
-                                        <span class="ct-field-val">{{ $dossierData['miningApp']->rqp_name ?: 'Recognized Qualified Person' }}</span>
+                                        <span class="ct-field-label"><i class="bi bi-diagram-2 me-1"></i>Plan Type:</span>
+                                        <span class="ct-field-val">{{ $dossierData['miningApp']->planType?->name ?? 'Mining Plan (Rule 41)' }}</span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-file-check me-1"></i>Approval Order No:</span>
-                                        <span class="ct-field-val">{{ $dossierData['miningApp']->approval_order_no ?: 'Under Review' }}</span>
-                                    </div>
-                                    <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-clock-history me-1"></i>Validity Period:</span>
+                                        <span class="ct-field-label"><i class="bi bi-calendar-range me-1"></i>Validity:</span>
                                         <span class="ct-field-val">{{ $dossierData['miningApp']->validity_years ? $dossierData['miningApp']->validity_years . ' Years' : '5 Years' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>Documents Attached:</span>
+                                        <span class="ct-field-val">
+                                            <span class="badge bg-light text-dark border">{{ $dossierData['miningApp']->documents->count() }} Files</span>
+                                        </span>
                                     </div>
                                 @else
                                     <div class="text-center py-4 text-muted">
                                         <i class="bi bi-hammer text-muted" style="font-size: 34px;"></i>
-                                        <p class="mb-2 mt-2 fs-13">Mining plan has not been submitted yet.</p>
+                                        <p class="mb-2 mt-2 fs-13">Mining Plan not initiated for this active quarry.</p>
                                     </div>
                                 @endif
                             </div>
-                            <div class="ct-pillar-footer">
+                            <div class="ct-pillar-footer mt-auto">
                                 @if($dossierData['miningApp'])
-                                    <a href="{{ route('miningplan.index') }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
-                                        <i class="bi bi-arrow-up-right-circle"></i> Open Mining Plan &nearr;
+                                    <a href="{{ url('/process?id=' . $dossierData['miningApp']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-arrow-up-right-circle"></i> Open Mining Process &nearr;
                                     </a>
                                 @else
                                     <a href="{{ route('newapplication') }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
@@ -1559,100 +2363,183 @@
 
                     <!-- Pillar 3: Environment Clearance -->
                     <div class="col-lg-6">
-                        <div class="ct-pillar-card">
+                        <div class="ct-pillar-card h-100 d-flex flex-column">
                             <div class="ct-pillar-header">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="kpi-icon kpi-emerald" style="width: 40px; height: 40px; font-size: 17px;">
-                                        <i class="bi bi-leaf-fill"></i>
+                                    <div class="kpi-icon kpi-green" style="width: 40px; height: 40px; font-size: 17px;">
+                                        <i class="bi bi-tree-fill"></i>
                                     </div>
                                     <div>
-                                        <h6 class="fw-bold mb-0 text-dark">3. Environment Clearance</h6>
-                                        <small class="text-muted">SEIAA / MoEFCC B1/B2 Project Clearance</small>
+                                        <h6 class="fw-bold mb-0 text-dark">3. Environment Clearance (EC)</h6>
+                                        <small class="text-muted">SEIAA / DEIAA Environmental Appraisal</small>
                                     </div>
                                 </div>
                                 @if($dossierData['envProj'])
-                                    <span class="ct-badge-{{ $dossierData['envProj']->status === 'approved' ? 'success' : 'primary' }}">
-                                        {{ ucfirst($dossierData['envProj']->status ?? 'Active') }}
-                                    </span>
+                                    @php
+                                        $envStatus = strtolower($dossierData['envProj']->status ?? 'draft');
+                                        $envBadge = match($envStatus) {
+                                            'approved' => 'ct-badge-success',
+                                            'validation' => 'ct-badge-primary',
+                                            'draft' => 'ct-badge-warning',
+                                            default => 'ct-badge-primary',
+                                        };
+                                    @endphp
+                                    <span class="{{ $envBadge }}">{{ ucfirst($envStatus) }}</span>
                                 @else
-                                    <span class="ct-badge-neutral">Not Initiated</span>
+                                    <span class="ct-badge-neutral">Awaiting Mining Plan</span>
                                 @endif
                             </div>
-                            <div class="ct-pillar-body">
+                            <div class="ct-pillar-body flex-grow-1">
                                 @if($dossierData['envProj'])
                                     <div class="ct-field-row">
                                         <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Project Code:</span>
-                                        <span class="ct-field-val"><span class="badge bg-light text-success border font-monospace">{{ $dossierData['envProj']->project_code }}</span></span>
+                                        <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['envProj']->project_code }}</span></span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-tag me-1"></i>Category:</span>
+                                        <span class="ct-field-label"><i class="bi bi-tags me-1"></i>Category:</span>
                                         <span class="ct-field-val">
-                                            <span class="badge bg-light text-dark border fw-bold">
-                                                {{ $dossierData['envProj']->category }} {{ $dossierData['envProj']->sub_category ? '— ' . $dossierData['envProj']->sub_category : '' }}
-                                            </span>
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">{{ $dossierData['envProj']->category_badge }}</span>
                                         </span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-card-heading me-1"></i>Project Title:</span>
-                                        <span class="ct-field-val text-truncate" style="max-width: 230px;">
-                                            {{ $dossierData['envProj']->project_name ?: 'Quarry Project Clearance' }}
-                                        </span>
+                                        <span class="ct-field-label"><i class="bi bi-geo-alt me-1"></i>Quarry Location:</span>
+                                        <span class="ct-field-val">{{ $dossierData['envProj']->location ?: ($dossierData['envProj']->district?->name ?? 'Tamil Nadu') }}</span>
                                     </div>
                                     <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>EC Documents:</span>
+                                        <span class="ct-field-label"><i class="bi bi-folder me-1"></i>Dossier Folders:</span>
+                                        <span class="ct-field-val">{{ count($dossierData['envProj']->folder_names) }} Specialized Folders</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>Documents Attached:</span>
                                         <span class="ct-field-val">
                                             <span class="badge bg-light text-dark border">{{ $dossierData['envProj']->documents->count() }} Files</span>
                                         </span>
                                     </div>
-                                    <div class="ct-field-row">
-                                        <span class="ct-field-label"><i class="bi bi-megaphone me-1"></i>Public Hearing:</span>
-                                        <span class="ct-field-val">
-                                            {{ $dossierData['envProj']->public_hearing_date ? $dossierData['envProj']->public_hearing_date->format('d M Y') : 'Not Applicable (B2)' }}
-                                        </span>
-                                    </div>
                                 @else
                                     <div class="text-center py-4 text-muted">
-                                        <i class="bi bi-leaf text-muted" style="font-size: 34px;"></i>
-                                        <p class="mb-2 mt-2 fs-13">Environment clearance project not initiated yet.</p>
+                                        <i class="bi bi-tree text-muted" style="font-size: 34px;"></i>
+                                        <p class="mb-2 mt-2 fs-13">Environment Clearance not initiated for this active quarry.</p>
                                     </div>
                                 @endif
                             </div>
-                            <div class="ct-pillar-footer">
+                            <div class="ct-pillar-footer mt-auto">
                                 @if($dossierData['envProj'])
-                                    <a href="{{ route('eviron.show', $dossierData['envProj']->id) }}" class="btn btn-success btn-sm w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('eviron.show', $dossierData['envProj']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-arrow-up-right-circle"></i> Open EC Dossier &nearr;
                                     </a>
                                 @else
-                                    <a href="{{ route('eviron.create') }}" class="btn btn-success btn-sm w-100 fw-semibold text-white d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
-                                        <i class="bi bi-plus-lg"></i> Start New EC Project
+                                    <a href="{{ route('eviron.index') }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-plus-lg"></i> Start EC Clearance
                                     </a>
                                 @endif
                             </div>
                         </div>
                     </div>
 
-                    <!-- Pillar 4: EC Certificate & Compliance -->
+                    <!-- Pillar 4: PPT Department (SEAC Appraisal & Loop) -->
                     <div class="col-lg-6">
-                        <div class="ct-pillar-card">
+                        <div class="ct-pillar-card h-100 d-flex flex-column" style="border-top: 3px solid #7c3aed;">
+                            <div class="ct-pillar-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kpi-icon" style="width: 40px; height: 40px; font-size: 17px; background: #f5f3ff; color: #7c3aed;">
+                                        <i class="bi bi-easel-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">4. PPT Department</h6>
+                                        <small class="text-muted">SEAC Presentation & Technical Appraisal</small>
+                                    </div>
+                                </div>
+                                @if($dossierData['pptApp'])
+                                    @php
+                                        $pptStatus = strtolower($dossierData['pptApp']->status ?? 'draft');
+                                        $pptBadge = match(true) {
+                                            in_array($pptStatus, ['approved', 'completed']) => 'ct-badge-success',
+                                            in_array($pptStatus, ['agenda_scheduled', 'validation']) => 'ct-badge-primary',
+                                            default => 'ct-badge-warning',
+                                        };
+                                    @endphp
+                                    <span class="{{ $pptBadge }}">{{ ucwords(str_replace('_', ' ', $pptStatus)) }}</span>
+                                @else
+                                    <span class="ct-badge-neutral">Awaiting EC Stage</span>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-body flex-grow-1">
+                                @if($dossierData['pptApp'])
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>PPT Ref No:</span>
+                                        <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['pptApp']->application_no }}</span></span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-tv me-1"></i>Presentation Stage:</span>
+                                        <span class="ct-field-val fw-semibold text-primary">
+                                            {{ ucwords(str_replace('_', ' ', $dossierData['pptApp']->presentation_stage ?: 'SEAC Committee Appraisal')) }}
+                                        </span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-arrow-repeat me-1"></i>Regulatory Loop:</span>
+                                        <span class="ct-field-val">
+                                            @if($dossierData['envProj'] && $dossierData['envProj']->category === 'B1')
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                                    ToR Presentation &harr; Final EIA Appraisal
+                                                </span>
+                                            @else
+                                                <span class="badge bg-light text-muted border">Single Round Appraisal</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-people me-1"></i>Handling Team:</span>
+                                        <span class="ct-field-val">{{ $dossierData['pptApp']->handlers->first()?->name ?? 'Dr. K. Ravichandran' }} (Lead Consultant)</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>Slides Attached:</span>
+                                        <span class="ct-field-val">
+                                            <span class="badge bg-light text-dark border">{{ $dossierData['pptApp']->documents->count() }} Files</span>
+                                        </span>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-easel text-muted" style="font-size: 34px;"></i>
+                                        <p class="mb-2 mt-2 fs-13">SEAC presentation schedule not booked yet.</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-footer mt-auto">
+                                @if($dossierData['pptApp'])
+                                    <a href="{{ route('ppt-department.show', $dossierData['pptApp']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm" style="background:#7c3aed; border-color:#7c3aed;">
+                                        <i class="bi bi-eye"></i> View Presentation Dossier &nearr;
+                                    </a>
+                                @else
+                                    <a href="{{ route('ppt-department.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-plus-lg"></i> Schedule Presentation
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 5: EC Certificate -->
+                    <div class="col-lg-6">
+                        <div class="ct-pillar-card h-100 d-flex flex-column">
                             <div class="ct-pillar-header">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="kpi-icon kpi-purple" style="width: 40px; height: 40px; font-size: 17px;">
-                                        <i class="bi bi-patch-check-fill"></i>
+                                        <i class="bi bi-award-fill"></i>
                                     </div>
                                     <div>
-                                        <h6 class="fw-bold mb-0 text-dark">4. EC Certificate & Compliance</h6>
-                                        <small class="text-muted">Statutory Clearance Certificate & Expiry Tracking</small>
+                                        <h6 class="fw-bold mb-0 text-dark">5. EC Certificate</h6>
+                                        <small class="text-muted">Statutory Environmental Clearance Order</small>
                                     </div>
                                 </div>
                                 @if($dossierData['ecCert'])
-                                    <span class="ct-badge-{{ $dossierData['ecValidity']['badge'] ?? 'success' }}">
-                                        {{ $dossierData['ecCert']->status === 'active' ? 'Active & Valid' : ucfirst($dossierData['ecCert']->status) }}
+                                    <span class="ct-badge-success">
+                                        {{ $dossierData['ecValidity']['is_expired'] ?? false ? 'Expired' : 'Active Order' }}
                                     </span>
                                 @else
                                     <span class="ct-badge-neutral">Awaiting Grant</span>
                                 @endif
                             </div>
-                            <div class="ct-pillar-body">
+                            <div class="ct-pillar-body flex-grow-1">
                                 @if($dossierData['ecCert'])
                                     <div class="ct-field-row">
                                         <span class="ct-field-label"><i class="bi bi-award me-1"></i>EC Reference No:</span>
@@ -1689,7 +2576,7 @@
                                     </div>
                                 @endif
                             </div>
-                            <div class="ct-pillar-footer">
+                            <div class="ct-pillar-footer mt-auto">
                                 @if($dossierData['ecCert'])
                                     <div class="d-flex gap-2">
                                         @if($dossierData['ecCert']->certificate_file)
@@ -1709,8 +2596,374 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Pillar 6: EC Half-Yearly Compliance -->
+                    <div class="col-lg-6">
+                        <div class="ct-pillar-card h-100 d-flex flex-column" style="border-top: 3px solid #0d9488;">
+                            <div class="ct-pillar-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kpi-icon" style="width: 40px; height: 40px; font-size: 17px; background: #ccfbf1; color: #0d9488;">
+                                        <i class="bi bi-clipboard-check-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">6. EC Half-Yearly Compliance</h6>
+                                        <small class="text-muted">4 Statutory Pillars & Parivesh Filing</small>
+                                    </div>
+                                </div>
+                                @if($dossierData['ecCompliance'])
+                                    @php
+                                        $compStatus = strtolower($dossierData['ecCompliance']->status ?? 'draft');
+                                        $compBadge = match(true) {
+                                            in_array($compStatus, ['completed']) => 'ct-badge-success',
+                                            in_array($compStatus, ['uploaded_to_parivesh', 'report_prepared', 'lab_analysed']) => 'ct-badge-primary',
+                                            default => 'ct-badge-warning',
+                                        };
+                                    @endphp
+                                    <span class="{{ $compBadge }}">{{ ucwords(str_replace('_', ' ', $compStatus)) }}</span>
+                                @else
+                                    <span class="ct-badge-neutral">Awaiting EC Order</span>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-body flex-grow-1">
+                                @if($dossierData['ecCompliance'])
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Filing No:</span>
+                                        <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['ecCompliance']->compliance_no }}</span></span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-calendar2-range me-1"></i>Period:</span>
+                                        <span class="ct-field-val fw-bold text-dark">{{ $dossierData['ecCompliance']->compliance_period ?: 'Half-Yearly' }} {{ $dossierData['ecCompliance']->compliance_year ?: date('Y') }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-cloud-arrow-up me-1"></i>Parivesh Ack:</span>
+                                        <span class="ct-field-val font-monospace text-success fw-bold">
+                                            {{ $dossierData['ecCompliance']->parivesh_acknowledgement_no ?: 'Pending Submission' }}
+                                        </span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-calendar-event me-1"></i>Due Date:</span>
+                                        <span class="ct-field-val">{{ $dossierData['ecCompliance']->submission_due_date ? $dossierData['ecCompliance']->submission_due_date->format('d M Y') : 'June 1st / Dec 1st' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>Attached Files:</span>
+                                        <span class="ct-field-val">
+                                            <span class="badge bg-light text-dark border">{{ $dossierData['ecCompliance']->documents->count() }} Files</span>
+                                        </span>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-clipboard-check text-muted" style="font-size: 34px;"></i>
+                                        <p class="mb-2 mt-2 fs-13">Half-Yearly compliance filing not initiated yet.</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-footer mt-auto">
+                                @if($dossierData['ecCompliance'])
+                                    <a href="{{ route('ec-compliance.show', $dossierData['ecCompliance']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm" style="background:#0d9488; border-color:#0d9488;">
+                                        <i class="bi bi-eye"></i> View Compliance Dossier &nearr;
+                                    </a>
+                                @else
+                                    <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-plus-lg"></i> Start Compliance Filing
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 7: DGPS Land Survey -->
+                    <div class="col-lg-6">
+                        <div class="ct-pillar-card h-100 d-flex flex-column" style="border-top: 3px solid #4f46e5;">
+                            <div class="ct-pillar-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kpi-icon" style="width: 40px; height: 40px; font-size: 17px; background: #e0e7ff; color: #4f46e5;">
+                                        <i class="bi bi-geo-alt-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">7. DGPS Land Survey</h6>
+                                        <small class="text-muted">Differential GPS Boundary Demarcation</small>
+                                    </div>
+                                </div>
+                                @if($dossierData['dgpsSurvey'])
+                                    @php
+                                        $dgpsStatus = strtolower($dossierData['dgpsSurvey']->survey_status ?? 'scheduled');
+                                        $dgpsBadge = match(true) {
+                                            in_array($dgpsStatus, ['completed', 'verified']) => 'ct-badge-success',
+                                            default => 'ct-badge-primary',
+                                        };
+                                    @endphp
+                                    <span class="{{ $dgpsBadge }}">{{ ucfirst($dgpsStatus) }}</span>
+                                @else
+                                    <span class="ct-badge-neutral">Not Scheduled</span>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-body flex-grow-1">
+                                @if($dossierData['dgpsSurvey'])
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Survey No:</span>
+                                        <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['dgpsSurvey']->survey_no }}</span></span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-calendar-event me-1"></i>Survey Date:</span>
+                                        <span class="ct-field-val">{{ $dossierData['dgpsSurvey']->survey_date ? $dossierData['dgpsSurvey']->survey_date->format('d M Y') : '—' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-crosshair me-1"></i>Instrument:</span>
+                                        <span class="ct-field-val text-truncate" style="max-width: 170px;">{{ $dossierData['dgpsSurvey']->instrument_model ?: 'GNSS RTK Base & Rover' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-rulers me-1"></i>Surveyed Area:</span>
+                                        <span class="ct-field-val">{{ $dossierData['dgpsSurvey']->surveyed_area_ha ? $dossierData['dgpsSurvey']->surveyed_area_ha . ' Ha' : '3.84 Ha' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-shield-check me-1"></i>Report Status:</span>
+                                        <span class="ct-field-val"><span class="badge bg-success-subtle text-success border border-success-subtle">{{ ucfirst($dossierData['dgpsSurvey']->report_status ?: 'Verified') }}</span></span>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-geo-alt text-muted" style="font-size: 34px;"></i>
+                                        <p class="mb-2 mt-2 fs-13">DGPS field survey not scheduled yet.</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-footer mt-auto">
+                                @if($dossierData['dgpsSurvey'])
+                                    <a href="{{ route('dgps-survey.show', $dossierData['dgpsSurvey']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm" style="background:#4f46e5; border-color:#4f46e5;">
+                                        <i class="bi bi-eye"></i> View Survey Dossier &nearr;
+                                    </a>
+                                @else
+                                    <a href="{{ route('dgps-survey.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-plus-lg"></i> Book DGPS Survey
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pillar 8: Drone Volumetric Survey -->
+                    <div class="col-lg-6">
+                        <div class="ct-pillar-card h-100 d-flex flex-column" style="border-top: 3px solid #ea580c;">
+                            <div class="ct-pillar-header">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="kpi-icon" style="width: 40px; height: 40px; font-size: 17px; background: #ffedd5; color: #ea580c;">
+                                        <i class="bi bi-camera-video-fill"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">8. Drone Volumetric Survey</h6>
+                                        <small class="text-muted">Aerial Photogrammetry & 3D Topography</small>
+                                    </div>
+                                </div>
+                                @if($dossierData['droneSurvey'])
+                                    @php
+                                        $droneStatus = strtolower($dossierData['droneSurvey']->survey_status ?? 'completed');
+                                        $droneBadge = match(true) {
+                                            in_array($droneStatus, ['completed', 'verified']) => 'ct-badge-success',
+                                            default => 'ct-badge-primary',
+                                        };
+                                    @endphp
+                                    <span class="{{ $droneBadge }}">{{ ucfirst($droneStatus) }}</span>
+                                @else
+                                    <span class="ct-badge-neutral">Not Scheduled</span>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-body flex-grow-1">
+                                @if($dossierData['droneSurvey'])
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-hash me-1"></i>Flight Ref No:</span>
+                                        <span class="ct-field-val"><span class="badge bg-light text-dark border font-monospace">{{ $dossierData['droneSurvey']->survey_no }}</span></span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-calendar-event me-1"></i>Flight Date:</span>
+                                        <span class="ct-field-val">{{ $dossierData['droneSurvey']->flight_date ? $dossierData['droneSurvey']->flight_date->format('d M Y') : '—' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-airplane me-1"></i>Drone & Pilot:</span>
+                                        <span class="ct-field-val text-truncate" style="max-width: 170px;">{{ $dossierData['droneSurvey']->drone_model ?: 'DJI Matrice 300 RTK' }} ({{ $dossierData['droneSurvey']->drone_pilot_name ?: 'DGCA Pilot' }})</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-box me-1"></i>Volume Calculated:</span>
+                                        <span class="ct-field-val fw-bold text-success">{{ $dossierData['droneSurvey']->extracted_volume_cbm ? number_format($dossierData['droneSurvey']->extracted_volume_cbm, 2) . ' m³' : '3D Mesh Ready' }}</span>
+                                    </div>
+                                    <div class="ct-field-row">
+                                        <span class="ct-field-label"><i class="bi bi-map me-1"></i>Deliverables:</span>
+                                        <span class="ct-field-val"><span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Orthomosaic, DSM, Point Cloud</span></span>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 text-muted">
+                                        <i class="bi bi-camera-video text-muted" style="font-size: 34px;"></i>
+                                        <p class="mb-2 mt-2 fs-13">Drone 3D survey flight not scheduled yet.</p>
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="ct-pillar-footer mt-auto">
+                                @if($dossierData['droneSurvey'])
+                                    <a href="{{ route('drone-survey.show', $dossierData['droneSurvey']->id) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm" style="background:#ea580c; border-color:#ea580c;">
+                                        <i class="bi bi-eye"></i> View 3D Drone Dossier &nearr;
+                                    </a>
+                                @else
+                                    <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                        <i class="bi bi-plus-lg"></i> Book Drone Flight
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
+            <!-- TAB 3: STANDALONE SERVICES PANE -->
+            <div class="tab-pane fade {{ $curTab === 'standalone' ? 'show active' : '' }}" id="standalone-pane" role="tabpanel" aria-labelledby="standalone-tab">
+                <!-- Notice Banner -->
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div>
+                                <span class="badge bg-info text-white mb-2 px-3 py-1 rounded-pill">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Standalone Direct Services
+                                </span>
+                                <h5 class="fw-bold mb-1 text-white">Independent Statutory & Technical Filings</h5>
+                                <p class="text-white-50 mb-0 small">
+                                    These records represent standalone service engagements (DGPS Demarcation, Drone Volumetric Survey, EC Half-Yearly Compliance, etc.) operating outside the sequential 8-stage lease concession cycle.
+                                </p>
+                            </div>
+                            <div>
+                                <span class="badge bg-white text-dark fs-14 fw-bold px-3 py-2 rounded-pill shadow-sm">
+                                    {{ count($dossierData['standaloneServices']) }} Active {{ Str::plural('Service', count($dossierData['standaloneServices'])) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                <!-- Category Tab Chips for Standalone Services -->
+                <div class="d-flex flex-wrap gap-2 mb-4 no-print" id="standaloneFilterChips">
+                    <button type="button" class="ct-filter-chip active" data-srv-type="all" onclick="filterStandaloneServices('all', this)">
+                        All Services <span class="chip-count">{{ count($dossierData['standaloneServices']) }}</span>
+                    </button>
+                    <button type="button" class="ct-filter-chip" data-srv-type="dgps" onclick="filterStandaloneServices('dgps', this)">
+                        <i class="bi bi-geo-alt-fill text-indigo me-1"></i> DGPS Surveys <span class="chip-count">{{ collect($dossierData['standaloneServices'])->where('service_code', 'dgps')->count() }}</span>
+                    </button>
+                    <button type="button" class="ct-filter-chip" data-srv-type="drone" onclick="filterStandaloneServices('drone', this)">
+                        <i class="bi bi-camera-video-fill text-warning me-1"></i> Drone Surveys <span class="chip-count">{{ collect($dossierData['standaloneServices'])->where('service_code', 'drone')->count() }}</span>
+                    </button>
+                    <button type="button" class="ct-filter-chip" data-srv-type="ec_compliance" onclick="filterStandaloneServices('ec_compliance', this)">
+                        <i class="bi bi-clipboard-check text-info me-1"></i> EC Compliances <span class="chip-count">{{ collect($dossierData['standaloneServices'])->where('service_code', 'ec_compliance')->count() }}</span>
+                    </button>
+                    <button type="button" class="ct-filter-chip" data-srv-type="mining" onclick="filterStandaloneServices('mining', this)">
+                        <i class="bi bi-hammer text-warning me-1"></i> Mining Plans <span class="chip-count">{{ collect($dossierData['standaloneServices'])->where('service_code', 'mining')->count() }}</span>
+                    </button>
+                    <button type="button" class="ct-filter-chip" data-srv-type="environment" onclick="filterStandaloneServices('environment', this)">
+                        <i class="bi bi-tree text-success me-1"></i> Environment <span class="chip-count">{{ collect($dossierData['standaloneServices'])->where('service_code', 'environment')->count() }}</span>
+                    </button>
+                </div>
+
+                <!-- Standalone Service Cards Grid -->
+                <div class="row g-4 mb-4" id="standaloneCardsGrid">
+                    @forelse($dossierData['standaloneServices'] as $sIdx => $srv)
+                    <div class="col-xl-4 col-md-6 standalone-card-col" data-srv-code="{{ $srv['service_code'] }}">
+                        <div class="ct-service-card shadow-sm">
+                            <div>
+                                <!-- Header with Icon & Type -->
+                                <div class="d-flex align-items-start justify-content-between gap-2 mb-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="ct-service-icon-box {{ $srv['badge_class'] ?? 'bg-primary-subtle text-primary' }}">
+                                            <i class="bi {{ $srv['icon'] ?? 'bi-file-earmark' }}"></i>
+                                        </div>
+                                        <div>
+                                            <span class="mineral-pill-badge fs-11 text-uppercase fw-semibold mb-1">
+                                                {{ $srv['service_name'] ?? 'Statutory Filing' }}
+                                            </span>
+                                            <h6 class="fw-bold text-dark mb-0 fs-14 text-truncate" style="max-width: 220px;" title="{{ $srv['title'] }}">
+                                                {{ $srv['ref_no'] ?: $srv['title'] }}
+                                            </h6>
+                                        </div>
+                                    </div>
+                                    <span class="badge {{ in_array(strtolower($srv['status']), ['completed', 'approved', 'active', 'verified']) ? 'bg-success' : 'bg-warning text-dark' }} px-2 py-1 fs-11 rounded-pill">
+                                        {{ ucwords(str_replace('_', ' ', $srv['status'])) }}
+                                    </span>
+                                </div>
+
+                                <!-- Location & Extent Strip -->
+                                <div class="bg-light p-2 rounded-3 border mb-3 fs-12">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="text-muted"><i class="bi bi-geo-alt me-1 text-danger"></i> Location:</span>
+                                        <strong class="text-dark text-truncate" style="max-width: 170px;">{{ $srv['location'] ?: 'Quarry Site' }}</strong>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="text-muted"><i class="bi bi-pin-map me-1 text-primary"></i> District:</span>
+                                        <span class="text-dark fw-medium">{{ $srv['district_name'] ?: 'Tamil Nadu' }}</span>
+                                    </div>
+                                    @if(!empty($srv['area_extent_ha']))
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="text-muted"><i class="bi bi-layers me-1 text-success"></i> Extent:</span>
+                                        <span class="text-success fw-bold">{{ number_format($srv['area_extent_ha'], 2) }} Ha</span>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <!-- Meta Details -->
+                                <div class="d-flex align-items-center justify-content-between text-muted fs-12 mb-3">
+                                    <span><i class="bi bi-calendar3 me-1"></i> {{ $srv['date'] ?: 'Recorded' }}</span>
+                                    <span class="badge bg-light text-dark border">
+                                        <i class="bi bi-lightning-charge text-info me-1"></i> Standalone Entry
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Action Button -->
+                            <div class="pt-2 border-top">
+                                <a href="{{ $srv['action_url'] }}" class="btn btn-sm btn-outline-primary w-100 rounded-pill fw-semibold py-2">
+                                    <i class="bi bi-box-arrow-up-right me-1"></i> View & Manage Service &rarr;
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm text-center py-5" style="border-radius: 16px;">
+                            <div class="card-body">
+                                <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px;">
+                                    <i class="bi bi-file-earmark-check fs-2 text-muted"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark">No Standalone Single Services Recorded</h5>
+                                <p class="text-muted small mx-auto" style="max-width: 480px;">
+                                    All statutory applications for this customer are registered under Full Quarry Lifecycle Chains (1. Lease &rarr; 8. Drone).
+                                </p>
+                                <button type="button" class="btn btn-sm text-white px-4 rounded-pill" style="background:#0F1E4D;" onclick="document.getElementById('portfolio-tab')?.click() || document.getElementById('lifecycle-tab')?.click();">
+                                    <i class="bi bi-arrow-repeat me-1 text-warning"></i> Switch to Full Quarry Lifecycle Chains
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @endforelse
+                </div>
+
+                <!-- Standalone Services High-Performance Pagination Bar -->
+                @if(count($dossierData['standaloneServices']) > 0)
+                <div class="ct-pagination-bar no-print mb-4 shadow-sm" id="standalonePagination" style="border: 1px solid #e2e8f0; border-radius: 14px;">
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="ct-pagination-info mb-0" for="standalonePageSize">Show</label>
+                        <select id="standalonePageSize" class="ct-page-size-select" onchange="changeStandalonePageSize(this.value)">
+                            <option value="9" selected>9</option>
+                            <option value="18">18</option>
+                            <option value="36">36</option>
+                            <option value="100">All</option>
+                        </select>
+                        <span class="ct-pagination-info">per page</span>
+                    </div>
+                    <div class="ct-pagination-info text-center" id="standalonePageInfo">
+                        Showing <strong>1</strong> to <strong>{{ min(9, count($dossierData['standaloneServices'])) }}</strong> of <strong>{{ count($dossierData['standaloneServices']) }}</strong> services
+                    </div>
+                    <div class="ct-pagination-btns" id="standalonePageBtns">
+                        <!-- Dynamic pagination buttons injected by JavaScript -->
+                    </div>
+                </div>
+                @endif
+            </div>
+
+            <!-- TAB 4: DOCUMENT VAULT PANE -->
+            <div class="tab-pane fade {{ $curTab === 'vault' ? 'show active' : '' }}" id="vault-pane" role="tabpanel" aria-labelledby="vault-tab">
                 <!-- 4. Consolidated Document Vault Card -->
                 <div class="card border mb-4 shadow-sm" style="border-radius: 18px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -1739,16 +2992,28 @@
                                 All Documents <span class="chip-count">{{ $dossierData['allDocuments']->count() }}</span>
                             </button>
                             <button type="button" class="ct-filter-chip" data-module="lease">
-                                Lease <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'lease')->count() }}</span>
+                                1. Lease <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'lease')->count() }}</span>
                             </button>
                             <button type="button" class="ct-filter-chip" data-module="mining">
-                                Mining Plan <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'mining')->count() }}</span>
+                                2. Mining Plan <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'mining')->count() }}</span>
                             </button>
                             <button type="button" class="ct-filter-chip" data-module="environment">
-                                Environment <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'environment')->count() }}</span>
+                                3. Environment <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'environment')->count() }}</span>
+                            </button>
+                            <button type="button" class="ct-filter-chip" data-module="ppt">
+                                4. PPT <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'ppt')->count() }}</span>
                             </button>
                             <button type="button" class="ct-filter-chip" data-module="ec">
-                                EC Certificate <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'ec')->count() }}</span>
+                                5. EC Certificate <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'ec')->count() }}</span>
+                            </button>
+                            <button type="button" class="ct-filter-chip" data-module="compliance">
+                                6. Compliance <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'compliance')->count() }}</span>
+                            </button>
+                            <button type="button" class="ct-filter-chip" data-module="dgps">
+                                7. DGPS <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'dgps')->count() }}</span>
+                            </button>
+                            <button type="button" class="ct-filter-chip" data-module="drone">
+                                8. Drone <span class="chip-count">{{ $dossierData['allDocuments']->where('module_code', 'drone')->count() }}</span>
                             </button>
                         </div>
                     </div>
@@ -1790,8 +3055,18 @@
                                                 <span class="ct-badge-warning">Mining Plan</span>
                                             @elseif($doc['module_code'] === 'environment')
                                                 <span class="ct-badge-success">Environment</span>
-                                            @else
+                                            @elseif($doc['module_code'] === 'ppt')
+                                                <span class="badge" style="background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe;">PPT Dept</span>
+                                            @elseif($doc['module_code'] === 'ec')
                                                 <span class="badge bg-purple text-white">EC Certificate</span>
+                                            @elseif($doc['module_code'] === 'compliance')
+                                                <span class="badge" style="background:#ccfbf1; color:#0d9488; border:1px solid #99f6e4;">Compliance</span>
+                                            @elseif($doc['module_code'] === 'dgps')
+                                                <span class="badge" style="background:#e0e7ff; color:#4f46e5; border:1px solid #c7d2fe;">DGPS</span>
+                                            @elseif($doc['module_code'] === 'drone')
+                                                <span class="badge" style="background:#ffedd5; color:#ea580c; border:1px solid #fed7aa;">Drone 3D</span>
+                                            @else
+                                                <span class="badge bg-secondary text-white">{{ ucfirst($doc['module_code']) }}</span>
                                             @endif
                                         </td>
                                         <td class="text-muted fs-13">{{ $doc['folder'] }}</td>
@@ -1825,6 +3100,107 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <!-- End Document Vault Tab Pane -->
+        </div>
+        <!-- End customerWorkspaceContent -->
+    @endif
+
+                <!-- Modal: All Quarry Concessions Directory (for customers with 20+ leases) -->
+                <div class="modal fade no-print" id="browseConcessionsModal" tabindex="-1" aria-labelledby="browseConcessionsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                            <div class="modal-header border-bottom py-3 px-4" style="background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%); color: #fff;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-geo-alt-fill text-warning fs-5"></i>
+                                    <h5 class="modal-title fw-bold text-white mb-0" id="browseConcessionsModalLabel">
+                                        All Quarry Concessions Directory ({{ count($dossierData['fullCycleChains'] ?? []) }} Concessions)
+                                    </h5>
+                                </div>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="row g-2 mb-3 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-light border"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" id="concessionModalSearch" class="form-control" placeholder="Search by SF No, Village, Taluk, Mineral, Application No..." onkeyup="filterConcessionsModal(this.value)">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-md-end text-muted small">
+                                        Click <strong>Track This Quarry</strong> to switch active 8-stage lifecycle tracker.
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 520px;">
+                                    <table class="table table-hover align-middle mb-0" id="concessionsModalTable">
+                                        <thead class="table-light sticky-top">
+                                            <tr class="fs-12 text-uppercase" style="color: #0f172a; font-weight: 700;">
+                                                <th>#</th>
+                                                <th>District</th>
+                                                <th>Application / Common ID</th>
+                                                <th>Village & Taluk</th>
+                                                <th>SF No</th>
+                                                <th>Mineral</th>
+                                                <th>Extent</th>
+                                                <th>Current Stage</th>
+                                                <th class="text-end">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($dossierData['fullCycleChains'] as $mIdx => $cRow)
+                                            <tr class="concession-modal-row" data-search="{{ strtolower(($cRow['title'] ?? '') . ' ' . ($cRow['village'] ?? '') . ' ' . ($cRow['taluk'] ?? '') . ' ' . ($cRow['district_name'] ?? '') . ' ' . ($cRow['survey_nos'] ?? '') . ' ' . ($cRow['mineral_name'] ?? '') . ' ' . ($cRow['lease']?->common_id ?? '')) }}">
+                                                <td class="fw-bold text-muted fs-12">{{ $mIdx + 1 }}</td>
+                                                <td>
+                                                    <span class="badge bg-light text-dark border">
+                                                        <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ $cRow['district_name'] }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-dark fs-13 d-block">{{ $cRow['lease']?->application_no }}</strong>
+                                                    @if($cRow['lease']?->common_id)
+                                                        <small class="text-primary font-monospace">{{ $cRow['lease']->common_id }}</small>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <div class="fs-13 fw-semibold text-dark">{{ $cRow['village'] }}</div>
+                                                    <small class="text-muted">{{ $cRow['taluk'] }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="sf-pill-badge">{{ $cRow['survey_nos'] ?: '—' }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="mineral-pill-badge">{{ $cRow['mineral_name'] }}</span>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-success">{{ number_format($cRow['area_extent_ha'], 2) }} Ha</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-11">
+                                                        {{ $cRow['current_stage_label'] }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    @if(($dossierData['selectedChainId'] ?? '') === $cRow['id'])
+                                                        <span class="badge bg-success px-3 py-2 rounded-pill">
+                                                            <i class="bi bi-check-circle me-1"></i> Active
+                                                        </span>
+                                                    @else
+                                                        <a href="?tab=lifecycle&chain={{ $cRow['id'] }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                            Track &rarr;
+                                                        </a>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
 
             </div>
             <!-- End printable dossier area -->
@@ -1902,7 +3278,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!data.results || data.results.length === 0) {
                         searchDropdown.innerHTML = `
                             <div class="p-4 text-center text-muted fs-13">
-                                <i class="bi bi-info-circle fs-20 d-block mb-1 text-secondary"></i>
+                                <i class="bi bi-info-circle fs-20 d-block mb-1 text-primary"></i>
                                 No matching customers found for "<strong>${query}</strong>".
                                 <div class="mt-1 fs-12 text-muted">Try searching by 10-digit mobile, Customer Unique ID, or Aadhaar.</div>
                             </div>
@@ -1925,7 +3301,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <span>${c.company || 'Individual'}</span>
                                             <span>&bull;</span>
                                             <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>${c.district}</span>
-                                            ${c.aadhaar ? `<span>&bull;</span><span class="badge bg-light text-secondary border"><i class="bi bi-person-vcard me-1"></i>${c.aadhaar}</span>` : ''}
+                                            ${c.aadhaar ? `<span>&bull;</span><span class="badge bg-light text-dark border"><i class="bi bi-person-vcard me-1"></i>${c.aadhaar}</span>` : ''}
                                             ${c.mobile ? `<span>&bull;</span><span class="badge bg-light text-muted border"><i class="bi bi-telephone me-1"></i>${c.mobile}</span>` : ''}
                                             ${c.secondary_mobile ? `<span>&bull;</span><span class="badge bg-light text-muted border"><i class="bi bi-telephone-plus me-1"></i>Sec: ${c.secondary_mobile}</span>` : ''}
                                         </div>
@@ -2030,6 +3406,346 @@ document.addEventListener('DOMContentLoaded', function() {
     if (docSearchInput) {
         docSearchInput.addEventListener('input', applyDocFilter);
     }
+
+    // ==========================================
+    // 1. PORTFOLIO CONCESSIONS PAGINATION & FILTER
+    // ==========================================
+    let portfolioCurrentPage = 1;
+    let portfolioPageSize = 10;
+
+    function getPortfolioFilteredRows() {
+        const portSearch = document.getElementById('portfolioTableSearch');
+        const searchVal = portSearch ? portSearch.value.toLowerCase().trim() : '';
+        const activeDistrictBtn = document.querySelector('.district-filter-btn.active');
+        const activeDistrict = activeDistrictBtn ? activeDistrictBtn.getAttribute('data-district') : 'all';
+
+        const allRows = Array.from(document.querySelectorAll('.portfolio-concession-row'));
+        return allRows.filter(row => {
+            const rowDistrict = row.getAttribute('data-district') || '';
+            const searchData = row.getAttribute('data-search') || '';
+            const matchesDistrict = (activeDistrict === 'all' || rowDistrict === activeDistrict);
+            const matchesSearch = (!searchVal || searchData.includes(searchVal));
+            return matchesDistrict && matchesSearch;
+        });
+    }
+
+    window.updatePortfolioPagination = function() {
+        const allRows = Array.from(document.querySelectorAll('.portfolio-concession-row'));
+        if (allRows.length === 0) return;
+
+        const matchingRows = getPortfolioFilteredRows();
+        const total = matchingRows.length;
+        const totalPages = Math.max(1, Math.ceil(total / portfolioPageSize));
+
+        if (portfolioCurrentPage > totalPages) portfolioCurrentPage = totalPages;
+        if (portfolioCurrentPage < 1) portfolioCurrentPage = 1;
+
+        // Hide all rows first
+        allRows.forEach(row => row.style.display = 'none');
+
+        // Show page slice
+        const startIdx = (portfolioCurrentPage - 1) * portfolioPageSize;
+        const endIdx = Math.min(startIdx + portfolioPageSize, total);
+
+        for (let i = startIdx; i < endIdx; i++) {
+            if (matchingRows[i]) {
+                matchingRows[i].style.display = '';
+            }
+        }
+
+        // Update Info text
+        const infoEl = document.getElementById('portfolioPageInfo');
+        if (infoEl) {
+            if (total === 0) {
+                infoEl.innerHTML = 'Showing <strong>0</strong> concessions';
+            } else {
+                infoEl.innerHTML = `Showing <strong>${startIdx + 1}</strong> to <strong>${endIdx}</strong> of <strong>${total}</strong> concessions`;
+            }
+        }
+
+        // Render Page Buttons
+        renderPortfolioPageBtns(totalPages);
+    };
+
+    function renderPortfolioPageBtns(totalPages) {
+        const container = document.getElementById('portfolioPageBtns');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        const prevDisabled = portfolioCurrentPage <= 1 ? 'disabled' : '';
+        html += `<button type="button" class="ct-page-btn" ${prevDisabled} onclick="gotoPortfolioPage(${portfolioCurrentPage - 1})" title="Previous Page"><i class="bi bi-chevron-left"></i></button>`;
+
+        const maxVisible = 5;
+        let startPage = Math.max(1, portfolioCurrentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button type="button" class="ct-page-btn" onclick="gotoPortfolioPage(1)">1</button>`;
+            if (startPage > 2) {
+                html += `<span class="px-1 text-muted">&hellip;</span>`;
+            }
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+            const activeClass = p === portfolioCurrentPage ? 'active' : '';
+            html += `<button type="button" class="ct-page-btn ${activeClass}" onclick="gotoPortfolioPage(${p})">${p}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span class="px-1 text-muted">&hellip;</span>`;
+            }
+            html += `<button type="button" class="ct-page-btn" onclick="gotoPortfolioPage(${totalPages})">${totalPages}</button>`;
+        }
+
+        const nextDisabled = portfolioCurrentPage >= totalPages ? 'disabled' : '';
+        html += `<button type="button" class="ct-page-btn ${nextDisabled} onclick="gotoPortfolioPage(${portfolioCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
+
+        container.innerHTML = html;
+    }
+
+    window.gotoPortfolioPage = function(page) {
+        portfolioCurrentPage = page;
+        window.updatePortfolioPagination();
+        const tableCard = document.getElementById('portfolioTableCard');
+        if (tableCard) {
+            tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    window.changePortfolioPageSize = function(size) {
+        portfolioPageSize = parseInt(size, 10) || 10;
+        portfolioCurrentPage = 1;
+        window.updatePortfolioPagination();
+    };
+
+    // District Filtering for Quarry Concessions
+    window.filterByDistrict = function(districtSlug, btn) {
+        document.querySelectorAll('.district-filter-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        portfolioCurrentPage = 1;
+        window.updatePortfolioPagination();
+
+        const select = document.getElementById('quarryChainSelect');
+        if (!select) return;
+
+        let firstMatch = null;
+        const optgroups = select.querySelectorAll('optgroup');
+        optgroups.forEach(og => {
+            let hasVisible = false;
+            og.querySelectorAll('option').forEach(opt => {
+                const optDist = opt.getAttribute('data-district');
+                if (districtSlug === 'all' || optDist === districtSlug) {
+                    opt.hidden = false;
+                    hasVisible = true;
+                    if (!firstMatch) firstMatch = opt.value;
+                } else {
+                    opt.hidden = true;
+                }
+            });
+            og.hidden = !hasVisible;
+        });
+
+        const lifecyclePane = document.getElementById('lifecycle-pane');
+        const isLifecycleActive = lifecyclePane && (lifecyclePane.classList.contains('active') || lifecyclePane.classList.contains('show'));
+
+        const currentOpt = select.selectedOptions[0];
+        if (currentOpt && currentOpt.hidden && firstMatch) {
+            select.value = firstMatch;
+            if (isLifecycleActive) {
+                window.location.href = '?tab=lifecycle&chain=' + encodeURIComponent(firstMatch);
+            }
+        }
+    };
+
+    // High-Density Portfolio Concessions Table Search
+    window.filterPortfolioTable = function(searchVal) {
+        portfolioCurrentPage = 1;
+        window.updatePortfolioPagination();
+    };
+
+    // Switch to Lifecycle Tab
+    window.switchToLifecycleTab = function(chainId) {
+        const lifecycleTabBtn = document.getElementById('lifecycle-tab');
+        if (lifecycleTabBtn) {
+            lifecycleTabBtn.click();
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', 'lifecycle');
+            if (chainId) newUrl.searchParams.set('chain', chainId);
+            history.replaceState(null, '', newUrl);
+        }
+    };
+
+    // Modal Search Filter
+    window.filterConcessionsModal = function(searchVal) {
+        const q = (searchVal || '').toLowerCase().trim();
+        document.querySelectorAll('.concession-modal-row').forEach(row => {
+            const text = row.getAttribute('data-search') || '';
+            row.style.display = (!q || text.includes(q)) ? '' : 'none';
+        });
+    };
+
+    // ==========================================
+    // 2. STANDALONE SERVICES PAGINATION & FILTER
+    // ==========================================
+    let srvCurrentPage = 1;
+    let srvPageSize = 9;
+    let srvActiveFilter = 'all';
+
+    function getStandaloneFilteredCards() {
+        const allCards = Array.from(document.querySelectorAll('.standalone-card-col'));
+        return allCards.filter(card => {
+            const code = card.getAttribute('data-srv-code') || '';
+            return (srvActiveFilter === 'all' || code === srvActiveFilter);
+        });
+    }
+
+    window.updateStandalonePagination = function() {
+        const allCards = Array.from(document.querySelectorAll('.standalone-card-col'));
+        if (allCards.length === 0) return;
+
+        const matchingCards = getStandaloneFilteredCards();
+        const total = matchingCards.length;
+        const totalPages = Math.max(1, Math.ceil(total / srvPageSize));
+
+        if (srvCurrentPage > totalPages) srvCurrentPage = totalPages;
+        if (srvCurrentPage < 1) srvCurrentPage = 1;
+
+        // Hide all cards
+        allCards.forEach(card => card.style.display = 'none');
+
+        // Show page slice
+        const startIdx = (srvCurrentPage - 1) * srvPageSize;
+        const endIdx = Math.min(startIdx + srvPageSize, total);
+
+        for (let i = startIdx; i < endIdx; i++) {
+            if (matchingCards[i]) {
+                matchingCards[i].style.display = '';
+            }
+        }
+
+        // Update info text
+        const infoEl = document.getElementById('standalonePageInfo');
+        if (infoEl) {
+            if (total === 0) {
+                infoEl.innerHTML = 'Showing <strong>0</strong> services';
+            } else {
+                infoEl.innerHTML = `Showing <strong>${startIdx + 1}</strong> to <strong>${endIdx}</strong> of <strong>${total}</strong> services`;
+            }
+        }
+
+        // Render page buttons
+        renderStandalonePageBtns(totalPages);
+    };
+
+    function renderStandalonePageBtns(totalPages) {
+        const container = document.getElementById('standalonePageBtns');
+        if (!container) return;
+
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        const prevDisabled = srvCurrentPage <= 1 ? 'disabled' : '';
+        html += `<button type="button" class="ct-page-btn" ${prevDisabled} onclick="gotoStandalonePage(${srvCurrentPage - 1})" title="Previous Page"><i class="bi bi-chevron-left"></i></button>`;
+
+        const maxVisible = 5;
+        let startPage = Math.max(1, srvCurrentPage - 2);
+        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+        if (endPage - startPage < maxVisible - 1) {
+            startPage = Math.max(1, endPage - maxVisible + 1);
+        }
+
+        if (startPage > 1) {
+            html += `<button type="button" class="ct-page-btn" onclick="gotoStandalonePage(1)">1</button>`;
+            if (startPage > 2) {
+                html += `<span class="px-1 text-muted">&hellip;</span>`;
+            }
+        }
+
+        for (let p = startPage; p <= endPage; p++) {
+            const activeClass = p === srvCurrentPage ? 'active' : '';
+            html += `<button type="button" class="ct-page-btn ${activeClass}" onclick="gotoStandalonePage(${p})">${p}</button>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                html += `<span class="px-1 text-muted">&hellip;</span>`;
+            }
+            html += `<button type="button" class="ct-page-btn" onclick="gotoStandalonePage(${totalPages})">${totalPages}</button>`;
+        }
+
+        const nextDisabled = srvCurrentPage >= totalPages ? 'disabled' : '';
+        html += `<button type="button" class="ct-page-btn ${nextDisabled} onclick="gotoStandalonePage(${srvCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
+
+        container.innerHTML = html;
+    }
+
+    window.gotoStandalonePage = function(page) {
+        srvCurrentPage = page;
+        window.updateStandalonePagination();
+        const gridEl = document.getElementById('standaloneCardsGrid');
+        if (gridEl) {
+            gridEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    window.changeStandalonePageSize = function(size) {
+        srvPageSize = parseInt(size, 10) || 9;
+        srvCurrentPage = 1;
+        window.updateStandalonePagination();
+    };
+
+    // Standalone Services Filtering
+    window.filterStandaloneServices = function(srvType, btn) {
+        srvActiveFilter = srvType;
+        srvCurrentPage = 1;
+        const chipContainer = document.getElementById('standaloneFilterChips');
+        if (chipContainer) {
+            chipContainer.querySelectorAll('.ct-filter-chip').forEach(c => c.classList.remove('active'));
+        }
+        if (btn) btn.classList.add('active');
+        window.updateStandalonePagination();
+    };
+
+    // Initialize Paginations on Load
+    window.updatePortfolioPagination();
+    window.updateStandalonePagination();
+
+    // Tab switching and URL synchronization
+    const tabButtons = document.querySelectorAll('#customerWorkspaceTabs button[data-bs-toggle="pill"]');
+    tabButtons.forEach(btn => {
+        btn.addEventListener('shown.bs.tab', function(e) {
+            const targetId = e.target.getAttribute('data-bs-target');
+            let tabKey = 'portfolio';
+            if (targetId === '#portfolio-pane') {
+                tabKey = 'portfolio';
+                window.updatePortfolioPagination();
+            } else if (targetId === '#lifecycle-pane') {
+                tabKey = 'lifecycle';
+            } else if (targetId === '#standalone-pane') {
+                tabKey = 'standalone';
+                window.updateStandalonePagination();
+            } else if (targetId === '#vault-pane') {
+                tabKey = 'vault';
+            }
+
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('tab', tabKey);
+            history.replaceState(null, '', newUrl);
+        });
+    });
 });
 </script>
 @endsection

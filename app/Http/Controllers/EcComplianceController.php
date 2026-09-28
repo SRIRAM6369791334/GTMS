@@ -12,6 +12,8 @@ use App\Models\District;
 use App\Models\Mineral;
 use App\Models\ApplicationHandler;
 use App\Models\ApplicationPayment;
+use App\Models\ActivityLog;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -80,29 +82,41 @@ class EcComplianceController extends Controller
                 $draft = [
                     'id'                     => $existing->id,
                     'compliance_no'          => $existing->compliance_no,
-                    'customer_id'            => $existing->customer_id,
-                    'environment_project_id' => $existing->environment_project_id,
-                    'ec_certificate_id'      => $existing->ec_certificate_id,
-                    'project_name'           => $existing->project_name,
-                    'district_id'            => $existing->district_id,
-                    'taluk_village'          => $existing->taluk_village,
-                    'mineral_id'             => $existing->mineral_id,
-                    'compliance_period'      => $existing->compliance_period,
-                    'submission_due_date'    => $existing->submission_due_date ? $existing->submission_due_date->format('Y-m-d') : '2026-12-01',
-                    'parivesh_app_no'        => $existing->parivesh_app_no,
-                    'nabl_lab_name'          => $existing->nabl_lab_name,
-                    'status'                 => $existing->status,
-                    'product_value'          => $existing->product_value,
-                    'paid_amount'            => $existing->paid_amount,
-                    'pending_amount'         => $existing->pending_amount,
-                    'payment_status'         => $existing->payment_status,
-                    'handlers'               => $existing->handlers->toArray(),
+                    'customer_id'              => $existing->customer_id,
+                    'primary_contact_person'   => $existing->primary_contact_person ?: ($existing->customer?->customer_name ?? ''),
+                    'primary_phone'            => $existing->primary_phone ?: ($existing->customer?->mobile_num ?? ''),
+                    'secondary_contact_person' => $existing->secondary_contact_person ?: ($existing->customer?->secondary_contact_person ?? ''),
+                    'secondary_phone'          => $existing->secondary_phone ?: ($existing->customer?->secondary_mobile_num ?? ''),
+                    'environment_project_id'   => $existing->environment_project_id,
+                    'environment_project_name' => $existing->environment_project_name ?: ($existing->environmentProject?->project_name ?? ''),
+                    'ec_certificate_id'        => $existing->ec_certificate_id,
+                    'ec_certificate_file'      => $existing->ec_certificate_file,
+                    'ec_certificate_name'      => $existing->ec_certificate_name,
+                    'project_name'             => $existing->project_name,
+                    'district_id'              => $existing->district_id,
+                    'taluk_village'            => $existing->taluk_village,
+                    'mineral_id'               => $existing->mineral_id,
+                    'compliance_period'        => $existing->compliance_period,
+                    'submission_due_date'      => $existing->submission_due_date ? $existing->submission_due_date->format('Y-m-d') : '2026-12-01',
+                    'parivesh_app_no'          => $existing->parivesh_app_no,
+                    'nabl_lab_name'            => $existing->nabl_lab_name,
+                    'status'                   => $existing->status,
+                    'product_value'            => $existing->product_value,
+                    'paid_amount'              => $existing->paid_amount,
+                    'pending_amount'           => $existing->pending_amount,
+                    'payment_status'           => $existing->payment_status,
+                    'handlers'                 => $existing->handlers->toArray(),
                 ];
                 session(['ec_compliance_wizard' => $draft]);
             }
         }
 
-        $customers   = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'company_name', 'mimas_no', 'mobile_num']);
+        if ($step === 1 && $request->filled('customer_id') && empty($draft['customer_id'])) {
+            $draft['customer_id'] = (int) $request->input('customer_id');
+            session(['ec_compliance_wizard' => $draft]);
+        }
+
+        $customers   = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'secondary_contact_person', 'company_name', 'mimas_no', 'mobile_num', 'secondary_mobile_num']);
         $districts   = District::orderBy('name')->get(['id', 'name']);
         $minerals    = Mineral::orderBy('name')->get(['id', 'name']);
         $envProjects = EnvironmentProject::orderBy('project_name')->get(['id', 'project_name', 'customer_id']);
@@ -171,15 +185,29 @@ class EcComplianceController extends Controller
 
         // Step 1: Project & Period
         if ($step === 1) {
-            $draft['customer_id']            = $request->input('customer_id');
-            $draft['environment_project_id'] = $request->input('environment_project_id');
-            $draft['ec_certificate_id']      = $request->input('ec_certificate_id');
-            $draft['project_name']           = $request->input('project_name');
-            $draft['district_id']            = $request->input('district_id');
-            $draft['taluk_village']          = $request->input('taluk_village');
-            $draft['compliance_period']      = $request->input('compliance_period', 'April 2026 - September 2026');
-            $draft['submission_due_date']    = $request->input('submission_due_date', '2026-12-01');
-            $draft['compliance_no']          = $request->input('compliance_no', 'HYC-' . date('Y') . '-' . sprintf('%04d', EcCompliance::count() + 1));
+            $draft['customer_id']              = $request->input('customer_id');
+            $draft['environment_project_id']   = $request->input('environment_project_id');
+            $draft['environment_project_name'] = $request->input('environment_project_name');
+            $draft['ec_certificate_id']        = $request->input('ec_certificate_id');
+            $draft['project_name']             = $request->input('project_name');
+            $draft['district_id']              = $request->input('district_id');
+            $draft['taluk_village']            = $request->input('taluk_village');
+            $draft['compliance_period']        = $request->input('compliance_period', 'April 2026 - September 2026');
+            $draft['compliance_year']          = $request->input('compliance_year', date('Y'));
+            $draft['submission_due_date']      = $request->input('submission_due_date', '2026-12-01');
+            $draft['compliance_no']            = $request->input('compliance_no', 'HYC-' . date('Y') . '-' . sprintf('%04d', EcCompliance::count() + 1));
+            $draft['primary_contact_person']   = $request->input('primary_contact_person');
+            $draft['primary_phone']            = $request->input('primary_phone');
+            $draft['secondary_contact_person'] = $request->input('secondary_contact_person');
+            $draft['secondary_phone']          = $request->input('secondary_phone');
+
+            if ($request->hasFile('ec_certificate_file')) {
+                $file = $request->file('ec_certificate_file');
+                $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $file->getClientOriginalName());
+                $filePath = $file->storeAs('uploads/compliance', $fileName, 'public');
+                $draft['ec_certificate_file'] = $filePath;
+                $draft['ec_certificate_name'] = $file->getClientOriginalName();
+            }
         }
 
         // Step 3: NABL Lab Info
@@ -246,14 +274,21 @@ class EcComplianceController extends Controller
             $compliance = EcCompliance::create([
                 'compliance_no'               => $complianceNo,
                 'customer_id'                 => $customerId,
+                'primary_contact_person'      => $request->input('primary_contact_person', $draft['primary_contact_person'] ?? null),
+                'primary_phone'               => $request->input('primary_phone', $draft['primary_phone'] ?? null),
+                'secondary_contact_person'    => $request->input('secondary_contact_person', $draft['secondary_contact_person'] ?? null),
+                'secondary_phone'             => $request->input('secondary_phone', $draft['secondary_phone'] ?? null),
                 'environment_project_id'      => $request->input('environment_project_id', $draft['environment_project_id'] ?? null),
+                'environment_project_name'    => $request->input('environment_project_name', $draft['environment_project_name'] ?? null),
                 'ec_certificate_id'           => $request->input('ec_certificate_id', $draft['ec_certificate_id'] ?? null),
+                'ec_certificate_file'         => $draft['ec_certificate_file'] ?? null,
+                'ec_certificate_name'         => $draft['ec_certificate_name'] ?? null,
                 'project_name'                => $request->input('project_name', $draft['project_name'] ?? 'Environmental Clearance Half-Yearly Compliance'),
                 'district_id'                 => $districtId,
                 'taluk_village'               => $request->input('taluk_village', $draft['taluk_village'] ?? 'Quarry Site / Taluk'),
                 'mineral_id'                  => $request->input('mineral_id', $draft['mineral_id'] ?? Mineral::value('id')),
                 'compliance_period'           => $request->input('compliance_period', $draft['compliance_period'] ?? 'April 2026 - September 2026'),
-                'compliance_year'             => date('Y'),
+                'compliance_year'             => $request->input('compliance_year', $draft['compliance_year'] ?? date('Y')),
                 'submission_due_date'         => $request->input('submission_due_date', $draft['submission_due_date'] ?? '2026-12-01'),
                 'submission_date'             => date('Y-m-d'),
                 'parivesh_app_no'             => $request->input('parivesh_app_no', $draft['parivesh_app_no'] ?? 'SIA/TN/MIN/' . rand(10000, 99999) . '/' . date('Y')),
@@ -306,6 +341,22 @@ class EcComplianceController extends Controller
                 'payment_status'   => $pStatus,
                 'notes'            => $request->input('payment_notes', $draft['payment_notes'] ?? 'Compliance monitoring fee settled'),
             ]);
+
+            // Save uploaded EC Certificate into documents table
+            $certPath = $compliance->ec_certificate_file;
+            if ($certPath) {
+                EcComplianceDocument::create([
+                    'ec_compliance_id' => $compliance->id,
+                    'folder_category'  => 'documents',
+                    'document_name'    => 'Prior Environmental Clearance (EC) Certificate',
+                    'file_name'        => $compliance->ec_certificate_name ?? basename($certPath),
+                    'file_path'        => $certPath,
+                    'file_type'        => pathinfo($certPath, PATHINFO_EXTENSION),
+                    'file_size'        => @filesize(storage_path('app/public/' . $certPath)) ?: null,
+                    'status'           => 'uploaded',
+                    'is_mandatory'     => false,
+                ]);
+            }
 
             DB::commit();
             session()->forget('ec_compliance_wizard');
@@ -366,5 +417,36 @@ class EcComplianceController extends Controller
             'file_url'  => asset('storage/' . $filePath),
             'file_size' => round($file->getSize() / 1024) . ' KB',
         ]);
+    }
+
+    /**
+     * Update EC Compliance Status (standard or custom manual status).
+     */
+    public function updateStatus(Request $request, int $id)
+    {
+        $request->validate([
+            'status'       => 'required|string|max:100',
+            'status_notes' => 'nullable|string|max:1000',
+        ]);
+
+        $compliance = EcCompliance::findOrFail($id);
+        $cleanStatus = trim($request->status);
+
+        $updateData = ['status' => $cleanStatus];
+        if ($request->has('status_notes')) {
+            $updateData['status_notes'] = $request->status_notes;
+        }
+        $compliance->update($updateData);
+
+        $noteLog = !empty($request->status_notes) ? " Notes: {$request->status_notes}" : '';
+        ActivityLog::create([
+            'loggable_type' => EcCompliance::class,
+            'loggable_id'   => $compliance->id,
+            'action'        => 'status_updated',
+            'description'   => "EC Compliance status updated to '{$cleanStatus}'.{$noteLog}",
+            'user_id'       => Auth::id() ?? 1,
+        ]);
+
+        return redirect()->back()->with('success', "Status updated to '{$cleanStatus}' successfully.");
     }
 }

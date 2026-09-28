@@ -170,8 +170,8 @@ class EnvironmentClearanceTest extends TestCase
         $response->assertSee('Category B1');
         $response->assertSee('Category B2');
         $response->assertSee('customer_datalist');
-        $response->assertSee('Sub Category 1');
-        $response->assertSee('Sub Category 2');
+        $response->assertSee('TOR');
+        $response->assertSee('ETA');
     }
 
     /**
@@ -718,10 +718,10 @@ class EnvironmentClearanceTest extends TestCase
 
         $uniq = uniqid();
 
-        // 1. Intake: Create B1 project with SC1
+        // 1. Intake: Create B1 project with TOR
         $createData = [
             'category'      => 'B1',
-            'sub_category'  => 'SC1',
+            'sub_category'  => 'TOR',
             'customer_id'   => $customer->id,
             'client_name'   => 'B1 Test Quarry Owner',
             'company_name'  => 'B1 Granites Private Limited',
@@ -737,7 +737,7 @@ class EnvironmentClearanceTest extends TestCase
         $project = EnvironmentProject::where('project_name', 'B1 Statutory Quarry Flow ' . $uniq)->first();
         $this->assertNotNull($project);
         $this->assertEquals('B1', $project->category);
-        $this->assertEquals('SC1', $project->sub_category);
+        $this->assertEquals('TOR', $project->sub_category);
         $this->assertEquals('sc1_prep', $project->b1_stage);
         $this->assertEquals('draft', $project->status);
         $this->assertCount(5, $project->folder_names);
@@ -766,15 +766,15 @@ class EnvironmentClearanceTest extends TestCase
         $this->assertEquals('approved', $pptStage1->status);
 
         $project->refresh();
-        $this->assertEquals('SC2', $project->sub_category);
+        $this->assertEquals('ETA', $project->sub_category);
         $this->assertEquals('sc2_prep', $project->b1_stage);
         $this->assertEquals('draft', $project->status);
         $this->assertCount(6, $project->folder_names);
 
-        // Verify show page displays SC2 state and submit button
+        // Verify show page displays ETA state and submit button
         $showRes1 = $this->get(route('eviron.show', $project->id));
         $showRes1->assertStatus(200);
-        $showRes1->assertSee('Submit SC2 to PPT Department');
+        $showRes1->assertSee('Submit ETA to PPT Department');
 
         // 4. Submit SC2 to PPT Department (Stage 2 Gate)
         $resSubmit2 = $this->post(route('eviron.submitSc2ToPpt', $project->id));
