@@ -1,6 +1,58 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 7.3 — CUSTOMER 360 ENTERPRISE WORKSPACE & ONBOARDING LAUNCHPAD (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 7.5 — COMPREHENSIVE AUTH, RBAC, MULTI-TENANCY & USER LIFECYCLE AUDIT & TEST SUITE (COMPLETED & VERIFIED) ✅
+- **Status:** Auth, RBAC, Multi-tenancy, and User Administration fully audited, hardened, and verified with 61 new automated feature tests across 4 comprehensive test suites (672 assertions, 0 failures, 100% pass rate):
+  1. **Branch Management (`tests/Feature/BranchManagementTest.php` - 17 tests passed):**
+     - Full route authorization matrix verified (`branch.view`, `branch.create`, `branch.edit`, `branch.delete`).
+     - Directory listing renders active and inactive branches; user assignment dropdown strictly filters inactive departments.
+     - Validation rules, phone number formats, and status toggle verified.
+     - Safe deletion cascade verified (nullifies `branch_id` on child records without orphaned data).
+     - Edge-case zero-500 exception handling verified for missing or non-existent IDs.
+  2. **Multi-Tenancy Global Scope (`tests/Feature/MultiTenancyBranchScopeTest.php` - 12 tests passed):**
+     - Non-admin users are strictly isolated to records matching their assigned `branch_id`.
+     - Super Admin / Admin role bypass verified across both legacy `role_id = 1` and Spatie `$user->hasRole(['Admin', 'Super Admin'])`.
+     - Automatic injection of `branch_id` upon record creation for non-admin users verified.
+     - Unauthenticated and null-branch contexts verified.
+     - Verified all 8 tenant domain models correctly implement `BelongsToBranch` and register `BranchScope`.
+  3. **Roles & Permissions (`tests/Feature/RolesAndPermissionsTest.php` - 15 tests passed):**
+     - Guest and unauthorized 403 gating strictly enforced across all CRUD endpoints.
+     - Dynamic AJAX permission fetching and synchronization verified (`getRolePermissions`).
+     - Role creation and update with permission synchronization verified.
+     - System critical roles (`Admin`, `Super Admin`) deletion safeguard verified.
+  4. **User Lifecycle & Authentication (`tests/Feature/UserManagementAndAuthTest.php` - 17 tests passed):**
+     - Dual-identifier login verified via both canonical email and generated `user_code` (e.g. `LUK_...`).
+     - Inactive user login rejection with exact user-friendly messaging verified.
+     - Automatic `user_code` sequence generation (padded to 3 digits) and dual role sync (`users.role_id` + Spatie `model_has_roles`).
+     - Fixed PHP 8.2 static call collision on `User::role()` by migrating to `User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))`.
+     - Self-deletion and last-admin deletion safeguards verified.
+     - Avatar file uploading, validation, and disk unlinking verified.
+  5. **Verification & Regression Testing:**
+     - 61/61 Auth feature tests passed (672 assertions).
+     - 12/12 existing application handlers and statutory tests passed (150 assertions).
+     - 100% test pass rate with zero regressions.
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.4 — RBAC ARCHITECTURE HARDENING, PERMISSION SEEDER SYNC & NEW MODULE INTEGRATION (COMPLETED & VERIFIED) ✅
+- **Status:** Resolved all latent RBAC inconsistencies and integrated newly introduced modules (PPT, DGPS, Drone, EC Certificate) cleanly into the system permission matrix:
+  1. **Permission Catalog & Seeder Repair (`RolePermissionSeeder.php`):**
+     - Discovered and resolved the missing `users.delete` permission gap (present in routes and views, but missing from seed catalog).
+     - Catalog expanded to 48 comprehensive granular permissions.
+  2. **Role Hierarchy & New Module Integration:**
+     - **Staff Role (11 permissions):** Granted read-only view access across the new modules (`ec_certificate.view`, `ppt.view`, `dgps.view`, `drone.view`), enabling full sidebar visibility without write/delete permissions.
+     - **Officer Role (22 permissions):** Granted operational permissions (`ec_certificate.view`, `ppt.view`, `ppt.manage`, `dgps.view`, `dgps.manage`, `drone.view`, `drone.manage`) allowing field personnel to record presentation gates, enter GCP coordinates, and manage survey deliverables without administrative deletion privileges.
+     - **Admin Role (48 permissions):** Retains 100% of all catalog permissions + Super Admin bypass via `Gate::before`.
+  3. **Multi-Tenancy Hardening (`BranchScope.php`):**
+     - Upgraded the superadmin check from a hardcoded `user.role_id !== 1` to `$user->hasRole(['Admin', 'Super Admin'])`, preventing administrators from being mistakenly restricted by branch isolation if primary key IDs shift.
+  4. **Route Protection & Syntax Corrections:**
+     - Attached `permission:dashboard.view` middleware to `/dashboard` route in `routes/web.php`.
+     - Fixed HTML attribute syntax error in `creatbranch.blade.php` (contact person placeholder).
+  5. **Verification & Testing:**
+     - Verified clean DB seeding and cache invalidation: `php artisan db:seed --class=RolePermissionSeeder`.
+     - Direct query verification confirmed 48 permissions, `users.delete` active, Staff = 11, Officer = 22, Admin = 48.
+     - `php artisan view:clear` and `php artisan view:cache` compiled 100% clean.
+     - Full automated feature tests passing: 12 passed (150 assertions), 0 failures.
+
+## Previous Phase: PHASE 7.3 — CUSTOMER 360 ENTERPRISE WORKSPACE & ONBOARDING LAUNCHPAD (COMPLETED & VERIFIED) ✅
 - **Status:** Re-architected and fixed the page flow of Customer Tracking (`/customer-tracking/{slug}`) using `/junior-to-senior` staff-engineer principles, solving user flow challenges for both zero-application onboarding clients (`raja-mining-works-6202`) and high-volume 20+ to 108 quarry clients (`sri-bala-traders`):
   1. **Clean Viewport & Elimination of Duplicate Clutter:**
      - Guarded global 5-card KPI bar and giant search hero with `@if(!$customer)`, hiding them completely when viewing a customer dossier.

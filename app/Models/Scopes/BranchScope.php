@@ -16,8 +16,8 @@ class BranchScope implements Scope
     {
         if (Auth::hasUser()) {
             $user = Auth::user();
-            // If user has a specific branch assigned and is not a superadmin (role_id !== 1)
-            if (!empty($user->branch_id) && $user->role_id !== 1) {
+            // If user has a specific branch assigned and is not a superadmin (role_id !== 1 and not Admin/Super Admin role)
+            if (!empty($user->branch_id) && $user->role_id !== 1 && !$user->hasRole(['Admin', 'Super Admin'])) {
                 $builder->where($model->getTable() . '.branch_id', $user->branch_id);
             }
         }

@@ -43,6 +43,7 @@ class BranchController extends Controller
      public function update(Request $request){
 
         $request->validate([
+            'id' => 'required|exists:branches,id',
             'branch_name' => 'required',
             'contact_person' => 'required',
             'mobile' => 'required',
@@ -57,7 +58,9 @@ class BranchController extends Controller
         $branch->city = $request->city;
         $branch->state = $request->state;
         $branch->pincode = $request->pincode;
-        $branch->status = $request->status;
+        if ($request->has('status')) {
+            $branch->status = $request->status;
+        }
         $branch->save();
 
          return response()->json([
@@ -68,6 +71,10 @@ class BranchController extends Controller
      }
 
      public function destroy(Request $request){
+
+        $request->validate([
+            'id' => 'required|exists:branches,id',
+        ]);
 
         $branch = Branch::find($request->id);
         $branch->delete();

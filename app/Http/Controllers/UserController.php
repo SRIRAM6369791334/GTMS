@@ -42,9 +42,13 @@ class UserController extends Controller
 
         // Upload Image
         if ($request->hasFile('image')) {
+            $uploadDir = public_path('uploads/users');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
             $image = $request->file('image');
             $imageName = time().'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('uploads/users'), $imageName);
+            $image->move($uploadDir, $imageName);
             $user->image = $imageName;
         }
 
@@ -98,12 +102,16 @@ class UserController extends Controller
 
         // Upload Image
         if ($request->hasFile('image')) {
-            if ($user->image && file_exists(public_path('uploads/users/' . $user->image))) {
-                unlink(public_path('uploads/users/' . $user->image));
+            $uploadDir = public_path('uploads/users');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            if ($user->image && file_exists($uploadDir . '/' . $user->image)) {
+                unlink($uploadDir . '/' . $user->image);
             }
             $image = $request->file('image');
             $imageName = time().'.'.$image->getClientOriginalExtension();
-            $image->move(public_path('uploads/users'), $imageName);
+            $image->move($uploadDir, $imageName);
             $user->image = $imageName;
         }
 
@@ -139,7 +147,7 @@ class UserController extends Controller
             ]);
         }
 
-        if ($user->hasRole('Admin') && User::role('Admin')->count() <= 1) {
+        if ($user->hasRole('Admin') && User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->count() <= 1) {
             return response()->json([
                 'status' => 0,
                 'message' => 'The last Admin account cannot be deleted.',

@@ -85,3 +85,47 @@ Generate or update the complete 24-file documentation suite under `docs/` accord
 ## Follow-up — 2026-09-24T12:54:14Z
 
 The user has refreshed their session and requested: 'check and again start work da' on reviewer_2 (a25e7dcb), challenger_1 (ced4e7b3), and challenger_2 (82d4a44c). Please check on these three gating subagents, collect their verdicts, update GATE_STATUS.md, and finalize the Milestone 6 Victory Audit.
+
+## 2026-09-28T05:54:24Z
+
+Execute a comprehensive architectural audit, end-to-end route verification, and automated feature test suite for the GTMS Authentication and Administration modules: Department / Branch (`/branch`), Roles & Permissions (`/roles`), and User Management (`/user`).
+
+Working directory: C:\xampp\htdocs\GTMS\gtms
+Integrity mode: development
+
+## Requirements
+
+### R1. Comprehensive Feature Test Suite for Branch Management
+Create a comprehensive test suite for `BranchController` covering:
+- Viewing branch directory with active/inactive filtering
+- Creating branches with validation
+- Updating branch metadata and status
+- Deleting branches and verifying database integrity
+
+### R2. Comprehensive Feature Test Suite for Roles and Permissions
+Create tests for `RolesController` covering:
+- Viewing role matrix and assigned permission counts
+- Creating new roles and synchronizing permissions
+- Dynamic AJAX fetching of role permissions
+- Updating role names and permission sets
+- Destruction safeguards (ensuring Admin and Super Admin cannot be deleted)
+
+### R3. Comprehensive Feature Test Suite for User Lifecycle & Dual RBAC
+Create tests for `UserController` and `AuthController` covering:
+- Dual-identifier login via both canonical email and user_code (e.g. `LUK_001`)
+- User provisioning with automatic `user_code` generation
+- Dual role synchronization (verifying `users.role_id` and Spatie `model_has_roles` remain synchronized)
+- Image uploading and unlinking on avatar replacement
+- Self-deletion and last-admin deletion protections
+- Permission middleware gating across all CRUD routes
+
+### R4. Multi-Tenancy Scope Verification
+Verify `BranchScope` correctly restricts non-admin users to their assigned `branch_id`, while allowing Super Admin (`hasRole(['Admin', 'Super Admin'])`) unrestricted statewide access.
+
+## Acceptance Criteria
+
+### Automated Test Coverage
+- [ ] All new tests pass with `php artisan test`
+- [ ] Zero regressions across existing test suites (`ApplicationHandlersAndPaymentsTest`, `PptDgpsAndEcComplianceTest`)
+- [ ] Zero unhandled 500 exceptions across GET/POST routes for `/branch`, `/roles`, `/user`
+

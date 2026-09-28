@@ -47,6 +47,7 @@ class RolesController extends Controller
         $request->validate([
             'name' => 'required|unique:roles,name',
             'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $role = Role::create([
@@ -84,6 +85,7 @@ class RolesController extends Controller
             'id' => 'required|exists:roles,id',
             'name' => 'required|unique:roles,name,' . $request->id,
             'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $role = Role::findOrFail($request->id);

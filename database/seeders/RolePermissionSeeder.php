@@ -42,6 +42,8 @@ class RolePermissionSeeder extends Seeder
             'users.view',
             'users.create',
             'users.edit',
+            'users.delete',
+
             // Customers
             'customer.view',
             'customer.create',
@@ -121,6 +123,10 @@ class RolePermissionSeeder extends Seeder
             'environment.view',
             'environment.b2.view',
             'users.view',
+            'ec_certificate.view',
+            'ppt.view',
+            'dgps.view',
+            'drone.view',
         ]);
 
         // 3. Officer Role
@@ -144,6 +150,13 @@ class RolePermissionSeeder extends Seeder
             'environment.b2.create',
             'environment.b2.upload',
             'environment.b2.review',
+            'ec_certificate.view',
+            'ppt.view',
+            'ppt.manage',
+            'dgps.view',
+            'dgps.manage',
+            'drone.view',
+            'drone.manage',
         ]);
 
         // Default Branch if none exists

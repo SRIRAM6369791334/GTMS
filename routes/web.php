@@ -105,7 +105,7 @@ Route::middleware('auth')->group(function () {
             'activeCount', 'pendingCount', 'approvedCount', 'archivedCount', 'recentApplications', 'districtStats',
             'totalPaid', 'totalPending', 'chartData'
         ));
-    })->name('dashboard');
+    })->middleware('permission:dashboard.view')->name('dashboard');
 
     // Customer Directory (Live Dynamic CRUD)
     Route::middleware('permission:customer.view')->group(function () {
