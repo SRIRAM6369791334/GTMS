@@ -401,7 +401,7 @@ class BranchManagementTest extends TestCase
             'pan' => 'ABCDE' . rand(1000, 9999) . 'F',
             'aadhaar_no' => '9842-' . rand(1000, 9999) . '-' . rand(1000, 9999),
             'slug' => 'kaveri-granites-' . rand(1000, 9999),
-            'status' => 'active',
+            'status' => 1,
         ]);
 
         $district = District::first() ?: District::create([
@@ -495,5 +495,169 @@ class BranchManagementTest extends TestCase
         ]);
         $resInvalid->assertStatus(422);
         $resInvalid->assertJsonValidationErrors(['id']);
+    }
+
+    /**
+     * Group E: Branch Deletion Safeguards & User Cascade (Grill-Me Decided)
+     */
+
+    public function test_last_branch_cannot_be_deleted(): void
+    {
+        $primaryBranch = Branch::first();
+        $this->assertNotNull($primaryBranch);
+
+        // Keep only 1 branch in database
+        $branches = Branch::where('id', '!=', $primaryBranch->id)->get();
+        foreach ($branches as $b) {
+            User::where('branch_id', $b->id)->delete();
+            $b->delete();
+        }
+
+        $this->assertEquals(1, Branch::count());
+
+        $response = $this->actingAs($this->adminUser)->postJson(route('branchdelete'), [
+            'id' => $primaryBranch->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 0,
+            'message' => 'The last remaining Department / Branch cannot be deleted.',
+        ]);
+
+        $this->assertDatabaseHas('branches', ['id' => $primaryBranch->id]);
+    }
+
+    public function test_cannot_delete_own_branch(): void
+    {
+        $ownBranch = Branch::find($this->adminUser->branch_id) ?: Branch::first();
+        $this->adminUser->branch_id = $ownBranch->id;
+        $this->adminUser->save();
+
+        // Create an auxiliary second branch so total count > 1
+        $otherBranch = Branch::create([
+            'branch_name' => 'Auxiliary Branch ' . uniqid(),
+            'contact_person' => 'Aux Contact',
+            'mobile' => '9888800000',
+            'address' => 'Aux Address',
+            'status' => 1,
+        ]);
+
+        // Attempt to delete the branch that the current adminUser belongs to
+        $response = $this->actingAs($this->adminUser)->postJson(route('branchdelete'), [
+            'id' => $ownBranch->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 0,
+            'message' => 'You cannot delete the department your own account is assigned to.',
+        ]);
+
+        $this->assertDatabaseHas('branches', ['id' => $ownBranch->id]);
+    }
+
+    public function test_cannot_delete_branch_holding_only_remaining_admin(): void
+    {
+        // Create an auxiliary branch
+        $branchWithAdmin = Branch::create([
+            'branch_name' => 'Admin Only Branch ' . uniqid(),
+            'contact_person' => 'Sole Admin Host',
+            'mobile' => '9777700000',
+            'address' => 'Admin Only Address',
+            'status' => 1,
+        ]);
+
+        // Move admin to this branch and make sure it's the only admin
+        $this->adminUser->branch_id = $branchWithAdmin->id;
+        $this->adminUser->save();
+
+        // Ensure other users with admin role in other branches don't exist
+        $otherAdmins = User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))
+            ->where('id', '!=', $this->adminUser->id)
+            ->get();
+        foreach ($otherAdmins as $oa) {
+            $oa->removeRole('Admin');
+        }
+
+        // Create an officer with branch.delete permission in another branch to perform the deletion
+        $anotherBranch = Branch::create([
+            'branch_name' => 'Actor Branch ' . uniqid(),
+            'contact_person' => 'Actor Contact',
+            'mobile' => '9666600000',
+            'address' => 'Actor Address',
+            'status' => 1,
+        ]);
+
+        $officerActor = User::create([
+            'name' => 'Officer Actor',
+            'email' => 'officer_actor_' . uniqid() . '@example.com',
+            'password' => bcrypt('Pass@123'),
+            'role_id' => 3,
+            'branch_id' => $anotherBranch->id,
+            'status' => 1,
+        ]);
+        $officerActor->givePermissionTo('branch.delete');
+
+        // Officer attempts to delete branchWithAdmin which contains the sole admin
+        $response = $this->actingAs($officerActor)->postJson(route('branchdelete'), [
+            'id' => $branchWithAdmin->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 0,
+            'message' => 'Cannot delete this department because it contains the only remaining Admin account.',
+        ]);
+
+        $this->assertDatabaseHas('branches', ['id' => $branchWithAdmin->id]);
+    }
+
+    public function test_branch_deletion_cascades_assigned_users(): void
+    {
+        // 1. Create a branch to delete
+        $targetBranch = Branch::create([
+            'branch_name' => 'Cascade Target Branch ' . uniqid(),
+            'contact_person' => 'Cascade Person',
+            'mobile' => '9555500000',
+            'address' => 'Cascade Address',
+            'status' => 1,
+        ]);
+
+        // 2. Create users assigned to this branch
+        $user1 = User::create([
+            'name' => 'Sub User 1',
+            'email' => 'sub1_' . uniqid() . '@example.com',
+            'password' => bcrypt('Pass@123'),
+            'role_id' => 2,
+            'branch_id' => $targetBranch->id,
+            'status' => 1,
+        ]);
+        $user2 = User::create([
+            'name' => 'Sub User 2',
+            'email' => 'sub2_' . uniqid() . '@example.com',
+            'password' => bcrypt('Pass@123'),
+            'role_id' => 2,
+            'branch_id' => $targetBranch->id,
+            'status' => 1,
+        ]);
+
+        $this->assertDatabaseHas('users', ['id' => $user1->id]);
+        $this->assertDatabaseHas('users', ['id' => $user2->id]);
+
+        // 3. Admin deletes the target branch
+        $response = $this->actingAs($this->adminUser)->postJson(route('branchdelete'), [
+            'id' => $targetBranch->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 1,
+        ]);
+
+        // 4. Verify branch is gone AND both assigned users are cascade deleted
+        $this->assertDatabaseMissing('branches', ['id' => $targetBranch->id]);
+        $this->assertDatabaseMissing('users', ['id' => $user1->id]);
+        $this->assertDatabaseMissing('users', ['id' => $user2->id]);
     }
 }

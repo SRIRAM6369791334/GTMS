@@ -132,8 +132,12 @@ class EnverionsoneController extends Controller
                 ->lockForUpdate()
                 ->orderByRaw("CAST(SUBSTRING_INDEX(project_code, '-', -1) AS UNSIGNED) DESC")
                 ->first();
-            $seq  = $lastProject ? (((int) substr($lastProject->project_code, -4)) + 1) : 1;
-            $code = $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+            $lastNum = $lastProject ? (int) substr($lastProject->project_code, strrpos($lastProject->project_code, '-') + 1) : 0;
+            $seq = $lastNum + 1;
+            do {
+                $code = $prefix . str_pad($seq, 4, '0', STR_PAD_LEFT);
+                $seq++;
+            } while (EnvironmentProject::withTrashed()->where('project_code', $code)->exists());
 
             // Resolve or link customer
             $customerId = $validated['customer_id'];

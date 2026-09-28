@@ -661,4 +661,78 @@ class UserManagementAndAuthTest extends TestCase
         $this->assertNotEquals(500, $resDel->getStatusCode());
         $this->assertEquals(422, $resDel->getStatusCode());
     }
+
+    /**
+     * Requirement R3.17: User with associated statutory records cannot be deleted (FK crash guard)
+     */
+    public function test_user_cannot_be_deleted_if_they_created_statutory_records(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        // 1. Create a staff user
+        $staff = User::create([
+            'name' => 'Filing Officer',
+            'email' => 'filing_officer_' . uniqid() . '@example.com',
+            'password' => bcrypt('Pass@123'),
+            'role_id' => 2,
+            'branch_id' => $this->branch->id,
+            'status' => 1,
+        ]);
+
+        // 2. Associate a customer record created by this user
+        $customer = \App\Models\Customer::create([
+            'customer_name' => 'FK Customer ' . uniqid(),
+            'company_name' => 'FK Customer ' . uniqid(),
+            'mimas_no' => 'TN/MMS/FK/' . rand(100, 999),
+            'mobile_num' => '9842109876',
+            'pan' => 'ABCDE' . rand(1000, 9999) . 'Z',
+            'aadhaar_no' => '9842-' . rand(1000, 9999) . '-' . rand(1000, 9999),
+            'slug' => 'fk-cust-' . rand(1000, 9999),
+            'status' => 1,
+            'created_by' => $staff->id,
+        ]);
+
+        // 3. Attempt to delete this staff user
+        $response = $this->postJson('/userdelete', ['id' => $staff->id]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 0,
+            'message' => 'Cannot delete user because they have recorded statutory applications or customer filings. You can deactivate their account instead.',
+        ]);
+
+        // 4. Assert user is still in database
+        $this->assertDatabaseHas('users', ['id' => $staff->id]);
+    }
+
+    /**
+     * Requirement R3.18: User status can be updated from Active to Inactive and vice-versa
+     */
+    public function test_user_status_can_be_updated_in_edit_route(): void
+    {
+        $this->actingAs($this->adminUser);
+
+        $staff = User::create([
+            'name' => 'Status Toggle Staff',
+            'email' => 'toggle_staff_' . uniqid() . '@example.com',
+            'password' => bcrypt('Pass@123'),
+            'role_id' => 2,
+            'branch_id' => $this->branch->id,
+            'status' => 1,
+        ]);
+
+        // Deactivate user via /useredit
+        $response = $this->postJson('/useredit', [
+            'id' => $staff->id,
+            'name' => $staff->name,
+            'email' => $staff->email,
+            'role_id' => $staff->role_id,
+            'branch_id' => $staff->branch_id,
+            'status' => 0,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 1]);
+        $this->assertDatabaseHas('users', ['id' => $staff->id, 'status' => 0]);
+    }
 }

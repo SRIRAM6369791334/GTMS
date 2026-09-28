@@ -10,39 +10,43 @@
              <div class="modal-body">
                  <form id="brancheadd">
                      @csrf
-                     <input type="hidden" name="id" id="id">
                      <div class="row">
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Department Name</label>
-                             <input type="text" class="form-control" name="branch_name" placeholder="Branch Name">
-
+                             <label class="form-label">Department Name <span class="text-danger">*</span></label>
+                             <input type="text" class="form-control" name="branch_name" placeholder="Branch / Department Name">
+                             <span class="text-danger error-text branch_name_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Contact Person</label>
-                             <input type="text" class="form-control" name="contact_person"
-                                 placeholder="Contact Person">
+                             <label class="form-label">Contact Person <span class="text-danger">*</span></label>
+                             <input type="text" class="form-control" name="contact_person" placeholder="Contact Person Name">
+                             <span class="text-danger error-text contact_person_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Phone Number</label>
-                             <input type="text" class="form-control" name="mobile" placeholder="Phone Number">
+                             <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                             <input type="text" class="form-control" name="mobile" placeholder="10-15 digit phone number">
+                             <span class="text-danger error-text mobile_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label>Address</label>
-                             <textarea type="text" class="form-control" name="address"></textarea>
-                         </div>
-
-                         <div class="mb-3 col-md-6">
-                             <label>City</label>
-                             <input type="text" class="form-control" name="city">
-                         </div>
-                         <div class="mb-3 col-md-6">
-                             <label>State</label>
-                             <input type="text" class="form-control" name="state">
+                             <label class="form-label">Address <span class="text-danger">*</span></label>
+                             <textarea class="form-control" name="address" rows="1" placeholder="Department street address"></textarea>
+                             <span class="text-danger error-text address_error fs-12"></span>
                          </div>
 
                          <div class="mb-3 col-md-6">
-                             <label>Pincode</label>
-                             <input type="text" class="form-control" name="pincode">
+                             <label class="form-label">City</label>
+                             <input type="text" class="form-control" name="city" placeholder="City">
+                             <span class="text-danger error-text city_error fs-12"></span>
+                         </div>
+                         <div class="mb-3 col-md-6">
+                             <label class="form-label">State</label>
+                             <input type="text" class="form-control" name="state" placeholder="State">
+                             <span class="text-danger error-text state_error fs-12"></span>
+                         </div>
+
+                         <div class="mb-3 col-md-6">
+                             <label class="form-label">Pincode</label>
+                             <input type="text" class="form-control" name="pincode" placeholder="6-digit pincode">
+                             <span class="text-danger error-text pincode_error fs-12"></span>
                          </div>
                      </div>
 
@@ -71,46 +75,52 @@
              <div class="modal-body">
                  <form id="brancheedit">
                      @csrf
-                     <input type="hidden" name="id" id="id">
+                     <input type="hidden" name="id" id="editid">
                      <div class="row">
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Department Name</label>
+                             <label class="form-label">Department Name <span class="text-danger">*</span></label>
                              <input type="text" class="form-control" name="branch_name" placeholder="Branch Name" id="editbranch_name">
-                             <input type="hidden" name="id" id="editid">
-
+                             <span class="text-danger error-text edit_branch_name_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Contact Person</label>
+                             <label class="form-label">Contact Person <span class="text-danger">*</span></label>
                              <input type="text" class="form-control" name="contact_person" id="editcontact_person" placeholder="Contact Person">
+                             <span class="text-danger error-text edit_contact_person_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label class="form-label">Phone Number</label>
+                             <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                              <input type="text" class="form-control" name="mobile" placeholder="Phone Number" id="editmobile">
+                             <span class="text-danger error-text edit_mobile_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label>Address</label>
-                             <textarea type="text" class="form-control" name="address" id="editaddress"></textarea>
+                             <label class="form-label">Address <span class="text-danger">*</span></label>
+                             <textarea class="form-control" name="address" id="editaddress" rows="1"></textarea>
+                             <span class="text-danger error-text edit_address_error fs-12"></span>
                          </div>
 
                          <div class="mb-3 col-md-6">
-                             <label>City</label>
+                             <label class="form-label">City</label>
                              <input type="text" class="form-control" name="city" id="editcity">
+                             <span class="text-danger error-text edit_city_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label>State</label>
+                             <label class="form-label">State</label>
                              <input type="text" class="form-control" name="state" id="editstate">
+                             <span class="text-danger error-text edit_state_error fs-12"></span>
                          </div>
 
                          <div class="mb-3 col-md-6">
-                             <label>Pincode</label>
+                             <label class="form-label">Pincode</label>
                              <input type="text" class="form-control" name="pincode" id="editpincode">
+                             <span class="text-danger error-text edit_pincode_error fs-12"></span>
                          </div>
                          <div class="mb-3 col-md-6">
-                             <label>Status</label>
+                             <label class="form-label">Status <span class="text-danger">*</span></label>
                              <select class="form-control" name="status" id="editstatus">
                                  <option value="1">Active</option>
                                  <option value="0">Inactive</option>
                              </select>
+                             <span class="text-danger error-text edit_status_error fs-12"></span>
                          </div>
                      </div>
 

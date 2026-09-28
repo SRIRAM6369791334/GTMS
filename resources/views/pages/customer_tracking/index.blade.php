@@ -498,6 +498,7 @@
 .ct-module-active-ec { background: #F5F3FF; color: #6D28D9; border-color: #DDD6FE; }
 .ct-module-active-ppt { background: #FDF2F8; color: #9D174D; border-color: #FBCFE8; }
 .ct-module-active-survey { background: #F0FDF4; color: #15803D; border-color: #BBF7D0; }
+.ct-module-active-compliance { background: #F0FDFA; color: #0F766E; border-color: #99F6E4; }
 .ct-module-inactive { background: #F8FAFC; color: #94A3B8; border-color: #E2E8F0; }
 
 .ct-btn-track {
@@ -1354,7 +1355,7 @@
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         <span class="fw-bold text-dark fs-13">
-                            <i class="bi bi-funnel text-primary me-1"></i>Active Criteria:
+                            <i class="bi bi-funnel text-primary me-1"></i>Active Filters:
                         </span>
                         @if(!empty($query))
                             <span class="ct-active-filter-chip">
@@ -1468,6 +1469,9 @@
                                 </span>
                                 <span class="ct-module-chip {{ (($rc->dgps_surveys_count ?? 0) + ($rc->drone_surveys_count ?? 0)) > 0 ? 'ct-module-active-survey' : 'ct-module-inactive' }}">
                                     Surveys: <strong>{{ ($rc->dgps_surveys_count ?? 0) + ($rc->drone_surveys_count ?? 0) }}</strong>
+                                </span>
+                                <span class="ct-module-chip {{ ($rc->ec_compliances_count ?? 0) > 0 ? 'ct-module-active-compliance' : 'ct-module-inactive' }}">
+                                    Compliance: <strong>{{ $rc->ec_compliances_count ?? 0 }}</strong>
                                 </span>
                             </div>
                         </div>
@@ -1613,7 +1617,7 @@
                                         </span>
                                         @if($customer->aadhaar_no)
                                             <span class="ct-meta-pill">
-                                                <i class="bi bi-person-vcard text-muted"></i> Aadhaar: <strong>{{ substr($customer->aadhaar_no, 0, 4) . ' **** ' . substr($customer->aadhaar_no, -4) }}</strong>
+                                                <i class="bi bi-person-vcard text-muted"></i> Aadhaar: <strong>{{ strlen($customer->aadhaar_no) >= 8 ? substr($customer->aadhaar_no, 0, 4) . ' **** ' . substr($customer->aadhaar_no, -4) : $customer->aadhaar_no }}</strong>
                                             </span>
                                         @endif
                                         @if($customer->pan)
@@ -1636,10 +1640,18 @@
                                                 <i class="bi bi-envelope text-primary"></i> <strong>{{ $customer->email }}</strong>
                                             </span>
                                         @endif
-                                        <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-primary" style="color:#0F1E4D;">
+                                        <a href="{{ route('customers.show', $customer->slug ?? $customer->id) }}" class="ct-meta-pill text-decoration-none bg-white border-info shadow-sm" style="color:#0284C7;">
+                                            <i class="bi bi-person-bounding-box text-info"></i> <strong>360 Enterprise Dossier &nearr;</strong>
+                                        </a>
+                                        @can('customer.edit')
+                                        <a href="{{ route('customers.index') }}#edit-{{ $customer->id }}" class="ct-meta-pill text-decoration-none bg-white border-warning shadow-sm" style="color:#D97706;">
+                                            <i class="bi bi-pencil-square text-warning"></i> <strong>Edit Profile</strong>
+                                        </a>
+                                        @endcan
+                                        <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-primary shadow-sm" style="color:#0F1E4D;">
                                             <i class="bi bi-file-earmark-text text-primary"></i> <strong>Proforma Invoice &nearr;</strong>
                                         </a>
-                                        <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-success" style="color:#059669;">
+                                        <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-success shadow-sm" style="color:#059669;">
                                             <i class="bi bi-receipt text-success"></i> <strong>Tax Invoice &nearr;</strong>
                                         </a>
                                     </div>
@@ -1825,7 +1837,20 @@
                     <!-- 4-TAB ENTERPRISE WORKSPACE                     -->
                     <!-- ============================================== -->
                     @php
-                        $curTab = $dossierData['activeTab'] ?? (count($dossierData['fullCycleChains']) > 1 ? 'portfolio' : 'lifecycle');
+                        $hasFullCycle = count($dossierData['fullCycleChains'] ?? []) > 0;
+                        $hasStandalone = count($dossierData['standaloneServices'] ?? []) > 0;
+
+                        $defaultTab = 'portfolio';
+                        if ($hasFullCycle) {
+                            $defaultTab = count($dossierData['fullCycleChains']) > 1 ? 'portfolio' : 'lifecycle';
+                        } else {
+                            $defaultTab = $hasStandalone ? 'standalone' : 'vault';
+                        }
+
+                        $curTab = $dossierData['activeTab'] ?? $defaultTab;
+                        if (!$hasFullCycle && in_array($curTab, ['portfolio', 'lifecycle'])) {
+                            $curTab = $hasStandalone ? 'standalone' : 'vault';
+                        }
                     @endphp
 
                     <!-- 4-Tab Workspace Navigation Bar -->
@@ -2277,7 +2302,7 @@
                             </div>
                             <div class="ct-pillar-footer mt-auto">
                                 @if($dossierData['leaseApp'])
-                                    <a href="{{ route('viewapplication') }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('viewapplication', ['id' => $dossierData['leaseApp']->id]) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-arrow-up-right-circle"></i> Open Lease Application &nearr;
                                     </a>
                                 @else
@@ -2489,7 +2514,7 @@
                                     </div>
                                     <div class="ct-field-row">
                                         <span class="ct-field-label"><i class="bi bi-people me-1"></i>Handling Team:</span>
-                                        <span class="ct-field-val">{{ $dossierData['pptApp']->handlers->first()?->name ?? 'Dr. K. Ravichandran' }} (Lead Consultant)</span>
+                                        <span class="ct-field-val">{{ $dossierData['pptApp']->handlers->first()?->name ? ($dossierData['pptApp']->handlers->first()->name . ' (Lead Consultant)') : 'Unassigned' }}</span>
                                     </div>
                                     <div class="ct-field-row">
                                         <span class="ct-field-label"><i class="bi bi-paperclip me-1"></i>Slides Attached:</span>

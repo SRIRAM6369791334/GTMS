@@ -7,8 +7,11 @@ use App\Models\User;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\Mineral;
+use App\Models\Category;
 use App\Models\MiningApplication;
 use App\Models\LeaseApplication;
+use App\Models\DgpsSurvey;
+use App\Models\EcCompliance;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class CustomerTrackingFilterTest extends TestCase
@@ -27,7 +30,14 @@ class CustomerTrackingFilterTest extends TestCase
             'database.connections.mysql.database' => 'gtms_data',
         ]);
 
-        $this->user = User::first() ?: User::factory()->create();
+        $this->user = User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->first()
+            ?: User::where('role_id', 1)->first()
+            ?: User::first();
+
+        if ($this->user && !$this->user->hasRole(['Admin', 'Super Admin'])) {
+            $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+            $this->user->assignRole($adminRole);
+        }
         $this->district = District::first();
 
         $random = rand(10000, 99999) . rand(100, 999);
@@ -145,5 +155,92 @@ class CustomerTrackingFilterTest extends TestCase
                 ]
             ]
         ]);
+    }
+
+    /**
+     * Test standalone-only customer (0 lease applications) activates standalone tab without blank screen
+     */
+    public function test_customer_tracking_standalone_client_renders_standalone_pane_active(): void
+    {
+        $random = rand(10000, 99999);
+        $standaloneClient = Customer::create([
+            'customer_name'        => 'Standalone Client ' . $random,
+            'company_name'         => 'Direct Survey Corp ' . $random,
+            'mimas_no'             => 'TN-MMS-STD-' . $random,
+            'mobile_num'           => '97865' . rand(10000, 99999),
+            'district_id'          => $this->district->id,
+            'slug'                 => 'standalone-client-' . $random,
+            'status'               => 1,
+        ]);
+
+        DgpsSurvey::create([
+            'survey_no'      => 'DGPS-STD-' . $random,
+            'customer_id'    => $standaloneClient->id,
+            'survey_status'  => 'scheduled',
+            'location'       => 'Direct Demarcation Site',
+            'surveyed_area_ha' => 4.5,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('customer-tracking.show', $standaloneClient->slug));
+
+        $response->assertStatus(200);
+        $response->assertSee('Standalone Services');
+        $response->assertSee('id="standalone-pane"', false);
+        $response->assertSee('show active');
+        $response->assertSee('360 Enterprise Dossier &nearr;', false);
+        $response->assertSee('Edit Profile');
+        $response->assertSee('DGPS-STD-' . $random);
+        // Ensure portfolio and lifecycle panes are not rendered as active
+        $response->assertDontSee('id="portfolio-pane" role="tabpanel" aria-labelledby="portfolio-tab"', false);
+    }
+
+    /**
+     * Test that Pillar 1 action button and stepper node 1 contain the lease ID parameter
+     */
+    public function test_customer_tracking_with_lease_chain_contains_id_parameter_in_actions(): void
+    {
+        $random = rand(10000, 99999);
+        $categoryId = \Illuminate\Support\Facades\DB::table('lease_categories')->value('id') ?? 2;
+        $mineral = Mineral::first();
+        $lease = LeaseApplication::create([
+            'application_no'    => 'LA-TEST-' . $random,
+            'common_id'         => 'GTMS-2026-' . $random,
+            'customer_id'       => $this->customer->id,
+            'district_id'       => $this->district->id,
+            'category_id'       => $categoryId,
+            'mineral_id'        => $mineral?->id ?? 1,
+            'status'            => 'draft',
+            'village'           => 'Alathur',
+            'taluk'             => 'Sankari',
+            'area_extent_ha'    => 2.50,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('customer-tracking.show', $this->customer->slug));
+
+        $response->assertStatus(200);
+        // Pillar 1 Action button must link to viewapplication with id
+        $expectedUrl = route('viewapplication', ['id' => $lease->id]);
+        $response->assertSee($expectedUrl, false);
+    }
+
+    /**
+     * Test that customer cards in recent directory display the EC Compliance chip
+     */
+    public function test_customer_tracking_recent_customers_shows_compliance_chip(): void
+    {
+        $random = rand(10000, 99999);
+        EcCompliance::create([
+            'compliance_no'     => 'EC-COMP-' . $random,
+            'project_name'      => 'Test Project ' . $random,
+            'customer_id'       => $this->customer->id,
+            'district_id'       => $this->district->id,
+            'status'            => 'draft',
+            'compliance_period' => 'April 2026 - September 2026',
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('customer-tracking.index'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Compliance:');
     }
 }

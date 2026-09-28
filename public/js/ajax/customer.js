@@ -62,7 +62,7 @@ $(document).ready(function() {
     // =========================================================================
     $('#customeradd').on('submit', function (e) {
         e.preventDefault();
-        $('.error-text').text('');
+        $('#customeradd').find('.error-text').text('');
         var formData = new FormData(this);
 
         $.ajax({
@@ -81,12 +81,12 @@ $(document).ready(function() {
             success: function (response) {
                 if (response.status == 0) {
                     $.each(response.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
+                        $('#customeradd .' + key + '_error').text(value[0]);
                     });
                 } else {
                     toastr.success(response.message);
                     $('#customeradd')[0].reset();
-                    $('.bd-customer-modal-lg').modal('hide');
+                    $('#customerModal').modal('hide');
                     setTimeout(function() { location.reload(); }, 600);
                 }
             },
@@ -94,7 +94,7 @@ $(document).ready(function() {
                 if (xhr.status === 422 && xhr.responseJSON.errors) {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function(key, value) {
-                        $('.' + key + '_error').text(value[0]);
+                        $('#customeradd .' + key + '_error').text(value[0]);
                         toastr.error(value[0]);
                     });
                 } else {
@@ -109,27 +109,56 @@ $(document).ready(function() {
     // =========================================================================
     $(document).on('click', '.editCustomerBtn', function () {
         var btn = $(this);
-        $('#edit_id').val(btn.data('id'));
-        $('#edit_mimas_no').val(btn.data('mimas'));
-        $('#edit_mimas_number').val(btn.data('mimas-number') || '');
-        $('#edit_mimas_status').val(btn.data('mimas-status') || '');
-        $('#edit_customer_name').val(btn.data('name'));
-        $('#edit_secondary_contact_person').val(btn.data('secondary-contact') || '');
-        $('#edit_company_name').val(btn.data('company'));
-        $('#edit_mobile_num').val(btn.data('mobile'));
-        $('#edit_secondary_mobile_num').val(btn.data('secondary-mobile') || '');
-        $('#edit_email').val(btn.data('email'));
-        $('#edit_district_id').val(btn.data('district-id'));
-        $('#edit_mineral_id').val(btn.data('mineral-id') || '');
-        $('#edit_area').val(btn.data('area') || '');
-        $('#edit_pan').val(btn.data('pan'));
-        $('#edit_aadhaar_no').val(btn.data('aadhaar'));
-        $('#edit_gstin').val(btn.data('gstin'));
-        $('#edit_status').val(btn.data('status'));
-        $('#edit_address').val(btn.data('address'));
+        var data = btn.data('customer');
 
-        $('.edit-error-text').text('');
+        if (data) {
+            $('#edit_id').val(data.id);
+            $('#edit_mimas_no').val(data.mimas_no || '');
+            $('#edit_mimas_number').val(data.mimas_number || '');
+            $('#edit_mimas_status').val(data.mimas_status || '');
+            $('#edit_customer_name').val(data.customer_name || '');
+            $('#edit_secondary_contact_person').val(data.secondary_contact_person || '');
+            $('#edit_company_name').val(data.company_name || '');
+            $('#edit_mobile_num').val(data.mobile_num || '');
+            $('#edit_secondary_mobile_num').val(data.secondary_mobile_num || '');
+            $('#edit_email').val(data.email || '');
+            $('#edit_district_id').val(data.district_id || '');
+            $('#edit_mineral_id').val(data.mineral_id || '');
+            $('#edit_area').val(data.area || '');
+            $('#edit_pan').val(data.pan || '');
+            $('#edit_aadhaar_no').val(data.aadhaar_no || '');
+            $('#edit_gstin').val(data.gstin || '');
+            $('#edit_status').val(data.status);
+            $('#edit_address').val(data.address || '');
+        } else {
+            // Fallback to individual data attributes
+            $('#edit_id').val(btn.data('id'));
+            $('#edit_mimas_no').val(btn.data('mimas'));
+            $('#edit_mimas_number').val(btn.data('mimas-number') || '');
+            $('#edit_mimas_status').val(btn.data('mimas-status') || '');
+            $('#edit_customer_name').val(btn.data('name'));
+            $('#edit_secondary_contact_person').val(btn.data('secondary-contact') || '');
+            $('#edit_company_name').val(btn.data('company'));
+            $('#edit_mobile_num').val(btn.data('mobile'));
+            $('#edit_secondary_mobile_num').val(btn.data('secondary-mobile') || '');
+            $('#edit_email').val(btn.data('email'));
+            $('#edit_district_id').val(btn.data('district-id'));
+            $('#edit_mineral_id').val(btn.data('mineral-id') || '');
+            $('#edit_area').val(btn.data('area') || '');
+            $('#edit_pan').val(btn.data('pan'));
+            $('#edit_aadhaar_no').val(btn.data('aadhaar'));
+            $('#edit_gstin').val(btn.data('gstin'));
+            $('#edit_status').val(btn.data('status'));
+            $('#edit_address').val(btn.data('address'));
+        }
+
+        $('#customeredit').find('.error-text').text('');
         $('#editCustomerModal').modal('show');
+    });
+
+    // Clear validation errors on modal dismissal
+    $('#customerModal, #editCustomerModal').on('hidden.bs.modal', function () {
+        $(this).find('.error-text').text('');
     });
 
     // =========================================================================
@@ -137,7 +166,7 @@ $(document).ready(function() {
     // =========================================================================
     $('#customeredit').on('submit', function (e) {
         e.preventDefault();
-        $('.edit-error-text').text('');
+        $('#customeredit').find('.error-text').text('');
         var formData = new FormData(this);
 
         $.ajax({
@@ -156,7 +185,7 @@ $(document).ready(function() {
             success: function (response) {
                 if (response.status == 0) {
                     $.each(response.errors, function (key, value) {
-                        $('.edit_' + key + '_error').text(value[0]);
+                        $('#customeredit .edit_' + key + '_error').text(value[0]);
                     });
                 } else {
                     toastr.success(response.message);
@@ -168,7 +197,7 @@ $(document).ready(function() {
                 if (xhr.status === 422 && xhr.responseJSON.errors) {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function(key, value) {
-                        $('.edit_' + key + '_error').text(value[0]);
+                        $('#customeredit .edit_' + key + '_error').text(value[0]);
                         toastr.error(value[0]);
                     });
                 } else {

@@ -1042,7 +1042,14 @@ class CustomerTrackingController extends Controller
         $selectedChainId = $selectedChain['id'] ?? null;
 
         // Determine Active Tab ('portfolio', 'lifecycle', 'standalone', 'vault')
-        if (in_array($requestedTab, ['portfolio', 'lifecycle', 'standalone', 'vault'])) {
+        if (count($fullCycleChains) === 0) {
+            // For clients with 0 full-cycle chains, only standalone or vault can be active
+            if (in_array($requestedTab, ['standalone', 'vault'])) {
+                $activeTab = $requestedTab;
+            } else {
+                $activeTab = count($standaloneServices) > 0 ? 'standalone' : 'vault';
+            }
+        } elseif (in_array($requestedTab, ['portfolio', 'lifecycle', 'standalone', 'vault'])) {
             $activeTab = $requestedTab;
         } elseif ($requestedTab === 'full_cycle') {
             $activeTab = (count($fullCycleChains) > 1 && !$requestedChainId) ? 'portfolio' : 'lifecycle';
@@ -1081,7 +1088,7 @@ class CustomerTrackingController extends Controller
                 'date'        => $leaseApp?->created_at ? $leaseApp->created_at->format('d M Y') : null,
                 'badge_color' => $leaseApp ? ($leaseApp->status === 'approved' ? 'success' : 'warning') : ($isDirectEntry && $entryStage > 1 ? 'info' : 'secondary'),
                 'icon'        => 'bi-file-earmark-text',
-                'url'         => $leaseApp ? route('viewapplication') : route('step1'),
+                'url'         => $leaseApp ? (route('viewapplication') . '?id=' . $leaseApp->id) : route('step1'),
             ],
             2 => [
                 'name'        => 'Mining Plan',

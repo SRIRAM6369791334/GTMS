@@ -62,8 +62,8 @@ class CustomerDirectoryController extends Controller
             'customer_name'            => 'required|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
             'company_name'             => 'nullable|string|max:255',
-            'mobile_num'               => 'required|string|max:15',
-            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'mobile_num'               => 'required|digits_between:10,15',
+            'secondary_mobile_num'     => 'nullable|digits_between:10,15|different:mobile_num',
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
@@ -74,9 +74,12 @@ class CustomerDirectoryController extends Controller
             'address'                  => 'nullable|string',
             'status'                   => 'required|in:0,1',
         ], [
-            'aadhaar_no.regex'   => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
-            'mimas_no.unique'    => 'This Customer Unique ID is already registered by an active customer.',
-            'aadhaar_no.unique'  => 'This Aadhaar number is already registered by an active customer.',
+            'mobile_num.digits_between'           => 'The primary mobile number must be between 10 and 15 digits.',
+            'secondary_mobile_num.digits_between' => 'The secondary mobile number must be between 10 and 15 digits.',
+            'secondary_mobile_num.different'      => 'The secondary mobile number must be different from the primary mobile number.',
+            'aadhaar_no.regex'                    => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'mimas_no.unique'                     => 'This Customer Unique ID is already registered by an active customer.',
+            'aadhaar_no.unique'                   => 'This Aadhaar number is already registered by an active customer.',
         ]);
 
         if ($validator->fails()) {
@@ -150,6 +153,8 @@ class CustomerDirectoryController extends Controller
             'pptApplications.agendas',
             'dgpsSurveys.points',
             'droneSurveys',
+            'ecCertificates',
+            'ecCompliances',
             'stockpiles.mineral',
             'stockpiles.dispatches' => fn($q) => $q->latest()->take(10),
             'stockpiles.entries' => fn($q) => $q->latest()->take(10),
@@ -178,8 +183,11 @@ class CustomerDirectoryController extends Controller
         $totalLeases = $customer->leaseApplications->count();
         $totalMiningPlans = $customer->miningApplications->count();
         $approvedMiningPlans = $customer->miningApplications->where('status', 'approved')->count();
-        $activeEcCount = $customer->environmentProjects->flatMap->ecCertificates->where('status', 'active')->count();
-        $currentStockpileCbm = $customer->stockpiles->sum('current_stock_cbm');
+        $directEcActive = $customer->ecCertificates ? $customer->ecCertificates->where('status', 'active')->count() : 0;
+        $envEcActive = $customer->environmentProjects ? $customer->environmentProjects->flatMap->ecCertificates->where('status', 'active')->count() : 0;
+        $activeEcCount = max($directEcActive, $envEcActive) ?: ($directEcActive + $envEcActive);
+        $totalCompliances = $customer->ecCompliances ? $customer->ecCompliances->count() : 0;
+        $currentStockpileCbm = $customer->stockpiles ? $customer->stockpiles->sum('current_stock_cbm') : 0;
 
         return view('pages.customer_show', compact(
             'customer',
@@ -187,6 +195,7 @@ class CustomerDirectoryController extends Controller
             'totalMiningPlans',
             'approvedMiningPlans',
             'activeEcCount',
+            'totalCompliances',
             'currentStockpileCbm'
         ));
     }
@@ -221,8 +230,8 @@ class CustomerDirectoryController extends Controller
             'customer_name'            => 'required|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
             'company_name'             => 'nullable|string|max:255',
-            'mobile_num'               => 'required|string|max:15',
-            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'mobile_num'               => 'required|digits_between:10,15',
+            'secondary_mobile_num'     => 'nullable|digits_between:10,15|different:mobile_num',
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
@@ -233,9 +242,12 @@ class CustomerDirectoryController extends Controller
             'address'                  => 'nullable|string',
             'status'                   => 'required|in:0,1',
         ], [
-            'aadhaar_no.regex'   => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
-            'mimas_no.unique'    => 'This Customer Unique ID is already registered by an active customer.',
-            'aadhaar_no.unique'  => 'This Aadhaar number is already registered by an active customer.',
+            'mobile_num.digits_between'           => 'The primary mobile number must be between 10 and 15 digits.',
+            'secondary_mobile_num.digits_between' => 'The secondary mobile number must be between 10 and 15 digits.',
+            'secondary_mobile_num.different'      => 'The secondary mobile number must be different from the primary mobile number.',
+            'aadhaar_no.regex'                    => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
+            'mimas_no.unique'                     => 'This Customer Unique ID is already registered by an active customer.',
+            'aadhaar_no.unique'                   => 'This Aadhaar number is already registered by an active customer.',
         ]);
 
         if ($validator->fails()) {
@@ -371,8 +383,20 @@ class CustomerDirectoryController extends Controller
         if ($customer->environmentProjects()->exists()) {
             $activeDependencies[] = $customer->environmentProjects()->count() . ' Environmental Project(s)';
         }
+        if ($customer->pptApplications()->exists()) {
+            $activeDependencies[] = $customer->pptApplications()->count() . ' PPT Application(s)';
+        }
         if ($customer->dgpsSurveys()->exists()) {
             $activeDependencies[] = $customer->dgpsSurveys()->count() . ' DGPS Survey(s)';
+        }
+        if ($customer->droneSurveys()->exists()) {
+            $activeDependencies[] = $customer->droneSurveys()->count() . ' Drone Survey(s)';
+        }
+        if ($customer->ecCertificates()->exists()) {
+            $activeDependencies[] = $customer->ecCertificates()->count() . ' EC Certificate(s)';
+        }
+        if ($customer->ecCompliances()->exists()) {
+            $activeDependencies[] = $customer->ecCompliances()->count() . ' EC Compliance(s)';
         }
         if ($customer->stockpiles()->exists()) {
             $activeDependencies[] = $customer->stockpiles()->count() . ' Mineral Stockpile(s)';
@@ -385,12 +409,12 @@ class CustomerDirectoryController extends Controller
             ], 422);
         }
 
-        $company = $customer->company_name;
+        $displayName = $customer->company_name ?: $customer->customer_name;
         $customer->delete();
 
         return response()->json([
             'status'  => 1,
-            'message' => 'Customer "' . $company . '" deleted successfully!',
+            'message' => 'Customer "' . $displayName . '" deleted successfully!',
         ]);
     }
 }

@@ -1,6 +1,170 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 7.5 — COMPREHENSIVE AUTH, RBAC, MULTI-TENANCY & USER LIFECYCLE AUDIT & TEST SUITE (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 7.11 — CUSTOMER TRACKING PORTAL AUDIT, TAB ACTIVATION RESILIENCE, LEASE PARAMETRIC DEEP-LINKS & EC COMPLIANCE ENHANCEMENT (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and hardening of `/customer-tracking` and `/customer-tracking/{customer}` across Model, Controller, Blade views, and Automated Test Suites:
+  1. **Tab Activation Resilience & Zero-Lease Safeguard (`CustomerTrackingController@buildCustomerDossier` & `index.blade.php`):**
+     - Fixed critical white screen bug where clients with zero full-cycle lease chains (`fullCycleChains === 0`) but active standalone direct services (DGPS, Drone, EC Compliance, Standalone Mining Plans) defaulted `$curTab = 'lifecycle'`, causing all tabs to remain unselected and all tab-panes to fail `.show .active`.
+     - Hardened both controller `$activeTab` and Blade `$curTab` fallback logic: when `count(fullCycleChains) === 0`, dynamically defaults to `'standalone'` (if standalone services exist) or `'vault'`.
+  2. **Pillar 1 Lease Action Parametric Deep-Link (`CustomerTrackingController.php` & `index.blade.php`):**
+     - Spliced missing `['id' => $leaseApp->id]` query parameter onto Pillar 1 action button `<a href="{{ route('viewapplication', ['id' => $dossierData['leaseApp']->id]) }}" ...>` and Stepper Node 1 URL.
+     - Guarantees clicking "Open Lease Application ↗" opens the active quarry concession rather than generic `/viewapplication`.
+  3. **EC Half-Yearly Compliance Chip Integration (`index.blade.php`):**
+     - Added dedicated `Compliance: X` chip into the statutory breakdown matrix of the Recent Customers cards.
+     - Registered `.ct-module-active-compliance` CSS token (teal background `#F0FDFA` with border `#99F6E4`).
+  4. **Bidirectional Navigation to Customer 360 Enterprise Dossier:**
+     - Spliced prominent `360 Enterprise Dossier ↗` pill button (`route('customers.show', $customer->slug ?? $customer->id)`) and `@can('customer.edit')` `Edit Profile` pill button into the tracking header strip.
+  5. **Defensive Identity Masking & Handler Parity:**
+     - Added `strlen($customer->aadhaar_no) >= 8` guard before calling `substr()` on Aadhaar numbers.
+     - Replaced hardcoded consultant mock name (`Dr. K. Ravichandran`) in Pillar 4 with genuine handler name or `'Unassigned'` fallback.
+  6. **Automated Verification:**
+     - Expanded `tests/Feature/CustomerTrackingFilterTest.php` with 3 new automated tests:
+       - `test_customer_tracking_standalone_client_renders_standalone_pane_active` (asserts standalone tab & pane active, zero-lease collapse prevented, 360 dossier links present).
+       - `test_customer_tracking_with_lease_chain_contains_id_parameter_in_actions` (asserts `viewapplication?id=` parameter on Pillar 1 action).
+       - `test_customer_tracking_recent_customers_shows_compliance_chip` (asserts `Compliance:` chip rendering on recent customer cards).
+     - 9/9 Customer Tracking tests passed (109 assertions).
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.10 — CUSTOMER 360° ENTERPRISE DOSSIER AUDIT, NULL-SAFETY, DEEP-LINK ACTIONS & EC COMPLIANCE INTEGRATION (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and hardening of `/customers/{slug}` (Customer 360° Enterprise Profile & Dossier) across Model, Controller, Blade views, and Automated Test Suites:
+  1. **Null-Safety & Defensive Object Traversal (`customer_show.blade.php`):**
+     - Spliced null-safe navigation across all relational properties to ensure newly registered or incomplete clients (e.g. `fk-cust-4834` / ID: 174 with null `district_id`, null `email`, null `address`) render without PHP exceptions:
+       - Tab 1: `$lease->category?->name ?? 'Standard Rule'`
+       - Tab 2: `$plan->planType?->name ?? 'Standard Plan'`
+       - Tab 6: `$stockpile->mineral?->name ?? 'Gravel / Stone'`
+       - Sidebar: `$customer->district?->name ?? 'Unassigned'`
+  2. **Multi-Mineral Support Across Mining Plans (Tab 2):**
+     - Spliced multi-mineral array resolution for mining plans (`$plan->minerals->pluck('name')` falling back to `$plan->mineral?->name`), rendering styled gemstone badges consistent with the Lease Applications tab.
+  3. **Deep-Link Action Columns Across All 6 Module Tables:**
+     - Added dedicated `Action` headers and direct workflow deep-links across all departmental tables:
+       - Tab 2 (Mining Plans): `<a href="/process?id={{ $plan->id }}">Open Plan ↗</a>`
+       - Tab 3 (Environment Projects): `<a href="{{ route('environment-b2.show', $env->id) }}">View Project</a>`
+       - Tab 4 (PPT Presentations): `<a href="{{ route('ppt-department.show', $ppt->id) }}">View Agenda</a>`
+       - Tab 5 (DGPS Ground Surveys): `<a href="{{ route('dgps-survey.show', $dgps->id) }}">View</a>`
+       - Tab 5 (Drone Aerial Surveys): `<a href="{{ route('drone-survey.show', $drone->id) }}">View</a>`
+     - Recalibrated table `colspan` on all empty-state message rows to match new column counts.
+  4. **EC Half-Yearly Compliance Monitoring Integration (Tab 3):**
+     - Embedded dedicated MoEFCC / SEIAA Half-Yearly Compliance section into Tab 3, displaying compliance number, period & year, project name, PARIVESH reference token, submission/due dates, live status badges, and deep-link to `ec-compliance.show`.
+     - Added direct `+ New Compliance` action button guarded by `@can('ec_compliance.create')`.
+     - Recalibrated Environment tab count pill to reflect both Environment Projects and EC Half-Yearly Compliance filings.
+  5. **Header Bar Action Navigation:**
+     - Spliced `@can('customer.edit')` "Edit Profile" action button linking directly into directory edit modal anchors (`{{ route('customers.index') }}#edit-{{ $customer->id }}`).
+  6. **Automated Verification:**
+     - Expanded `tests/Feature/CustomerDirectoryCrudTest.php` with:
+       - `test_customer_show_dossier_page_renders_successfully` asserting zero-state rendering for `fk-cust-4834`, unassigned district, empty states across all modules, and header actions.
+       - `test_customer_show_dossier_with_statutory_records_and_actions` asserting populated multi-tab state and all 6 module action deep-links.
+     - 11/11 Customer Directory tests passed.
+     - 151/151 tests passed across the entire GTMS application test suite (1036 assertions, 0 failures, 100% pass rate).
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.9 — CUSTOMER DIRECTORY STATUTORY INTEGRITY, 9-FK DEPENDENCY SAFEGUARDS, VALIDATION HARDENING & SCOPED AJAX RESILIENCE (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and hardening of `/customers` (Customer Directory & Management) across Model, Controller, Blade views, JavaScript AJAX routines, and Foreign Key constraints:
+  1. **Comprehensive Foreign Key Dependency Check Expansion (`CustomerDirectoryController@destroy`):**
+     - Spliced missing dependency checks for technical service modules: `pptApplications()` (PPT Department), `droneSurveys()` (Drone Survey), `ecCertificates()` (EC Certificate), and `ecCompliances()` (Half-Yearly Compliance).
+     - Deletion now verifies all 9 statutory relational dependencies (`leaseApplications`, `miningApplications`, `environmentProjects`, `pptApplications`, `dgpsSurveys`, `droneSurveys`, `ecCertificates`, `ecCompliances`, `stockpiles`).
+     - Eliminates fatal `SQLSTATE[23000]: 1451 Cannot delete or update a parent row` foreign key crashes when deleting clients with technical services.
+  2. **Empty Display Name Fallback Bug Fix (`CustomerDirectoryController@destroy`):**
+     - Fixed issue where deleting individual quarry operators without a company name resulted in `"Customer \"\" deleted successfully!"`.
+     - Spliced fallback: `$displayName = $customer->company_name ?: $customer->customer_name;`.
+  3. **Input Validation Hardening (`CustomerDirectoryController@store` & `@update`):**
+     - Hardened phone number validation from loose `'string|max:15'` to `'required|digits_between:10,15'` on `mobile_num` and `'nullable|digits_between:10,15|different:mobile_num'` on `secondary_mobile_num`.
+     - Added clear, actionable custom error messages for phone digit ranges and duplicate numbers.
+  4. **Scoped AJAX Error Clearing & Class Parity (`customer.js` & `customers.blade.php`):**
+     - Fixed class mismatch where `customer.js` attempted to clear `$('.edit-error-text')` while Blade defined `.error-text`.
+     - Scoped error clearing cleanly to each active form: `$('#customeradd').find('.error-text').text('')` and `$('#customeredit').find('.error-text').text('')`.
+     - Hooked `hidden.bs.modal` on both modals to ensure validation feedback clears automatically upon dismissal.
+  5. **DOM Attribute Escaping & Data Binding Protection (`customers.blade.php`):**
+     - Safeguarded all Edit button DOM attributes (`data-address`, `data-company`, etc.) against double quotes, newlines, and entity breaks.
+     - Handled fallback display name on delete button: `data-name="{{ $customer->company_name ?: $customer->customer_name }}"`.
+  6. **Automated Verification:**
+     - Created comprehensive test suite `tests/Feature/CustomerDirectoryCrudTest.php` (9 tests, 51 assertions) covering directory rendering, AJAX creation with auto-Aadhaar formatting, phone validation failures, updating, deletion safeguards across all 9 FKs, soft-delete restoration, and MIMAS lookup.
+     - 9/9 Customer Directory tests passed.
+     - 149/149 tests passed across the entire GTMS application test suite (1001 assertions, 0 failures, 100% pass rate).
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.8 — ROLES & PERMISSIONS ARCHITECTURAL AUDIT, MODULE CRUD PERMISSIONS EXPANSION, ASSIGNED ROLE SAFEGUARDS & FULL SUITE STABILIZATION (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and hardening of `/roles` (Roles & Permissions) across Model, Controller, Blade views, JavaScript AJAX routines, and Permission Seeders:
+  1. **Expanded Granular CRUD Permissions (`RolePermissionSeeder.php` & MySQL):**
+     - Spliced complete CRUD permissions for modules previously limited to `.view` and `.manage`:
+       - **PPT Department:** `ppt.create`, `ppt.edit`, `ppt.delete` (joining `ppt.view`, `ppt.manage`).
+       - **DGPS Survey:** `dgps.create`, `dgps.edit`, `dgps.delete` (joining `dgps.view`, `dgps.manage`).
+       - **Drone Survey:** `drone.create`, `drone.edit`, `drone.delete` (joining `drone.view`, `drone.manage`).
+       - **EC Certificate:** `ec_certificate.create`, `ec_certificate.edit`, `ec_certificate.delete` (joining `ec_certificate.view`, `ec_certificate.manage`).
+       - **EC Compliance:** `ec_compliance.view`, `ec_compliance.create`, `ec_compliance.edit`, `ec_compliance.delete`, `ec_compliance.manage`.
+     - Catalog expanded to 66 system permissions; synced with Admin (66 perms), Officer (35 perms), and Staff (12 perms).
+  2. **Route Authorization Realignment (`routes/web.php`):**
+     - Replaced coarse `environment.view` and `ppt.view` umbrella route blocks with granular middleware gates:
+       - Viewing endpoints (`index`, `show`) -> `permission:{module}.view`
+       - Wizard/Intake/Creation endpoints (`wizard`, `saveStep`, `store`) -> `permission:{module}.create`
+       - Status/Upload/Approval endpoints (`status`, `approveStage`, `upload`) -> `permission:{module}.edit`
+  3. **Sidebar Permission Slicing (`sidebar.blade.php`):**
+     - Wrapped EC Certificate and Half Yearly Compliance menu items in specific `@can('ec_certificate.view')` and `@can('ec_compliance.view')` directives within `@canany(['environment.view', 'ec_certificate.view', 'ec_compliance.view'])`.
+  4. **Roles Controller Safeguards (`RolesController.php`):**
+     - Spliced missing `'customer' => 'Customer Management'` and `'ec_compliance' => 'EC Compliance'` into `$modules` array.
+     - **Admin Immunity in Update:** Blocked renaming `Admin` / `Super Admin` and guaranteed `Admin` retains all system permissions (`syncPermissions(Permission::all())`) regardless of request payload.
+     - **Assigned Role Deletion Safeguard:** Added pre-deletion check querying `User::where('role_id', $role->id)->orWhereHas('roles', fn($q) => $q->where('roles.id', $role->id))->count()`. Blocks deletion if active users are assigned, preventing dangling role pointers or silent permission loss.
+  5. **UI & AJAX Resilience (`createrole.blade.php` & `role.js`):**
+     - Spliced `edit_name_error` class in edit modal and scoped error clearing/rendering to `form.find(...)`, isolating Add and Edit modals.
+     - Handled `status == 0` rejection responses in AJAX with explicit `toastr.error(response.message)`.
+  6. **Sequence Number Extraction Bug Fix (`EnverionsoneController.php`):**
+     - Fixed critical logic flaw where `substr($lastProject->project_code, -4)` caused 5-digit project numbers (`44071`, `89065`) to truncate into `9065 + 1 = 9066`, causing persistent duplicate key crashes on `ENV-B2-2026-9066`. Spliced `strrpos` dynamic suffix extraction with `exists()` `do...while` collision avoidance loop.
+  7. **Full Automated Suite Stabilization:**
+     - Fixed non-deterministic `$user = User::first()` across legacy test suites (`StepOnePhoneNumbersTest`, `ApplicationHandlersAndPaymentsTest`, `CustomerTrackingFilterTest`, `MiningPlanTransitionTest`, `EnvironmentClearanceTest`, `PptDgpsAndEcComplianceTest`) by enforcing explicit Admin user resolution.
+     - Added 3 new tests to `tests/Feature/RolesAndPermissionsTest.php`: `test_admin_role_cannot_be_renamed_or_stripped_of_permissions`, `test_role_cannot_be_deleted_if_active_users_are_assigned`, and `test_expanded_crud_permissions_can_be_assigned`.
+     - 18/18 Roles tests passed (132 assertions).
+     - 140/140 tests passed across the entire GTMS application test suite (950 assertions, 0 failures, 100% pass rate).
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.7 — USER LIFECYCLE, STATUS TOGGLE, CREDENTIAL SANITIZATION & FK INTEGRITY AUDIT (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and remediation of `/user` (User Management) across Model, Controller, Blade views, and JavaScript AJAX routines:
+  1. **Branch Assignment Alignment & Required Validation (`createuser.blade.php`):**
+     - Spliced red asterisk (`*`) and HTML5 `required` attribute onto Branch / Department select in both Add and Edit modals.
+     - Added dedicated `<span class="text-danger branch_id_error error-text"></span>` and `<span class="text-danger edit_branch_id_error error-text"></span>`.
+  2. **Edit Modal Status Toggle (`createuser.blade.php` & `UserController@update`):**
+     - Spliced missing `<select name="status" id="editstatus">` into user edit modal, enabling administrators to toggle user status between Active (1) and Inactive (0) directly from the UI.
+     - Hardened `UserController@update` to validate and persist integer `status`.
+  3. **Foreign Key Integrity Safeguard (`UserController@destroy`):**
+     - Added pre-deletion check across 7 statutory filing tables (`customers`, `lease_applications`, `mining_applications`, `environment_projects`, `dgps_surveys`, `drone_surveys`, `ec_certificates`).
+     - Gracefully rejects deletion with status 0 message if target user has recorded filings, preventing fatal SQLSTATE 23000 (1451) foreign key crashes.
+  4. **Security & Credential Sanitization (`index.blade.php` & `user.js`):**
+     - Removed plaintext password leak (`data-password="{{ $user->show_password }}"`) from DataTable DOM attributes.
+     - Cleaned `user.js` to avoid referencing DOM plaintext passwords.
+  5. **Validation & Inline Error Formatting (`user.js` & `UserController`):**
+     - Added phone number length validation: `'mobile_num' => 'nullable|digits_between:10,15'`.
+     - Spliced inline error spans under all inputs across Add and Edit modals.
+     - Updated `user.js` AJAX error callback to catch HTTP 422 JSON validation errors and render red error text under offending inputs.
+     - Hardened profile image naming using `time() . '_' . uniqid() . '.' . $extension` to eliminate collision risks.
+  6. **Automated Verification:**
+     - Added 2 new tests to `tests/Feature/UserManagementAndAuthTest.php`: `test_user_cannot_be_deleted_if_they_created_statutory_records` and `test_user_status_can_be_updated_in_edit_route`.
+     - 19/19 User feature tests passed (122 assertions).
+     - 67/67 tests passed across all 4 Auth suites (372 assertions, 0 failures).
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.6 — DEPARTMENT / BRANCH FULL ARCHITECTURAL HARDENING, SAFEGUARDS & EVENT DELEGATION AUDIT (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep code-level manual inspection and remediation of `/branch` (Department Management) across Model, Controller, Blade views, and JavaScript AJAX routines following `/grill-me` protocol:
+  1. **JavaScript Event Delegation & Dynamic Row Rendering (`branch.js`):**
+     - Fixed critical event delegation bug by migrating `.editbranchBtn` to `$(document).on('click', '.editbranchBtn', ...)`, ensuring Edit modal triggers reliably on newly added rows and across DataTable pagination.
+     - Added `formatAddress()` helper in AJAX handler to ensure dynamically injected rows render full address (`address<br>city, state pincode`) matching server-side Blade SSR.
+  2. **Atomic Cascade Deletion & Multi-Layer Safeguards (`BranchController@destroy`):**
+     - Implemented 3 unbreakable safeguards:
+       a) **Last Branch Protection:** Prevents deleting the last remaining department in the system (`Branch::count() <= 1`).
+       b) **Own Session Branch Protection:** Prevents authenticated administrators from deleting the department assigned to their active session.
+       c) **Sole Admin Safeguard:** Prevents deleting a department if it hosts the only remaining Admin account in the entire system.
+     - Implemented atomic user cascade deletion wrapped in `DB::transaction(...)` to safely eliminate orphaned records when a department is legitimately deleted.
+     - Enhanced SweetAlert warning text informing operators of cascade impact.
+  3. **Validation Hardening & Inline Error Feedback (`creatbranch.blade.php`):**
+     - Spliced dedicated inline error spans (`span.text-danger.error-text.{field}_error`) under all inputs in both Add and Edit modals.
+     - Configured AJAX `error` callback to catch HTTP 422 `responseJSON.errors` and display red error text directly under offending fields.
+     - Added phone number length validation (`digits_between:10,15`) and pincode validation (`nullable|digits:6`).
+     - Removed redundant duplicate hidden ID input tag from Edit modal.
+  4. **Model Relationship Enrichment (`Branch.php`):**
+     - Added explicit Eloquent relationships on `Branch`: `users(): HasMany`, `leaseApplications(): HasMany`, and `miningApplications(): HasMany`.
+  5. **Automated Verification:**
+     - Expanded `tests/Feature/BranchManagementTest.php` with 4 new tests: `test_last_branch_cannot_be_deleted`, `test_cannot_delete_own_branch`, `test_cannot_delete_branch_holding_only_remaining_admin`, and `test_branch_deletion_cascades_assigned_users`.
+     - 21/21 Branch feature tests passed (116 assertions).
+     - 44/44 remaining Auth feature tests passed (274 assertions). Total 65 feature tests 100% passing.
+- **Last Updated:** 2026-09-28
+
+## Previous Phase: PHASE 7.5 — COMPREHENSIVE AUTH, RBAC, MULTI-TENANCY & USER LIFECYCLE AUDIT & TEST SUITE (COMPLETED & VERIFIED) ✅
 - **Status:** Auth, RBAC, Multi-tenancy, and User Administration fully audited, hardened, and verified with 61 new automated feature tests across 4 comprehensive test suites (672 assertions, 0 failures, 100% pass rate):
   1. **Branch Management (`tests/Feature/BranchManagementTest.php` - 17 tests passed):**
      - Full route authorization matrix verified (`branch.view`, `branch.create`, `branch.edit`, `branch.delete`).

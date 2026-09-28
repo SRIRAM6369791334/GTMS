@@ -21,23 +21,27 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email',
-            'password'  => 'required|min:6',
-            'role_id'   => 'required|exists:roles,id',
-            'branch_id' => 'required|exists:branches,id',
-            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:users,email',
+            'password'   => 'required|min:6',
+            'role_id'    => 'required|exists:roles,id',
+            'branch_id'  => 'required|exists:branches,id',
+            'mobile_num' => 'nullable|digits_between:10,15',
+            'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ], [
+            'branch_id.required'        => 'Please select a branch / department.',
+            'mobile_num.digits_between' => 'Phone number must be between 10 and 15 digits.',
         ]);
 
         $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
+        $user->name = trim($request->name);
+        $user->email = trim($request->email);
         $user->password = bcrypt($request->password);
         $user->role_id = $request->role_id;
         $user->branch_id = $request->branch_id;
         $user->status = $request->input('status', 1);
         $user->remember_token = Str::random(10);
-        $user->mobile_num = $request->mobile_num;
+        $user->mobile_num = trim($request->mobile_num ?? '');
         $user->show_password = $request->password;
 
         // Upload Image
@@ -47,7 +51,7 @@ class UserController extends Controller
                 mkdir($uploadDir, 0777, true);
             }
             $image = $request->file('image');
-            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($uploadDir, $imageName);
             $user->image = $imageName;
         }
@@ -77,18 +81,23 @@ class UserController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'id'        => 'required|exists:users,id',
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email,' . $request->id,
-            'password'  => 'nullable|min:6',
-            'role_id'   => 'required|exists:roles,id',
-            'branch_id' => 'required|exists:branches,id',
-            'image'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'id'         => 'required|exists:users,id',
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:users,email,' . $request->id,
+            'password'   => 'nullable|min:6',
+            'role_id'    => 'required|exists:roles,id',
+            'branch_id'  => 'required|exists:branches,id',
+            'mobile_num' => 'nullable|digits_between:10,15',
+            'status'     => 'nullable|in:0,1',
+            'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ], [
+            'branch_id.required'        => 'Please select a branch / department.',
+            'mobile_num.digits_between' => 'Phone number must be between 10 and 15 digits.',
         ]);
 
         $user = User::findOrFail($request->id);
-        $user->name = $request->name;
-        $user->email = $request->email;
+        $user->name = trim($request->name);
+        $user->email = trim($request->email);
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
             $user->show_password = $request->password;
@@ -96,9 +105,9 @@ class UserController extends Controller
         $user->role_id = $request->role_id;
         $user->branch_id = $request->branch_id;
         if ($request->has('status')) {
-            $user->status = $request->status;
+            $user->status = (int) $request->status;
         }
-        $user->mobile_num = $request->mobile_num;
+        $user->mobile_num = trim($request->mobile_num ?? '');
 
         // Upload Image
         if ($request->hasFile('image')) {
@@ -110,7 +119,7 @@ class UserController extends Controller
                 unlink($uploadDir . '/' . $user->image);
             }
             $image = $request->file('image');
-            $imageName = time().'.'.$image->getClientOriginalExtension();
+            $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
             $image->move($uploadDir, $imageName);
             $user->image = $imageName;
         }
@@ -151,6 +160,22 @@ class UserController extends Controller
             return response()->json([
                 'status' => 0,
                 'message' => 'The last Admin account cannot be deleted.',
+            ]);
+        }
+
+        // Integrity safeguard: check if user has created records in statutory application tables
+        $hasStatutoryRecords = \Illuminate\Support\Facades\DB::table('customers')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('lease_applications')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('mining_applications')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('environment_projects')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('dgps_surveys')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('drone_surveys')->where('created_by', $user->id)->exists()
+            || \Illuminate\Support\Facades\DB::table('ec_certificates')->where('created_by', $user->id)->exists();
+
+        if ($hasStatutoryRecords) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Cannot delete user because they have recorded statutory applications or customer filings. You can deactivate their account instead.',
             ]);
         }
 

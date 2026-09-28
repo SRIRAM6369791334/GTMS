@@ -32,11 +32,14 @@ class ApplicationHandlersAndPaymentsTest extends TestCase
             'database.connections.mysql.database' => 'gtms_data',
         ]);
 
-        $user = User::first();
-        if (!$user) {
-            $user = User::factory()->create();
+        $this->user = User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->first()
+            ?: User::where('role_id', 1)->first()
+            ?: User::first();
+
+        if ($this->user && !$this->user->hasRole(['Admin', 'Super Admin'])) {
+            $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+            $this->user->assignRole($adminRole);
         }
-        $this->user = $user;
         $this->actingAs($this->user);
     }
 

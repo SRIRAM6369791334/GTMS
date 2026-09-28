@@ -20,10 +20,12 @@ class RolesController extends Controller
             'branch' => 'Department / Branch',
             'roles' => 'Roles & Permissions',
             'users' => 'Users Management',
+            'customer' => 'Customer Management',
             'application' => 'Lease Applications',
             'mining' => 'Mining Plan',
             'environment' => 'Environment Clearance',
             'ec_certificate' => 'EC Certificate',
+            'ec_compliance' => 'EC Compliance',
             'ppt' => 'PPT Department',
             'dgps' => 'DGPS Survey',
             'drone' => 'Drone Survey',
@@ -45,7 +47,7 @@ class RolesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|unique:roles,name',
+            'name' => 'required|string|max:255|unique:roles,name',
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
@@ -83,12 +85,34 @@ class RolesController extends Controller
     {
         $request->validate([
             'id' => 'required|exists:roles,id',
-            'name' => 'required|unique:roles,name,' . $request->id,
+            'name' => 'required|string|max:255|unique:roles,name,' . $request->id,
             'permissions' => 'nullable|array',
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
         $role = Role::findOrFail($request->id);
+
+        // Safeguard Admin and Super Admin from unauthorized rename or total permission wipe
+        if ($role->name === 'Admin' || $role->name === 'Super Admin') {
+            if ($request->name !== $role->name) {
+                return response()->json([
+                    'status' => 0,
+                    'message' => 'Default Administrator role cannot be renamed.',
+                ]);
+            }
+
+            // Ensure Admin retains full access
+            $role->syncPermissions(Permission::all());
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+            $role->load('permissions');
+
+            return response()->json([
+                'status' => 1,
+                'message' => 'Administrator role permissions preserved with full system access.',
+                'data' => $role
+            ]);
+        }
+
         $role->name = $request->name;
         $role->save();
 
@@ -110,11 +134,27 @@ class RolesController extends Controller
 
     public function destroy(Request $request)
     {
+        $request->validate([
+            'id' => 'required|exists:roles,id',
+        ]);
+
         $role = Role::findOrFail($request->id);
         if ($role->name === 'Admin' || $role->name === 'Super Admin') {
             return response()->json([
                 'status' => 0,
                 'message' => 'Default Administrator role cannot be deleted.',
+            ]);
+        }
+
+        // Check if any users are assigned to this role
+        $assignedUsersCount = \App\Models\User::where('role_id', $role->id)
+            ->orWhereHas('roles', fn($q) => $q->where('id', $role->id))
+            ->count();
+
+        if ($assignedUsersCount > 0) {
+            return response()->json([
+                'status' => 0,
+                'message' => "Cannot delete role '{$role->name}' because {$assignedUsersCount} user(s) are currently assigned to it. Reassign or remove these users first.",
             ]);
         }
 

@@ -36,21 +36,27 @@ $(document).ready(function() {
     // Add Role Submit
     $('#rolesadd').submit(function (e) {
         e.preventDefault();
-        $('.error-text').text('');
+        var form = $(this);
+        form.find('.error-text').text('');
 
         $.ajax({
             url: 'roleadd',
             type: "POST",
-            data: $(this).serialize(),
+            data: form.serialize(),
             dataType: "json",
             success: function (response) {
                 if (response.status == 0) {
-                    $.each(response.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
-                    });
+                    if (response.message) {
+                        toastr.error(response.message);
+                    }
+                    if (response.errors) {
+                        $.each(response.errors, function (key, value) {
+                            form.find('.' + key + '_error').text(value[0]);
+                        });
+                    }
                 } else {
                     toastr.success(response.message);
-                    $('#rolesadd')[0].reset();
+                    form[0].reset();
                     $('.module-check-all-add').prop('checked', false);
                     $('#roleModal').modal('hide');
                     setTimeout(function() { location.reload(); }, 800);
@@ -59,7 +65,7 @@ $(document).ready(function() {
             error: function (xhr) {
                 if (xhr.status === 422 && xhr.responseJSON.errors) {
                     $.each(xhr.responseJSON.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
+                        form.find('.' + key + '_error').text(value[0]);
                     });
                 } else {
                     toastr.error("Something went wrong.");
@@ -113,18 +119,24 @@ $(document).ready(function() {
     // Update Role Submit
     $('#rolesedit').submit(function (e) {
         e.preventDefault();
-        $('.error-text').text('');
+        var form = $(this);
+        form.find('.error-text').text('');
 
         $.ajax({
             url: 'roleupdate',
             type: "POST",
-            data: $(this).serialize(),
+            data: form.serialize(),
             dataType: "json",
             success: function (response) {
                 if (response.status == 0) {
-                    $.each(response.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
-                    });
+                    if (response.message) {
+                        toastr.error(response.message);
+                    }
+                    if (response.errors) {
+                        $.each(response.errors, function (key, value) {
+                            form.find('.' + key + '_error').text(value[0]);
+                        });
+                    }
                 } else {
                     toastr.success(response.message);
                     $('#roleeditModal').modal('hide');
@@ -134,7 +146,7 @@ $(document).ready(function() {
             error: function (xhr) {
                 if (xhr.status === 422 && xhr.responseJSON.errors) {
                     $.each(xhr.responseJSON.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
+                        form.find('.' + key + '_error').text(value[0]);
                     });
                 } else {
                     toastr.error("Something went wrong.");

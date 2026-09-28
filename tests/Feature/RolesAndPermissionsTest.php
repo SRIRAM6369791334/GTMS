@@ -443,4 +443,107 @@ class RolesAndPermissionsTest extends TestCase
         $res4 = $this->postJson('/roledelete', ['id' => 99999999]);
         $this->assertNotEquals(500, $res4->getStatusCode());
     }
+
+    /**
+     * Requirement R2.11: Admin role cannot be renamed or stripped of permissions
+     */
+    public function test_admin_role_cannot_be_renamed_or_stripped_of_permissions(): void
+    {
+        $adminRole = Role::where('name', 'Admin')->first();
+
+        // 1. Attempt to rename Admin
+        $renameResponse = $this->actingAs($this->adminUser)->postJson('/roleupdate', [
+            'id' => $adminRole->id,
+            'name' => 'Renamed Admin ' . uniqid(),
+            'permissions' => ['customer.view'],
+        ]);
+
+        $renameResponse->assertStatus(200);
+        $renameResponse->assertJson([
+            'status' => 0,
+            'message' => 'Default Administrator role cannot be renamed.',
+        ]);
+
+        // 2. Attempt to strip permissions: Admin retains all permissions
+        $stripResponse = $this->actingAs($this->adminUser)->postJson('/roleupdate', [
+            'id' => $adminRole->id,
+            'name' => 'Admin',
+            'permissions' => [],
+        ]);
+
+        $stripResponse->assertStatus(200);
+        $stripResponse->assertJson([
+            'status' => 1,
+            'message' => 'Administrator role permissions preserved with full system access.',
+        ]);
+
+        $adminRole->refresh();
+        $this->assertEquals('Admin', $adminRole->name);
+        $this->assertGreaterThanOrEqual(50, $adminRole->permissions()->count());
+    }
+
+    /**
+     * Requirement R2.12: Cannot delete a role if active users are assigned to it
+     */
+    public function test_role_cannot_be_deleted_if_active_users_are_assigned(): void
+    {
+        $role = Role::create([
+            'name' => 'Active Officer Role ' . uniqid(),
+            'guard_name' => 'web',
+        ]);
+
+        // Assign a user to this role via role_id
+        $assignedUser = User::create([
+            'name' => 'Assigned Officer',
+            'email' => 'assigned_' . uniqid() . '@gtms.com',
+            'password' => bcrypt('secret123'),
+            'role_id' => $role->id,
+            'branch_id' => $this->adminUser->branch_id ?? 1,
+            'status' => 1,
+        ]);
+        $assignedUser->assignRole($role);
+
+        // Attempt deletion
+        $response = $this->actingAs($this->adminUser)->postJson('/roledelete', [
+            'id' => $role->id,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 0,
+        ]);
+        $this->assertStringContainsString('currently assigned', $response->json('message'));
+        $this->assertDatabaseHas('roles', ['id' => $role->id]);
+    }
+
+    /**
+     * Requirement R2.13: Newly expanded CRUD permissions for PPT, DGPS, Drone, EC Certificate & EC Compliance
+     */
+    public function test_expanded_crud_permissions_can_be_assigned(): void
+    {
+        $expandedPerms = [
+            'ppt.create', 'ppt.edit', 'ppt.delete',
+            'dgps.create', 'dgps.edit', 'dgps.delete',
+            'drone.create', 'drone.edit', 'drone.delete',
+            'ec_certificate.create', 'ec_certificate.edit', 'ec_certificate.delete',
+            'ec_compliance.create', 'ec_compliance.edit', 'ec_compliance.delete',
+        ];
+
+        $roleName = 'Technical Specialist ' . uniqid();
+        $response = $this->actingAs($this->adminUser)->postJson('/roleadd', [
+            'name' => $roleName,
+            'permissions' => $expandedPerms,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['status' => 1]);
+
+        $createdRole = Role::where('name', $roleName)->first();
+        $this->assertNotNull($createdRole);
+        $this->assertCount(count($expandedPerms), $createdRole->permissions);
+
+        foreach ($expandedPerms as $perm) {
+            $this->assertTrue($createdRole->hasPermissionTo($perm));
+        }
+    }
 }

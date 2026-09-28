@@ -277,23 +277,30 @@ Route::middleware('auth')->group(function () {
 
 
     // EC Certificate Issuance
-    Route::middleware('permission:environment.view')->group(function () {
+    Route::middleware('permission:ec_certificate.view')->group(function () {
         Route::get('/ec-certificate', [EcCertificateController::class, 'index'])->name('ec-certificate.index');
         Route::get('/ec-certificate/{id}', [EcCertificateController::class, 'show'])->whereNumber('id')->name('ec-certificate.show');
-        Route::post('/ec-certificate/{id}/status', [EcCertificateController::class, 'updateStatus'])->whereNumber('id')->name('ec-certificate.status');
+    });
+    Route::middleware('permission:ec_certificate.create')->group(function () {
         Route::get('/ec-certificate/step/{step}', [EcCertificateController::class, 'wizard'])->whereNumber('step')->name('ec-certificate.step');
         Route::post('/ec-certificate/step/{step}', [EcCertificateController::class, 'saveStep'])->whereNumber('step')->name('ec-certificate.saveStep');
         Route::post('/ec-certificate', [EcCertificateController::class, 'store'])->name('ec-certificate.store');
     });
-
+    Route::middleware('permission:ec_certificate.edit')->group(function () {
+        Route::post('/ec-certificate/{id}/status', [EcCertificateController::class, 'updateStatus'])->whereNumber('id')->name('ec-certificate.status');
+    });
 
     // PPT Department
     Route::middleware('permission:ppt.view')->group(function () {
         Route::get('/ppt-department', [PptDepartmentController::class, 'index'])->name('ppt-department.index');
+        Route::get('/ppt-department/{id}', [PptDepartmentController::class, 'show'])->whereNumber('id')->name('ppt-department.show');
+    });
+    Route::middleware('permission:ppt.create')->group(function () {
         Route::get('/ppt-department/step/{step}', [PptDepartmentController::class, 'wizard'])->whereNumber('step')->name('ppt-department.step');
         Route::post('/ppt-department/step/{step}', [PptDepartmentController::class, 'saveStep'])->whereNumber('step')->name('ppt-department.saveStep');
         Route::post('/ppt-department', [PptDepartmentController::class, 'store'])->name('ppt-department.store');
-        Route::get('/ppt-department/{id}', [PptDepartmentController::class, 'show'])->whereNumber('id')->name('ppt-department.show');
+    });
+    Route::middleware('permission:ppt.edit')->group(function () {
         Route::post('/ppt-department/{id}/status', [PptDepartmentController::class, 'updateStatus'])->whereNumber('id')->name('ppt-department.status');
         Route::post('/ppt-department/{id}/approve-stage', [PptDepartmentController::class, 'approvePresentation'])->whereNumber('id')->name('ppt-department.approveStage');
         Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
@@ -302,29 +309,39 @@ Route::middleware('auth')->group(function () {
     // DGPS Survey
     Route::middleware('permission:dgps.view')->group(function () {
         Route::get('/dgps-survey', [DgpsSurveyController::class, 'index'])->name('dgps-survey.index');
+        Route::get('/dgps-survey/{id}', [DgpsSurveyController::class, 'show'])->whereNumber('id')->name('dgps-survey.show');
+    });
+    Route::middleware('permission:dgps.create')->group(function () {
         Route::get('/dgps-survey/step/{step}', [DgpsSurveyController::class, 'wizard'])->whereNumber('step')->name('dgps-survey.step');
         Route::post('/dgps-survey/step/{step}', [DgpsSurveyController::class, 'saveStep'])->whereNumber('step')->name('dgps-survey.saveStep');
         Route::post('/dgps-survey', [DgpsSurveyController::class, 'store'])->name('dgps-survey.store');
-        Route::get('/dgps-survey/{id}', [DgpsSurveyController::class, 'show'])->whereNumber('id')->name('dgps-survey.show');
+    });
+    Route::middleware('permission:dgps.edit')->group(function () {
         Route::post('/dgps-survey/upload', [DgpsSurveyController::class, 'uploadDocument'])->name('dgps-survey.upload');
     });
 
     // Drone Survey
     Route::middleware('permission:drone.view')->group(function () {
         Route::get('/drone-survey', [DroneSurveyController::class, 'index'])->name('drone-survey.index');
+        Route::get('/drone-survey/{id}', [DroneSurveyController::class, 'show'])->whereNumber('id')->name('drone-survey.show');
+    });
+    Route::middleware('permission:drone.create')->group(function () {
         Route::get('/drone-survey/step/{step}', [DroneSurveyController::class, 'wizard'])->whereNumber('step')->name('drone-survey.step');
         Route::post('/drone-survey/step/{step}', [DroneSurveyController::class, 'saveStep'])->whereNumber('step')->name('drone-survey.saveStep');
         Route::post('/drone-survey', [DroneSurveyController::class, 'store'])->name('drone-survey.store');
-        Route::get('/drone-survey/{id}', [DroneSurveyController::class, 'show'])->whereNumber('id')->name('drone-survey.show');
     });
 
     // EC Compliance (Half Yearly Compliance)
-    Route::middleware('permission:environment.view')->group(function () {
+    Route::middleware('permission:ec_compliance.view')->group(function () {
         Route::get('/ec-compliance', [EcComplianceController::class, 'index'])->name('ec-compliance.index');
+        Route::get('/ec-compliance/{id}', [EcComplianceController::class, 'show'])->whereNumber('id')->name('ec-compliance.show');
+    });
+    Route::middleware('permission:ec_compliance.create')->group(function () {
         Route::get('/ec-compliance/step/{step}', [EcComplianceController::class, 'wizard'])->whereNumber('step')->name('ec-compliance.step');
         Route::post('/ec-compliance/step/{step}', [EcComplianceController::class, 'saveStep'])->whereNumber('step')->name('ec-compliance.saveStep');
         Route::post('/ec-compliance', [EcComplianceController::class, 'store'])->name('ec-compliance.store');
-        Route::get('/ec-compliance/{id}', [EcComplianceController::class, 'show'])->whereNumber('id')->name('ec-compliance.show');
+    });
+    Route::middleware('permission:ec_compliance.edit')->group(function () {
         Route::post('/ec-compliance/{id}/status', [EcComplianceController::class, 'updateStatus'])->whereNumber('id')->name('ec-compliance.status');
         Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
     });

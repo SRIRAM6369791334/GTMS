@@ -291,7 +291,20 @@
                     @endif
                 </div>
             </div>
-            <div>
+            <div class="d-flex align-items-center gap-2">
+                @can('customer.edit')
+                <a href="{{ route('customers.index') }}#edit-{{ $customer->id }}" class="btn btn-sm btn-outline-warning px-3 py-2 fw-semibold rounded-pill text-dark" title="Edit in Customer Directory">
+                    <i class="fa fa-edit me-1"></i> Edit Profile
+                </a>
+                @endcan
+                @can('application.create')
+                <a href="{{ route('step1') }}?customer_id={{ $customer->id }}" class="btn btn-sm btn-navy px-3 py-2 fw-semibold rounded-pill text-white shadow-sm">
+                    <i class="fa fa-plus me-1"></i> New Lease Application
+                </a>
+                @endcan
+                <a href="{{ route('customer-tracking.show', $customer->slug ?? $customer->id) }}" class="btn btn-sm btn-outline-primary px-3 py-2 fw-semibold rounded-pill" title="Open in 4-Tab Customer Tracking Hub">
+                    <i class="fa fa-chart-line me-1"></i> Tracking 360
+                </a>
                 <a href="{{ route('customers.index') }}" class="btn btn-sm btn-outline-secondary px-3 py-2 fw-semibold rounded-pill">
                     <i class="fa fa-arrow-left me-1"></i> Back to Directory
                 </a>
@@ -370,7 +383,7 @@
                             </span>
                             <div class="info-chip-card d-flex justify-content-between align-items-center">
                                 <span class="text-muted small"><i class="fa fa-map-marker-alt me-1 text-danger"></i> District</span>
-                                <span class="fw-bold text-dark small">{{ $customer->district->name ?? 'Unassigned' }}</span>
+                                <span class="fw-bold text-dark small">{{ $customer->district?->name ?? 'Unassigned' }}</span>
                             </div>
                             <div class="info-chip-card mb-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -545,7 +558,7 @@
                             <button class="segmented-tab-btn" id="tab-environment-btn" data-bs-toggle="pill" data-bs-target="#tab-environment" type="button" role="tab">
                                 <i class="fa fa-leaf"></i>
                                 <span>Environment & EC</span>
-                                <span class="tab-count-pill">{{ $customer->environmentProjects->count() }}</span>
+                                <span class="tab-count-pill">{{ $customer->environmentProjects->count() + ($customer->ecCompliances ? $customer->ecCompliances->count() : 0) }}</span>
                             </button>
 
                             <button class="segmented-tab-btn" id="tab-ppt-btn" data-bs-toggle="pill" data-bs-target="#tab-ppt" type="button" role="tab">
@@ -613,7 +626,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-light text-dark border">{{ $lease->category->name ?? 'Standard Rule' }}</span>
+                                                    <span class="badge bg-light text-dark border">{{ $lease->category?->name ?? 'Standard Rule' }}</span>
                                                 </td>
                                                 <td>
                                                     @php
@@ -716,6 +729,7 @@
                                                 <th>RQP Details</th>
                                                 <th>Boundary Pillars</th>
                                                 <th>Status</th>
+                                                <th class="text-end" style="min-width: 120px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -726,9 +740,24 @@
                                                     <div class="text-muted small" style="font-size: .72rem;">Validity: {{ $plan->validity_years }} Years</div>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-info-subtle text-info border border-info">{{ $plan->planType->name ?? 'Standard Plan' }}</span>
+                                                    <span class="badge bg-info-subtle text-info border border-info">{{ $plan->planType?->name ?? 'Standard Plan' }}</span>
                                                 </td>
-                                                <td>{{ $plan->mineral->name ?? '-' }}</td>
+                                                <td>
+                                                    @php
+                                                        $planMinerals = $plan->minerals && $plan->minerals->isNotEmpty()
+                                                            ? $plan->minerals->pluck('name')->toArray()
+                                                            : ($plan->mineral ? [$plan->mineral->name] : []);
+                                                    @endphp
+                                                    @if(!empty($planMinerals))
+                                                        @foreach($planMinerals as $mName)
+                                                            <span class="badge bg-primary-subtle text-primary border border-primary me-1 mb-1 d-inline-block">
+                                                                <i class="fa fa-gem me-1"></i> {{ $mName }}
+                                                            </span>
+                                                        @endforeach
+                                                    @else
+                                                        <span class="badge bg-light text-muted border">-</span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     <span class="badge bg-primary text-white px-2 py-1">Stage {{ $plan->stage }}</span>
                                                 </td>
@@ -746,10 +775,15 @@
                                                         <span class="status-blip-badge pending"><span class="status-blip-dot"></span>{{ ucfirst($plan->status) }}</span>
                                                     @endif
                                                 </td>
+                                                <td class="text-end">
+                                                    <a href="/process?id={{ $plan->id }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Open Mining Plan Dossier">
+                                                        <i class="fa fa-mountain me-1"></i> Open Plan ↗
+                                                    </a>
+                                                </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="7">
+                                                <td colspan="8">
                                                     <div class="empty-state-box">
                                                         <div class="empty-state-icon"><i class="fa fa-mountain"></i></div>
                                                         <h6 class="fw-bold text-dark mb-1">No Mining Plans Registered</h6>
@@ -785,6 +819,7 @@
                                                 <th>SEIAA Certificate Ref</th>
                                                 <th>Validity Window</th>
                                                 <th>Status</th>
+                                                <th class="text-end" style="min-width: 120px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -817,10 +852,15 @@
                                                 <td>
                                                     <span class="badge bg-info-subtle text-info border border-info">{{ ucfirst($env->status) }}</span>
                                                 </td>
+                                                <td class="text-end">
+                                                    <a href="{{ route('environment-b2.show', $env->id) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View Environmental Project">
+                                                        <i class="fa fa-eye me-1"></i> View Project
+                                                    </a>
+                                                </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="6">
+                                                <td colspan="7">
                                                     <div class="empty-state-box">
                                                         <div class="empty-state-icon"><i class="fa fa-leaf"></i></div>
                                                         <h6 class="fw-bold text-dark mb-1">No Environmental Clearances</h6>
@@ -831,6 +871,89 @@
                                             @endforelse
                                         </tbody>
                                     </table>
+                                </div>
+
+                                <!-- EC Half-Yearly Compliance Monitoring Section -->
+                                <div class="mt-4 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge bg-success text-white"><i class="fa fa-calendar-check me-1"></i> EC Half-Yearly Compliance</span>
+                                                <span class="text-muted small">({{ $customer->ecCompliances ? $customer->ecCompliances->count() : 0 }} records)</span>
+                                            </div>
+                                            <small class="text-muted">MoEFCC / SEIAA half-yearly compliance filings, PARIVESH submissions &amp; monitoring</small>
+                                        </div>
+                                        @can('ec_compliance.create')
+                                        <a href="{{ route('ec-compliance.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-sm btn-outline-success rounded-pill py-1 px-3">
+                                            <i class="fa fa-plus me-1"></i> New Compliance
+                                        </a>
+                                        @endcan
+                                    </div>
+
+                                    <div class="table-responsive border rounded-3">
+                                        <table class="table dossier-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Compliance No</th>
+                                                    <th>Period &amp; Year</th>
+                                                    <th>Project Name</th>
+                                                    <th>PARIVESH Ref</th>
+                                                    <th>Submission / Due</th>
+                                                    <th>Status</th>
+                                                    <th class="text-end" style="min-width: 110px;">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($customer->ecCompliances ?? [] as $comp)
+                                                <tr>
+                                                    <td>
+                                                        <span class="font-monospace fw-bold text-success">{{ $comp->compliance_no }}</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge bg-light text-dark border">{{ $comp->compliance_period }} {{ $comp->compliance_year }}</span>
+                                                    </td>
+                                                    <td class="fw-semibold text-dark">
+                                                        {{ $comp->project_name ?? $comp->environmentProject?->project_name ?? '-' }}
+                                                    </td>
+                                                    <td>
+                                                        @if($comp->parivesh_acknowledgement_no)
+                                                            <span class="code-badge text-primary">{{ $comp->parivesh_acknowledgement_no }}</span>
+                                                        @elseif($comp->parivesh_app_no)
+                                                            <span class="code-badge">{{ $comp->parivesh_app_no }}</span>
+                                                        @else
+                                                            <span class="text-muted small">Pending Upload</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($comp->submission_date)
+                                                            <span class="text-success small fw-semibold"><i class="fa fa-check-circle me-1"></i> {{ $comp->submission_date->format('d M Y') }}</span>
+                                                        @elseif($comp->submission_due_date)
+                                                            <span class="text-danger small fw-semibold"><i class="fa fa-clock me-1"></i> Due: {{ $comp->submission_due_date->format('d M Y') }}</span>
+                                                        @else
+                                                            <span class="text-muted small">-</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        @if($comp->status === 'submitted' || $comp->status === 'approved')
+                                                            <span class="status-blip-badge active"><span class="status-blip-dot"></span>{{ ucfirst($comp->status) }}</span>
+                                                        @else
+                                                            <span class="status-blip-badge pending"><span class="status-blip-dot"></span>{{ ucfirst($comp->status) }}</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('ec-compliance.show', $comp->id) }}" class="btn btn-sm btn-outline-success py-1 px-2" title="View Compliance Dossier">
+                                                            <i class="fa fa-eye me-1"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                @empty
+                                                <tr>
+                                                    <td colspan="7" class="text-center py-3 text-muted small">No EC half-yearly compliance reports logged for this customer.</td>
+                                                </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
 
@@ -857,6 +980,7 @@
                                                 <th>Meeting Date</th>
                                                 <th>Hearing Outcome</th>
                                                 <th>Status</th>
+                                                <th class="text-end" style="min-width: 120px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -897,10 +1021,15 @@
                                                 <td>
                                                     <span class="badge bg-light text-dark border">{{ ucfirst($ppt->status) }}</span>
                                                 </td>
+                                                <td class="text-end">
+                                                    <a href="{{ route('ppt-department.show', $ppt->id) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View PPT Hearing">
+                                                        <i class="fa fa-eye me-1"></i> View Agenda
+                                                    </a>
+                                                </td>
                                             </tr>
                                             @empty
                                             <tr>
-                                                <td colspan="7">
+                                                <td colspan="8">
                                                     <div class="empty-state-box">
                                                         <div class="empty-state-icon"><i class="fa fa-chalkboard-teacher"></i></div>
                                                         <h6 class="fw-bold text-dark mb-1">No PPT Department Hearings</h6>
@@ -942,6 +1071,7 @@
                                                     <th>Discrepancy</th>
                                                     <th>Control Points</th>
                                                     <th>Status</th>
+                                                    <th class="text-end" style="min-width: 90px;">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -958,10 +1088,15 @@
                                                     </td>
                                                     <td><span class="code-badge">{{ $dgps->points->count() }} GCPs</span></td>
                                                     <td><span class="status-blip-badge active"><span class="status-blip-dot"></span>{{ ucfirst($dgps->survey_status) }}</span></td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('dgps-survey.show', $dgps->id) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View DGPS Survey">
+                                                            <i class="fa fa-satellite-dish me-1"></i> View
+                                                        </a>
+                                                    </td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="7" class="text-center py-3 text-muted small">No DGPS ground surveys logged.</td>
+                                                    <td colspan="8" class="text-center py-3 text-muted small">No DGPS ground surveys logged.</td>
                                                 </tr>
                                                 @endforelse
                                             </tbody>
@@ -981,10 +1116,11 @@
                                                 <tr>
                                                     <th>Survey No</th>
                                                     <th>Flight Date</th>
-                                                    <th>Pilot & Drone UIN</th>
+                                                    <th>Pilot &amp; Drone UIN</th>
                                                     <th>Altitude / GSD</th>
                                                     <th>Extracted Volume</th>
                                                     <th>Status</th>
+                                                    <th class="text-end" style="min-width: 90px;">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1002,10 +1138,15 @@
                                                         <span class="text-muted small">CBM</span>
                                                     </td>
                                                     <td><span class="status-blip-badge active"><span class="status-blip-dot"></span>{{ ucfirst($drone->survey_status) }}</span></td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('drone-survey.show', $drone->id) }}" class="btn btn-sm btn-outline-info py-1 px-2" title="View Drone Flight">
+                                                            <i class="fa fa-paper-plane me-1"></i> View
+                                                        </a>
+                                                    </td>
                                                 </tr>
                                                 @empty
                                                 <tr>
-                                                    <td colspan="6" class="text-center py-3 text-muted small">No drone volumetric flights logged.</td>
+                                                    <td colspan="7" class="text-center py-3 text-muted small">No drone volumetric flights logged.</td>
                                                 </tr>
                                                 @endforelse
                                             </tbody>
@@ -1030,7 +1171,7 @@
                                     <div class="row g-3 align-items-center">
                                         <div class="col-md-3 border-end">
                                             <span class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: .68rem;">Mineral Site</span>
-                                            <h5 class="fw-bold text-primary mb-0">{{ $stockpile->mineral->name ?? 'Gravel / Stone' }}</h5>
+                                            <h5 class="fw-bold text-primary mb-0">{{ $stockpile->mineral?->name ?? 'Gravel / Stone' }}</h5>
                                             <span class="code-badge mt-1 d-inline-block">Stockpile #{{ $stockpile->id }}</span>
                                         </div>
                                         <div class="col-md-3 border-end">

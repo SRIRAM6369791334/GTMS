@@ -66,22 +66,28 @@
                 </ul>
             </li>
             @endcan
-            @can('environment.view')
+            @canany(['environment.view', 'ec_certificate.view', 'ec_compliance.view'])
             <li>
                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">
                     <i class="fas fa-leaf"></i>
                     <span class="nav-text">Environment Clearance</span>
                 </a>
                 <ul aria-expanded="false">
+                    @can('environment.view')
                     <li><a href="{{ route('eviron.index') }}">All Applications</a></li>
+                    @endcan
                     @can('environment.b2.create')
                     <!-- <li><a href="{{ route('eviron.create') }}">New Application</a></li> -->
                     @endcan
+                    @can('ec_certificate.view')
                     <li><a href="{{ route('ec-certificate.index') }}">EC Certificate Issuance</a></li>
+                    @endcan
+                    @can('ec_compliance.view')
                     <li><a href="{{ route('ec-compliance.index') }}">Half Yearly Compliance</a></li>
+                    @endcan
                 </ul>
             </li>
-            @endcan
+            @endcanany
             @can('ppt.view')
             <li>
                 <a class="has-arrow" href="javascript:void(0);" aria-expanded="false">

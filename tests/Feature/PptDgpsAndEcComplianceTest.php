@@ -29,7 +29,14 @@ class PptDgpsAndEcComplianceTest extends TestCase
             'database.connections.mysql.database' => 'gtms_data',
         ]);
 
-        $this->user = User::first() ?: User::factory()->create();
+        $this->user = User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->first()
+            ?: User::where('role_id', 1)->first()
+            ?: User::first();
+
+        if ($this->user && !$this->user->hasRole(['Admin', 'Super Admin'])) {
+            $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+            $this->user->assignRole($adminRole);
+        }
 
         $this->customer = Customer::first() ?: Customer::create([
             'customer_name' => 'Kaveri Granites Pvt Ltd',

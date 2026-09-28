@@ -10,9 +10,12 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 
 class EnvironmentClearanceTest extends TestCase
 {
+    use DatabaseTransactions;
+
     protected User $user;
 
     protected function setUp(): void
@@ -23,12 +26,14 @@ class EnvironmentClearanceTest extends TestCase
             'database.connections.mysql.database' => 'gtms_data',
         ]);
 
-        // Resolve or create an authenticated user with permissions
-        $user = User::first();
-        if (!$user) {
-            $user = User::factory()->create();
+        $this->user = User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->first()
+            ?: User::where('role_id', 1)->first()
+            ?: User::first();
+
+        if ($this->user && !$this->user->hasRole(['Admin', 'Super Admin'])) {
+            $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+            $this->user->assignRole($adminRole);
         }
-        $this->user = $user;
         $this->actingAs($this->user);
     }
 
@@ -129,9 +134,11 @@ class EnvironmentClearanceTest extends TestCase
         $cert = EcCertificate::whereHas('environmentProject')->first();
         if (!$cert) {
             $project = EnvironmentProject::first();
+            $customer = $project?->customer ?? Customer::first();
             $cert = EcCertificate::create([
                 'ec_ref_no'              => 'SEIAA-TN/EC/2026/TEST99',
                 'environment_project_id' => $project?->id,
+                'customer_id'            => $customer?->id ?? 1,
                 'applicant_name'         => 'Authentic Granite Ltd',
                 'issue_date'             => date('Y-m-d'),
                 'validity_years'         => 5,
@@ -386,24 +393,23 @@ class EnvironmentClearanceTest extends TestCase
                     'completed'              => true,
                 ],
                 'step2' => [
-                    'file_path'   => null,
+                    'file_path'   => 'uploads/ec_certificates/test.pdf',
                     'file_name'   => 'Auto-generated Digital Clearance Notice.pdf',
                     'file_size'   => 124800,
                     'uploaded_at' => now()->toDateTimeString(),
                 ],
                 'step3' => [
-                    'preview_verified' => true,
-                    'verified_at'      => now()->toDateTimeString(),
-                ],
-                'step4' => [
-                    'storage_confirmed' => true,
-                    'primary_folder'    => 'EC Certificate & Statutory Grants',
-                ],
-                'step5' => [
                     'communication_type' => 'Grant',
                     'recipient_email'    => 'applicant@example.com',
                     'recipient_phone'    => '9876543210',
                     'communication_note' => 'Formal grant notice.',
+                ],
+                'step4' => [
+                    'handlers' => [],
+                ],
+                'step5' => [
+                    'product_value' => 50000,
+                    'paid_amount'   => 50000,
                 ],
             ],
         ];

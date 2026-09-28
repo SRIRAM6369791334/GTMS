@@ -70,18 +70,40 @@ class RolePermissionSeeder extends Seeder
             'environment.b2.upload',
             'environment.b2.review',
             'environment.b2.status',
+
+            // EC Certificate
             'ec_certificate.view',
+            'ec_certificate.create',
+            'ec_certificate.edit',
+            'ec_certificate.delete',
+            'ec_certificate.manage',
+
+            // EC Compliance (Half-Yearly)
+            'ec_compliance.view',
+            'ec_compliance.create',
+            'ec_compliance.edit',
+            'ec_compliance.delete',
+            'ec_compliance.manage',
 
             // PPT Department
             'ppt.view',
+            'ppt.create',
+            'ppt.edit',
+            'ppt.delete',
             'ppt.manage',
 
             // DGPS Survey
             'dgps.view',
+            'dgps.create',
+            'dgps.edit',
+            'dgps.delete',
             'dgps.manage',
 
             // Drone Survey
             'drone.view',
+            'drone.create',
+            'drone.edit',
+            'drone.delete',
             'drone.manage',
 
             // Masters (Category, Product, Unit)
@@ -124,6 +146,7 @@ class RolePermissionSeeder extends Seeder
             'environment.b2.view',
             'users.view',
             'ec_certificate.view',
+            'ec_compliance.view',
             'ppt.view',
             'dgps.view',
             'drone.view',
@@ -151,11 +174,24 @@ class RolePermissionSeeder extends Seeder
             'environment.b2.upload',
             'environment.b2.review',
             'ec_certificate.view',
+            'ec_certificate.create',
+            'ec_certificate.edit',
+            'ec_certificate.manage',
+            'ec_compliance.view',
+            'ec_compliance.create',
+            'ec_compliance.edit',
+            'ec_compliance.manage',
             'ppt.view',
+            'ppt.create',
+            'ppt.edit',
             'ppt.manage',
             'dgps.view',
+            'dgps.create',
+            'dgps.edit',
             'dgps.manage',
             'drone.view',
+            'drone.create',
+            'drone.edit',
             'drone.manage',
         ]);
 

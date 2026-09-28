@@ -321,7 +321,7 @@
                                         @can('customer.delete')
                                         <button type="button" class="btn-action-icon btn-action-delete deleteCustomerBtn" 
                                             data-id="{{ $customer->id }}" 
-                                            data-name="{{ $customer->company_name ?? $customer->customer_name }}" 
+                                            data-name="{{ $customer->company_name ?: $customer->customer_name }}" 
                                             title="Delete Customer">
                                             <i class="fa fa-trash"></i>
                                         </button>

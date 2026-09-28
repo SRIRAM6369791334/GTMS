@@ -14,24 +14,32 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function (response) {
                 if (response.status == 0) {
-                    $.each(response.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
-                    });
+                    if (response.errors) {
+                        $.each(response.errors, function (key, value) {
+                            $('.' + key + '_error').text(value[0]);
+                        });
+                    } else if (response.message) {
+                        toastr.error(response.message);
+                    }
                 } else {
                     toastr.success(response.message);
                     $('#useradd')[0].reset();
+                    $('.error-text').text('');
                     $('#userModal').modal('hide');
-                    setTimeout(function() { location.reload(); }, 800);
+                    setTimeout(function() { location.reload(); }, 600);
                 }
             },
             error: function (xhr) {
-                if (xhr.status === 422 && xhr.responseJSON.errors) {
-                    var errors = xhr.responseJSON.errors;
-                    $.each(errors, function(key, value) {
-                        toastr.error(value[0]);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        $('.' + key + '_error').text(value[0]);
                     });
+                    toastr.error("Please correct the form errors indicated in red.");
                 } else {
                     toastr.error("Something went wrong while adding user.");
                 }
@@ -41,6 +49,8 @@ $(document).ready(function() {
 
     // Edit User Button
     $(document).on('click', '.edituserBtn', function () {
+        $('.error-text').text('');
+
         var id = $(this).data('id');
         var name = $(this).data('name');
         var email = $(this).data('email');
@@ -49,14 +59,13 @@ $(document).ready(function() {
         var status = $(this).data('status');
         var image = $(this).data('image');
         var mobile = $(this).data('mobile');
-        var password = $(this).data('password');
 
         $('#editid').val(id);
         $('#editname').val(name);
         $('#editemail').val(email);
         $('#editrole').val(role).trigger('change');
         $('#editbranch').val(branch).trigger('change');
-        $('#editstatus').val(status);
+        $('#editstatus').val(status !== undefined ? status : 1).trigger('change');
         $('#editmobile_num').val(mobile);
         $('#editpassword').val('');
 
@@ -82,24 +91,32 @@ $(document).ready(function() {
             processData: false,
             contentType: false,
             dataType: 'json',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             success: function (response) {
                 if (response.status == 0) {
-                    $.each(response.errors, function (key, value) {
-                        $('.' + key + '_error').text(value[0]);
-                    });
+                    if (response.errors) {
+                        $.each(response.errors, function (key, value) {
+                            $('.edit_' + key + '_error').text(value[0]);
+                        });
+                    } else if (response.message) {
+                        toastr.error(response.message);
+                    }
                 } else {
                     toastr.success(response.message);
                     $('#useredit')[0].reset();
+                    $('.error-text').text('');
                     $('#usereditModal').modal('hide');
-                    setTimeout(function() { location.reload(); }, 800);
+                    setTimeout(function() { location.reload(); }, 600);
                 }
             },
             error: function (xhr) {
-                if (xhr.status === 422 && xhr.responseJSON.errors) {
-                    var errors = xhr.responseJSON.errors;
-                    $.each(errors, function(key, value) {
-                        toastr.error(value[0]);
+                if (xhr.status === 422 && xhr.responseJSON && xhr.responseJSON.errors) {
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        $('.edit_' + key + '_error').text(value[0]);
                     });
+                    toastr.error("Please correct the form errors indicated in red.");
                 } else {
                     toastr.error("Something went wrong while updating user.");
                 }
@@ -134,20 +151,23 @@ $(document).ready(function() {
                     success: function (response) {
                         if (response.status == 1) {
                             toastr.success(response.message);
-                            table.row(button.parents('tr')).remove().draw();
+                            table.row(button.closest('tr')).remove().draw();
                         } else {
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Error',
+                                title: 'Cannot Delete',
                                 text: response.message
                             });
                         }
                     },
-                    error: function () {
+                    error: function (xhr) {
+                        var errMsg = (xhr.responseJSON && xhr.responseJSON.message)
+                            ? xhr.responseJSON.message
+                            : 'An unexpected error occurred while deleting the user.';
                         Swal.fire({
                             icon: 'error',
-                            title: 'Oops...',
-                            text: 'Something went wrong!'
+                            title: 'Error',
+                            text: errMsg
                         });
                     }
                 });

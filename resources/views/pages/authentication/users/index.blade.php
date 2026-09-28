@@ -149,8 +149,7 @@
                                             data-branch="{{ $user->branch_id }}"
                                             data-status="{{ $user->status }}"
                                             data-image="{{ $user->image }}"
-                                            data-mobile="{{ $user->mobile_num }}"
-                                            data-password="{{ $user->show_password }}">
+                                            data-mobile="{{ $user->mobile_num }}">
                                             <i class="fa fa-pencil"></i>
                                         </button>
                                         @endcan
@@ -172,7 +171,7 @@
             </div>
 
             <!-- Role Permissions Matrix Overview -->
-            <div class="admin-panel">
+            <!-- <div class="admin-panel">
                 <div class="panel-head">
                     <div>
                         <h5>Role Permissions Overview</h5>
@@ -236,7 +235,7 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div> -->
         </div>
     </div>
     @include('pages.authentication.users.createuser')
