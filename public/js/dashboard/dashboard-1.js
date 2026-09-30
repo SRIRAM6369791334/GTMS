@@ -7,10 +7,12 @@
 	
 	var screenWidth = $(window).width();
 		var donutChart1 = function(){
-		$("span.donut1").peity("donut", {
-			width: "60",
-			height: "60"
-		});
+		if(jQuery("span.donut1").length > 0 && typeof jQuery.fn.peity !== 'undefined'){
+			$("span.donut1").peity("donut", {
+				width: "60",
+				height: "60"
+			});
+		}
 	}
 	var chartBar = function(){
 		
@@ -200,7 +202,7 @@
 			}
 	}
 	var chartBar1 = function(){
-		
+		if (!document.querySelector("#chartBar1")) return;
 		var options = {
 			  series: [
 				{
@@ -327,7 +329,7 @@
 			chartBar1.render();
 	}
 	var chartBar2 = function(){
-		
+		if (!document.querySelector("#chartBar2")) return;
 		var options = {
 			  series: [
 				{
@@ -454,6 +456,7 @@
 			chartBar1.render();
 	}
 	var revenueMap = function(){
+		if (!document.querySelector("#revenueMap")) return;
 		  var options = {
 			  series: [
 				{
@@ -560,6 +563,7 @@
 		 
 	 }
 	 var columnChart = function(){
+		if (!document.querySelector("#columnChart")) return;
 		var options = {
 			series: [{
 				name: 'Aplication Sent',
@@ -670,6 +674,7 @@
 	}
 	
 	var NewCustomers = function(){
+		if (!document.querySelector("#NewCustomers")) return;
 		var options = {
 		  series: [
 			{
@@ -797,6 +802,7 @@
 	 
 	}
 	var NewCustomers1 = function(){
+		if (!document.querySelector("#NewCustomers1")) return;
 		var options = {
 		  series: [
 			{
@@ -925,6 +931,7 @@
 	}
 	
 	var redial = function(){
+		if (!document.querySelector("#redial")) return;
 		  var options = {
           series: [70],
           chart: {
@@ -1008,6 +1015,7 @@
 	
 	}
 	var emailchart = function(){
+		if (!document.querySelector("#emailchart")) return;
 		 var options = {
           series: [27, 11, 22,15,25],
           chart: {

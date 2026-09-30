@@ -64,6 +64,7 @@ class BranchManagementTest extends TestCase
             'status' => 1,
         ]);
         $this->unauthorizedUser->assignRole('Staff');
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     /**

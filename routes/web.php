@@ -21,12 +21,18 @@ use App\Http\Controllers\EcComplianceController;
 
 use App\Http\Controllers\CustomerDirectoryController;
 use App\Http\Controllers\CustomerTrackingController;
+use App\Http\Controllers\Accounts\QuotationController;
+use App\Http\Controllers\Accounts\PaymentCollectionController;
+use App\Http\Controllers\Accounts\PaymentReceiptController;
+use App\Http\Controllers\Accounts\CustomerLedgerController;
+use App\Http\Controllers\Accounts\FinancialReportController;
+
 
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');
     Route::get('/login', [AuthController::class, 'showLogin']);
-    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:15,1')->name('login.post');
 
 });
 
@@ -346,5 +352,97 @@ Route::middleware('auth')->group(function () {
         Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
     });
 
+    // Accounts & Financial Management Module
+    Route::prefix('accounts')->name('accounts.')->group(function () {
+        // Customer Concessions AJAX lookup
+        Route::get('/quotations/customer-concessions/{customer}', [QuotationController::class, 'getCustomerConcessions'])
+            ->middleware('permission:account.view')
+            ->name('quotations.customer-concessions');
+
+        // High-Fidelity Standalone Print View
+        Route::get('/quotations/{quotation}/print', [QuotationController::class, 'print'])
+            ->middleware('permission:account.view')
+            ->name('quotations.print');
+
+        // Quotations CRUD Routes with Granular Permissions
+        Route::get('/quotations', [QuotationController::class, 'index'])
+            ->middleware('permission:account.view')
+            ->name('quotations.index');
+
+        Route::get('/quotations/create', [QuotationController::class, 'create'])
+            ->middleware('permission:account.create')
+            ->name('quotations.create');
+
+        Route::post('/quotations', [QuotationController::class, 'store'])
+            ->middleware('permission:account.create')
+            ->name('quotations.store');
+
+        Route::get('/quotations/{quotation}', [QuotationController::class, 'show'])
+            ->middleware('permission:account.view')
+            ->name('quotations.show');
+
+        Route::get('/quotations/{quotation}/edit', [QuotationController::class, 'edit'])
+            ->middleware('permission:account.edit')
+            ->name('quotations.edit');
+
+        Route::put('/quotations/{quotation}', [QuotationController::class, 'update'])
+            ->middleware('permission:account.edit')
+            ->name('quotations.update');
+
+        Route::delete('/quotations/{quotation}', [QuotationController::class, 'destroy'])
+            ->middleware('permission:account.delete')
+            ->name('quotations.destroy');
+
+        // Centralized Payment Collection Engine
+        Route::get('/payments/create', [PaymentCollectionController::class, 'create'])
+            ->middleware('permission:account.create')
+            ->name('payments.create');
+
+        Route::post('/payments', [PaymentCollectionController::class, 'store'])
+            ->middleware('permission:account.create')
+            ->name('payments.store');
+
+        Route::get('/payments/customer-dues/{customer}', [PaymentCollectionController::class, 'getCustomerPendingDues'])
+            ->middleware('permission:account.view')
+            ->name('payments.customer-dues');
+
+        // Official Money Receipt Vouchers
+        Route::get('/receipts', [PaymentReceiptController::class, 'index'])
+            ->middleware('permission:account.view')
+            ->name('receipts.index');
+
+        Route::get('/receipts/{receipt}', [PaymentReceiptController::class, 'show'])
+            ->middleware('permission:account.view')
+            ->name('receipts.show');
+
+        Route::get('/receipts/{receipt}/print', [PaymentReceiptController::class, 'print'])
+            ->middleware('permission:account.view')
+            ->name('receipts.print');
+
+        // Customer Financial Ledger & Statement of Account
+        Route::get('/ledger', [CustomerLedgerController::class, 'index'])
+            ->middleware('permission:account.view')
+            ->name('ledger.index');
+
+        Route::get('/ledger/{customer}', [CustomerLedgerController::class, 'show'])
+            ->middleware('permission:account.view')
+            ->name('ledger.show');
+
+        Route::get('/ledger/{customer}/print', [CustomerLedgerController::class, 'printStatement'])
+            ->middleware('permission:account.view')
+            ->name('ledger.print');
+
+        // Financial Reports & Reconciliation Engine
+        Route::get('/reports', [FinancialReportController::class, 'index'])
+            ->middleware('permission:account.view')
+            ->name('reports.index');
+
+        Route::get('/reports/export-csv', [FinancialReportController::class, 'exportCsv'])
+            ->middleware('permission:account.view')
+            ->name('reports.export-csv');
+    });
+
+
 });
+
 

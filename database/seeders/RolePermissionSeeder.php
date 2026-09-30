@@ -106,6 +106,12 @@ class RolePermissionSeeder extends Seeder
             'drone.delete',
             'drone.manage',
 
+            // Accounts & Financials
+            'account.view',
+            'account.create',
+            'account.edit',
+            'account.delete',
+
             // Masters (Category, Product, Unit)
             'category.view',
             'category.create',
@@ -117,6 +123,7 @@ class RolePermissionSeeder extends Seeder
             'product.delete',
             'unit.view',
         ];
+
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
@@ -150,6 +157,7 @@ class RolePermissionSeeder extends Seeder
             'ppt.view',
             'dgps.view',
             'drone.view',
+            'account.view',
         ]);
 
         // 3. Officer Role
@@ -193,7 +201,12 @@ class RolePermissionSeeder extends Seeder
             'drone.create',
             'drone.edit',
             'drone.manage',
+            'account.view',
+            'account.create',
+            'account.edit',
+            'account.delete',
         ]);
+
 
         // Default Branch if none exists
         $branch = Branch::firstOrCreate(

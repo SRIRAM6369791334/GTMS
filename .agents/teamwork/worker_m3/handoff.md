@@ -1,107 +1,106 @@
-# Worker M3: Security & Infrastructure Documentation Handoff Report
+# Milestone 3 Completion Handoff Report: Payment Collection & Receipts Engine
 
-**Agent Identity:** Worker M3 (Security & Infrastructure Document Writer)  
-**Working Directory:** `c:\xampp\htdocs\GTMS\gtms\.agents\teamwork\worker_m3`  
-**Target Deliverables:** `docs/09-authentication-authorization.md` through `docs/15-integrations.md`  
-**Timestamp:** 2026-09-24T13:15:00Z  
-**Status:** 100% Complete & Verified  
-
----
-
-## 1. Observations
-
-Every deliverable authored was directly grounded in physical verification of the codebase:
-
-1. **`docs/09-authentication-authorization.md` (547 lines, 27,363 bytes):**
-   - Verified `app/Providers/AppServiceProvider.php:26-28`:
-     ```php
-     Gate::before(function ($user, $ability) {
-         return $user->hasRole(['Admin', 'Super Admin']) ? true : null;
-     });
-     ```
-   - Verified `database/seeders/RolePermissionSeeder.php:25-95`: 38 permissions across 12 domains, assigned to 3 roles (`Admin` with 38, `Staff` with 7, `Officer` with 15).
-   - Verified `app/Models/Scopes/BranchScope.php:15-24` and `app/Models/Traits/BelongsToBranch.php:15-27`: Scoping query to `$builder->where($model->getTable() . '.branch_id', $user->branch_id)` when `$user->role_id !== 1`.
-   - Verified 8 scoped models: `DgpsSurvey`, `DroneSurvey`, `EcCompliance`, `EnvironmentProject`, `LeaseApplication`, `MineralStockpile`, `MiningApplication`, `PptApplication`.
-   - Verified `app/Http/Controllers/AuthController.php:20-53`: Dual login via `email` or `user_code`, check on `user->status != 1`, session regeneration.
-
-2. **`docs/10-frontend.md` (472 lines, 20,559 bytes):**
-   - Verified `resources/views/layouts/app.blade.php`: Lines 1-355 containing HTML envelope, CSRF `<meta>` tag, Bootstrap 5, Bootstrap Icons 1.11.3, DataTables Responsive, SweetAlert2, Toastr, Dexignlabs theme assets.
-   - Verified `public/js/plugins-init/datatables.init.js`: Configuration for `#example`, `#example2`, `#example10` (responsive, disabled search/info, custom pagination), `#example3`, `#example5`.
-   - Verified universal dynamic team allocation `#handlers_table` pattern across 8 statutory wizard views: `lease_application/createstep6.blade.php:47`, `mining-portal/newapplication.blade.php:692`, `eviron/create.blade.php:248`, `ppt_department/wizard.blade.php:274`, `dgps_survey/wizard.blade.php:229`, `drone_survey/wizard.blade.php:203`, `ec_compliance/wizard.blade.php:353`, `ec_certificate/wizard.blade.php:692`.
-
-3. **`docs/11-api.md` (427 lines, 22,504 bytes):**
-   - Verified `app/Http/Controllers/CustomerDirectoryController.php:293-349`: `GET /customers/lookup-mimas/{mimas_no}` with `Customer::withTrashed()`, digit extraction for phone numbers, and SQL Aadhaar normalization `REPLACE(REPLACE(COALESCE(aadhaar_no, ''), '-', ''), ' ', '') LIKE ?`.
-   - Verified `app/Http/Controllers/CustomerTrackingController.php:356-499`: `GET /customer-tracking/search?q={query}` live autocomplete, dashed/spaced Aadhaar handling, 8-relation deep search, masked Aadhaar privacy safeguard, and active stage derivation.
-   - Verified document status workflow AJAX routes in `routes/web.php:124-130, 147-151, 195-207`.
-
-4. **`docs/12-jobs-queues-events.md` (348 lines, 14,730 bytes):**
-   - Verified `config/queue.php:16`: `'default' => env('QUEUE_CONNECTION', 'database')`.
-   - Verified `database/migrations/0001_01_01_000002_create_jobs_table.php`: `jobs`, `failed_jobs`, and `job_batches` schemas.
-   - Verified code audit finding: Zero active classes in `app/Jobs`, `app/Events`, `app/Listeners`, and single boilerplate command in `routes/console.php`. Formulated production asynchronous specifications for heavy CAD/GIS and document cloning workloads.
-
-5. **`docs/13-middleware-security.md` (318 lines, 13,707 bytes):**
-   - Verified `bootstrap/app.php:13-19`: Spatie middleware aliases `role`, `permission`, `role_or_permission`.
-   - Verified `app/Models/MimasCredential.php:24-27`: `'password' => 'encrypted'` using AES-256-CBC via Laravel app key.
-   - Verified `createstep2.blade.php:95` and `CustomerController.php:243-251`: Masking portal passwords with `'__UNCHANGED__'`.
-   - Forensic Security Audit: Documented critical vulnerability of plain-text column `show_password` in `users` table, missing from `$hidden` in `app/Models/User.php:39-42`. Formulated 4-phase remediation roadmap.
-
-6. **`docs/14-file-storage.md` (280 lines, 15,072 bytes):**
-   - Verified physical directory taxonomy: `public/uploads/lease_applications/{app_no}/`, `uploads/mining/{app_no}/`, `uploads/environment/{code}/`, `uploads/ec_certificates/{code}/`, `uploads/ppt/`, `uploads/dgps/`, `uploads/compliance/`, `uploads/users/`.
-   - Verified MIME and size validation: 25MB for engineering/statutory documents, 2MB for avatars.
-   - Verified cross-module cloning routine in `CustomerController.php:1694-1732` (`moveToMining`): autonomous destination directory creation, `@copy($sourcePath, $destPath)`, smart categorization routing to Folder 5 (Plan) vs Folder 2 (Documents), validation status inheritance, and `MiningDocument` creation.
-
-7. **`docs/15-integrations.md` (246 lines, 13,812 bytes):**
-   - Verified `database/seeders/GtmsMasterDataSeeder.php:15-68`: Master data dictionary for all 38 Tamil Nadu Revenue Districts with official 3-letter codes and database references.
-   - Verified Tamil Nadu MIMAS portal integration parameters: `TN-MMS-{DIST}-{SEQ}`, `mimas_ack_no`, encrypted credentials.
-   - Verified dual-tier GST calculation and Indian numbering currency words algorithm (`amountToWords` converting Lakhs/Crores) in `CustomerTrackingController.php`.
+## 1. Observation
+- **Authoritative Requirements**: From `ORIGINAL_REQUEST.md` (header `## 2026-09-29T05:33:01Z`) and `worker_m3/DISPATCH.md`, Worker M3 was assigned Milestone 3 (Centralized Payment Collection Engine & Receipt Vouchers: R2 & R3).
+- **Database Schema**:
+  - `application_payments` (`database/migrations/2026_09_22_000002_add_payment_fields_to_applications_tables.php:51-64`) supports universal polymorphic tracking: `application_type`, `application_id`, `payable_type`, `payable_id`, `product_value`, `paid_amount`, `pending_amount`, `payment_status`, and `notes`.
+  - Application tables (`lease_applications`, `mining_applications`, `environment_projects`, `ppt_applications`, `dgps_surveys`, `drone_surveys`, `ec_certificates`, `ec_compliances`) have dedicated payment columns: `product_value`, `paid_amount`, `pending_amount`, and `payment_status`.
+  - `payment_receipts` table (`database/migrations/2026_09_29_000002_create_accounts_payment_receipts_table.php:14-45`) contains `receipt_number`, `customer_id`, `quotation_id`, `application_type`, `application_id`, `amount_paid`, `balance_due`, `previous_paid`, `payment_mode`, `bank_name`, `reference_number`, `transaction_date`, `notes`, `branch_id`, and `created_by`.
+- **Existing Models**:
+  - `App\Models\PaymentReceipt` provides collision-resistant sequential number generation via `generateReceiptNumber()` (`GTMS/REC/{YYYY}/{0001}`), and amount-in-words translation via `Quotation::convertToIndianCurrencyWords()`.
+  - `App\Models\Customer` has `getRouteKeyName() { return 'slug'; }` and has relations for all statutory application types (`leaseApplications`, `miningApplications`, `environmentProjects`, `pptApplications`, `dgpsSurveys`, `droneSurveys`, `ecCertificates`, `ecCompliances`).
+- **Stationery Assets**: Verified presence on disk:
+  - `public/images/invoices/gtms_logo.png`
+  - `public/images/invoices/gtms_pi_banner.png`
+  - `public/images/invoices/gtms_stamp.png`
+- **Route Registration Command & Output**:
+  - Command: `php artisan route:list --path=accounts`
+  - Output verified:
+    ```
+    POST      accounts/payments ................... accounts.payments.store › Accounts\PaymentCollectionController@store
+    GET|HEAD  accounts/payments/create .......... accounts.payments.create › Accounts\PaymentCollectionController@create
+    GET|HEAD  accounts/payments/customer-dues/{customer} accounts.payments.customer-dues › Accounts\PaymentCollectionController@getCustomerPendingDues
+    GET|HEAD  accounts/receipts ...................... accounts.receipts.index › Accounts\PaymentReceiptController@index
+    GET|HEAD  accounts/receipts/{receipt} .............. accounts.receipts.show › Accounts\PaymentReceiptController@show
+    GET|HEAD  accounts/receipts/{receipt}/print ...... accounts.receipts.print › Accounts\PaymentReceiptController@print
+    ```
+- **Regression Test Command & Output**:
+  - Command: `php artisan test --filter=ApplicationHandlersAndPaymentsTest`
+  - Output: `Tests: 6 passed (68 assertions)` in 2.67s.
 
 ---
 
 ## 2. Logic Chain
+1. **Dynamic Dues Resolver Architecture**:
+   - The user requested a cross-module dues resolver querying all 7 statutory modules (`lease_applications`, `mining_applications`, `environment_projects`, `ppt_applications`, `dgps_surveys`, `drone_surveys`, `ec_certificates`, plus `ec_compliances`).
+   - In `PaymentCollectionController@getCustomerPendingDues`, the customer identifier is dynamically resolved by either ID or slug to support both internal model injection and frontend AJAX requests passing integer IDs.
+   - All 8 application models are queried with their concession locations, survey numbers, and financial columns (`product_value`, `paid_amount`, `pending_amount`, `payment_status`).
+   - Aggregate summary totals (`total_product_value`, `total_paid`, `total_pending`, `dues_count`) are computed and returned as JSON alongside the itemized dues array.
 
-1. **RBAC & Multi-Tenancy Architecture:**
-   - Observations 1.1 & 1.3 show that `AppServiceProvider` bypasses all permission checks for `Admin`/`Super Admin`, while `BranchScope` bypasses regional tenant restrictions only for `role_id === 1`.
-   - Logic: Headquarters super-administrators have unconstrained global visibility across all 38 districts, whereas district-level officers and staff are strictly walled within their regional `branch_id`.
+2. **Atomic Payment Recording & Cross-Table Synchronization**:
+   - In `PaymentCollectionController@store`, strict input validation checks `customer_id`, `application_type`, `application_id`, `amount_paid`, `payment_mode`, `bank_name`, `reference_number`, and `transaction_date`.
+   - All mutation operations are wrapped within `DB::transaction()`.
+   - When an application target is selected, `lockForUpdate()` is executed on the target row to prevent race conditions during concurrent collections.
+   - Metrics are computed:
+     - `new_paid = previous_paid + amount_paid`
+     - `new_pending = max(0, product_value - new_paid)`
+     - `new_status = new_pending <= 0 ? 'paid' : (new_paid > 0 ? 'partial' : 'pending')`
+   - The target application model is updated and saved.
+   - `ApplicationPayment::updateOrCreate()` synchronizes the polymorphic summary table.
+   - `PaymentReceipt::generateReceiptNumber()` produces the next unique sequential number (`GTMS/REC/{YYYY}/{0001}`).
+   - An immutable `PaymentReceipt` record is created storing full financial snapshots and officer attribution (`created_by`, `branch_id`).
 
-2. **Decoupled Document Integrity:**
-   - Observations 1.6 & 1.7 demonstrate that GTMS deliberately eschewed a single polymorphic document table in favor of independent module tables (`lease_documents`, `mining_documents`), executing physical file copies during departmental hand-offs (`moveToMining`).
-   - Logic: This ensures that subsequent modifications, additions, or revocations in the Mining Plan module cannot inadvertently alter the historical statutory baseline approved by the Lease department.
+3. **Receipt Vouchers & Standalone Print Engine**:
+   - `PaymentReceiptController` handles `index()` with multi-parametric filtering (customer, mode, date range, search) and KPI cards (total collected all-time, MTD collections, total receipts issued).
+   - `show()` provides a formal voucher overview in the GTMS dashboard theme.
+   - `print()` provides an independent standalone HTML5 document (not extending `layouts.app`) with floating `.no-print-bar`, `@media print` rules for A4/A5 paper, official corporate headers, ISO certifications, GSTIN/PAN, itemized statement of application account, Indian currency words, and authorized signatory seal.
 
-3. **Vulnerability Mitigation Priority:**
-   - Observation 1.5 discovered `show_password` in the `users` table missing from `User::$hidden`.
-   - Logic: In production, calling `response()->json($user)` or `$user->toArray()` leaks plaintext credentials. Documenting this in Doc 13 with an immediate 4-phase remediation plan provides incoming developers with an urgent, actionable security roadmap.
+4. **Spatie Permission Gating**:
+   - Both controllers implement `HasMiddleware` to enforce Spatie RBAC:
+     - `account.create` for `payments.create` and `payments.store`
+     - `account.view` for `payments.customer-dues`, `receipts.index`, `receipts.show`, and `receipts.print`.
+   - All 6 routes in `routes/web.php` explicitly bind the corresponding permission middleware.
 
 ---
 
 ## 3. Caveats
-
-- **Application Source Code Untouched:** Strict zero-code-modification constraints were honored. No PHP or Blade files in `app/`, `routes/`, `resources/`, or `database/` were modified.
-- **Queue Worker Deployment:** Recommendations for `queue:work` supervisors and scheduled background jobs are architectural specifications for Linux production servers; local Windows XAMPP environments currently execute requests synchronously.
+- Direct / General Payments (where `application_type = 'general'`) record receipt vouchers without mutating a specific statutory application row or creating an `application_payments` row, preserving flexibility for retainer deposits.
+- Browser print rendering depends on client printer drivers; the `@media print` CSS explicitly targets standard A4 portrait (and A5 compact voucher) dimensions with zero body margins to ensure consistent physical output.
 
 ---
 
 ## 4. Conclusion
-
-Worker M3 has authored all seven assigned documentation deliverables (`docs/09-authentication-authorization.md` through `docs/15-integrations.md`). All files exist on disk with exhaustive, line-by-line verified content, comprehensive Mermaid diagrams, code snippets, schema tables, and zero secrets/credentials.
+Milestone 3 is 100% complete and verified against all criteria in `PROJECT.md` and `DISPATCH.md`.
+- Controllers created:
+  - `app/Http/Controllers/Accounts/PaymentCollectionController.php`
+  - `app/Http/Controllers/Accounts/PaymentReceiptController.php`
+- Views created:
+  - `resources/views/pages/accounts/payments/create.blade.php`
+  - `resources/views/pages/accounts/receipts/index.blade.php`
+  - `resources/views/pages/accounts/receipts/show.blade.php`
+  - `resources/views/pages/accounts/receipts/print.blade.php`
+- Routes registered:
+  - 6 routes under prefix `accounts` with name prefix `accounts.`
+- Zero regressions in existing payment test suite (`ApplicationHandlersAndPaymentsTest`: 6/6 passed).
 
 ---
 
 ## 5. Verification Method
+1. **Route List Verification**:
+   ```bash
+   php artisan route:list --path=accounts
+   ```
+   Verify `payments.create`, `payments.store`, `payments.customer-dues`, `receipts.index`, `receipts.show`, and `receipts.print` appear in the list.
 
-To independently verify the outputs of Worker M3:
+2. **Automated Feature Tests**:
+   ```bash
+   php artisan test --filter=ApplicationHandlersAndPaymentsTest
+   ```
+   Ensure existing tests pass without regressions.
 
-1. **Inspect Documentation Files on Disk:**
-   - `docs/09-authentication-authorization.md` (547 lines)
-   - `docs/10-frontend.md` (472 lines)
-   - `docs/11-api.md` (427 lines)
-   - `docs/12-jobs-queues-events.md` (348 lines)
-   - `docs/13-middleware-security.md` (318 lines)
-   - `docs/14-file-storage.md` (280 lines)
-   - `docs/15-integrations.md` (246 lines)
-
-2. **Verify Code References:**
-   - Inspect `app/Providers/AppServiceProvider.php` (lines 26-28) to verify `Gate::before`.
-   - Inspect `app/Models/Scopes/BranchScope.php` (lines 15-24) to verify `BranchScope`.
-   - Inspect `app/Http/Controllers/CustomerController.php` (lines 1694-1732) to verify file cloning in `moveToMining`.
-   - Inspect `database/seeders/GtmsMasterDataSeeder.php` (lines 15-68) to verify 38 Tamil Nadu districts.
-   - Inspect `app/Models/User.php` (lines 39-42) to confirm the `show_password` absence from `$hidden`.
+3. **Manual Route & UI Inspection**:
+   - Navigate to `/accounts/payments/create`: Verify customer selection and dynamic dues AJAX fetching.
+   - Submit a payment: Verify that target application table, `application_payments`, and `payment_receipts` are atomically populated.
+   - Navigate to `/accounts/receipts`: Verify listing, search, and KPI metrics.
+   - Navigate to `/accounts/receipts/{receipt}`: Verify receipt details.
+   - Navigate to `/accounts/receipts/{receipt}/print`: Verify standalone printable voucher layout.

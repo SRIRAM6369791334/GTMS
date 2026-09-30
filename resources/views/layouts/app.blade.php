@@ -148,8 +148,26 @@
             font-size: 0.85rem !important;
             color: #64748b !important;
         }
-    </style>
 
+        /* Robust Sticky Footer & Layout Guard */
+        #main-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .content-body {
+            flex: 1 0 auto;
+        }
+        .footer {
+            clear: both;
+            position: relative;
+            z-index: 1;
+            margin-top: auto;
+            width: 100%;
+        }
+    </style>
+    @yield('styles')
+    @stack('styles')
 </head>
 
 <body>
@@ -288,7 +306,7 @@
     <script src="/vendor/peity/jquery.peity.min.js"></script>
     <!-- Dashboard 1 -->
     @if(request()->is('/') || request()->is('dashboard*'))
-    <script src="/js/dashboard/dashboard-1.js"></script>
+    <script src="/js/dashboard/dashboard-1.js?v=3"></script>
     @endif
      <!-- Datatable -->
     <script src="/vendor/datatables/js/jquery.dataTables.min.js"></script>

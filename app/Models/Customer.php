@@ -140,4 +140,15 @@ class Customer extends Model
     {
         return $this->hasMany(EcCompliance::class);
     }
+
+    public function quotations(): HasMany
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    public function paymentReceipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class);
+    }
 }
+

@@ -241,6 +241,7 @@
 
           </div>
         </div>
+      </div>
       {{-- ================= SECTION 3: PROJECT HANDLING TEAM ================= --}}
       <div class="card mb-4 border-0 shadow-sm">
         <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">

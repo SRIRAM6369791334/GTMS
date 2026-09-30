@@ -2146,12 +2146,10 @@
                                                         onchange="window.location.href = '?tab=lifecycle&chain=' + encodeURIComponent(this.value);">
                                                     @foreach($dossierData['districtGroups'] as $distName => $distInfo)
                                                         <optgroup label="📍 {{ $distName }} ({{ $distInfo['count'] }} Quarries)">
-                                                            @foreach($dossierData['fullCycleChains'] as $ch)
-                                                                @if(($ch['district_name'] ?? '') === $distName)
-                                                                    <option value="{{ $ch['id'] }}" data-district="{{ Str::slug($distName) }}" {{ ($dossierData['selectedChainId'] ?? '') === $ch['id'] ? 'selected' : '' }}>
-                                                                        {{ $ch['title'] }} [{{ $ch['current_stage_label'] }}]
-                                                                    </option>
-                                                                @endif
+                                                            @foreach($distInfo['chains'] as $ch)
+                                                                <option value="{{ $ch['id'] }}" data-district="{{ Str::slug($distName) }}" {{ ($dossierData['selectedChainId'] ?? '') === $ch['id'] ? 'selected' : '' }}>
+                                                                    {{ $ch['title'] }} [{{ $ch['current_stage_label'] }}]
+                                                                </option>
                                                             @endforeach
                                                         </optgroup>
                                                     @endforeach
@@ -3532,7 +3530,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const nextDisabled = portfolioCurrentPage >= totalPages ? 'disabled' : '';
-        html += `<button type="button" class="ct-page-btn ${nextDisabled} onclick="gotoPortfolioPage(${portfolioCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
+        html += `<button type="button" class="ct-page-btn ${nextDisabled}" onclick="gotoPortfolioPage(${portfolioCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
 
         container.innerHTML = html;
     }
@@ -3712,7 +3710,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const nextDisabled = srvCurrentPage >= totalPages ? 'disabled' : '';
-        html += `<button type="button" class="ct-page-btn ${nextDisabled} onclick="gotoStandalonePage(${srvCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
+        html += `<button type="button" class="ct-page-btn ${nextDisabled}" onclick="gotoStandalonePage(${srvCurrentPage + 1})" title="Next Page"><i class="bi bi-chevron-right"></i></button>`;
 
         container.innerHTML = html;
     }

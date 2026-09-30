@@ -103,7 +103,13 @@ class UserManagementAndAuthTest extends TestCase
     public function test_guest_can_access_login_views_and_auth_user_redirects_to_dashboard(): void
     {
         // Guests can view / and /login
-        $this->get('/')->assertStatus(200)->assertViewIs('pages.login');
+        $response = $this->get('/');
+        $response->assertStatus(200)->assertViewIs('pages.login');
+        $response->assertSee('GTMS Mining Statutory Portal');
+        $response->assertSee('togglePasswordBtn');
+        $response->assertSee('forgotPasswordModal');
+        $response->assertDontSee('LeaseFlow');
+
         $this->get('/login')->assertStatus(200)->assertViewIs('pages.login');
 
         // Authenticated user is redirected to dashboard

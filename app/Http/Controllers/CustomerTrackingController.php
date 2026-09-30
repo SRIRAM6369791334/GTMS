@@ -1006,10 +1006,12 @@ class CustomerTrackingController extends Controller
                     'district_name' => $dName,
                     'count'         => 0,
                     'total_area'    => 0.0,
+                    'chains'        => [],
                 ];
             }
             $districtGroups[$dName]['count']++;
             $districtGroups[$dName]['total_area'] += (float) ($fc['area_extent_ha'] ?? 0);
+            $districtGroups[$dName]['chains'][] = $fc;
         }
         ksort($districtGroups);
 
@@ -1440,7 +1442,7 @@ class CustomerTrackingController extends Controller
 
         $districtName = $customer->district?->name
             ?: ($miningApp?->district?->name
-            ?: ($leaseApp?->district?->name ?: 'Salem'));
+            ?: ($leaseApp?->district?->name ?: 'Tamil Nadu'));
 
         $locationDetails = $miningApp
             ? "over an extent of " . ($miningApp->area_extent_ha ?: '3.85.0') . " Hectares in S.F.Nos. " . ($miningApp->survey_numbers_text ?: '102/1A, 102/1B') . ", " . ($miningApp->village ?: 'Alathur') . " Village, " . ($miningApp->taluk ?: 'Sankari') . " Taluk, {$districtName} District, Tamil Nadu."

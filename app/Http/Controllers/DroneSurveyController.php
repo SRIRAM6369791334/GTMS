@@ -14,13 +14,56 @@ use Illuminate\Support\Facades\Log;
 
 class DroneSurveyController extends Controller
 {
-    public function index()
+    /**
+     * Master Index Listing (Dynamic Database Records & KPI Cards)
+     */
+    public function index(Request $request)
     {
-        $surveys = DroneSurvey::with(['customer', 'leaseApplication'])
-            ->latest()
-            ->paginate(15);
+        $query = DroneSurvey::with(['customer.district', 'leaseApplication.district', 'documents']);
 
-        return view('pages.drone_survey.index', compact('surveys'));
+        // Search filter
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('survey_no', 'like', "%{$search}%")
+                  ->orWhere('location', 'like', "%{$search}%")
+                  ->orWhere('drone_pilot_name', 'like', "%{$search}%")
+                  ->orWhere('drone_model', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function ($cq) use ($search) {
+                      $cq->where('customer_name', 'like', "%{$search}%")
+                         ->orWhere('company_name', 'like', "%{$search}%")
+                         ->orWhere('mimas_no', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // Status filter
+        if ($status = $request->input('status')) {
+            if ($status === 'scheduled') {
+                $query->where('survey_status', 'scheduled');
+            } elseif ($status === 'acquisition' || $status === 'flying' || $status === 'processing') {
+                $query->whereIn('survey_status', ['flying', 'data_acquisition', 'processing', 'data_processing']);
+            } elseif ($status === 'deliverables_ready') {
+                $query->where('survey_status', 'deliverables_ready');
+            } elseif ($status === 'completed' || $status === 'uploaded') {
+                $query->whereIn('survey_status', ['completed', 'gtms_uploaded']);
+            }
+        }
+
+        $surveys = $query->latest()->paginate(10)->withQueryString();
+
+        // Real Dynamic KPI Counts
+        $totalRequests          = DroneSurvey::count();
+        $dataAcquisitionCount   = DroneSurvey::whereIn('survey_status', ['scheduled', 'flying', 'data_acquisition', 'processing', 'data_processing'])->count();
+        $deliverablesReadyCount = DroneSurvey::where('survey_status', 'deliverables_ready')->count();
+        $gtmsUploadedCount      = DroneSurvey::whereIn('survey_status', ['completed', 'gtms_uploaded'])->count();
+
+        return view('pages.drone_survey.index', compact(
+            'surveys',
+            'totalRequests',
+            'dataAcquisitionCount',
+            'deliverablesReadyCount',
+            'gtmsUploadedCount'
+        ));
     }
 
     public function show(int $id)

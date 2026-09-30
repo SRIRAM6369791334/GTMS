@@ -129,3 +129,65 @@ Verify `BranchScope` correctly restricts non-admin users to their assigned `bran
 - [ ] Zero regressions across existing test suites (`ApplicationHandlersAndPaymentsTest`, `PptDgpsAndEcComplianceTest`)
 - [ ] Zero unhandled 500 exceptions across GET/POST routes for `/branch`, `/roles`, `/user`
 
+## 2026-09-29T05:33:01Z
+
+Architect, implement, and verify a complete, streamlined Accounts & Financial Management Module for GTMS (Tamil Nadu Mining Statutory Management System) connecting Quotations, Cross-Application Payment Collection, Payment Receipts, Customer Statements, and Financial Reports.
+
+Working directory: C:\xampp\htdocs\GTMS\gtms
+Integrity mode: development
+
+## Requirements
+
+### R1. Quotation Generation Engine & High-Fidelity Print Layout
+Implement dynamic Quotation generation:
+- Client & Concession Selection: Auto-populate customer profile (name, company, mobile, GST, address) and quarry concession metadata (village, taluk, district, survey numbers, extent in hectares).
+- Dynamic Service Line Items: Support multi-service selection (DGPS demarcation, Drone photogrammetry, Mining Plan preparation, Form-1/Form-2 Environmental Clearance, TNPCB CTE/CTO, Half-yearly compliance) with unit rates, quantities/areas, and automated subtotal calculation.
+- Statutory Terms & Scope: Configurable validity periods, milestone payment terms, and government challan exclusions.
+- Clean A4 Print & PDF View: Professional print layout with GTMS insignia, quotation reference number (e.g. `GTMS/QTN/2026/001`), tabular breakdown, total amount in words, authorized signatory zone, and one-click browser print / PDF download.
+
+### R2. Centralized Payment Collection Engine with Application Auto-Synchronization
+Create a unified Payment Collection interface linking directly to existing statutory application payment workflows:
+- Customer Pending Application Resolver: Query and display all outstanding dues across all 7 statutory modules (`lease_applications`, `mining_applications`, `environment_projects`, `ppt_applications`, `dgps_surveys`, `drone_surveys`, `ec_certificates`) with their current `product_value`, `paid_amount`, and `pending_amount`.
+- Payment Collection Form: Collect partial or full payments with payment modes (Cash, Cheque, NEFT/RTGS, UPI/GPay), bank reference numbers, and transaction dates.
+- Atomic Database Synchronization: Upon recording a payment, atomically update both the specific application table's payment columns (`paid_amount`, `pending_amount`, `payment_status`) and the polymorphic `application_payments` table in a single database transaction.
+
+### R3. Official Money Receipt Voucher Generation & Printing
+Generate official Payment Receipts immediately upon payment collection:
+- Unique sequential receipt vouchers (e.g. `GTMS/REC/2026/001`).
+- Display customer details, target application reference (e.g. Mining Plan S.F. No. 102/1A), amount paid, remaining balance due, payment method, and officer timestamp.
+- Dedicated printable A4/A5 voucher view ready for immediate distribution to quarry owners.
+
+### R4. Customer Financial Ledger & Statement of Account
+Provide a comprehensive single-pane-of-glass financial dossier for any customer:
+- Ledger table presenting chronological chronology of all debits (Quotations/Invoices) and credits (Payments Collected).
+- Live calculation of total billed, total received, and net outstanding dues.
+- Printable Customer Statement PDF for formal audit and payment reminders.
+
+### R5. Comprehensive Financial Transaction Reports & Export
+Build a centralized financial reporting interface:
+- KPI summary metrics: Total Collected (All-time & Month-to-date), Total Outstanding Receivables, and Total Quotations Issued.
+- Detailed transaction log with multi-parametric filtering: by date range, customer, application module type, and payment mode.
+- Export capabilities: CSV / Excel export for external accounting and audit reconciliation.
+
+### R6. UI Integration, Sidebar Navigation & Spatie RBAC Permissions
+Integrate seamlessly into GTMS:
+- Sidebar navigation under a unified `Accounts` section (`Quotations`, `Collect Payment`, `Customer Ledger`, `Reports`).
+- Register and enforce granular Spatie permissions: `account.view`, `account.create`, `account.edit`, `account.delete` across all routes and views.
+- Strict null-safety and Bootstrap 5 design alignment matching GTMS styling tokens.
+
+## Acceptance Criteria
+
+### Automated Test Coverage & Verification
+- [ ] Comprehensive Feature Test Suite (`tests/Feature/AccountsModuleTest.php`) covering:
+  - Quotation creation, validation, listing, and print view rendering
+  - Payment collection entry and verification of atomic synchronization with `application_payments` and target application tables (`mining_applications`, `dgps_surveys`, etc.)
+  - Payment receipt voucher generation and calculation integrity
+  - Customer ledger statement calculation and rendering
+  - Report filtering and CSV/Excel export functionality
+  - Spatie permission gating (`account.view`, `account.create`, etc.)
+- [ ] All new tests pass with `php artisan test --filter=AccountsModuleTest`
+- [ ] Zero regressions across existing test suites (`UserManagementAndAuthTest`, `CustomerTrackingFilterTest`, `PptDgpsAndEcComplianceTest`)
+- [ ] Zero unhandled 500 exceptions across all accounts routes
+- [ ] Database migrations execute and roll back cleanly without constraint errors
+
+

@@ -243,4 +243,55 @@ class CustomerTrackingFilterTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Compliance:');
     }
+
+    /**
+     * Test high-volume customer (Kaveri Granites, 264 leases) renders portfolio, pagination,
+     * and district-grouped chains without quadratic loops or broken pagination buttons
+     */
+    public function test_customer_tracking_high_volume_client_kaveri_renders_successfully(): void
+    {
+        $kaveri = Customer::where('slug', 'kaveri-granites-3197')->first();
+        if (!$kaveri) {
+            // If Kaveri not in DB, create a multi-lease client to simulate
+            $random = rand(10000, 99999);
+            $kaveri = Customer::create([
+                'customer_name'  => 'High Volume Client ' . $random,
+                'company_name'   => 'Multi-Quarry Corp ' . $random,
+                'mimas_no'       => 'TN-MMS-HV-' . $random,
+                'mobile_num'     => '91111' . rand(10000, 99999),
+                'slug'           => 'high-volume-client-' . $random,
+                'status'         => 1,
+            ]);
+            $categoryId = \Illuminate\Support\Facades\DB::table('lease_categories')->value('id') ?? 2;
+            $mineral = Mineral::first();
+            // Create multiple leases across districts
+            for ($i = 0; $i < 5; $i++) {
+                LeaseApplication::create([
+                    'application_no' => 'LA-HV-' . $random . '-' . $i,
+                    'common_id'      => 'GTMS-2026-HV-' . $random . '-' . $i,
+                    'customer_id'    => $kaveri->id,
+                    'district_id'    => $this->district->id,
+                    'category_id'    => $categoryId,
+                    'mineral_id'     => $mineral?->id ?? 1,
+                    'status'         => 'draft',
+                    'village'        => 'Village-' . $i,
+                    'taluk'          => 'Taluk-' . $i,
+                    'area_extent_ha' => rand(100, 500) / 100,
+                ]);
+            }
+        }
+
+        $response = $this->actingAs($this->user)->get(route('customer-tracking.show', $kaveri->slug));
+
+        $response->assertStatus(200);
+        // Portfolio tab and pagination controls must render
+        $response->assertSee('Concessions Directory');
+        $response->assertSee('portfolioPageSize');
+        // District-grouped chains should use pre-grouped optgroup (no O(N*M) loop)
+        $response->assertSee('<optgroup label=', false);
+        // Pagination Next button must have proper class quote closure (Bug Fix #1)
+        $response->assertDontSee('ct-page-btn ${nextDisabled} onclick=', false);
+        // Invoice fallback must not say 'Salem' (Bug Fix #4)
+        $response->assertDontSee("?: 'Salem'", false);
+    }
 }

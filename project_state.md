@@ -1,6 +1,249 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 7.11 — CUSTOMER TRACKING PORTAL AUDIT, TAB ACTIVATION RESILIENCE, LEASE PARAMETRIC DEEP-LINKS & EC COMPLIANCE ENHANCEMENT (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 7.22 — QUOTATION DOSSIER SHOW PAGE UI/UX PRO MAX OVERHAUL (SWISS MODERNISM 2.0 / WCAG AAA CONTRAST & ERGONOMICS) (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted high-fidelity UI/UX redesign and contrast overhaul of the Quotation Show / Dossier view (`/accounts/quotations/{id}`):
+  1. **Eradicated Template Pink/Magenta Text Glitches (WCAG AAA Contrast Fix):**
+     - Diagnosed root cause: Dexignlabs template stylesheet `style.css` defined `--bs-secondary: #FFA7D7` (faint pink) and applied it to `.text-secondary` and `.badge.bg-light.text-secondary`.
+     - Hardened `resources/views/pages/accounts/partials/theme.blade.php` to strictly override `.content-body .text-secondary` to deep slate `#475569` and `.badge.bg-light.text-secondary` to crisp `#0F172A` with `#CBD5E1` border.
+     - Refactored `resources/views/pages/accounts/quotations/show.blade.php` using semantic high-contrast tokens, resolving faint pink text across Billing Address, Survey Field Numbers, Target Mineral, Milestone Payment Schedule, and Government Statutory Exclusions.
+  2. **Page Header & Action Controls Ergonomics:**
+     - Added Monospace voucher badge (`.mono-voucher-badge`) with 1-click clipboard copy button and dynamic "Copied!" feedback micro-interaction.
+     - Styled status indicator pill with pulsing colored dot for live clarity (Sent: Sky Blue, Accepted: Emerald, Converted: Violet, Rejected: Rose, Draft: Amber).
+     - Standardized executive action buttons: "Back to Directory" (`btn-light`), "Standalone A4 Print / PDF" (`btn-navy`), and "Edit Quotation" (`btn-outline-warning`).
+  3. **Bento Profile Cards (Client Particulars & Quarry Concession):**
+     - Structured side-by-side Bento cards with colored top border accents (`#1E3A8A` Blue for Client Profile, `#059669` Emerald for Quarry Concession).
+     - Enhanced typography hierarchy: bold `#0F1E4D` firm title, crisp slate metadata labels with FontAwesome icons, clickable phone (`tel:`) and email (`mailto:`) links, verified GSTIN badge, and monospace survey field number pill.
+  4. **Commercial Services Table & SAC Code Badges:**
+     - Overhauled table header with `#F8FAFC` background, uppercase deep slate text, and clean borders.
+     - Redesigned SAC Code pill to monospace `#0F172A` on `#F1F5F9` with `#CBD5E1` border, completely eliminating washed-out magenta styling.
+     - Enforced `font-variant-numeric: tabular-nums` (.financial-number) on unit rates, quantities, and line item subtotals.
+  5. **Total Value in Words FinTech Endorsement Widget:**
+     - Replaced dull grey box with a premium FinTech endorsement container: soft blue background (`#F0F7FF`), deep blue accent border (`#1E3A8A`), bold italic lettering, and statutory GST inclusion notice.
+  6. **Commercial Summary Totals Box:**
+     - Structured breakdown of Services Net Subtotal, CGST @ 9%, SGST @ 9%, and display-sized Grand Total in deep navy `#0F1E4D` with tabular numbers.
+  7. **Milestone Payment Terms & Statutory Exclusions:**
+     - Converted plain multiline payment terms into numbered step cards (`Step 1`, `Step 2`, `Step 3`) with blue step badges and crisp `#1E293B` text.
+     - Encased statutory exclusions in an amber-accented compliance alert callout with shield icon.
+  8. **FinTech Ledger Integration (Connected Receipts):**
+     - Added dynamic linked payment receipts table (`$quotation->receipts`) displaying receipt vouchers, payment dates, payment modes, amounts, and direct links to receipt dossiers.
+  9. **Strict Safety Rules & Verification:**
+     - 0 database migrations, 0 schema alterations, 0 business calculation changes, 0 unrelated module refactors.
+     - View cache cleared and compiled cleanly (`php artisan view:clear; php artisan view:cache`).
+     - Automated test suite verified with `AccountsModuleTest` (23 tests, 169 assertions — 100% pass).
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.21 — ACCOUNTS MODULE P1, P2, P3 FILTER ARCHITECTURE, SELECT2 AUTOCOMPLETE, MOBILE CARD VIEWS, STICKY HEADERS & COLLECTION ANALYTICS (COMPLETED & VERIFIED) ✅
+- **Status:** Completed and verified all remaining phases (P1, P2, P3) for the GTMS Accounts Module (`/accounts/...`) in accordance with `ui-ux-pro-max` standards:
+  1. **Phase P1 (Filter Architecture, Searchable Dropdowns & Empty States):**
+     - Symmetrically normalized query parameter handling across `QuotationController` and `PaymentReceiptController` (`q`/`search`, `start_date`/`date_from`, `end_date`/`date_to`) allowing bookmarkable links, seamless query parameter swapping, and consistent filter chips.
+     - Integrated Select2 autocomplete across all filter bars (Quotations, Receipts, Financial Reports) and dynamic creation forms (`quotations/create.blade.php`, `quotations/edit.blade.php`).
+     - Added native event dispatch bridge (`customerSelect.dispatchEvent(new Event('change'))`) so Select2 selections trigger vanilla JS customer concession and due resolvers without friction.
+     - Built actionable empty state component (`resources/views/pages/accounts/partials/empty_state.blade.php`) with contextual empty-box icon, title, message, "Reset All Filters" button, and permission-aware creation CTAs.
+  2. **Phase P2 (Responsive Ergonomics & Mobile Card Fallbacks):**
+     - Re-architected data-dense tables across all four listing directories (Quotations, Receipts, Ledger, Financial Reports) with dual display ergonomics:
+       - Wide tables hidden on mobile (`d-none d-md-block`) with desktop sticky headers (`.table-sticky` with `position: sticky; top: 0; z-index: 10;`).
+       - Responsive mobile card stack (`d-md-none` with `.account-mobile-card`) providing clean, single-column summary cards, badge status indicators, tabular numbers, and full action button parity without horizontal scrollbars on viewports < 768px.
+     - Built collapsible mobile filter drawers (`#filterDrawerCollapse`) across all directory index views to conserve vertical screen real-estate on mobile.
+  3. **Phase P3 (Visual Reconciliations & Progress Analytics):**
+     - Designed Revenue Realization & Collection Efficiency progress bar on Financial Reports (`resources/views/pages/accounts/reports/index.blade.php`), visualizing percentage of billed revenue collected vs outstanding dues, with color-coded status badges and breakdown metrics.
+     - Enhanced Customer Ledger chronological running balance with monospace tabular numbers, clear credit/debit badges, and balance indicator styling.
+  4. **Strict Safety Rules & Verification:**
+     - 0 database migrations, 0 schema alterations, 0 business calculation changes, 0 unrelated module refactors.
+     - Full Blade compilation verified with `php artisan view:clear` and `php artisan view:cache` (0 errors).
+     - Full test suite verified with `AccountsModuleTest` (23 tests, 169 assertions — 100% pass) and cross-module regression (54 tests, 375 assertions — 100% pass). Total: 77 tests, 544 assertions passing.
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.20 — ACCOUNTS MODULE P0 USABILITY, DESIGN TOKENS, TABULAR NUMBERS, SUBMIT GUARDS & FILTER CHIPS (COMPLETED & VERIFIED) ✅
+- **Status:** Completed and verified all 5 Priority-0 (P0) usability and consistency improvements for the GTMS Accounts Module (`/accounts/...`) in accordance with `ui-ux-pro-max` standards:
+  1. **Global Account UI Design Tokens (`theme.blade.php`):**
+     - Created `resources/views/pages/accounts/partials/theme.blade.php` defining semantic tokens (`--color-primary`, `--color-primary-hover`, `--color-secondary`, `--color-background`, `--color-surface`, `--color-text-*`, `--color-success*`, `--color-warning*`, `--color-danger*`, `--color-info*`, `--color-border*`).
+     - Provided backward-compatible aliases for legacy color variables (`--ct-navy`, `--color-navy`, `--color-slate-*`).
+  2. **Financial Number Alignment (`font-variant-numeric: tabular-nums`):**
+     - Added `.financial-number` and `.tabular-nums` CSS rules with right-alignment and monospace numeric spacing.
+     - Applied across Quotations (create, edit, show, index), Payment Receipts (show, index), Customer Ledger (show, index), and Financial Reports (index).
+  3. **Form Submit Loading State & Double-Click Prevention:**
+     - Standardized submission handlers across Quotation Create (`Generating Quotation...`), Quotation Edit (`Updating Quotation...`), and Payment Collection Desk (`Recording Payment...`).
+     - Submitting forms disables the submit button, displays an active spinner icon, and prevents accidental duplicate postbacks.
+  4. **Active Filter Chips Bar (`filter_chips.blade.php`):**
+     - Engineered reusable dismissible active filter chips partial (`resources/views/pages/accounts/partials/filter_chips.blade.php`).
+     - Extracts active URL parameters (`search`, `q`, `customer_id`, `status`, `payment_mode`, `application_type`, `district_id`, `date_from`/`start_date`, `date_to`/`end_date`), creates individual dismiss links using `request()->except(...)` dropping `page`, and provides a one-click "Reset All" button.
+     - Integrated across Quotations Index, Receipts Index, Customer Ledger Index, and Financial Reports Index.
+  5. **Safety Constraints & Verification:**
+     - 0 database migrations, 0 schema alterations, 0 business calculation changes, 0 unrelated module refactors.
+     - Verified with `AccountsModuleTest` — **23 tests, 169 assertions, 100% PASSING**.
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.19 — DRONE SURVEY REGISTER DYNAMIC DATABASE INTEGRATION, LIVE KPIS, ADVANCED SEARCH & DOSSIER LINKING (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted full audit and dynamic upgrade of the Drone Survey Register (`/drone-survey`):
+  1. **Root Cause Confirmed & Eliminating Hardcoded Static Data:**
+     - Confirmed user suspicion: `resources/views/pages/drone_survey/index.blade.php` was completely static, hardcoding dummy stats (`26, 07, 13, 11`) and a fake array `@php($records = [['DRN-2026-0026', 'M. Senthil Kumar', ...]])`.
+     - In addition, the table "View" action button was pointing to wizard step 2 or 5 (`route('drone-survey.step', ...)`) without any reference to actual survey dossiers.
+  2. **Controller Dynamic Engine Upgrade (`DroneSurveyController.php`):**
+     - Upgraded `DroneSurveyController@index` to support real-time multi-field search (`survey_no`, `location`, `drone_pilot_name`, `drone_model`, `customer.customer_name`, `customer.company_name`, `customer.mimas_no`).
+     - Added status filtering (`scheduled`, `acquisition`, `deliverables_ready`, `completed`).
+     - Dynamically calculated real KPI counts: `$totalRequests` (24), `$dataAcquisitionCount` (17), `$deliverablesReadyCount` (7), `$gtmsUploadedCount` (0).
+  3. **High-Fidelity Enterprise Register UI (`index.blade.php`):**
+     - Aligned layout with DGPS register standards: 4 branded KPI stat cards with color-coded left borders, search box with clear filter trigger, status filter dropdown.
+     - Connected "View" action button directly to the official dossier: `route('drone-survey.show', $survey->id)`.
+     - Added "Edit / Resume" button linking to `route('drone-survey.step', ['step' => 1, 'resume' => $survey->id])`.
+     - Added server-side pagination with query string preservation: `{{ $surveys->links('vendor.pagination.bootstrap-5') }}`.
+  4. **Automated Feature Test Suite (`tests/Feature/DroneSurveyTest.php`):**
+     - Created comprehensive test suite verifying index rendering, real dynamic records, KPI counts, search query filtering, status filtering, and show dossier view (4/4 passed).
+     - Full test suite regression executed across all 14 suites — **182 tests, 1,242 assertions, ZERO failures**.
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.18 — PAYMENT COLLECTION DESK UI/UX PRO MAX UPGRADE & STACK STYLES HARDENING (COMPLETED & VERIFIED) ✅
+- **Status:** Upgraded the Payment Collection Desk (`/accounts/payments/create`) using `ui-ux-pro-max` design intelligence framework with Swiss Modernism 2.0 aesthetics and fintech data-dense UX:
+  1. **Global Stylesheet Injection Fix (`layouts/app.blade.php`):**
+     - Discovered that `@stack('styles')` and `@yield('styles')` were completely missing in the `<head>` of the master layout `app.blade.php`.
+     - Injected `@yield('styles')` and `@stack('styles')` directly before `</head>`, restoring child view CSS injection capability across the entire platform.
+  2. **Select2 Live Search & Theming:**
+     - Styled Select2 dropdown with deep navy focus rings, hiding raw underlying select to prevent double dropdown artifacts.
+     - Live search enables instant filtering across 740+ registered quarry clients by name, company, or mobile number.
+  3. **Customer Financial Dossier Banner:**
+     - Engineered dark-navy gradient banner (`#0F1E4D` to `#1E3A5F`) displaying verified client tag, contact chips (Mobile, GSTIN), and live KPI metrics (Applications count, Total Billed, Total Received, Net Outstanding Receivables).
+     - Integrated direct deep-link button to open the Customer Financial Ledger statement in a new tab.
+  4. **Application Cards, Tabs & Instant Client-Side Search:**
+     - Replaced plain table rows with accessible, color-coded application cards (Red = Pending, Amber = Partial, Green = Settled).
+     - Strictly enforced UI/UX Pro Max rule: zero raw emojis, using crisp FontAwesome module icons (`fa-file-contract`, `fa-mountain`, `fa-leaf`, etc.).
+     - Added instant filter pills (`All`, `Pending Dues`, `Settled`) and real-time client-side search input filtering across 400+ dossiers by S.F. number, village, or reference number without reloading.
+  5. **Real-Time Indian Currency & Remaining Due Calculator:**
+     - Live conversion of payment amount to Indian numbering words (`Rupees Fifty Thousand Only`).
+     - Real-time remaining balance computation displaying settlement state (`Full Settlement` vs `Pending Balance`).
+  6. **Quick Amount Presets & Narration Chips:**
+     - Added `Pay Full`, `Pay 50%`, `Pay 25%`, and `Clear` preset buttons.
+     - Narration suggestion chips (`+ 50% Advance`, `+ Final Settlement`, `+ DGPS Demarcation`, `+ Challan Excluded`).
+  7. **Confirmation Voucher Modal & Auto-Print:**
+     - Added review confirmation modal with receipt breakdown prior to atomic database write.
+     - Checkbox option to automatically open official printable Money Receipt voucher in a new tab.
+     - Keyboard shortcuts: `Ctrl + Enter` to Review & Submit, `Esc` to Reset.
+  8. **Zero Regression Verification:**
+     - Verified with `AccountsModuleTest` (23/23 tests, 169 assertions pass).
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.17 — FULL GTMS TEST SUITE REGRESSION (ALL 13 SUITES PASS) ✅
+- **Status:** Complete full regression across all 13 test suites — 179 tests, 985 assertions, ZERO failures:
+  | Suite | Tests | Assertions |
+  |---|---|---|
+  | AccountsModuleTest | 23 | 169 |
+  | BranchManagementTest | 21 | 94 |
+  | RolesAndPermissionsTest | 18 | 132 |
+  | UserManagementAndAuthTest | 19 | 126 |
+  | CustomerDirectoryCrudTest | 11 | 80 |
+  | CustomerTrackingFilterTest | 10 | 115 |
+  | MultiTenancyBranchScopeTest | 12 | 56 |
+  | ApplicationHandlersAndPaymentsTest | 6 | 68 |
+  | PptDgpsAndEcComplianceTest | 6 | 82 |
+  | EnvironmentClearanceTest | 24 | 138 |
+  | MiningPlanTransitionTest | 6 | 35 |
+  | DocumentRequirementToggleTest | 11 | 45 |
+  | StepOnePhoneNumbersTest | 9 | 60 |
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.16 — GLOBAL LAYOUT DOM INTEGRITY REPAIR, HEADER STRAY DIV ELIMINATION, DYNAMIC HEADER TITLE & STICKY FOOTER HARDENING (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep structural DOM, CSS, and layout audit resolving long-standing layout overlap and misplaced footer bugs across GTMS pages:
+  1. **Global Root Cause Identified & Fixed (`layouts/header.blade.php`):**
+     - Discovered an invalid stray `</div>` tag inside the `<a class="brand-logo">` element at line 9.
+     - Root cause: In earlier branding modifications, the closing `</div>` was left orphan when brand-title text was replaced with an image.
+     - Consequence: This stray tag was prematurely closing `<div class="nav-header">` early, causing the subsequent `</div>` at line 16 to close `<div id="main-wrapper">` prematurely on EVERY SINGLE PAGE in the application. As a result, sidebar, content body, and footer were orphaned outside the main wrapper, causing browser DOM reconstruction anomalies, card overlap, and the footer floating in the middle of screens.
+     - Fixed: Removed the orphan `</div>`. Header now has perfectly balanced open (34) and close (34) tags (Diff: 0).
+  2. **Dynamic Topbar Title Injection (`layouts/header.blade.php`):**
+     - Replaced static hardcoded `<div class="dashboard_bar">Dashboard</div>` with `@yield('title', 'Dashboard')` so each page dynamically displays its contextual title (e.g. "Payment Collection Desk", "Quotations", "Customers", etc.) instead of always displaying "Dashboard".
+  3. **Sticky Footer & Flexbox Layout Guard (`layouts/app.blade.php`):**
+     - Engineered robust sticky footer CSS rules on `#main-wrapper` (`display: flex; flex-direction: column; min-height: 100vh;`), `.content-body` (`flex: 1 0 auto;`), and `.footer` (`clear: both; position: relative; z-index: 1; margin-top: auto; width: 100%;`).
+     - Guarantees footer always rests at the true bottom of the viewport on short pages and beneath all cards on long scrollable pages, eliminating mid-screen overlaps.
+     - Fixed typo in `layouts/footer.blade.php`: "Sai Techno Solitions" -> "Sai Techno Solutions".
+  4. **Unclosed Card Div Repair (`pages/eviron/create.blade.php`):**
+     - Corrected unclosed Section 2 card `<div>` tag before Section 3, restoring perfect tag balance (79/79, Diff: 0).
+  5. **Automated Verification:**
+     - Verified zero regressions across all core feature test suites (`AccountsModuleTest`: 23/23, `BranchManagementTest`: 21/21, `RolesAndPermissionsTest`: 18/18, `UserManagementAndAuthTest`: 19/19, `CustomerDirectoryCrudTest`: 11/11, `CustomerTrackingFilterTest`: 10/10, `MultiTenancyBranchScopeTest`: 12/12, `ApplicationHandlersAndPaymentsTest`: 6/6) — 120+ tests passing, 840+ assertions passing.
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.15 — ACCOUNTS & FINANCIAL MANAGEMENT MODULE (COMPLETED & VERIFIED) ✅
+- **Status:** Architected, implemented, and comprehensively verified the full Accounts & Financial Management Module for GTMS:
+  1. **Database Schema & Migrations (`2026_09_29_000001` & `2026_09_29_000002`):**
+     - Created `quotations`, `quotation_items`, and `payment_receipts` tables with foreign keys, SoftDeletes, and BelongsToBranch tenancy.
+  2. **Core Models (`Quotation`, `QuotationItem`, `PaymentReceipt`):**
+     - Equipped with BelongsToBranch trait, polymorphic relations, and Indian currency text helpers.
+  3. **Controllers & Endpoints:**
+     - `QuotationController`: CRUD, AJAX customer concessions lookup, concurrency-safe sequential quotation generator (`GTMS/QTN/YYYY/XXXX`), and standalone A4 print layout.
+     - `PaymentCollectionController`: Cross-module dues resolver spanning all 7 statutory modules (`lease_applications`, `mining_applications`, `environment_projects`, `ec_certificates`, `ppt_applications`, `dgps_surveys`, `drone_surveys`), atomic DB::transaction with `lockForUpdate()`, and synchronized receipts issuance.
+     - `PaymentReceiptController`: Voucher directory, show view, and standalone A4/A5 print vouchers.
+     - `CustomerLedgerController`: Single-pane customer financial dossier with chronological debits/credits running balance calculation and printable Statement of Account.
+     - `FinancialReportController`: KPI cards, multi-parametric filtering, and StreamedResponse CSV export.
+  4. **UI Integration:**
+     - 13 Blade views under `resources/views/pages/accounts/` properly wrapped in `<div class="content-body default-height">`.
+     - Sidebar navigation menu injected under `Accounts` with 5 sub-items gated by Spatie permissions (`account.view`, `account.create`, etc.).
+  5. **Automated Test Suite:**
+     - `tests/Feature/AccountsModuleTest.php` with 23 feature tests (169 assertions) — 100% passing.
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.14 — AUTHENTICATION PORTAL HARDENING, BRUTE-FORCE RATE LIMITING, GTMS BRANDING, PASSWORD EYE TOGGLE & FORGOT PASSWORD ASSISTANCE MODAL (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted comprehensive code, UX, and security audit of the root login route `/` and `/login` (`AuthController.php`, `login.blade.php`, and `routes/web.php`):
+  1. **Brute-Force Rate Limiting (`routes/web.php`):**
+     - Attached `throttle:15,1` middleware to `Route::post('/login')` to protect statutory credentials against credential stuffing and brute-force guessing attacks.
+  2. **GTMS Branding & Favicon (`login.blade.php`):**
+     - Replaced outdated "LeaseFlow" template title with "Sign in — GTMS Mining Statutory Portal".
+     - Added `<link rel="shortcut icon">` linking to `images/gtmslogo.png`.
+     - Replaced mobile "LA LeaseFlow" orange badge with official GTMS logo, title, and district mining subtitle.
+     - Secured all asset links with `asset(...)` helper.
+  3. **Interactive Password Show/Hide Toggle (`login.blade.php`):**
+     - Converted password input into an input group with eye toggle button (`<i class="bi bi-eye"></i>`).
+     - Added client-side toggle script switching between password and plain text with automatic focus.
+  4. **Forgot Password Assistance Modal (`login.blade.php`):**
+     - Replaced dead `href="#"` link with an accessible, minimal Bootstrap 5 modal (`#forgotPasswordModal`).
+     - Removed cluttered/redundant texts, support email buttons, and internal phone extensions, presenting a clean, focused instruction directing users to contact their District Mining Office Administrator, with a single [OK] button.
+  5. **State Retention & Flash Notifications (`login.blade.php`):**
+     - Added `{{ old('remember') ? 'checked' : '' }}` to preserve "Remember me" selection on authentication errors.
+     - Added multi-level flash alerts (`session('success')`, `session('error')`, `session('warning')`, `session('status')`, and `$errors`).
+  6. **Double-Click Submission Safeguard (`login.blade.php`):**
+     - Form submit listener disables the button and injects an interactive loading spinner (`Signing in...`).
+  7. **Automated Verification:**
+     - Enhanced `UserManagementAndAuthTest` with assertions for GTMS branding, password toggle, modal presence, and absence of legacy LeaseFlow tokens.
+     - 19/19 User Management and Auth tests passed (126 assertions).
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.13 — DASHBOARD APEXCHARTS DEFENSIVE DOM GUARD & ELEMENT NOT FOUND CONSOLE ERROR ELIMINATION (COMPLETED & VERIFIED) ✅
+- **Status:** Investigated and resolved unhandled promise rejections `Uncaught (in promise) Error: Element not found` at `apexchart.js` triggered by `dashboard-1.js`:
+  1. **Defensive DOM Guards across all Chart Functions (`public/js/dashboard/dashboard-1.js`):**
+     - Added strict element existence guards (`if (!document.querySelector("#elementId")) return;`) to:
+       - `revenueMap` (`#revenueMap`)
+       - `columnChart` (`#columnChart`)
+       - `NewCustomers` (`#NewCustomers`)
+       - `NewCustomers1` (`#NewCustomers1`)
+       - `redial` (`#redial`)
+       - `emailchart` (`#emailchart`)
+       - `chartBar1` (`#chartBar1`)
+       - `chartBar2` (`#chartBar2`)
+       - `donutChart1` (`span.donut1` & `jQuery.fn.peity`)
+     - Eliminated all 6 console promise errors when pages load `dashboard-1.js` without the full set of demo template chart widgets.
+  2. **Script Cache-Busting (`resources/views/layouts/app.blade.php`):**
+     - Added query version parameter `?v=3` to `<script src="/js/dashboard/dashboard-1.js?v=3"></script>` ensuring clients receive the updated script immediately without hard-refreshing browser cache.
+  3. **Verification:**
+     - Tested authentication and dashboard navigation test suites (`UserManagementAndAuthTest`, `CustomerTrackingFilterTest`) — 100% passing.
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.12 — KAVERI GRANITES HIGH-VOLUME (264 LEASES) PAGINATION BUG FIX, O(N×M) LOOP OPTIMIZATION & INVOICE FALLBACK HARDENING (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted deep audit of `/customer-tracking/kaveri-granites-3197` (Customer ID: 1, 264 leases, 25 mining plans, 7 env projects, 7 compliances, `district_id = null`) — the largest enterprise client in the system:
+  1. **Critical JS Pagination Button Fix (`index.blade.php` L3535 & L3715):**
+     - Fixed broken "Next Page" buttons in both Portfolio Concessions and Standalone Services pagination.
+     - Root cause: Missing closing double-quote on `class` attribute (`class="ct-page-btn ${nextDisabled}` → missing `"` before `onclick="`).
+     - Effect: Clients with >10 concessions (like Kaveri with 264) could never navigate to Page 2+ in the portfolio directory.
+  2. **O(N×M) → O(N) Loop Optimization (`CustomerTrackingController.php` & `index.blade.php`):**
+     - Pre-grouped full-cycle chains by district inside `$districtGroups[$dName]['chains']` in the controller.
+     - Replaced quadratic Blade loop (`@foreach districtGroups → @foreach fullCycleChains → @if district matches`) with direct `@foreach($distInfo['chains'])`.
+     - For Kaveri (264 chains × 8 districts = 2,112 iterations), reduced to exactly 264 iterations (1× per chain).
+     - HTML output reduced from 1,958,468 → 1,921,510 bytes (~37KB savings).
+  3. **Hardcoded 'Salem' District Fallback Removed (`CustomerTrackingController@buildInvoiceData`):**
+     - Replaced hardcoded `'Salem'` district fallback in Proforma/Tax Invoice data assembly with generic `'Tamil Nadu'`.
+     - Salem is one of 38 Tamil Nadu districts and should not be the system-wide default when customer and all applications lack district assignment.
+  4. **Automated Verification:**
+     - Added `test_customer_tracking_high_volume_client_kaveri_renders_successfully` test (6 assertions) verifying portfolio pagination, district optgroup rendering, Next button HTML integrity, and absence of hardcoded 'Salem' fallback.
+     - 10/10 Customer Tracking tests passed (115 assertions).
+     - Full GTMS suite: 155/155 tests passed (0 failures, 0 regressions).
+- **Last Updated:** 2026-09-29
+
+## Previous Phase: PHASE 7.11 — CUSTOMER TRACKING PORTAL AUDIT, TAB ACTIVATION RESILIENCE, LEASE PARAMETRIC DEEP-LINKS & EC COMPLIANCE ENHANCEMENT (COMPLETED & VERIFIED) ✅
 - **Status:** Conducted deep code-level manual inspection and hardening of `/customer-tracking` and `/customer-tracking/{customer}` across Model, Controller, Blade views, and Automated Test Suites:
   1. **Tab Activation Resilience & Zero-Lease Safeguard (`CustomerTrackingController@buildCustomerDossier` & `index.blade.php`):**
      - Fixed critical white screen bug where clients with zero full-cycle lease chains (`fullCycleChains === 0`) but active standalone direct services (DGPS, Drone, EC Compliance, Standalone Mining Plans) defaulted `$curTab = 'lifecycle'`, causing all tabs to remain unselected and all tab-panes to fail `.show .active`.

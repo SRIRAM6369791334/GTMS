@@ -1,12 +1,6 @@
    <div class="nav-header">
             <a href="/" class="brand-logo">
                <img src="{{ asset('images/gtmslogo.png') }}" width="50" alt="GTMS Logo" />
-
-
-
-
-
-                </div>
             </a>
             <div class="nav-control">
                 <div class="hamburger">
@@ -35,7 +29,7 @@
                     <div class="collapse navbar-collapse justify-content-between">
                         <div class="header-left">
                             <div class="dashboard_bar">
-                                Dashboard
+                                @yield('title', 'Dashboard')
                             </div>
                         </div>
                         <ul class="navbar-nav header-right">

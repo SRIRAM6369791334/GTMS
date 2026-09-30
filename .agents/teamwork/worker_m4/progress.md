@@ -1,21 +1,28 @@
-# Progress - Worker M4 (QA & Workflows Document Writer)
+# Progress - Worker M4 (Accounts Milestone 4)
 
-Last visited: 2026-09-24T12:35:30Z
+Last visited: 2026-09-29T12:19:10+05:30
 
 ## Status
-All 5 documentation files (`docs/16-testing.md`, `docs/17-deployment.md`, `docs/18-feature-map.md`, `docs/19-data-flows.md`, `docs/20-error-handling.md`) have been authored, validated against the codebase, verified for zero Tamil characters and zero secrets. Now authoring `handoff.md` and notifying parent.
+Milestone 4 (Customer Financial Ledger, Reports, CSV Export & UI Sidebar Integration) implementation and verification 100% complete. Ready for handoff to orchestrator_3.
 
-## Plan
-1. [x] Read `ORIGINAL_REQUEST.md`, `gtms_knowledge_transfer_blueprint.md`, and explorer handoff report.
-2. [x] Audit `tests/` directory (Feature tests, Unit tests, fixtures, traits, assertions count, coverage, database rollback strategies).
-3. [x] Audit deployment configurations, Apache/Nginx directives, `.env`, caching commands, storage permissions, requirements.
-4. [x] Audit routes (`routes/web.php`), controllers, models, tables, and views to generate comprehensive feature map for Module 18.
-5. [x] Audit statutory workflows (Customer Intake, Lease -> Mining promotion, B1 2-stage lifecycle with PPT approval gates, EC Certificate issuance, and Commercial Invoicing) for Module 19 diagrams.
-6. [x] Audit error handling, exception handlers (`app/Exceptions/Handler.php` or Laravel 11 bootstrap), DB transactions (`DB::transaction`, `DB::beginTransaction`), ActivityLog logging for Module 20.
-7. [x] Author `docs/16-testing.md`.
-8. [x] Author `docs/17-deployment.md`.
-9. [x] Author `docs/18-feature-map.md`.
-10. [x] Author `docs/19-data-flows.md`.
-11. [x] Author `docs/20-error-handling.md`.
-12. [x] Verify all 5 documents, ensure zero Tamil characters, accurate details, and complete coverage.
-13. [ ] Write `handoff.md` and notify parent.
+## Implementation Plan Checklist
+1. [x] Read DISPATCH.md, ORIGINAL_REQUEST.md, PROJECT.md, and survey report.
+2. [x] Update DISPATCH.md, BRIEFING.md, and progress.md.
+3. [x] Implement `CustomerLedgerController.php`:
+   - `index()`: Paginated customer directory with search, totals for billed, received, and net balance.
+   - `show()`: Single customer financial dossier with chronological ledger, date filters, debits & credits, running balance, KPIs.
+   - `printStatement()`: Standalone printable Statement of Account.
+4. [x] Implement `FinancialReportController.php`:
+   - `index()`: 4 KPI summary cards, multi-parametric filter bar, paginated transaction table.
+   - `exportCsv()`: Native Symfony `StreamedResponse` CSV export with exact filter application.
+5. [x] Create Blade views:
+   - `resources/views/pages/accounts/ledger/index.blade.php`
+   - `resources/views/pages/accounts/ledger/show.blade.php`
+   - `resources/views/pages/accounts/ledger/print.blade.php`
+   - `resources/views/pages/accounts/reports/index.blade.php`
+6. [x] Update `resources/views/layouts/sidebar.blade.php`:
+   - Injected Accounts navigation group under `@canany(['account.view', 'account.create'])`.
+7. [x] Update `routes/web.php`:
+   - Registered ledger and reports routes under `accounts` prefix with proper permission middleware.
+8. [x] Verify implementation via PHP syntax checks, route list checks, and automated/manual tests.
+9. [x] Write `handoff.md` and send completion message to parent orchestrator.

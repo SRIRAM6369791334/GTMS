@@ -1,61 +1,85 @@
-# BRIEFING — 2026-09-24T12:35:00Z
+# BRIEFING — 2026-09-29T12:18:00+05:30
 
 ## Mission
-Author five production-grade documentation files in `docs/`: 16-testing.md, 17-deployment.md, 18-feature-map.md, 19-data-flows.md, 20-error-handling.md, ensuring 100% genuine analysis, strict formatting, and verified codebase details.
+Implement Milestone 4 of GTMS Accounts & Financial Management Module: Customer Financial Ledger, Comprehensive Financial Reports, CSV Export, Standalone Statement Print, and Sidebar RBAC Integration.
 
 ## 🔒 My Identity
-- Archetype: Worker M4
+- Archetype: worker_m4
 - Roles: implementer, qa, specialist
 - Working directory: c:\xampp\htdocs\GTMS\gtms\.agents\teamwork\worker_m4
-- Original parent: fc4fccb0-9277-4772-bc78-8b30d1b460ca
-- Milestone: M4 (QA, Workflows & Operational Architecture Documentation)
+- Original parent: ecb0a4ee-1d25-4637-a1fb-552edc53b301
+- Milestone: Milestone 4 (Customer Financial Ledger, Reports, CSV Export & UI Sidebar Integration)
 
 ## 🔒 Key Constraints
-- EXCLUSIVE FILE OWNERSHIP: You may ONLY write to `docs/16`, `docs/17`, `docs/18`, `docs/19`, `docs/20`, and your working directory.
-- ZERO modification of application source code (`app/*`, `routes/*`, `resources/*`, `database/*`).
-- Zero secrets/passwords (use `[REDACTED]`).
-- Update `progress.md` with timestamps.
-- Zero Tamil characters in docs (all documentation in English).
+- Exclusive write ownership:
+  * app/Http/Controllers/Accounts/CustomerLedgerController.php
+  * app/Http/Controllers/Accounts/FinancialReportController.php
+  * resources/views/pages/accounts/ledger/index.blade.php
+  * resources/views/pages/accounts/ledger/show.blade.php
+  * resources/views/pages/accounts/ledger/print.blade.php
+  * resources/views/pages/accounts/reports/index.blade.php
+  * resources/views/layouts/sidebar.blade.php
+  * routes/web.php
+  * .agents/teamwork/worker_m4/*
+- Genuine implementations only: no dummy code, no hardcoding, no facades.
+- Comply with Laravel 12, Bootstrap 5, Spatie RBAC (`account.view`, `account.create`).
 
 ## Current Parent
-- Conversation ID: fc4fccb0-9277-4772-bc78-8b30d1b460ca
-- Updated: 2026-09-24T12:35:00Z
+- Conversation ID: ecb0a4ee-1d25-4637-a1fb-552edc53b301
+- Updated: 2026-09-29T12:18:00+05:30
 
 ## Task Summary
 - **What to build**:
-  - `docs/16-testing.md`: Complete audit of PHPUnit 11.5.50 test suite (50 tests, 390 assertions, 100% pass, DatabaseTransactions, zero-Tamil static analysis rule).
-  - `docs/17-deployment.md`: Hardened production deployment guide (Ubuntu 22.04 LTS, Nginx 1.24+ & Apache 2.4+ virtual hosts, PHP 8.2 extensions, 775 directory permissions, 100MB body size for CAD, Supervisor queue workers, and caching pipeline).
-  - `docs/18-feature-map.md`: Complete end-to-end matrix mapping all 12 operational modules across Route -> Controller -> Model -> Table -> View -> Guard.
-  - `docs/19-data-flows.md`: Complete Mermaid sequence and state diagrams for 6 statutory pipelines (Customer intake & AJAX auto-fill, Lease to Mining promotion, Process 6.1-6.6, B1 2-stage lifecycle with PPT approval gates, EC certificate 6-step wizard, Customer 360 invoicing).
-  - `docs/20-error-handling.md`: Exception handling, transaction boundaries (`DB::transaction`, `DB::beginTransaction`), concurrency protection via `lockForUpdate()`, forensic auditing via `ActivityLog`, and flash alerts.
-  - `handoff.md` in `c:\xampp\htdocs\GTMS\gtms\.agents\teamwork\worker_m4\handoff.md`.
-- **Success criteria**: All 5 documents authored to production grade with verified code references and zero Tamil characters.
-- **Interface contracts**: GTMS codebase and blueprint.
+  - `CustomerLedgerController`: `index()`, `show()`, `printStatement()` [COMPLETED]
+  - `FinancialReportController`: `index()`, `exportCsv()` [COMPLETED]
+  - Blade views: `ledger/index.blade.php`, `ledger/show.blade.php`, `ledger/print.blade.php`, `reports/index.blade.php` [COMPLETED]
+  - Sidebar: injected Accounts menu group in `sidebar.blade.php` [COMPLETED]
+  - Routes: registered `/accounts/ledger*` and `/accounts/reports*` in `routes/web.php` [COMPLETED]
+- **Success criteria**:
+  - Accurate arithmetic for debits, credits, running balance, KPIs [VERIFIED]
+  - Clean streamed CSV export with zero memory bloat and UTF-8 BOM [VERIFIED]
+  - Standalone printable A4 customer statement [VERIFIED]
+  - Proper RBAC gating on routes and sidebar [VERIFIED]
+- **Interface contracts**: PROJECT.md and DISPATCH.md
+- **Code layout**: PROJECT.md
 
 ## Key Decisions Made
-- Anchored PHPUnit test suite audit on empirical facts: exactly 50 tests (49 Feature, 1 Unit), 390 assertions, 100% pass rate.
-- Documented both closure-based `DB::transaction()` and manual `DB::beginTransaction()` with exact controller line citations.
-- Detailed the multi-factor Aadhaar/mobile customer lookup and Indian currency words conversion algorithm.
-- Ensured zero secrets (passwords replaced with `[REDACTED]`).
-- Verified zero Tamil Unicode characters across all created files.
+- Single-pane customer dossier resolves customer by ID or slug (`resolveCustomer`).
+- Ledger merges Quotations (Debits) and PaymentReceipts (Credits) chronologically to calculate running balance.
+- Opening balance computed dynamically when date range (`from_date`) is specified.
+- CSV export uses Symfony StreamedResponse with UTF-8 BOM and chunking (`chunk(250)`) for flat memory consumption.
+- Statement print uses standalone HTML5 matching official GTMS letterhead with `.no-print-bar`, A4 sheet simulation, and digital seal.
 
 ## Artifact Index
-- `docs/16-testing.md` — Testing suite audit & execution guide
-- `docs/17-deployment.md` — Production deployment & server configuration guide
-- `docs/18-feature-map.md` — End-to-end feature matrix across 12 modules
-- `docs/19-data-flows.md` — Statutory workflow sequence & state diagrams
-- `docs/20-error-handling.md` — Error handling, transactions & audit architecture
-- `.agents/teamwork/worker_m4/handoff.md` — Handoff report to parent
+- `app/Http/Controllers/Accounts/CustomerLedgerController.php` — Ledger controller with directory, dossier, and statement print
+- `app/Http/Controllers/Accounts/FinancialReportController.php` — Financial reports controller with KPI cards, multi-parametric filter, and streamed CSV export
+- `resources/views/pages/accounts/ledger/index.blade.php` — Customer directory with financial ledger balances
+- `resources/views/pages/accounts/ledger/show.blade.php` — Customer financial dossier with running balance ledger and statutory dues
+- `resources/views/pages/accounts/ledger/print.blade.php` — Standalone printable Statement of Account A4 sheet
+- `resources/views/pages/accounts/reports/index.blade.php` — Financial reports dashboard with KPI cards and transaction table
+- `resources/views/layouts/sidebar.blade.php` — Sidebar with RBAC-gated Accounts navigation group
+- `routes/web.php` — Registered ledger and reports routes under accounts prefix
+- `.agents/teamwork/worker_m4/test_ledger_reports.php` — Basic verification test script
+- `.agents/teamwork/worker_m4/test_ledger_e2e.php` — E2E transactional arithmetic test script
 
 ## Change Tracker
-- **Files modified**: None in application code. Created 5 files in `docs/` and agent metadata in `.agents/teamwork/worker_m4/`.
-- **Build status**: Pass (100% test pass rate, 50 tests, 390 assertions).
+- **Files modified**:
+  * `resources/views/layouts/sidebar.blade.php`: Injected Accounts menu
+  * `routes/web.php`: Registered ledger and reports routes
+- **Files created**:
+  * `app/Http/Controllers/Accounts/CustomerLedgerController.php`
+  * `app/Http/Controllers/Accounts/FinancialReportController.php`
+  * `resources/views/pages/accounts/ledger/index.blade.php`
+  * `resources/views/pages/accounts/ledger/show.blade.php`
+  * `resources/views/pages/accounts/ledger/print.blade.php`
+  * `resources/views/pages/accounts/reports/index.blade.php`
+- **Build status**: Pass (100% test pass rate across existing test suites and new E2E verification).
 - **Pending issues**: None.
 
 ## Quality Status
-- **Build/test result**: Pass (0 errors, 0 failures).
-- **Lint status**: Clean.
-- **Tests added/modified**: No source code modified.
+- **Build/test result**: Pass (0 errors, 0 failures, 100% assertions verified).
+- **Lint status**: Clean (PHP syntax verified with 0 errors).
+- **Tests added/modified**: E2E verification scripts in agent folder.
 
 ## Loaded Skills
-- None requested.
+- None.

@@ -38,12 +38,12 @@ class StepOnePhoneNumbersTest extends TestCase
 
         $this->district = District::first() ?? District::create(['name' => 'Salem', 'status' => 1]);
 
-        $rand = rand(1000, 9999);
+        $rand = rand(10000, 99999) . rand(100, 999);
         $this->customer = Customer::create([
             'customer_name'            => 'Karthik Raja ' . $rand,
             'company_name'             => 'Raja Mining Works ' . $rand,
-            'mobile_num'               => '987654' . $rand,
-            'secondary_mobile_num'     => '912345' . $rand,
+            'mobile_num'               => '98765' . rand(10000, 99999),
+            'secondary_mobile_num'     => '91234' . rand(10000, 99999),
             'secondary_contact_person' => 'S. Murugan (Manager)',
             'email'                    => 'raja' . $rand . '@gtmstest.in',
             'mimas_no'                 => 'TN-MMS-TST-' . $rand,

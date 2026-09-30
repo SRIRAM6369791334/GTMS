@@ -114,6 +114,41 @@
             </li>
             @endcan
 
+            {{-- Accounts & Financial Management Module --}}
+            @canany(['account.view', 'account.create'])
+            <li class="{{ request()->routeIs('accounts.*') ? 'mm-active' : '' }}">
+                <a class="has-arrow {{ request()->routeIs('accounts.*') ? 'mm-active' : '' }}" href="javascript:void(0);" aria-expanded="{{ request()->routeIs('accounts.*') ? 'true' : 'false' }}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span class="nav-text">Accounts</span>
+                </a>
+                <ul aria-expanded="{{ request()->routeIs('accounts.*') ? 'true' : 'false' }}" class="{{ request()->routeIs('accounts.*') ? 'mm-show' : '' }}">
+                    @can('account.view')
+                    <li class="{{ request()->routeIs('accounts.quotations.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('accounts.quotations.index') }}" class="{{ request()->routeIs('accounts.quotations.*') ? 'mm-active' : '' }}">Quotations</a>
+                    </li>
+                    @endcan
+
+                    @can('account.create')
+                    <li class="{{ request()->routeIs('accounts.payments.create') ? 'mm-active' : '' }}">
+                        <a href="{{ route('accounts.payments.create') }}" class="{{ request()->routeIs('accounts.payments.create') ? 'mm-active' : '' }}">Collect Payment</a>
+                    </li>
+                    @endcan
+
+                    @can('account.view')
+                    <li class="{{ request()->routeIs('accounts.receipts.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('accounts.receipts.index') }}" class="{{ request()->routeIs('accounts.receipts.*') ? 'mm-active' : '' }}">Payment Receipts</a>
+                    </li>
+                    <li class="{{ request()->routeIs('accounts.ledger.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('accounts.ledger.index') }}" class="{{ request()->routeIs('accounts.ledger.*') ? 'mm-active' : '' }}">Customer Ledger</a>
+                    </li>
+                    <li class="{{ request()->routeIs('accounts.reports.*') ? 'mm-active' : '' }}">
+                        <a href="{{ route('accounts.reports.index') }}" class="{{ request()->routeIs('accounts.reports.*') ? 'mm-active' : '' }}">Financial Reports</a>
+                    </li>
+                    @endcan
+                </ul>
+            </li>
+            @endcanany
+
              {{--  <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
                             <i class="fas fa-info-circle"></i>
                             <span class="nav-text">Apps</span>

@@ -32,7 +32,9 @@ class RolesController extends Controller
             'category' => 'Categories',
             'product' => 'Products',
             'unit' => 'Units',
+            'account' => 'Accounts & Financials',
         ];
+
 
         $groupedPermissions = [];
         foreach ($allPermissions as $perm) {
