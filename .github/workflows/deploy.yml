@@ -1,0 +1,61 @@
+name: Deploy GTMS to Local Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Local Docker Deployment
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Availability
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Deploy Containers with Docker Compose
+        run: |
+          docker compose up -d --build
+
+      - name: Verify Service Health
+        shell: powershell
+        run: |
+          $maxRetries = 15
+          $retry = 0
+          $success = $false
+
+          Write-Host "Checking application health at http://localhost:8000/up..."
+
+          while ($retry -lt $maxRetries) {
+              try {
+                  $response = Invoke-WebRequest -Uri "http://localhost:8000/up" -UseBasicParsing -TimeoutSec 5
+                  if ($response.StatusCode -eq 200) {
+                      Write-Host "Application is HEALTHY (HTTP 200)!"
+                      $success = $true
+                      break
+                  }
+              } catch {
+                  Write-Host "Waiting for service to be healthy... ($($retry + 1)/$maxRetries)"
+                  Start-Sleep -Seconds 3
+                  $retry++
+              }
+          }
+
+          if (-not $success) {
+              Write-Error "Deployment failed health check at http://localhost:8000/up"
+              exit 1
+          }
+
+      - name: Run Safe Database Migrations
+        run: |
+          docker compose exec -T app php artisan migrate --force
+
+      - name: Deployment Summary
+        run: |
+          docker compose ps

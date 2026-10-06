@@ -22,3 +22,17 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# GTMS specific & temporary files
+/.agents/
+/public/dev-tools/
+/public/uploads/
+create_*.png
+edit_*.png
+quotation_*.png
+*.zip
+*.bak
+.env.docker
+.env.local
+
+

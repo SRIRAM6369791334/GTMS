@@ -1,0 +1,14 @@
+/node_modules
+/vendor
+/.git
+/.agents
+/storage/*.key
+/storage/logs/*
+/public/hot
+/public/storage
+.env
+.env.*
+.phpunit.result.cache
+*.log
+*.zip
+*.png
