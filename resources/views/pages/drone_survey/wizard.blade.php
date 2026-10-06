@@ -40,6 +40,10 @@ $steps = [
         <h4>{{ $steps[$step - 1][0] }}</h4>
         <div class="wc-sub">Complete the drone survey activities in this stage before moving to the next step.</div>
 
+        <form method="POST" action="{{ $step === 8 ? route('drone-survey.store') : route('drone-survey.saveStep', $step) }}" id="droneWizardForm">
+          @csrf
+          <input type="hidden" name="customer_id" id="drone_customer_id" value="{{ $draft['customer_id'] ?? ($customers->first()?->id ?? 1) }}">
+
         {{-- STEP 1: SURVEY REQUEST --}}
         @if($step === 1)
           {{-- CUSTOMER UNIQUE ID LOOKUP CARD --}}
@@ -97,6 +101,8 @@ $steps = [
               <label class="form-label fw-bold text-navy">Location / Quarry Site</label>
               <input class="form-control auto-filled-field" id="field_drone_location" name="location" placeholder="District / village" value="Salem / Semmandapatti">
             </div>
+            <input type="hidden" name="lease_application_id" value="1">
+            <input type="hidden" name="mining_application_id" value="1">
           </div>
 
         {{-- STEP 2: DATA ACQUISITION --}}
@@ -104,11 +110,16 @@ $steps = [
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Flight Date</label>
-              <input class="form-control" type="date" value="{{ date('Y-m-d') }}">
+              <input class="form-control" type="date" name="flight_date" value="{{ date('Y-m-d') }}">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Drone / Pilot Details</label>
-              <input class="form-control" placeholder="Drone model and pilot name" value="DJI Matrice 300 RTK &bull; Pilot: S. Karthik (RPC #DRN-TN-8821)">
+              <label class="form-label">Drone Model &amp; Pilot</label>
+              <input class="form-control" name="drone_model" value="DJI Matrice 300 RTK">
+              <input type="hidden" name="drone_pilot_name" value="S. Karthik">
+              <input type="hidden" name="pilot_rpc_no" value="RPC #DRN-TN-8821">
+              <input type="hidden" name="drone_uin_no" value="UIN-TN-DRN-2026-9901">
+              <input type="hidden" name="altitude_meters" value="120">
+              <input type="hidden" name="gsd_cm_px" value="2.5">
             </div>
           </div>
           <div class="card-panel mt-4 mb-0" style="background:var(--navy-soft);border:none">
@@ -117,6 +128,8 @@ $steps = [
 
         {{-- STEP 3: DATA PROCESSING & DOCUMENTS UPLOAD --}}
         @elseif($step === 3)
+          <input type="hidden" name="extracted_volume_cbm" value="18450">
+          <input type="hidden" name="survey_status" value="completed">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <div>
               <h4 class="mb-1">Process Drone Data &amp; Upload Deliverables</h4>
@@ -402,11 +415,12 @@ $steps = [
             <i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}
           </a>
           @can('drone.create')
-            <a href="{{ $step === 8 ? route('drone-survey.index') : route('drone-survey.step', $step + 1) }}" class="btn {{ $step === 8 ? 'btn-green' : 'btn-navy' }} px-4">
-              {{ $step === 8 ? 'Finish Process' : 'Save & Continue' }} <i class="bi bi-arrow-right"></i>
-            </a>
+            <button type="submit" class="btn {{ $step === 8 ? 'btn-green' : 'btn-navy' }} px-4 btn-drone-continue">
+              {{ $step === 8 ? 'Finish & Save Survey' : 'Save & Continue' }} <i class="bi {{ $step === 8 ? 'bi-check2-circle' : 'bi-arrow-right' }}"></i>
+            </button>
           @endcan
         </div>
+        </form>
       </div>
     </div>
   </div>
@@ -696,6 +710,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function applyDroneCustomerAutofill(c) {
     if (!c) return;
+    const fCustId = document.getElementById('drone_customer_id');
+    if (fCustId && c.id) fCustId.value = c.id;
     const fApplicant = document.getElementById('field_drone_applicant');
     const fArea = document.getElementById('field_drone_area');
     const fLoc = document.getElementById('field_drone_location');

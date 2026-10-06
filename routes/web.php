@@ -123,7 +123,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/customer-tracking/{customer}/proforma-invoice', [CustomerTrackingController::class, 'proformaInvoice'])->name('customer-tracking.proforma-invoice');
         Route::get('/customer-tracking/{customer}/tax-invoice', [CustomerTrackingController::class, 'taxInvoice'])->name('customer-tracking.tax-invoice');
     });
-    Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->name('customers.lookup.mimas');
+    Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->where('mimas_no', '.*')->name('customers.lookup.mimas');
     Route::post('/customeradd', [CustomerDirectoryController::class, 'store'])->name('customeradd')->middleware('permission:customer.create');
     Route::post('/customeredit', [CustomerDirectoryController::class, 'update'])->name('customeredit')->middleware('permission:customer.edit');
     Route::post('/customerdelete', [CustomerDirectoryController::class, 'destroy'])->name('customerdelete')->middleware('permission:customer.delete');

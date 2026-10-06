@@ -1,805 +1,810 @@
 @extends('layouts.app')
 
-@section('title', 'Payment Collection Desk - GTMS Accounts')
+@section('title', 'Record Customer Payment • GTMS Accounts')
 
 @push('styles')
-{{-- Select2 CSS --}}
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
-<style>
-    /* ─── UI-UX-PRO-MAX HIGH CONTRAST TOKENS ───────────────────── */
-    :root {
-        --color-navy: #0F1E4D;
-        --color-navy-light: #1E3A8A;
-        --color-navy-dark: #0A1435;
-        --color-slate-dark: #0F172A;
-        --color-slate-body: #1E293B;
-        --color-slate-muted: #475569;
-        --color-emerald: #059669;
-        --color-amber: #D97706;
-        --color-rose: #DC2626;
-        --color-border-clean: #CBD5E1;
-        --color-bg-subtle: #F8FAFC;
-    }
+    @include('pages.accounts.partials.theme')
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════
+           GTMS FINTECH PAYMENT VOUCHER TERMINAL (ZOHO / STRIPE INSPIRED)
+           Single centered luxury financial voucher with zero scroll friction.
+        ═══════════════════════════════════════════════════════════════════ */
 
-    /* Force all text in this view to high contrast */
-    .content-body {
-        color: var(--color-slate-body);
-    }
-    .text-muted {
-        color: var(--color-slate-muted) !important;
-    }
-
-    /* ─── Select2 Clean Styling (No duplicate raw select) ──────── */
-    select#customer_selector {
-        display: none !important;
-    }
-    .select2-container {
-        width: 100% !important;
-    }
-    .select2-container--default .select2-selection--single {
-        height: 46px;
-        border: 1.5px solid var(--color-border-clean);
-        border-radius: 9px;
-        padding: 5px 14px;
-        font-size: 0.95rem;
-        background-color: #FFFFFF;
-        transition: all 0.18s ease;
-        box-shadow: 0 1px 2px rgba(15,23,42,0.05);
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 34px;
-        color: var(--color-slate-dark);
-        font-weight: 600;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 44px;
-        right: 12px;
-    }
-    .select2-container--default.select2-container--focus .select2-selection--single,
-    .select2-container--default.select2-container--open .select2-selection--single {
-        border-color: var(--color-navy-light);
-        box-shadow: 0 0 0 3px rgba(30,58,138,0.18);
-        outline: none;
-    }
-    .select2-dropdown {
-        border: 1.5px solid var(--color-border-clean);
-        border-radius: 9px;
-        box-shadow: 0 12px 28px rgba(15,23,42,0.15);
-        z-index: 1050;
-    }
-    .select2-results__option {
-        padding: 9px 14px;
-        font-size: 0.9rem;
-        color: var(--color-slate-dark);
-    }
-    .select2-results__option--highlighted[aria-selected] {
-        background-color: var(--color-navy);
-        color: #FFFFFF;
-    }
-    .select2-search--dropdown .select2-search__field {
-        padding: 8px 12px;
-        border-radius: 7px;
-        border: 1px solid var(--color-border-clean);
-        outline: none;
-    }
-
-    /* ─── Customer Dossier Banner ──────────────────────────────── */
-    .customer-dossier-banner {
-        background: linear-gradient(135deg, #0F1E4D 0%, #1E3A8A 55%, #1E3A5F 100%) !important;
-        border-radius: 11px;
-        padding: 14px 18px;
-        color: #FFFFFF !important;
-        box-shadow: 0 4px 14px rgba(15,30,77,0.18);
-        animation: bannerReveal 0.2s ease-out;
-    }
-    @keyframes bannerReveal {
-        from { opacity: 0; transform: translateY(-6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    .customer-dossier-banner * {
-        color: #FFFFFF;
-    }
-    .customer-dossier-banner .btn-ledger {
-        background: #FFFFFF !important;
-        color: #0F1E4D !important;
-        font-weight: 700;
-        font-size: 0.76rem;
-        border-radius: 6px;
-        padding: 3px 10px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        text-decoration: none;
-    }
-    .customer-dossier-banner .btn-ledger:hover {
-        background: #F1F5F9 !important;
-    }
-    .banner-meta-tag {
-        display: inline-flex;
-        align-items: center;
-        background: rgba(255,255,255,0.14);
-        padding: 3px 8px;
-        border-radius: 5px;
-        font-size: 0.76rem;
-        color: #E2E8F0 !important;
-    }
-    .banner-meta-tag * {
-        color: #E2E8F0 !important;
-    }
-    .banner-kpi-pill {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.15);
-        border-radius: 7px;
-        padding: 6px 10px;
-        text-align: center;
-    }
-
-    /* ─── Application Cards ────────────────────────────────────── */
-    .app-card {
-        border-radius: 9px;
-        border: 1.5px solid var(--color-border-clean);
-        background: #FFFFFF;
-        transition: all 0.16s ease-in-out;
-        cursor: pointer;
-        padding: 11px 14px;
-        margin-bottom: 9px;
-    }
-    .app-card:hover {
-        border-color: #93C5FD;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(30,58,138,0.08);
-    }
-    .app-card.selected {
-        border-color: #2563EB !important;
-        background: #EFF6FF !important;
-        box-shadow: 0 0 0 2px #2563EB, 0 6px 16px rgba(37,99,235,0.12);
-    }
-    .app-card.status-pending { border-left: 5px solid var(--color-rose); }
-    .app-card.status-partial { border-left: 5px solid var(--color-amber); }
-    .app-card.status-paid    { border-left: 5px solid var(--color-emerald); }
-
-    /* Module Icon Badges */
-    .module-icon-box {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.95rem;
-        flex-shrink: 0;
-    }
-    .icon-box-lease      { background: #FEF3C7; color: #B45309; }
-    .icon-box-mining     { background: #FFE4E6; color: #BE123C; }
-    .icon-box-eviron     { background: #D1FAE5; color: #047857; }
-    .icon-box-ec         { background: #DBEAFE; color: #1D4ED8; }
-    .icon-box-ppt        { background: #EDE9FE; color: #6D28D9; }
-    .icon-box-dgps       { background: #FCE7F3; color: #BE185D; }
-    .icon-box-drone      { background: #E0F2FE; color: #0369A1; }
-    .icon-box-compliance { background: #DCFCE7; color: #15803D; }
-    .icon-box-general    { background: #F1F5F9; color: #475569; }
-
-    /* ─── Dues Filter Tabs & Search ────────────────────────────── */
-    .filter-tab-pill {
-        appearance: none;
-        -webkit-appearance: none;
-        font-size: 0.78rem;
-        font-weight: 600;
-        padding: 4px 12px;
-        border-radius: 20px;
-        border: 1px solid var(--color-border-clean) !important;
-        background: #FFFFFF;
-        color: var(--color-slate-muted);
-        cursor: pointer;
-        transition: all 0.15s ease;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    .filter-tab-pill:hover {
-        background: #F1F5F9;
-        color: var(--color-slate-dark);
-    }
-    .filter-tab-pill.active {
-        background: var(--color-navy) !important;
-        color: #FFFFFF !important;
-        border-color: var(--color-navy) !important;
-    }
-
-    #dues_cards_container {
-        max-height: 380px;
-        overflow-y: auto;
-        padding-right: 4px;
-        scrollbar-width: thin;
-    }
-    #dues_cards_container::-webkit-scrollbar { width: 5px; }
-    #dues_cards_container::-webkit-scrollbar-thumb {
-        background-color: var(--color-border-clean);
-        border-radius: 4px;
-    }
-
-    /* ─── Right Form: Compact Viewport Design ──────────────────── */
-    .payment-form-card {
-        border-radius: 12px;
-        border: 1.5px solid var(--color-border-clean);
-        background: #FFFFFF;
-        box-shadow: 0 4px 16px rgba(15,23,42,0.06);
-    }
-    @media (min-width: 992px) {
-        .payment-right-sticky {
-            position: sticky;
-            top: 76px;
+        .payment-page-container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding-bottom: 2.5rem;
         }
-    }
 
-    /* Target Application Mini Banner */
-    .target-app-mini {
-        background: linear-gradient(135deg, #0F1E4D 0%, #1E3A5F 100%);
-        color: #FFFFFF;
-        border-radius: 9px;
-        padding: 10px 14px;
-    }
-    .target-app-mini * {
-        color: #FFFFFF;
-    }
+        /* ── Master Financial Voucher Card ── */
+        .voucher-card {
+            background: #FFFFFF;
+            border-radius: 14px;
+            border: 1px solid #E2E8F0;
+            border-top: 4px solid #0F1E4D;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+            overflow: hidden;
+        }
 
-    /* Amount & Calculation Box */
-    .amount-calc-box {
-        background: #F8FAFC;
-        border: 1px solid var(--color-border-clean);
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 0.8rem;
-    }
-    .amount-calc-box .words-text {
-        font-size: 0.8rem;
-        color: var(--color-navy-light);
-        font-weight: 600;
-        font-style: italic;
-    }
+        .voucher-header {
+            padding: 20px 26px 16px;
+            background: #FFFFFF;
+            border-bottom: 1px solid #F1F5F9;
+        }
 
-    /* Quick Preset Pills */
-    .quick-preset-pill {
-        appearance: none;
-        -webkit-appearance: none;
-        font-size: 0.74rem;
-        font-weight: 600;
-        padding: 3px 9px;
-        border-radius: 14px;
-        border: 1px solid var(--color-border-clean) !important;
-        background: #FFFFFF;
-        color: var(--color-slate-body);
-        cursor: pointer;
-        transition: all 0.12s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    .quick-preset-pill:hover {
-        background: var(--color-navy);
-        color: #FFFFFF !important;
-        border-color: var(--color-navy) !important;
-    }
+        .voucher-body {
+            padding: 24px 26px;
+        }
 
-    /* Input Group Icons: Transparent clean border */
-    .clean-input-group .input-group-text {
-        background-color: #F8FAFC !important;
-        border: 1.5px solid var(--color-border-clean) !important;
-        color: var(--color-navy) !important;
-        font-size: 0.88rem !important;
-        padding: 0 11px !important;
-    }
-    .clean-input-group .form-control,
-    .clean-input-group .form-select {
-        border: 1.5px solid var(--color-border-clean) !important;
-        font-size: 0.9rem;
-    }
-    .clean-input-group .form-control:focus,
-    .clean-input-group .form-select:focus {
-        border-color: var(--color-navy-light) !important;
-        box-shadow: 0 0 0 3px rgba(30,58,138,0.15) !important;
-    }
+        .voucher-section-divider {
+            border-top: 1px solid #F1F5F9;
+            margin: 20px 0;
+        }
 
-    /* Narration Suggestion Chips */
-    .narration-chip {
-        font-size: 0.72rem;
-        padding: 2px 7px;
-        border-radius: 10px;
-        border: 1px dashed var(--color-border-clean);
-        background: #FFFFFF;
-        color: var(--color-slate-muted);
-        cursor: pointer;
-        transition: all 0.12s ease;
-    }
-    .narration-chip:hover {
-        background: #F1F5F9;
-        color: var(--color-slate-dark);
-        border-color: var(--color-navy);
-    }
+        /* ── Form Controls & Typography ── */
+        .form-label-fintech {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
-    /* Submit Button */
-    .btn-record-main {
-        background: var(--color-navy);
-        color: #FFFFFF;
-        border: none;
-        font-weight: 700;
-        font-size: 0.95rem;
-        padding: 10px 16px;
-        border-radius: 9px;
-        transition: all 0.18s ease;
-        box-shadow: 0 4px 12px rgba(15,30,77,0.22);
-    }
-    .btn-record-main:hover {
-        background: #1A2F6C;
-        color: #FFFFFF;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(15,30,77,0.3);
-    }
+        .form-control-fintech, .form-select-fintech {
+            position: relative;
+            height: 42px;
+            line-height: 1.5;
+            border: 1px solid #CBD5E1;
+            color: #0F172A;
+            font-weight: 500;
+            font-size: 0.88rem;
+            border-radius: 8px;
+            padding: 8px 12px;
+            background-color: #FFFFFF;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            width: 100%;
+        }
 
-    /* Tabular numeric alignment */
-    .tabular-nums {
-        font-variant-numeric: tabular-nums;
-    }
+        /* ── Critical Guard: Prevent input[type="date"] picker from escaping to main-wrapper ── */
+        input[type="date"] {
+            position: relative !important;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            position: static !important;
+            cursor: pointer !important;
+            background: initial !important;
+            color: initial !important;
+            opacity: 0.7 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: auto !important;
+            height: auto !important;
+        }
 
-    /* Bottom spacing guard */
-    .content-body.default-height {
-        padding-bottom: 70px;
-    }
-</style>
+        .form-control-fintech:focus, .form-select-fintech:focus {
+            border-color: #1E3A8A;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
+            color: #0F172A;
+            outline: none;
+        }
+
+        /* ── Select2 Customization ── */
+        select#customer_selector { display: none !important; }
+        .select2-container { width: 100% !important; }
+        .select2-container .select2-selection--single {
+            height: 44px !important;
+            border: 1px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            padding: 6px 14px !important;
+            display: flex !important;
+            align-items: center !important;
+            background-color: #FFFFFF !important;
+            transition: all 0.15s ease;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 30px !important;
+            color: #0F172A !important;
+            font-weight: 600 !important;
+            font-size: 0.88rem !important;
+            padding-left: 0 !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px !important;
+            right: 10px !important;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #1E3A8A !important;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12) !important;
+            outline: none !important;
+        }
+        .select2-dropdown {
+            border: 1.5px solid #CBD5E1 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12) !important;
+            z-index: 1050;
+        }
+        .select2-results__option {
+            padding: 8px 14px !important;
+            font-size: 0.88rem !important;
+            color: #0F172A !important;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: #0F1E4D !important;
+            color: #FFFFFF !important;
+        }
+
+        /* ── Customer Capsule Dossier ── */
+        .customer-dossier-capsule {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .client-avatar-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0F1E4D 0%, #1E3A8A 100%);
+            color: #FFFFFF;
+            font-weight: 800;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* ── Hero Amount Input ── */
+        .hero-amount-box {
+            position: relative;
+        }
+        .hero-amount-group {
+            display: flex;
+            align-items: stretch;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #FFFFFF;
+            transition: all 0.15s ease;
+        }
+        .hero-amount-group:focus-within {
+            border-color: #1E3A8A;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12);
+        }
+        .hero-amount-prefix {
+            background: #F8FAFC;
+            border-right: 1px solid #CBD5E1;
+            color: #0F1E4D;
+            font-weight: 800;
+            font-size: 1.4rem;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .hero-amount-input {
+            border: none !important;
+            font-size: 1.45rem !important;
+            font-weight: 800 !important;
+            color: #0F1E4D !important;
+            padding: 8px 14px !important;
+            width: 100%;
+            outline: none;
+            letter-spacing: 0.02em;
+        }
+        .hero-amount-input::placeholder {
+            color: #CBD5E1;
+            font-weight: 600;
+        }
+
+        /* ── Preset Chips ── */
+        .preset-chip {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 6px;
+            border: 1px solid #CBD5E1;
+            background: #FFFFFF;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .preset-chip:hover:not(.disabled) {
+            background: #0F1E4D;
+            color: #FFFFFF;
+            border-color: #0F1E4D;
+        }
+        .preset-chip.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        /* ── Live Indian Words Preview ── */
+        .words-preview-strip {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #1E3A8A;
+            font-style: italic;
+            margin-top: 6px;
+            line-height: 1.4;
+            min-height: 20px;
+        }
+
+        /* ── Payment Method Horizontal Pills ── */
+        .mode-pills-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+        }
+        .mode-pill-btn {
+            height: 42px;
+            padding: 6px 4px;
+            border-radius: 6px;
+            border: 1px solid #CBD5E1;
+            background: #FFFFFF;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .mode-pill-btn:hover {
+            border-color: #1E3A8A;
+            color: #0F1E4D;
+            background: #F8FAFC;
+        }
+        .mode-pill-btn.active {
+            background: #0F1E4D;
+            color: #FFFFFF;
+            border-color: #0F1E4D;
+            box-shadow: 0 2px 6px rgba(15, 30, 77, 0.15);
+        }
+
+        /* ── Dues Allocation Table ── */
+        .dues-table-box {
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #FFFFFF;
+        }
+        .dues-table-header-bar {
+            padding: 10px 14px;
+            background: #F8FAFC;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .table-voucher {
+            width: 100%;
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-voucher thead th {
+            background-color: #F8FAFC;
+            color: #475569;
+            font-size: 0.70rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 9px 12px;
+            border-bottom: 1px solid #E2E8F0;
+            white-space: nowrap;
+        }
+        .table-voucher tbody td {
+            padding: 10px 12px;
+            vertical-align: middle;
+            font-size: 0.84rem;
+            color: #1E293B;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .table-voucher tbody tr {
+            cursor: pointer;
+            transition: background-color 0.12s ease;
+        }
+        .table-voucher tbody tr:hover td {
+            background-color: #F8FAFC;
+        }
+        .table-voucher tbody tr.selected td {
+            background-color: #EFF6FF !important;
+        }
+        .table-voucher tbody tr.selected {
+            border-left: 3px solid #1E3A8A;
+        }
+
+        /* Module Icons */
+        .module-icon-sm {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+        .icon-box-lease      { background: #FEF3C7; color: #B45309; }
+        .icon-box-mining     { background: #FFE4E6; color: #BE123C; }
+        .icon-box-eviron     { background: #D1FAE5; color: #047857; }
+        .icon-box-ec         { background: #DBEAFE; color: #1D4ED8; }
+        .icon-box-ppt        { background: #EDE9FE; color: #6D28D9; }
+        .icon-box-dgps       { background: #FCE7F3; color: #BE185D; }
+        .icon-box-drone      { background: #E0F2FE; color: #0369A1; }
+        .icon-box-compliance { background: #DCFCE7; color: #15803D; }
+        .icon-box-general    { background: #F1F5F9; color: #475569; }
+
+        /* Quick Pills / Filters */
+        .tab-filter-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 14px;
+            border: 1px solid #CBD5E1;
+            background: #FFFFFF;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.12s ease;
+        }
+        .tab-filter-btn:hover { background: #F1F5F9; color: #0F172A; }
+        .tab-filter-btn.active {
+            background: #0F1E4D;
+            color: #FFFFFF;
+            border-color: #0F1E4D;
+        }
+
+        /* Status Dot Pills */
+        .status-dot-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+        .status-dot-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+        .status-pending-pill { background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA; }
+        .status-pending-pill .dot { background: #DC2626; }
+        .status-settled-pill { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+        .status-settled-pill .dot { background: #059669; }
+
+        /* Narration Tags */
+        .narration-tag {
+            font-size: 0.70rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid #CBD5E1;
+            background: #F8FAFC;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.12s ease;
+            display: inline-block;
+        }
+        .narration-tag:hover {
+            background: #EFF6FF;
+            color: #1E3A8A;
+            border-color: #93C5FD;
+        }
+
+        /* ── Primary Action Button ── */
+        .btn-issue-receipt {
+            background: #0F1E4D;
+            color: #FFFFFF;
+            border: 1px solid #0F1E4D;
+            font-weight: 700;
+            font-size: 0.92rem;
+            padding: 10px 24px;
+            border-radius: 8px;
+            transition: all 0.18s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(15, 30, 77, 0.2);
+        }
+        .btn-issue-receipt:hover {
+            background: #1A327E;
+            border-color: #1A327E;
+            color: #FFFFFF;
+            box-shadow: 0 6px 16px rgba(15, 30, 77, 0.25);
+            transform: translateY(-1px);
+        }
+        .btn-issue-receipt:disabled {
+            background: #94A3B8 !important;
+            border-color: #94A3B8 !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+        }
+    </style>
 @endpush
 
 @section('main_content')
-<div class="content-body default-height">
-<div class="container-fluid py-3 px-4">
+<div class="content-body">
+    <div class="container-fluid payment-page-container">
 
-    {{-- ── Top Navigation Header ───────────────────────────────────────── --}}
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1 text-muted small">
-                    <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}" class="text-decoration-none text-muted">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('accounts.receipts.index') }}" class="text-decoration-none text-muted">Accounts</a></li>
-                    <li class="breadcrumb-item active text-primary fw-bold" aria-current="page">Payment Collection Desk</li>
-                </ol>
-            </nav>
-            <h4 class="mb-0 fw-bold text-dark">
-                <i class="fas fa-cash-register text-primary me-2"></i>Payment Collection Desk
-            </h4>
-            <div class="small" style="color: #475569;">
-                Record client statutory payments, auto-synchronize dossiers &amp; generate official money receipt vouchers.
+        {{-- ── Top Navigation Bar ────────────────────────────────────────── --}}
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 py-0 text-muted" style="font-size: 0.76rem;">
+                        <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}" class="text-decoration-none text-muted">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('accounts.receipts.index') }}" class="text-decoration-none text-muted">Accounts</a></li>
+                        <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Record Payment</li>
+                    </ol>
+                </nav>
+                <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="fas fa-file-invoice-dollar" style="color: #0F1E4D;"></i>
+                    <span>Record Customer Payment</span>
+                </h4>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <a href="{{ route('accounts.receipts.index') }}" class="btn btn-outline-dark btn-sm fw-semibold shadow-sm"
+                   style="border-color: #CBD5E1; color: #0F172A; height: 36px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+                    <i class="fas fa-receipt me-1.5" style="color: #0F1E4D;"></i> Receipts Directory
+                </a>
+                <a href="{{ route('accounts.quotations.index') }}" class="btn btn-outline-primary btn-sm fw-semibold shadow-sm"
+                   style="border-color: #BFDBFE; color: #1E3A8A; height: 36px; display: inline-flex; align-items: center; font-size: 0.8rem;">
+                    <i class="fas fa-file-invoice me-1.5"></i> Quotations
+                </a>
             </div>
         </div>
-        <div class="mt-2 mt-sm-0 d-flex gap-2">
-            <a href="{{ route('accounts.receipts.index') }}" class="btn btn-outline-secondary btn-sm shadow-sm fw-semibold">
-                <i class="fas fa-receipt me-1"></i> Receipts Directory
-            </a>
-            <a href="{{ route('accounts.quotations.index') }}" class="btn btn-outline-primary btn-sm shadow-sm fw-semibold">
-                <i class="fas fa-file-invoice me-1"></i> Quotations
-            </a>
-            <a href="{{ route('accounts.reports.index') }}" class="btn btn-outline-dark btn-sm shadow-sm fw-semibold">
-                <i class="fas fa-chart-line me-1"></i> Reports
-            </a>
-        </div>
-    </div>
 
-    {{-- ── Flash Notifications ────────────────────────────────────────── --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
-            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-    @if($errors->any())
-        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
-            <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Submission Failed:</div>
-            <ul class="mb-0 ps-3">
-                @foreach($errors->all() as $e)
-                    <li>{{ $e }}</li>
-                @endforeach
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    {{-- Keyboard Shortcuts Bar --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div class="small fw-semibold" style="color: #334155;">
-            <i class="fas fa-arrow-circle-right text-primary me-1"></i> <strong>Step 1:</strong> Select a quarry operator below to view active applications and record payment.
-        </div>
-        <div>
-            <span class="badge bg-white text-dark border px-2 py-1 shadow-sm" style="font-size:0.75rem; color:#334155 !important;">
-                <kbd style="background:#0F1E4D; color:#FFFFFF; padding:2px 5px; border-radius:4px;">Ctrl</kbd> + <kbd style="background:#0F1E4D; color:#FFFFFF; padding:2px 5px; border-radius:4px;">Enter</kbd> Review &amp; Submit &nbsp;|&nbsp; <kbd style="background:#475569; color:#FFFFFF; padding:2px 5px; border-radius:4px;">Esc</kbd> Reset to General
-            </span>
-        </div>
-    </div>
-
-    <div class="row g-3 align-items-start">
-
-        {{-- ══════════════════════════════════════════════════════════════════
-             LEFT COLUMN — Customer Profile + Applications & Outstanding Dues
-        ══════════════════════════════════════════════════════════════════ --}}
-        <div class="col-lg-7">
-
-            {{-- 1. Client Selection Card --}}
-            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px; border: 1.5px solid #CBD5E1;">
-                <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold text-dark fs-6">
-                        <i class="fas fa-user-check text-primary me-2"></i>1. Select Client / Quarry Owner
-                    </h5>
-                    <span class="badge bg-light text-dark border small fw-semibold" id="customer_counter_badge">
-                        {{ count($customers) }} Registered Clients
-                    </span>
-                </div>
-                <div class="card-body p-3">
-                    <label class="form-label fw-bold small text-dark mb-1">
-                        Search Client by Name, Company, or Mobile Number:
-                    </label>
-                    <select id="customer_selector" style="width: 100%;">
-                        <option value="">-- Type to search client name or phone --</option>
-                        @foreach($customers as $c)
-                            <option value="{{ $c->id }}"
-                                data-name="{{ $c->customer_name }}"
-                                data-company="{{ $c->company_name }}"
-                                data-mobile="{{ $c->mobile_num }}"
-                                data-gstin="{{ $c->gstin }}"
-                                data-slug="{{ $c->slug }}"
-                                {{ (old('customer_id', $selectedCustomerId) == $c->id) ? 'selected' : '' }}>
-                                {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
-                                @if($c->mobile_num) • {{ $c->mobile_num }} @endif
-                            </option>
-                        @endforeach
-                    </select>
-
-                    {{-- Customer Dossier Banner --}}
-                    <div id="customer_dossier_banner" class="customer-dossier-banner mt-3" style="display:none;">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                            <div>
-                                <div class="fs-6 fw-bold text-white d-flex align-items-center gap-2">
-                                    <span id="banner_client_name">-</span>
-                                    <span class="badge bg-success" style="font-size:0.7rem;">Verified Client</span>
-                                </div>
-                                <div class="d-flex flex-wrap gap-2 mt-1.5">
-                                    <span class="banner-meta-tag">
-                                        <i class="fas fa-phone-alt me-1 text-info"></i>
-                                        <span id="banner_mobile">-</span>
-                                    </span>
-                                    <span class="banner-meta-tag">
-                                        <i class="fas fa-id-card me-1 text-warning"></i>
-                                        <span id="banner_gstin">GST: Unregistered</span>
-                                    </span>
-                                </div>
-                            </div>
-                            <div class="text-sm-end">
-                                <div class="small opacity-75">Net Outstanding Receivables</div>
-                                <div class="fs-4 fw-bold tabular-nums text-white" id="banner_total_due">₹ 0.00</div>
-                                <a href="#" id="link_view_ledger" target="_blank" class="btn-ledger mt-1 d-inline-block">
-                                    <i class="fas fa-book-open me-1"></i> Customer Ledger →
-                                </a>
-                            </div>
-                        </div>
-
-                        <hr class="my-2.5 border-white opacity-25">
-
-                        <div class="row g-2">
-                            <div class="col-4">
-                                <div class="banner-kpi-pill">
-                                    <div class="small opacity-75" style="font-size:0.72rem;">APPLICATIONS</div>
-                                    <div class="fw-bold fs-6 tabular-nums" id="banner_apps_count">0</div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="banner-kpi-pill">
-                                    <div class="small opacity-75" style="font-size:0.72rem;">TOTAL BILLED</div>
-                                    <div class="fw-bold fs-6 tabular-nums" id="banner_total_billed">₹ 0.00</div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="banner-kpi-pill">
-                                    <div class="small opacity-75" style="font-size:0.72rem;">TOTAL RECEIVED</div>
-                                    <div class="fw-bold fs-6 tabular-nums" style="color: #34D399 !important;" id="banner_total_received">₹ 0.00</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        {{-- ── Flash Notifications ──────────────────────────────────────── --}}
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3 py-2 px-3" role="alert"
+                 style="background-color: #ECFDF5; color: #065F46; border-left: 4px solid #059669 !important; border-radius: 8px;">
+                <i class="fas fa-check-circle me-2 text-success"></i> <strong>Success:</strong> {{ session('success') }}
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
             </div>
-
-            {{-- 2. Statutory Applications & Dues Section --}}
-            <div class="card border-0 shadow-sm mb-3" style="border-radius:12px; border: 1.5px solid #CBD5E1; overflow:hidden;">
-                <div class="card-header bg-white py-2.5 px-3 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
-                    <h5 class="mb-0 fw-bold text-dark fs-6">
-                        <i class="fas fa-file-invoice-dollar text-primary me-2"></i>2. Statutory Applications &amp; Outstanding Dues
-                    </h5>
-                    <span id="dues_badge_counter" class="badge bg-secondary fw-semibold">0 Applications</span>
-                </div>
-
-                <div class="card-body p-3">
-                    {{-- Loading State --}}
-                    <div id="dues_loader" class="text-center py-4" style="display:none;">
-                        <div class="spinner-border text-primary" role="status"></div>
-                        <div class="small mt-2 fw-semibold" style="color: #475569;">Querying records across Lease, Mining, EC, PPT, DGPS, and Drone surveys…</div>
-                    </div>
-
-                    {{-- Empty State (No client chosen) --}}
-                    <div id="dues_empty_state" class="text-center py-4">
-                        <div class="mb-2">
-                            <div class="d-inline-flex p-3 rounded-circle bg-light text-primary">
-                                <i class="fas fa-hand-holding-usd fa-2x"></i>
-                            </div>
-                        </div>
-                        <h6 class="fw-bold text-dark mb-1">No Client Selected Yet</h6>
-                        <p class="small mb-0 mx-auto" style="max-width: 380px; color: #475569 !important;">
-                            Choose a quarry client from the search box above to load active statutory dossiers, concessions, and pending payment schedules.
-                        </p>
-                    </div>
-
-                    {{-- Applications Container --}}
-                    <div id="dues_main_container" style="display:none;">
-                        {{-- Controls: Tab filters & Search input --}}
-                        <div class="row g-2 mb-2.5 align-items-center">
-                            <div class="col-md-7 d-flex gap-1 flex-wrap">
-                                <button type="button" class="filter-tab-pill active" data-filter="all" id="tab_filter_all">
-                                    All (<span id="count_all">0</span>)
-                                </button>
-                                <button type="button" class="filter-tab-pill" data-filter="pending" id="tab_filter_pending">
-                                    Pending Dues (<span id="count_pending">0</span>)
-                                </button>
-                                <button type="button" class="filter-tab-pill" data-filter="settled" id="tab_filter_settled">
-                                    Settled (<span id="count_settled">0</span>)
-                                </button>
-                            </div>
-                            <div class="col-md-5">
-                                <div class="input-group input-group-sm clean-input-group">
-                                    <span class="input-group-text bg-white text-muted"><i class="fas fa-search"></i></span>
-                                    <input type="text" id="app_search_input" class="form-control" placeholder="Filter by ref, survey, village…">
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Application Cards Scrollable List --}}
-                        <div id="dues_cards_container"></div>
-
-                        {{-- Pagination / Showing counter --}}
-                        <div class="d-flex justify-content-between align-items-center mt-2 px-1 small fw-semibold" style="color: #475569;" id="cards_footer_info">
-                            <span id="showing_apps_text">Showing applications</span>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-bold" id="btn_load_all_cards" style="display:none;">
-                                Load all applications →
-                            </button>
-                        </div>
-
-                        {{-- Direct General Advance Banner --}}
-                        <div class="mt-2.5 p-2.5 bg-light rounded-3 border d-flex justify-content-between align-items-center">
-                            <div>
-                                <strong class="small text-dark d-block">
-                                    <i class="fas fa-coins text-warning me-1"></i> Collect as General Account Advance
-                                </strong>
-                                <span class="small" style="color: #475569;">Not linked to a specific statutory step? Collect as client retainer deposit.</span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary fw-bold" id="btn_general_advance">
-                                <i class="fas fa-layer-group me-1"></i> General Deposit
-                            </button>
-                        </div>
-                    </div>
-                </div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3 py-2 px-3" role="alert"
+                 style="background-color: #FEF2F2; color: #991B1B; border-left: 4px solid #DC2626 !important; border-radius: 8px;">
+                <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Submission Failed:</div>
+                <ul class="mb-0 ps-3 small">
+                    @foreach($errors->all() as $e)
+                        <li>{{ $e }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
             </div>
+        @endif
 
-            {{-- ── 3. Recent Receipts Quick View ──────────────────────────────── --}}
-            <div class="card border-0 shadow-sm" style="border-radius:12px; border: 1.5px solid #CBD5E1;">
-                <div class="card-header bg-white py-2.5 px-3 d-flex justify-content-between align-items-center border-bottom">
-                    <h6 class="mb-0 fw-bold text-dark fs-6">
-                        <i class="fas fa-history text-secondary me-2"></i>Recent Payment Receipts
-                    </h6>
-                    <a href="{{ route('accounts.receipts.index') }}" class="btn btn-link btn-sm text-decoration-none p-0 fw-bold">
-                        View Receipts Directory →
-                    </a>
-                </div>
-                <div class="card-body p-2">
-                    @forelse($recentReceipts as $rr)
-                        <div class="d-flex justify-content-between align-items-center p-2 border-bottom" style="border-color: #F1F5F9 !important;">
-                            <div>
-                                <div class="fw-bold small text-dark">
-                                    {{ $rr->receipt_number }}
-                                    <span class="badge bg-light text-dark border ms-1" style="font-size:0.68rem;">{{ $rr->payment_mode }}</span>
-                                </div>
-                                <div class="small" style="font-size:0.75rem; color:#475569;">
-                                    {{ $rr->customer->company_name ?? ($rr->customer->customer_name ?? 'N/A') }}
-                                    &middot; {{ \Carbon\Carbon::parse($rr->transaction_date)->format('d M Y') }}
-                                </div>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="fw-bold text-success tabular-nums small">₹ {{ number_format($rr->amount_paid, 2) }}</span>
-                                <a href="{{ route('accounts.receipts.show', $rr->id) }}" class="btn btn-outline-secondary btn-sm py-0 px-2 fw-semibold" style="font-size:0.75rem;">
-                                    View
-                                </a>
-                                <a href="{{ route('accounts.receipts.print', $rr->id) }}" target="_blank" class="btn btn-outline-primary btn-sm py-0 px-2" style="font-size:0.75rem;">
-                                    <i class="fas fa-print"></i>
-                                </a>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="text-center py-3 small" style="color: #64748B;">
-                            <i class="fas fa-receipt me-1"></i> No receipts recorded yet.
-                        </div>
-                    @endforelse
-                </div>
-            </div>
+        {{-- ═══════════════════════════════════════════════════════════════════
+             FINANCIAL VOUCHER CARD (SINGLE COMPACT CONTAINER)
+        ═══════════════════════════════════════════════════════════════════ --}}
+        <div class="voucher-card">
+            <form action="{{ route('accounts.payments.store') }}" method="POST" id="paymentForm">
+                @csrf
+                <input type="hidden" name="customer_id"      id="form_customer_id"      value="{{ old('customer_id', $selectedCustomerId) }}">
+                <input type="hidden" name="application_type" id="form_application_type" value="{{ old('application_type', $selectedAppType ?: 'general') }}">
+                <input type="hidden" name="application_id"   id="form_application_id"   value="{{ old('application_id', $selectedAppId) }}">
 
-        </div>{{-- /col-lg-7 --}}
+                {{-- ── SECTION 1: Customer Intake & Hero Amount Received ────── --}}
+                <div class="voucher-header">
+                    <div class="row g-4 align-items-start">
+                        {{-- Left Column: Customer Selector & Capsule --}}
+                        <div class="col-lg-6">
+                            <label class="form-label-fintech" for="customer_selector">
+                                <span>Customer / Quarry Client <span class="text-danger">*</span></span>
+                                <span class="badge bg-light text-dark border fw-bold" style="font-size: 0.68rem; border-color: #CBD5E1 !important;" id="customer_counter_badge">
+                                    {{ count($customers) }} Clients
+                                </span>
+                            </label>
+                            <select id="customer_selector" style="width: 100%;">
+                                <option value="">-- Search client name, company, or mobile --</option>
+                                @foreach($customers as $c)
+                                    <option value="{{ $c->id }}"
+                                        data-name="{{ $c->customer_name }}"
+                                        data-company="{{ $c->company_name }}"
+                                        data-mobile="{{ $c->mobile_num }}"
+                                        data-gstin="{{ $c->gstin }}"
+                                        data-slug="{{ $c->slug }}"
+                                        {{ (old('customer_id', $selectedCustomerId) == $c->id) ? 'selected' : '' }}>
+                                        {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
+                                        @if($c->mobile_num) • {{ $c->mobile_num }} @endif
+                                    </option>
+                                @endforeach
+                            </select>
 
-        {{-- ══════════════════════════════════════════════════════════════════
-             RIGHT COLUMN — Payment Collection Desk Form (Compact & Direct)
-        ══════════════════════════════════════════════════════════════════ --}}
-        <div class="col-lg-5">
-            <div class="payment-right-sticky">
-                <div class="payment-form-card">
-                    <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 fw-bold text-dark fs-6">
-                            <i class="fas fa-money-check-alt text-primary me-2"></i>3. Payment Collection Details
-                        </h5>
-                        <span class="badge bg-light text-primary border small fw-bold" id="collection_mode_badge">Direct Entry</span>
-                    </div>
-
-                    <div class="card-body p-3">
-                        <form action="{{ route('accounts.payments.store') }}" method="POST" id="paymentForm">
-                            @csrf
-                            <input type="hidden" name="customer_id"      id="form_customer_id"      value="{{ old('customer_id', $selectedCustomerId) }}">
-                            <input type="hidden" name="application_type" id="form_application_type" value="{{ old('application_type', $selectedAppType ?: 'general') }}">
-                            <input type="hidden" name="application_id"   id="form_application_id"   value="{{ old('application_id', $selectedAppId) }}">
-
-                            {{-- Target Application Dossier Banner --}}
-                            <div class="target-app-mini mb-2.5 shadow-sm" id="target_app_card">
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <div>
-                                        <span class="badge bg-light text-dark fw-bold mb-1" style="font-size:0.68rem;" id="disp_target_service">General Advance / Retainer</span>
-                                        <h6 class="fw-bold mb-0 text-white fs-6" id="disp_target_ref">Direct Payment on Account</h6>
-                                        <div class="small opacity-75" style="font-size:0.75rem;" id="disp_target_concession">Unassigned / General Quarry Account</div>
+                            {{-- Compact Customer Capsule Dossier --}}
+                            <div id="customer_dossier_banner" class="customer-dossier-capsule" style="display:none;">
+                                <div class="d-flex align-items-center gap-2 text-truncate">
+                                    <div class="client-avatar-badge" id="banner_avatar">C</div>
+                                    <div class="text-truncate">
+                                        <div class="fw-bold text-dark text-truncate" style="font-size: 0.86rem;" id="banner_client_name">-</div>
+                                        <div class="text-muted small" style="font-size: 0.72rem;">
+                                            <span id="banner_mobile">-</span> • <span id="banner_gstin">GST: Unregistered</span>
+                                            <a href="#" id="link_view_ledger" target="_blank" class="fw-bold text-decoration-none ms-1" style="color: #1E3A8A;">
+                                                Ledger ↗
+                                            </a>
+                                        </div>
                                     </div>
-                                    <span class="badge bg-warning text-dark fw-bold" style="font-size:0.7rem;" id="disp_target_status">General</span>
                                 </div>
-                                <hr class="my-1.5 border-white opacity-25">
-                                <div class="d-flex justify-content-between small" style="font-size:0.78rem;">
-                                    <span>Agreed: <strong class="tabular-nums" id="disp_target_value">₹ 0.00</strong></span>
-                                    <span>Pending: <strong class="tabular-nums text-warning" id="disp_target_pending">₹ 0.00</strong></span>
+                                <div class="text-end text-nowrap">
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-bold" style="font-size: 0.75rem;" id="banner_total_due">
+                                        ₹ 0.00 Due
+                                    </span>
                                 </div>
                             </div>
+                        </div>
 
-                            {{-- Amount to Collect Input --}}
-                            <div class="mb-2">
-                                <label class="form-label fw-bold small text-dark d-flex justify-content-between align-items-center mb-1">
-                                    <span>Amount to Collect (₹) <span class="text-danger">*</span></span>
-                                    <span class="fw-semibold" style="font-size:0.75rem; color:#475569;">Indian Rupee (₹)</span>
+                        {{-- Right Column: Hero Amount Received & Words --}}
+                        <div class="col-lg-6">
+                            <div class="hero-amount-box">
+                                <label class="form-label-fintech" for="amount_paid">
+                                    <span>Amount Received (₹) <span class="text-danger">*</span></span>
+                                    <span class="text-muted fw-semibold" style="text-transform: none; font-size: 0.70rem;">Indian Rupee (INR)</span>
                                 </label>
-                                <div class="input-group clean-input-group shadow-sm">
-                                    <span class="input-group-text fw-bold">₹</span>
+                                <div class="hero-amount-group shadow-sm">
+                                    <div class="hero-amount-prefix">₹</div>
                                     <input type="number" step="0.01" min="0.01"
                                            name="amount_paid" id="amount_paid"
-                                           class="form-control fw-bold text-primary tabular-nums @error('amount_paid') is-invalid @enderror"
+                                           class="hero-amount-input tabular-nums @error('amount_paid') is-invalid @enderror"
                                            value="{{ old('amount_paid') }}" placeholder="0.00" required>
                                 </div>
                                 @error('amount_paid')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
 
-                                {{-- Quick Presets Pills --}}
-                                <div class="d-flex gap-1 mt-1.5 flex-wrap" id="quick_presets_row">
-                                    <button type="button" class="quick-preset-pill" id="btn_preset_full" data-pct="100">
-                                        <i class="fas fa-check-double text-success"></i> Pay Full
+                                {{-- Preset Chips --}}
+                                <div class="d-flex gap-1.5 mt-1.5 flex-wrap" id="quick_presets_row">
+                                    <button type="button" class="preset-chip disabled" id="btn_preset_full" data-pct="100">
+                                        <i class="fas fa-check-double text-success"></i> 100% Full Dues
                                     </button>
-                                    <button type="button" class="quick-preset-pill" id="btn_preset_half" data-pct="50">
-                                        <i class="fas fa-percentage text-info"></i> Pay 50%
+                                    <button type="button" class="preset-chip disabled" id="btn_preset_half" data-pct="50">
+                                        <i class="fas fa-percentage text-info"></i> 50% Milestone
                                     </button>
-                                    <button type="button" class="quick-preset-pill" id="btn_preset_25" data-pct="25">
-                                        <i class="fas fa-adjust text-warning"></i> Pay 25%
+                                    <button type="button" class="preset-chip disabled" id="btn_preset_25" data-pct="25">
+                                        <i class="fas fa-adjust text-warning"></i> 25% Token
                                     </button>
-                                    <button type="button" class="quick-preset-pill" id="btn_preset_clear">
+                                    <button type="button" class="preset-chip" id="btn_preset_clear">
                                         <i class="fas fa-times text-danger"></i> Clear
                                     </button>
                                 </div>
 
-                                {{-- Real-Time Balance & Words Calculation Box --}}
-                                <div class="amount-calc-box mt-1.5">
-                                    <div class="d-flex justify-content-between align-items-center mb-0.5">
-                                        <span class="fw-bold" style="font-size:0.72rem; color:#475569;">REMAINING DUE AFTER PAYMENT:</span>
-                                        <span class="fw-bold tabular-nums" id="calc_remaining_balance">₹ 0.00</span>
-                                    </div>
-                                    <div class="words-text" id="calc_amount_words">
-                                        <span style="color:#64748B; font-weight:normal;">Enter amount above to preview in words…</span>
-                                    </div>
+                                {{-- Live Indian Words Preview --}}
+                                <div class="words-preview-strip" id="calc_amount_words">
+                                    <span style="color: #94A3B8; font-weight: normal; font-style: normal;">Enter amount above to preview in words…</span>
                                 </div>
                             </div>
-
-                            {{-- Payment Mode & Transaction Date --}}
-                            <div class="row g-2 mb-2 clean-input-group">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-bold small text-dark mb-1">
-                                        Payment Mode <span class="text-danger">*</span>
-                                    </label>
-                                    <select name="payment_mode" id="payment_mode" class="form-select @error('payment_mode') is-invalid @enderror" required>
-                                        <option value="NEFT/RTGS" {{ old('payment_mode', 'NEFT/RTGS') == 'NEFT/RTGS' ? 'selected' : '' }}>NEFT / RTGS</option>
-                                        <option value="UPI/GPay"  {{ old('payment_mode') == 'UPI/GPay'  ? 'selected' : '' }}>UPI / GPay / QR</option>
-                                        <option value="Cheque"    {{ old('payment_mode') == 'Cheque'    ? 'selected' : '' }}>Cheque</option>
-                                        <option value="Cash"      {{ old('payment_mode') == 'Cash'      ? 'selected' : '' }}>Cash</option>
-                                        <option value="Other"     {{ old('payment_mode') == 'Other'     ? 'selected' : '' }}>Other Mode</option>
-                                    </select>
-                                    @error('payment_mode')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-bold small text-dark mb-1">
-                                        Payment Date <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="date" name="transaction_date" id="transaction_date"
-                                           class="form-control @error('transaction_date') is-invalid @enderror"
-                                           value="{{ old('transaction_date', date('Y-m-d')) }}" required>
-                                    @error('transaction_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-
-                            {{-- Bank Details Row --}}
-                            <div class="row g-2 mb-2 clean-input-group" id="bank_details_row">
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-bold small text-dark mb-1">Issuing / Depository Bank</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-university"></i></span>
-                                        <input type="text" name="bank_name" id="bank_name"
-                                               class="form-control @error('bank_name') is-invalid @enderror"
-                                               value="{{ old('bank_name') }}" placeholder="e.g. State Bank of India">
-                                    </div>
-                                    @error('bank_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
-                                <div class="col-sm-6">
-                                    <label class="form-label fw-bold small text-dark mb-1">UTR / Cheque Ref No</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-receipt"></i></span>
-                                        <input type="text" name="reference_number" id="reference_number"
-                                               class="form-control @error('reference_number') is-invalid @enderror"
-                                               value="{{ old('reference_number') }}" placeholder="e.g. UTR20260929001">
-                                    </div>
-                                    @error('reference_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                                </div>
-                            </div>
-
-                            {{-- Narration with Suggestion Chips --}}
-                            <div class="mb-2.5">
-                                <label class="form-label fw-bold small text-dark d-flex justify-content-between align-items-center mb-1">
-                                    <span>Payment Narration / Notes</span>
-                                    <span class="fw-normal" style="font-size:0.75rem; color:#64748B;">Optional</span>
-                                </label>
-                                <textarea name="notes" id="notes" rows="1" style="min-height:36px; resize:vertical;"
-                                          class="form-control @error('notes') is-invalid @enderror"
-                                          placeholder="Enter transaction remarks or statutory details…">{{ old('notes') }}</textarea>
-                                @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
-
-                                <div class="d-flex gap-1 mt-1 flex-wrap">
-                                    <span class="narration-chip" data-text="50% Advance Payment for statutory processing">+ 50% Advance</span>
-                                    <span class="narration-chip" data-text="Final settlement towards milestone completion">+ Final Settlement</span>
-                                    <span class="narration-chip" data-text="Payment received towards DGPS survey charges">+ DGPS Demarcation</span>
-                                </div>
-                            </div>
-
-                            {{-- Action Submit Buttons --}}
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-record-main shadow" id="btn_review_payment">
-                                    <i class="fas fa-check-circle me-1.5"></i> Review &amp; Record Payment
-                                </button>
-                                <a href="{{ route('accounts.receipts.index') }}" class="btn btn-light py-1.5 text-muted small">
-                                    Cancel
-                                </a>
-                            </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
-            </div>{{-- /payment-right-sticky --}}
-        </div>{{-- /col-lg-5 --}}
 
-    </div>{{-- /row --}}
-</div>
+                <div class="voucher-body">
+                    {{-- ── SECTION 2: Inline Payment Details Row ──────────────── --}}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label-fintech" for="transaction_date">Payment Date <span class="text-danger">*</span></label>
+                            <input type="date" name="transaction_date" id="transaction_date"
+                                   class="form-control-fintech @error('transaction_date') is-invalid @enderror"
+                                   value="{{ old('transaction_date', date('Y-m-d')) }}" required>
+                            @error('transaction_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="col-md-4 col-sm-6">
+                            <label class="form-label-fintech">Payment Method <span class="text-danger">*</span></label>
+                            <div class="mode-pills-row">
+                                <div class="mode-pill-btn active" data-mode="NEFT/RTGS" id="pill_mode_neft">
+                                    <i class="fas fa-university"></i> NEFT
+                                </div>
+                                <div class="mode-pill-btn" data-mode="UPI/GPay" id="pill_mode_upi">
+                                    <i class="fas fa-qrcode"></i> UPI
+                                </div>
+                                <div class="mode-pill-btn" data-mode="Cheque" id="pill_mode_cheque">
+                                    <i class="fas fa-money-check"></i> Cheque
+                                </div>
+                                <div class="mode-pill-btn" data-mode="Cash" id="pill_mode_cash">
+                                    <i class="fas fa-coins"></i> Cash
+                                </div>
+                            </div>
+                            {{-- Hidden native select to preserve 100% backend compatibility --}}
+                            <select name="payment_mode" id="payment_mode" class="d-none" required>
+                                <option value="NEFT/RTGS" {{ old('payment_mode', 'NEFT/RTGS') == 'NEFT/RTGS' ? 'selected' : '' }}>NEFT/RTGS</option>
+                                <option value="UPI/GPay"  {{ old('payment_mode') == 'UPI/GPay'  ? 'selected' : '' }}>UPI/GPay</option>
+                                <option value="Cheque"    {{ old('payment_mode') == 'Cheque'    ? 'selected' : '' }}>Cheque</option>
+                                <option value="Cash"      {{ old('payment_mode') == 'Cash'      ? 'selected' : '' }}>Cash</option>
+                                <option value="Other"     {{ old('payment_mode') == 'Other'     ? 'selected' : '' }}>Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2 col-sm-6" id="bank_name_col">
+                            <label class="form-label-fintech" for="bank_name">Depository / Bank</label>
+                            <input type="text" name="bank_name" id="bank_name"
+                                   class="form-control-fintech @error('bank_name') is-invalid @enderror"
+                                   value="{{ old('bank_name') }}"
+                                   placeholder="e.g. SBI, HDFC">
+                            @error('bank_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="col-md-3 col-sm-6" id="ref_number_col">
+                            <label class="form-label-fintech" for="reference_number">UTR / Cheque Ref #</label>
+                            <input type="text" name="reference_number" id="reference_number"
+                                   class="form-control-fintech @error('reference_number') is-invalid @enderror"
+                                   value="{{ old('reference_number') }}"
+                                   placeholder="e.g. UTR20260929001">
+                            @error('reference_number')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
+
+                    <div id="cash_mode_notice" class="small mb-3 fw-semibold" style="display:none; font-size: 0.76rem; color: #059669 !important;">
+                        <i class="fas fa-check-circle me-1"></i> Cash mode active — bank routing and UTR clearance references are not required.
+                    </div>
+
+                    {{-- ── SECTION 3: Outstanding Invoices & Dues Allocation ──── --}}
+                    <div class="mb-4">
+                        <div class="dues-table-box">
+                            <div class="dues-table-header-bar">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark" style="font-size: 0.82rem;">
+                                        <i class="fas fa-list-check me-1" style="color: #0F1E4D;"></i> Unpaid Statutory Dues &amp; Invoices
+                                    </span>
+                                    <span id="dues_badge_counter" class="badge bg-white border text-dark fw-bold" style="font-size: 0.68rem; border-color: #CBD5E1 !important;">
+                                        0 Applications
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <div class="d-flex gap-1">
+                                        <button type="button" class="tab-filter-btn active" data-filter="all" id="tab_filter_all">All (<span id="count_all">0</span>)</button>
+                                        <button type="button" class="tab-filter-btn" data-filter="pending" id="tab_filter_pending">Pending (<span id="count_pending">0</span>)</button>
+                                        <button type="button" class="tab-filter-btn" data-filter="settled" id="tab_filter_settled">Settled (<span id="count_settled">0</span>)</button>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-warning text-dark fw-bold" id="btn_general_advance"
+                                            style="border-color: #FCD34D; background-color: #FFFBEB; font-size: 0.72rem; padding: 3px 10px; height: 28px;">
+                                        <i class="fas fa-coins text-warning me-1"></i> General Deposit
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Loader --}}
+                            <div id="dues_loader" class="text-center py-4" style="display:none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <span class="small ms-2 fw-semibold text-muted">Retrieving customer statutory records…</span>
+                            </div>
+
+                            {{-- Empty State (No client selected) --}}
+                            <div id="dues_empty_state" class="text-center py-4 text-muted">
+                                <i class="fas fa-hand-holding-usd fa-2x mb-2" style="color: #CBD5E1;"></i>
+                                <div class="fw-bold" style="color: #0F172A; font-size: 0.86rem;">No Client Selected</div>
+                                <div class="small" style="font-size: 0.76rem;">Select a quarry client from the search box above to load pending statutory fees.</div>
+                            </div>
+
+                            {{-- Table of Dues --}}
+                            <div id="dues_main_container" style="display:none; max-height: 260px; overflow-y: auto;">
+                                <table class="table-voucher">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 4%;"></th>
+                                            <th style="width: 38%;">Service Scope &amp; Concession</th>
+                                            <th style="width: 22%;">Dossier Reference</th>
+                                            <th style="width: 14%;" class="text-end">Agreed Fee</th>
+                                            <th style="width: 14%;" class="text-end">Due Balance</th>
+                                            <th style="width: 8%;" class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dues_cards_container">
+                                        {{-- Populated dynamically --}}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Selected Target Dossier Indicator --}}
+                        <div class="d-flex justify-content-between align-items-center mt-2 px-1 text-muted small" style="font-size: 0.74rem;">
+                            <div>
+                                <span class="fw-semibold">Allocating To:</span>
+                                <strong class="text-dark ms-1" id="disp_target_ref">Direct Payment on Account (General Advance)</strong>
+                                <span id="disp_target_service" style="display:none;">General</span>
+                                <span id="disp_target_concession" style="display:none;"></span>
+                                <span id="disp_target_status" style="display:none;">General</span>
+                                <span id="disp_target_value" style="display:none;">₹ 0.00</span>
+                                <span id="disp_target_pending" style="display:none;">₹ 0.00</span>
+                            </div>
+                            <div>
+                                <span class="fw-semibold">Remaining Due:</span>
+                                <span class="fw-bold ms-1" id="calc_remaining_balance">₹ 0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ── SECTION 4: Footer & Execution ──────────────────────── --}}
+                    <div class="voucher-section-divider"></div>
+
+                    <div class="row align-items-center g-3">
+                        {{-- Narration with suggestion tags --}}
+                        <div class="col-lg-6">
+                            <label class="form-label-fintech" for="notes">
+                                <span>Narration / Remarks</span>
+                                <span class="text-muted fw-normal" style="text-transform: none; font-size: 0.70rem;">Optional</span>
+                            </label>
+                            <input type="text" name="notes" id="notes"
+                                   class="form-control-fintech @error('notes') is-invalid @enderror"
+                                   value="{{ old('notes') }}"
+                                   placeholder="e.g. 50% Advance towards statutory processing…">
+                            @error('notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+
+                            <div class="d-flex gap-1 mt-1.5 flex-wrap">
+                                <span class="narration-tag" data-text="50% Advance Payment">+ 50% Advance</span>
+                                <span class="narration-tag" data-text="Final milestone settlement">+ Final Settlement</span>
+                                <span class="narration-tag" data-text="DGPS survey charges">+ DGPS Fee</span>
+                                <span class="narration-tag" data-text="Statutory Retainer Deposit">+ Retainer</span>
+                            </div>
+                        </div>
+
+                        {{-- Action Button & Auto-Print --}}
+                        <div class="col-lg-6 text-lg-end">
+                            <div class="d-inline-flex flex-column align-items-lg-end gap-2 w-100">
+                                <div class="form-check d-inline-flex align-items-center gap-2 mb-0">
+                                    <input class="form-check-input" type="checkbox" id="check_auto_print" checked style="width: 15px; height: 15px;">
+                                    <label class="form-check-label small fw-semibold text-muted" for="check_auto_print" style="font-size: 0.76rem;">
+                                        <i class="fas fa-print text-primary me-1"></i> Auto-open printable receipt voucher in new tab
+                                    </label>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-lg-end gap-2 w-100">
+                                    <a href="{{ route('accounts.receipts.index') }}" class="btn btn-outline-dark btn-sm fw-semibold"
+                                       style="border-color: #CBD5E1; color: #475569; height: 42px; display: inline-flex; align-items: center; padding: 0 16px; font-size: 0.82rem;">
+                                        Cancel
+                                    </a>
+                                    <button type="button" class="btn-issue-receipt" id="btn_submit_payment">
+                                        <i class="fas fa-check-circle"></i> Save &amp; Issue Receipt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>{{-- /voucher-body --}}
+            </form>
+        </div>{{-- /voucher-card --}}
+
+    </div>{{-- /payment-page-container --}}
 </div>
 
-{{-- ══════════════════════════════════════════════════════════════════════
-     CONFIRM PAYMENT VOUCHER MODAL
-══════════════════════════════════════════════════════════════════════ --}}
+{{-- ═══════════════════════════════════════════════════════════════════
+     CONFIRMATION MODAL (LIGHTWEIGHT CERTIFIED DIALOG)
+═══════════════════════════════════════════════════════════════════ --}}
 <div class="modal fade" id="confirmPaymentModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius:14px; overflow:hidden;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
             <div class="modal-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #0F1E4D 0%, #1E3A8A 100%);">
                 <h5 class="modal-title fw-bold fs-6 text-white" id="confirmModalLabel" style="color: #FFFFFF !important;">
                     <i class="fas fa-shield-alt me-2 text-warning"></i> Confirm Payment Collection
@@ -807,58 +812,49 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
-                <div class="table-responsive">
-                    <table class="table table-sm table-borderless mb-0">
-                        <tbody>
-                            <tr>
-                                <td class="small fw-bold ps-0" width="38%" style="color:#475569;">Customer / Client</td>
-                                <td class="fw-bold text-dark fs-6" id="modal_conf_client">-</td>
-                            </tr>
-                            <tr>
-                                <td class="small fw-bold ps-0" style="color:#475569;">Target Dossier</td>
-                                <td class="fw-bold text-primary" id="modal_conf_app">-</td>
-                            </tr>
-                            <tr>
-                                <td class="small fw-bold ps-0" style="color:#475569;">Amount to Collect</td>
-                                <td class="fw-bold text-success fs-5 tabular-nums" id="modal_conf_amount">₹ 0.00</td>
-                            </tr>
-                            <tr>
-                                <td class="small fw-bold ps-0" style="color:#475569;">Amount in Words</td>
-                                <td class="fst-italic fw-semibold text-dark small" id="modal_conf_words">-</td>
-                            </tr>
-                            <tr>
-                                <td class="small fw-bold ps-0" style="color:#475569;">Payment Mode</td>
-                                <td class="fw-bold text-dark" id="modal_conf_mode">-</td>
-                            </tr>
-                            <tr>
-                                <td class="small fw-bold ps-0" style="color:#475569;">Transaction Date</td>
-                                <td class="fw-bold text-dark" id="modal_conf_date">-</td>
-                            </tr>
-                            <tr id="modal_conf_ref_row">
-                                <td class="small fw-bold ps-0" style="color:#475569;">Bank &amp; UTR Ref</td>
-                                <td class="tabular-nums fw-bold text-dark" id="modal_conf_ref">-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <table class="table table-sm table-borderless mb-0" style="font-size: 0.88rem;">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0" width="36%">Client / Customer</td>
+                            <td class="fw-bold text-dark" id="modal_conf_client">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0">Allocated Dossier</td>
+                            <td class="fw-bold" style="color: #1E3A8A;" id="modal_conf_app">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0">Amount Received</td>
+                            <td class="fw-bold text-success fs-5 tabular-nums" id="modal_conf_amount">₹ 0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0">In Words</td>
+                            <td class="fst-italic fw-semibold small text-dark" id="modal_conf_words">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0">Payment Method</td>
+                            <td class="fw-bold text-dark" id="modal_conf_mode">-</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold ps-0">Transaction Date</td>
+                            <td class="fw-bold text-dark" id="modal_conf_date">-</td>
+                        </tr>
+                        <tr id="modal_conf_ref_row">
+                            <td class="text-muted fw-bold ps-0">Bank &amp; Ref</td>
+                            <td class="tabular-nums fw-bold text-dark" id="modal_conf_ref">-</td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <div class="form-check mt-3 p-2.5 bg-light rounded border">
-                    <input class="form-check-input ms-1" type="checkbox" id="check_auto_print" checked>
-                    <label class="form-check-label small fw-bold text-dark ms-2" for="check_auto_print">
-                        <i class="fas fa-print text-primary me-1"></i> Auto-open printable Money Receipt voucher in a new tab
-                    </label>
-                </div>
-
-                <div class="p-2.5 px-3 mt-3 mb-0 rounded-3 small fw-semibold" style="background:#F0F7FF; border:1px solid #BFDBFE; color:#1E3A8A;">
+                <div class="p-2.5 px-3 mt-3 mb-0 rounded-3 small fw-semibold" style="background: #F0F7FF; border: 1px solid #BFDBFE; color: #1E3A8A; font-size: 0.76rem;">
                     <i class="fas fa-info-circle me-1 text-primary"></i>
-                    Recording this payment atomically updates the application ledger and issues a certified sequential receipt voucher.
+                    This transaction atomically updates the statutory application ledger and generates a certified sequential money receipt voucher.
                 </div>
             </div>
             <div class="modal-footer border-0 pt-0 px-4 pb-4">
-                <button type="button" class="btn btn-light px-3 fw-semibold" data-bs-dismiss="modal">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Edit
+                <button type="button" class="btn btn-light px-3 fw-semibold" data-bs-dismiss="modal" style="border: 1px solid #CBD5E1; color: #475569;">
+                    <i class="fas fa-arrow-left me-1"></i> Edit
                 </button>
-                <button type="button" class="btn btn-record-main px-4" id="btn_execute_submit">
+                <button type="button" class="btn-issue-receipt px-4" id="btn_execute_submit">
                     <i class="fas fa-check-circle me-1"></i> Confirm &amp; Issue Receipt
                 </button>
             </div>
@@ -868,7 +864,6 @@
 @endsection
 
 @push('scripts')
-{{-- Select2 JS --}}
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -891,7 +886,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const duesLoader        = document.getElementById('dues_loader');
     const cardsContainer    = document.getElementById('dues_cards_container');
     const duesBadgeCounter  = document.getElementById('dues_badge_counter');
-    const appSearchInput    = document.getElementById('app_search_input');
     const bannerBox         = document.getElementById('customer_dossier_banner');
     const linkLedger        = document.getElementById('link_view_ledger');
 
@@ -905,6 +899,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const calcWords         = document.getElementById('calc_amount_words');
     const calcRemaining     = document.getElementById('calc_remaining_balance');
 
+    // Payment mode & bank elements
+    const paymentModeSelect = document.getElementById('payment_mode');
+    const bankNameCol       = document.getElementById('bank_name_col');
+    const refNumCol         = document.getElementById('ref_number_col');
+    const bankNameInput     = document.getElementById('bank_name');
+    const refNumInput       = document.getElementById('reference_number');
+    const cashNotice        = document.getElementById('cash_mode_notice');
+
     let allLoadedDues       = [];
     let currentFilter       = 'all';
     let selectedItemPending = 0;
@@ -914,22 +916,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const initialAppType    = "{{ $selectedAppType }}";
     const initialAppId      = "{{ $selectedAppId }}";
 
-    /* ── 3. Module Metadata (FontAwesome Strict / No Emojis) ─── */
+    /* ── 3. Module Metadata ─── */
     const moduleIcons = {
-        lease_application:   { icon: 'fa-file-contract',  cls: 'icon-box-lease',      name: 'Lease Application' },
-        mining_application:  { icon: 'fa-mountain',       cls: 'icon-box-mining',     name: 'Mining Plan' },
-        environment_project: { icon: 'fa-leaf',           cls: 'icon-box-eviron',     name: 'Environment Clearance' },
-        ec_certificate:      { icon: 'fa-award',          cls: 'icon-box-ec',         name: 'EC Certificate' },
-        ppt_application:     { icon: 'fa-briefcase',      cls: 'icon-box-ppt',        name: 'PPT Department' },
-        dgps_survey:         { icon: 'fa-satellite-dish', cls: 'icon-box-dgps',       name: 'DGPS Survey' },
-        drone_survey:        { icon: 'fa-paper-plane',    cls: 'icon-box-drone',      name: 'Drone Survey' },
-        ec_compliance:       { icon: 'fa-clipboard-check',cls: 'icon-box-compliance', name: 'EC Compliance' },
-        general:             { icon: 'fa-coins',          cls: 'icon-box-general',    name: 'General Advance' }
+        lease:               { icon: 'fa-file-contract',   cls: 'icon-box-lease',      name: 'Lease Application' },
+        lease_application:   { icon: 'fa-file-contract',   cls: 'icon-box-lease',      name: 'Lease Application' },
+        mining:              { icon: 'fa-mountain',        cls: 'icon-box-mining',     name: 'Mining Plan' },
+        mining_application:  { icon: 'fa-mountain',        cls: 'icon-box-mining',     name: 'Mining Plan' },
+        environment:         { icon: 'fa-leaf',            cls: 'icon-box-eviron',     name: 'Environment Clearance' },
+        environment_project: { icon: 'fa-leaf',            cls: 'icon-box-eviron',     name: 'Environment Clearance' },
+        ec:                  { icon: 'fa-award',           cls: 'icon-box-ec',         name: 'EC Certificate' },
+        ec_certificate:      { icon: 'fa-award',           cls: 'icon-box-ec',         name: 'EC Certificate' },
+        ppt:                 { icon: 'fa-briefcase',       cls: 'icon-box-ppt',        name: 'PPT Department' },
+        ppt_application:     { icon: 'fa-briefcase',       cls: 'icon-box-ppt',        name: 'PPT Department' },
+        dgps:                { icon: 'fa-satellite-dish',  cls: 'icon-box-dgps',       name: 'DGPS Survey' },
+        dgps_survey:         { icon: 'fa-satellite-dish',  cls: 'icon-box-dgps',       name: 'DGPS Survey' },
+        drone:               { icon: 'fa-paper-plane',     cls: 'icon-box-drone',      name: 'Drone Survey' },
+        drone_survey:        { icon: 'fa-paper-plane',     cls: 'icon-box-drone',      name: 'Drone Survey' },
+        ec_compliance:       { icon: 'fa-clipboard-check', cls: 'icon-box-compliance', name: 'EC Compliance' },
+        general:             { icon: 'fa-coins',           cls: 'icon-box-general',    name: 'General Advance' }
     };
 
-    /* ── 4. Customer Selection Listener ───────────────────────── */
-    $('#customer_selector').on('change', function () {
-        const customerId = this.value;
+    /* ── 4. Customer Selection Handler ─── */
+    function handleCustomerSelection(customerId) {
         formCustomerId.value = customerId;
 
         if (!customerId) {
@@ -941,21 +949,29 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const selectedOpt = this.options[this.selectedIndex];
-        selectedCustomerName = selectedOpt.getAttribute('data-company') || selectedOpt.getAttribute('data-name') || 'Client';
-        const mobile = selectedOpt.getAttribute('data-mobile') || 'Not on file';
-        const gstin  = selectedOpt.getAttribute('data-gstin')  || 'Unregistered';
-        const slug   = selectedOpt.getAttribute('data-slug')   || customerId;
+        const selectEl = document.getElementById('customer_selector');
+        const selectedOpt = selectEl.options[selectEl.selectedIndex];
+        if (selectedOpt) {
+            selectedCustomerName = selectedOpt.getAttribute('data-company') || selectedOpt.getAttribute('data-name') || 'Client';
+            const mobile = selectedOpt.getAttribute('data-mobile') || 'No phone';
+            const gstin  = selectedOpt.getAttribute('data-gstin')  || 'Unregistered';
+            const slug   = selectedOpt.getAttribute('data-slug')   || customerId;
 
-        // Populate Banner
-        document.getElementById('banner_client_name').textContent = selectedCustomerName;
-        document.getElementById('banner_mobile').textContent      = mobile;
-        document.getElementById('banner_gstin').textContent       = 'GST: ' + gstin;
-        document.getElementById('banner_total_due').textContent   = '…';
-        linkLedger.href = '{{ url("/accounts/ledger") }}/' + slug;
-        bannerBox.style.display = 'block';
+            document.getElementById('banner_client_name').textContent = selectedCustomerName;
+            document.getElementById('banner_mobile').textContent      = mobile;
+            document.getElementById('banner_gstin').textContent       = 'GST: ' + gstin;
+            document.getElementById('banner_total_due').textContent   = 'Loading dues…';
+            document.getElementById('banner_avatar').textContent      = selectedCustomerName.charAt(0).toUpperCase();
+            linkLedger.href = '{{ url("/accounts/ledger") }}/' + slug;
+
+            bannerBox.style.display = 'flex';
+        }
 
         loadCustomerDues(customerId);
+    }
+
+    $('#customer_selector').on('select2:select select2:clear change', function () {
+        handleCustomerSelection(this.value);
     });
 
     /* ── 5. Fetch Customer Dues via AJAX ──────────────────────── */
@@ -982,12 +998,9 @@ document.addEventListener('DOMContentLoaded', function () {
             allLoadedDues = data.dues || [];
             duesContainer.style.display = 'block';
 
-            // Summary metrics
+            // Summary metrics for Dossier Capsule
             const s = data.summary;
-            document.getElementById('banner_total_due').textContent      = '₹ ' + formatIndianNumber(s.total_pending);
-            document.getElementById('banner_apps_count').textContent     = allLoadedDues.length;
-            document.getElementById('banner_total_billed').textContent    = '₹ ' + formatIndianNumber(s.total_product_value);
-            document.getElementById('banner_total_received').textContent  = '₹ ' + formatIndianNumber(s.total_paid);
+            document.getElementById('banner_total_due').textContent = '₹ ' + formatIndianNumber(s.total_pending) + ' Due';
             duesBadgeCounter.textContent = allLoadedDues.length + ' Applications';
 
             // Counts for filter pills
@@ -1017,166 +1030,143 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ── 6. Render Application Cards with Filter & Search ───────── */
+    /* ── 6. Render Application Rows ───────────────────────────── */
     function renderCards() {
         cardsContainer.innerHTML = '';
-        const searchQ = (appSearchInput.value || '').trim().toLowerCase();
 
-        // Filter list
         let filtered = allLoadedDues.filter(item => {
-            // Tab filter
             if (currentFilter === 'pending' && item.pending_amount <= 0) return false;
             if (currentFilter === 'settled' && item.pending_amount > 0) return false;
-
-            // Search filter
-            if (searchQ) {
-                const matchRef  = (item.reference_number || '').toLowerCase().includes(searchQ);
-                const matchLbl  = (item.service_label || '').toLowerCase().includes(searchQ);
-                const matchInfo = (item.concession_info || '').toLowerCase().includes(searchQ);
-                return matchRef || matchLbl || matchInfo;
-            }
             return true;
         });
 
         if (filtered.length === 0) {
             cardsContainer.innerHTML = `
-                <div class="text-center py-4 text-muted bg-light rounded-3 my-2 fw-semibold">
-                    <i class="fas fa-search me-1"></i> No applications found matching the selected filter.
-                </div>`;
-            document.getElementById('showing_apps_text').textContent = 'Showing 0 of ' + allLoadedDues.length + ' applications';
+                <tr>
+                    <td colspan="6" class="text-center py-3 fw-semibold text-muted" style="font-size: 0.8rem;">
+                        No statutory records found for the selected filter.
+                    </td>
+                </tr>`;
             return;
         }
 
-        // Limit rendering for ultra-fast performance on 400+ applications
-        const displayLimit = 25;
-        const visibleItems = filtered.slice(0, displayLimit);
-
-        visibleItems.forEach(d => {
+        filtered.forEach(d => {
             const meta = moduleIcons[d.application_type] || moduleIcons['general'];
 
-            let statusCls = 'status-pending', badgeBg = 'bg-danger text-white', badgeTxt = 'Pending';
+            let statusPillCls = 'status-pending-pill', badgeTxt = 'Pending';
             if (d.payment_status === 'paid' || d.pending_amount <= 0) {
-                statusCls = 'status-paid'; badgeBg = 'bg-success text-white'; badgeTxt = 'Settled';
+                statusPillCls = 'status-settled-pill'; badgeTxt = 'Settled';
             } else if (d.payment_status === 'partial') {
-                statusCls = 'status-partial'; badgeBg = 'bg-warning text-dark'; badgeTxt = 'Partial';
+                statusPillCls = 'status-pending-pill'; badgeTxt = 'Partial';
             }
 
-            const card = document.createElement('div');
-            card.className = `app-card ${statusCls}`;
-            card.id = `card_${d.application_type}_${d.application_id}`;
-            card.innerHTML = `
-                <div class="d-flex align-items-start gap-2.5">
-                    <div class="module-icon-box ${meta.cls}">
-                        <i class="fas ${meta.icon}"></i>
-                    </div>
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="d-flex justify-content-between align-items-start gap-2">
-                            <div>
-                                <span class="fw-bold text-dark small d-block">${escapeHtml(d.service_label)}</span>
-                                <div class="small fw-semibold" style="font-size:0.75rem; color:#475569;">
-                                    <i class="fas fa-hashtag me-1 text-primary"></i><strong>${escapeHtml(d.reference_number)}</strong>
-                                    ${d.concession_info ? ' &bull; <i class="fas fa-map-marker-alt text-danger me-1"></i>' + escapeHtml(d.concession_info) : ''}
-                                </div>
-                            </div>
-                            <span class="badge ${badgeBg} rounded-pill fw-bold" style="font-size:0.68rem;">${badgeTxt}</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
-                            <div class="small tabular-nums">
-                                <span style="color:#64748B;">Agreed: </span><span class="fw-bold text-dark">₹ ${formatIndianNumber(d.product_value)}</span>
-                                <span class="ms-3" style="color:#64748B;">Due: </span>
-                                <span class="fw-bold ${d.pending_amount > 0 ? 'text-danger' : 'text-success'}">
-                                    ₹ ${formatIndianNumber(d.pending_amount)}
-                                </span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-primary btn-select-card py-0 px-2 shadow-sm fw-bold"
-                                    style="font-size:0.75rem;"
-                                    data-type="${escapeHtml(d.application_type)}"
-                                    data-id="${d.application_id}"
-                                    data-label="${escapeHtml(d.service_label)}"
-                                    data-ref="${escapeHtml(d.reference_number)}"
-                                    data-info="${escapeHtml(d.concession_info)}"
-                                    data-val="${d.product_value}"
-                                    data-pending="${d.pending_amount}"
-                                    data-status="${badgeTxt}">
-                                <i class="fas fa-check me-1"></i> Select
-                            </button>
-                        </div>
-                    </div>
-                </div>`;
+            const isSelected = (formAppType.value === d.application_type && formAppId.value == d.application_id);
 
-            cardsContainer.appendChild(card);
+            const tr = document.createElement('tr');
+            tr.id = `card_${d.application_type}_${d.application_id}`;
+            if (isSelected) tr.classList.add('selected');
+
+            tr.innerHTML = `
+                <td class="text-center">
+                    <input type="radio" name="dues_row_radio" class="form-check-input" ${isSelected ? 'checked' : ''} style="cursor: pointer;">
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="module-icon-sm ${meta.cls}">
+                            <i class="fas ${meta.icon}"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold" style="color: #0F172A; font-size: 0.84rem;">${escapeHtml(d.service_label)}</div>
+                            <div class="text-muted" style="font-size: 0.70rem;">
+                                ${d.concession_info ? '<i class="fas fa-map-marker-alt text-danger me-1"></i>' + escapeHtml(d.concession_info) : 'Quarry Area'}
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-light text-dark border fw-bold" style="font-family: monospace; font-size: 0.72rem; border-color: #CBD5E1 !important;">
+                        # ${escapeHtml(d.reference_number)}
+                    </span>
+                </td>
+                <td class="text-end tabular-nums fw-semibold" style="color: #0F172A; font-size: 0.82rem;">
+                    ₹ ${formatIndianNumber(d.product_value)}
+                </td>
+                <td class="text-end tabular-nums fw-bold ${d.pending_amount > 0 ? 'text-danger' : 'text-success'}" style="font-size: 0.84rem;">
+                    ₹ ${formatIndianNumber(d.pending_amount)}
+                </td>
+                <td class="text-center">
+                    <span class="status-dot-pill ${statusPillCls}">
+                        <span class="dot"></span> ${badgeTxt}
+                    </span>
+                </td>`;
+
+            // Row click event
+            tr.addEventListener('click', function () {
+                selectApplication({
+                    application_type: d.application_type,
+                    application_id:   d.application_id,
+                    service_label:    d.service_label,
+                    reference_number: d.reference_number,
+                    concession_info:  d.concession_info,
+                    product_value:    parseFloat(d.product_value) || 0,
+                    pending_amount:   parseFloat(d.pending_amount) || 0,
+                    status_text:      badgeTxt
+                });
+            });
+
+            cardsContainer.appendChild(tr);
         });
-
-        document.getElementById('showing_apps_text').textContent =
-            `Showing ${visibleItems.length} of ${filtered.length} applications` + (filtered.length !== allLoadedDues.length ? ` (filtered from ${allLoadedDues.length})` : '');
     }
 
-    /* ── 7. Filter Tabs & Search Listeners ─────────────────────── */
-    document.querySelectorAll('.filter-tab-pill').forEach(btn => {
+    /* ── 7. Filter Tabs Listeners ──────────────────────────────── */
+    document.querySelectorAll('.tab-filter-btn').forEach(btn => {
         btn.addEventListener('click', function () {
-            document.querySelectorAll('.filter-tab-pill').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-filter-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentFilter = this.getAttribute('data-filter');
             renderCards();
         });
     });
 
-    appSearchInput.addEventListener('input', function () {
-        renderCards();
-    });
-
-    /* ── 8. Card Click & Selection Logic ───────────────────────── */
-    cardsContainer.addEventListener('click', function (e) {
-        const btn = e.target.closest('.btn-select-card') || e.target.closest('.app-card');
-        if (!btn) return;
-
-        const targetBtn = btn.classList.contains('btn-select-card') ? btn : btn.querySelector('.btn-select-card');
-        if (!targetBtn) return;
-
-        selectApplication({
-            application_type: targetBtn.dataset.type,
-            application_id:   targetBtn.dataset.id,
-            service_label:    targetBtn.dataset.label,
-            reference_number: targetBtn.dataset.ref,
-            concession_info:  targetBtn.dataset.info,
-            product_value:    parseFloat(targetBtn.dataset.val) || 0,
-            pending_amount:   parseFloat(targetBtn.dataset.pending) || 0,
-            status_text:      targetBtn.dataset.status
-        });
-    });
-
+    /* ── 8. Selection Logic ────────────────────────────────────── */
     function selectApplication(item) {
         formAppType.value   = item.application_type;
         formAppId.value     = item.application_id;
         selectedItemPending = item.pending_amount || 0;
 
         dispService.textContent    = item.service_label;
-        dispRef.textContent        = item.reference_number;
-        dispConcession.textContent = item.concession_info || 'Quarry Concession Area';
+        dispRef.textContent        = item.service_label + ' • #' + item.reference_number;
+        dispConcession.textContent = item.concession_info || 'Quarry Area';
         dispValue.textContent      = '₹ ' + formatIndianNumber(item.product_value);
         dispPending.textContent    = '₹ ' + formatIndianNumber(item.pending_amount);
         dispStatus.textContent     = item.status_text || (item.pending_amount > 0 ? 'Pending' : 'Settled');
 
-        document.getElementById('collection_mode_badge').textContent = 'Linked to Dossier';
-
-        // Pre-fill amount to collect
+        // Pre-fill amount
         if (item.pending_amount > 0) {
             amountInput.value = item.pending_amount.toFixed(2);
         } else {
             amountInput.value = '';
         }
+
+        updatePresetPillsState();
         recalculateBalance();
 
-        // Highlight selected card
-        document.querySelectorAll('.app-card').forEach(c => c.classList.remove('selected'));
-        const activeCard = document.getElementById(`card_${item.application_type}_${item.application_id}`);
-        if (activeCard) {
-            activeCard.classList.add('selected');
-            activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // Update row highlights & radio
+        document.querySelectorAll('#dues_cards_container tr').forEach(r => {
+            r.classList.remove('selected');
+            const radio = r.querySelector('input[type="radio"]');
+            if (radio) radio.checked = false;
+        });
+
+        const activeRow = document.getElementById(`card_${item.application_type}_${item.application_id}`);
+        if (activeRow) {
+            activeRow.classList.add('selected');
+            const radio = activeRow.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
         }
     }
 
-    /* ── 9. General Advance Retainer Mode ──────────────────────── */
+    /* ── 9. General Advance Mode ───────────────────────────────── */
     btnGeneralAdvance.addEventListener('click', setGeneralAdvance);
 
     function setGeneralAdvance() {
@@ -1184,21 +1174,36 @@ document.addEventListener('DOMContentLoaded', function () {
         formAppId.value     = '';
         selectedItemPending = 0;
 
-        dispService.textContent    = 'General Advance / Retainer';
-        dispRef.textContent        = 'Direct Payment on Account';
-        dispConcession.textContent = 'Unassigned / Quarry Owner General Deposit';
+        dispService.textContent    = 'General Advance';
+        dispRef.textContent        = 'Direct Payment on Account (General Advance)';
+        dispConcession.textContent = 'Unassigned';
         dispValue.textContent      = '₹ 0.00';
         dispPending.textContent    = '₹ 0.00';
-        dispStatus.textContent     = 'General Deposit';
+        dispStatus.textContent     = 'General';
 
-        document.getElementById('collection_mode_badge').textContent = 'General Advance';
-        document.querySelectorAll('.app-card').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('#dues_cards_container tr').forEach(r => {
+            r.classList.remove('selected');
+            const radio = r.querySelector('input[type="radio"]');
+            if (radio) radio.checked = false;
+        });
 
+        updatePresetPillsState();
         recalculateBalance();
     }
 
-    /* ── 10. Quick Preset Amount Pills ─────────────────────────── */
-    document.querySelectorAll('.quick-preset-pill[data-pct]').forEach(btn => {
+    /* ── 10. Quick Preset Pills ────────────────────────────────── */
+    function updatePresetPillsState() {
+        const hasPending = selectedItemPending > 0;
+        document.querySelectorAll('.preset-chip[data-pct]').forEach(btn => {
+            if (hasPending) {
+                btn.classList.remove('disabled');
+            } else {
+                btn.classList.add('disabled');
+            }
+        });
+    }
+
+    document.querySelectorAll('.preset-chip[data-pct]').forEach(btn => {
         btn.addEventListener('click', function () {
             if (selectedItemPending <= 0) return;
             const pct = parseInt(this.dataset.pct) / 100;
@@ -1213,9 +1218,9 @@ document.addEventListener('DOMContentLoaded', function () {
         recalculateBalance();
     });
 
-    /* ── 11. Narration Suggestions Chips ───────────────────────── */
-    document.querySelectorAll('.narration-chip').forEach(chip => {
-        chip.addEventListener('click', function () {
+    /* ── 11. Narration Suggestions Tags ────────────────────────── */
+    document.querySelectorAll('.narration-tag').forEach(tag => {
+        tag.addEventListener('click', function () {
             const notesEl = document.getElementById('notes');
             const snippet = this.getAttribute('data-text');
             if (notesEl.value.trim().length > 0) {
@@ -1226,46 +1231,90 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    /* ── 12. Amount & Remaining Balance Real-Time Recalculation ── */
+    /* ── 12. Amount & Balance Real-Time Recalculation ──────────── */
     amountInput.addEventListener('input', recalculateBalance);
 
     function recalculateBalance() {
         const val = parseFloat(amountInput.value) || 0;
 
-        // Update Indian words
+        // Indian words preview
         if (val <= 0) {
-            calcWords.innerHTML = '<span style="color:#64748B; font-weight:normal;">Enter amount above to preview in words…</span>';
+            calcWords.innerHTML = '<span style="color: #94A3B8; font-weight: normal; font-style: normal;">Enter amount above to preview in words…</span>';
         } else {
-            calcWords.innerHTML = '<strong style="color:#1E3A8A;">In Words:</strong> ' + convertNumberToWords(val);
+            calcWords.innerHTML = '<strong style="color: #1E3A8A;"><i class="fas fa-shield-alt me-1 text-success"></i> In Words:</strong> ' + convertNumberToWords(val);
         }
 
-        // Update Remaining Due
+        // Remaining balance preview
         if (selectedItemPending > 0) {
             const rem = selectedItemPending - val;
             if (rem <= 0) {
                 calcRemaining.innerHTML = '<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> ₹ 0.00 (Full Settlement)</span>';
             } else {
-                calcRemaining.innerHTML = `<span class="text-danger fw-bold">₹ ${formatIndianNumber(rem)} (Pending Balance)</span>`;
+                calcRemaining.innerHTML = `<span class="text-danger fw-bold">₹ ${formatIndianNumber(rem)}</span>`;
             }
         } else {
-            calcRemaining.innerHTML = '<span class="fw-semibold" style="color:#64748B;">₹ 0.00 (Direct Retainer)</span>';
+            calcRemaining.innerHTML = '<span class="text-muted fw-semibold">₹ 0.00 (General)</span>';
         }
     }
 
-    /* ── 13. Payment Mode & Bank Row Toggle ────────────────────── */
-    const paymentModeSelect = document.getElementById('payment_mode');
-    const bankDetailsRow    = document.getElementById('bank_details_row');
-
-    paymentModeSelect.addEventListener('change', function () {
-        if (this.value === 'Cash') {
-            bankDetailsRow.style.opacity = '0.35';
-        } else {
-            bankDetailsRow.style.opacity = '1';
-        }
+    /* ── 13. Payment Mode Pills & Dynamic Field Visibility ─────── */
+    const modePills = document.querySelectorAll('.mode-pill-btn');
+    modePills.forEach(pill => {
+        pill.addEventListener('click', function () {
+            modePills.forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            const mode = this.getAttribute('data-mode');
+            paymentModeSelect.value = mode;
+            handlePaymentModeChange();
+        });
     });
 
-    /* ── 14. Confirmation Modal Review ─────────────────────────── */
-    document.getElementById('btn_review_payment').addEventListener('click', function () {
+    function handlePaymentModeChange() {
+        const mode = paymentModeSelect.value;
+
+        // Sync active pill visual
+        modePills.forEach(p => {
+            if (p.getAttribute('data-mode') === mode) {
+                p.classList.add('active');
+            } else {
+                p.classList.remove('active');
+            }
+        });
+
+        if (mode === 'Cash') {
+            bankNameCol.style.display = 'none';
+            refNumCol.style.display   = 'none';
+            bankNameInput.disabled    = true;
+            refNumInput.disabled      = true;
+            bankNameInput.value       = '';
+            refNumInput.value         = '';
+            if (cashNotice) cashNotice.style.display = 'block';
+        } else if (mode === 'UPI/GPay') {
+            bankNameCol.style.display = 'none';
+            refNumCol.style.display   = 'block';
+            refNumCol.className       = 'col-md-5 col-sm-12';
+            bankNameInput.disabled    = true;
+            refNumInput.disabled      = false;
+            refNumInput.placeholder   = 'e.g. UPI Ref / Google Pay ID';
+            if (cashNotice) cashNotice.style.display = 'none';
+        } else {
+            bankNameCol.style.display = 'block';
+            refNumCol.style.display   = 'block';
+            bankNameCol.className     = 'col-md-2 col-sm-6';
+            refNumCol.className       = 'col-md-3 col-sm-6';
+            bankNameInput.disabled    = false;
+            refNumInput.disabled      = false;
+            bankNameInput.placeholder = 'e.g. SBI, HDFC';
+            refNumInput.placeholder   = 'e.g. UTR20260929001';
+            if (cashNotice) cashNotice.style.display = 'none';
+        }
+    }
+
+    paymentModeSelect.addEventListener('change', handlePaymentModeChange);
+    handlePaymentModeChange();
+
+    /* ── 14. Confirmation Modal & Submit ────────────────────────── */
+    document.getElementById('btn_submit_payment').addEventListener('click', function () {
         const amount = parseFloat(amountInput.value) || 0;
         if (!formCustomerId.value) {
             alert('Please select a quarry client first from the search box.');
@@ -1278,7 +1327,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         document.getElementById('modal_conf_client').textContent = selectedCustomerName || 'Client';
-        document.getElementById('modal_conf_app').textContent    = dispRef.textContent + ' (' + dispService.textContent + ')';
+        document.getElementById('modal_conf_app').textContent    = dispRef.textContent;
         document.getElementById('modal_conf_amount').textContent = '₹ ' + formatIndianNumber(amount);
         document.getElementById('modal_conf_words').textContent  = convertNumberToWords(amount);
         document.getElementById('modal_conf_mode').textContent   = paymentModeSelect.value;
@@ -1287,7 +1336,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const refVal = document.getElementById('reference_number').value.trim();
         const bankVal = document.getElementById('bank_name').value.trim();
         if (refVal || bankVal) {
-            document.getElementById('modal_conf_ref').textContent = (bankVal ? bankVal + ' &bull; ' : '') + (refVal || 'N/A');
+            document.getElementById('modal_conf_ref').textContent = (bankVal ? bankVal + ' • ' : '') + (refVal || 'N/A');
             document.getElementById('modal_conf_ref_row').style.display = '';
         } else {
             document.getElementById('modal_conf_ref_row').style.display = 'none';
@@ -1301,7 +1350,6 @@ document.addEventListener('DOMContentLoaded', function () {
         this.disabled = true;
         this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Recording Payment…';
 
-        // Check if auto-print checkbox is enabled
         const autoPrint = document.getElementById('check_auto_print').checked;
         if (autoPrint) {
             sessionStorage.setItem('gtms_auto_print_receipt', '1');
@@ -1314,14 +1362,14 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.ctrlKey && e.key === 'Enter') {
             e.preventDefault();
-            document.getElementById('btn_review_payment').click();
+            document.getElementById('btn_submit_payment').click();
         }
         if (e.key === 'Escape') {
             setGeneralAdvance();
         }
     });
 
-    /* ── 16. Auto-Open Receipt Print on Redirect (if requested) ── */
+    /* ── 16. Auto-Open Receipt Print on Redirect ─────────────── */
     if (sessionStorage.getItem('gtms_auto_print_receipt') === '1') {
         sessionStorage.removeItem('gtms_auto_print_receipt');
         @if(session('receipt_id'))
@@ -1408,7 +1456,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── 18. Initial Trigger if customer is preselected ────────── */
     if ($('#customer_selector').val()) {
-        $('#customer_selector').trigger('change');
+        handleCustomerSelection($('#customer_selector').val());
     }
     if (amountInput.value) {
         recalculateBalance();

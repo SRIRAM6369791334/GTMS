@@ -1289,25 +1289,16 @@
                 if (!did) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a District.', confirmButtonColor: '#0F1E4D' }); return false; }
             }
             if (step === 5) {
-                var missingMandatory = [];
+                // Flexible upload: Documents can be uploaded during registration or later in the Project Folder Dossier.
+                // Soft warning if mandatory documents are not yet uploaded.
+                var missingCount = 0;
                 $('#pane_5 .checklist-row').each(function() {
                     var isUp = $(this).hasClass('up');
                     var isMandatory = $(this).attr('data-mandatory') === '1';
-                    if (isMandatory && !isUp) {
-                        var name = $(this).find('.ci-name').text().trim() || 'Mandatory Document';
-                        missingMandatory.push(name);
-                    }
+                    if (isMandatory && !isUp) missingCount++;
                 });
-
-                if (missingMandatory.length > 0) {
-                    var docList = missingMandatory.slice(0, 3).join(', ') + (missingMandatory.length > 3 ? (' (+' + (missingMandatory.length - 3) + ' more)') : '');
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Mandatory Documents Required',
-                        text: 'Please upload all mandatory documents before continuing: ' + docList + '. You may change document status to "Optional" if not required.',
-                        confirmButtonColor: '#0F1E4D'
-                    });
-                    return false;
+                if (missingCount > 0 && typeof toastr !== 'undefined') {
+                    toastr.info(missingCount + ' documents pending upload. You can complete uploads in the Project Folder Dossier.');
                 }
             }
             if (step === 6) {

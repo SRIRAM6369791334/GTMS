@@ -738,10 +738,11 @@ class AccountsModuleTest extends TestCase
      */
     public function test_customer_ledger_index_directory_and_kpis(): void
     {
-        $customer = $this->createTestCustomer(['company_name' => 'Ledger Test Minerals']);
+        $companyName = 'Ledger Test Minerals ' . uniqid();
+        $customer = $this->createTestCustomer(['company_name' => $companyName]);
 
         Quotation::create([
-            'quotation_number' => 'GTMS/QTN/' . date('Y') . '/9071',
+            'quotation_number' => 'GTMS/QTN/' . date('Y') . '/' . rand(1000, 9999),
             'customer_id'      => $customer->id,
             'subtotal'         => 100000.00,
             'tax_rate'         => 18.00,
@@ -752,7 +753,7 @@ class AccountsModuleTest extends TestCase
         ]);
 
         PaymentReceipt::create([
-            'receipt_number'   => 'GTMS/REC/' . date('Y') . '/9071',
+            'receipt_number'   => 'GTMS/REC/' . date('Y') . '/' . rand(1000, 9999),
             'customer_id'      => $customer->id,
             'amount_paid'      => 45000.00,
             'balance_due'      => 73000.00,
@@ -761,9 +762,9 @@ class AccountsModuleTest extends TestCase
             'branch_id'        => $this->branch->id,
         ]);
 
-        $response = $this->get(route('accounts.ledger.index', ['q' => 'Ledger Test Minerals']));
+        $response = $this->get(route('accounts.ledger.index', ['q' => $companyName]));
         $response->assertStatus(200);
-        $response->assertSee('Ledger Test Minerals');
+        $response->assertSee($companyName);
         $response->assertSee('118,000.00');
         $response->assertSee('45,000.00');
     }

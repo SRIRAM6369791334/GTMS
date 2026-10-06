@@ -793,10 +793,11 @@
               <div class="fico"><i class="fa fa-folder-open"></i></div>
               <div class="flex-grow-1">
                 <div class="ft">1. Documents</div>
-                <div class="fs">{{ $docs->where('folder_id', 7)->whereNotNull('file_path')->count() }} / 9 uploaded</div>
+                @php $f7Total = $docs->where('folder_id', 7)->count(); $f7Up = $docs->where('folder_id', 7)->whereNotNull('file_path')->count(); @endphp
+                <div class="fs">{{ $f7Up }} / {{ $f7Total }} uploaded</div>
               </div>
-              <span class="badge-status {{ $docs->where('folder_id', 7)->whereNotNull('file_path')->count() >= 9 ? 'uploaded' : 'pending' }}">
-                {{ $docs->where('folder_id', 7)->whereNotNull('file_path')->count() >= 9 ? 'Complete' : 'Pending' }}
+              <span class="badge-status {{ $f7Up >= $f7Total && $f7Total > 0 ? 'uploaded' : 'pending' }}">
+                {{ $f7Up >= $f7Total && $f7Total > 0 ? 'Complete' : 'Pending' }}
               </span>
             </div>
 
@@ -804,10 +805,11 @@
               <div class="fico"><i class="fa fa-folder"></i></div>
               <div class="flex-grow-1">
                 <div class="ft">2. Lease Application</div>
-                <div class="fs">{{ $docs->where('folder_id', 8)->whereNotNull('file_path')->count() }} / 7 uploaded</div>
+                @php $f8Total = $docs->where('folder_id', 8)->count(); $f8Up = $docs->where('folder_id', 8)->whereNotNull('file_path')->count(); @endphp
+                <div class="fs">{{ $f8Up }} / {{ $f8Total }} uploaded</div>
               </div>
-              <span class="badge-status {{ $docs->where('folder_id', 8)->whereNotNull('file_path')->count() >= 7 ? 'uploaded' : 'pending' }}">
-                {{ $docs->where('folder_id', 8)->whereNotNull('file_path')->count() >= 7 ? 'Complete' : 'Pending' }}
+              <span class="badge-status {{ $f8Up >= $f8Total && $f8Total > 0 ? 'uploaded' : 'pending' }}">
+                {{ $f8Up >= $f8Total && $f8Total > 0 ? 'Complete' : 'Pending' }}
               </span>
             </div>
 
@@ -815,10 +817,11 @@
               <div class="fico"><i class="fa fa-inbox"></i></div>
               <div class="flex-grow-1">
                 <div class="ft">3. Plan</div>
-                <div class="fs">{{ $docs->where('folder_id', 9)->whereNotNull('file_path')->count() }} / 3 uploaded</div>
+                @php $f9Total = $docs->where('folder_id', 9)->count(); $f9Up = $docs->where('folder_id', 9)->whereNotNull('file_path')->count(); @endphp
+                <div class="fs">{{ $f9Up }} / {{ $f9Total }} uploaded</div>
               </div>
-              <span class="badge-status {{ $docs->where('folder_id', 9)->whereNotNull('file_path')->count() >= 3 ? 'uploaded' : 'pending' }}">
-                {{ $docs->where('folder_id', 9)->whereNotNull('file_path')->count() >= 3 ? 'Complete' : 'Pending' }}
+              <span class="badge-status {{ $f9Up >= $f9Total && $f9Total > 0 ? 'uploaded' : 'pending' }}">
+                {{ $f9Up >= $f9Total && $f9Total > 0 ? 'Complete' : 'Pending' }}
               </span>
             </div>
           </div>

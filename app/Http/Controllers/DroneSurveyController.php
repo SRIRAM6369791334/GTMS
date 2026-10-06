@@ -209,7 +209,7 @@ class DroneSurveyController extends Controller
                 'altitude_meters'       => (float) ($draft['altitude_meters'] ?? 120),
                 'gsd_cm_px'             => (float) ($draft['gsd_cm_px'] ?? 2.5),
                 'extracted_volume_cbm'  => (float) ($draft['extracted_volume_cbm'] ?? 0),
-                'survey_status'         => $draft['survey_status'] ?? 'completed',
+                'survey_status'         => in_array($draft['survey_status'] ?? '', ['scheduled', 'flying_completed', 'processing', 'deliverables_ready', 'report_signed']) ? $draft['survey_status'] : 'deliverables_ready',
                 'product_value'         => $val,
                 'paid_amount'           => $paid,
                 'pending_amount'        => $pending,

@@ -63,6 +63,22 @@
         font-feature-settings: "tnum";
     }
 
+    /* ─── P0.3: INPUT DATE PICKER ESCAPE SHIELD ─── */
+    .content-body input[type="date"] {
+        position: relative !important;
+    }
+    .content-body input[type="date"]::-webkit-calendar-picker-indicator {
+        position: static !important;
+        cursor: pointer !important;
+        background: initial !important;
+        color: initial !important;
+        opacity: 0.7 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: auto !important;
+        height: auto !important;
+    }
+
     /* ─── WCAG AAA HIGH-CONTRAST TEXT & VISIBILITY REINFORCEMENTS ─── */
     .content-body .text-muted,
     .content-body small.text-muted,

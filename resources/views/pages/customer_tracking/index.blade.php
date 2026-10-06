@@ -2780,11 +2780,11 @@
                                     @php
                                         $droneStatus = strtolower($dossierData['droneSurvey']->survey_status ?? 'completed');
                                         $droneBadge = match(true) {
-                                            in_array($droneStatus, ['completed', 'verified']) => 'ct-badge-success',
+                                            in_array($droneStatus, ['completed', 'verified', 'deliverables_ready', 'report_signed']) => 'ct-badge-success',
                                             default => 'ct-badge-primary',
                                         };
                                     @endphp
-                                    <span class="{{ $droneBadge }}">{{ ucfirst($droneStatus) }}</span>
+                                    <span class="{{ $droneBadge }}">{{ ucwords(str_replace('_', ' ', $droneStatus)) }}</span>
                                 @else
                                     <span class="ct-badge-neutral">Not Scheduled</span>
                                 @endif

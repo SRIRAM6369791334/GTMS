@@ -1,6 +1,83 @@
 # GTMS — Project State & Memory
 
-## Current Phase: PHASE 7.22 — QUOTATION DOSSIER SHOW PAGE UI/UX PRO MAX OVERHAUL (SWISS MODERNISM 2.0 / WCAG AAA CONTRAST & ERGONOMICS) (COMPLETED & VERIFIED) ✅
+## Current Phase: PHASE 7.26 — PAYMENT COLLECTION DESK COMPLETE SEQUENTIAL BENTO REDESIGN (MATCHING APPROVED QUOTATIONS ARCHITECTURE) (COMPLETED & VERIFIED) ✅
+- **Status:** Completed ground-up redesign of the Payment Collection Desk (`/accounts/payments/create`) discarding the cramped 7/5 asymmetrical split and transitioning to a clean full-width sequential layout mirroring the approved standards of `quotations/create.blade.php` and `quotations/show.blade.php`:
+  1. **Full-Width Sequential Bento Architecture:**
+     - Transitioned from the narrow, cramped 7/5 column split to full-width sequential Bento Cards:
+       - **Card 1 (Accent Blue):** Client Intake with 42px Select2 search, inline metadata links, and a dedicated 3-column KPI Dossier (Total Billed, Total Collected, Outstanding Due) with avatar badge.
+       - **Card 2 (Accent Navy):** Outstanding Statutory Dues & Concession Schedule featuring full 12-column width, quick filter pills (`All`, `Pending`, `Settled`), real-time search, module icons, tabular numbers, and clean selection buttons.
+       - **Card 3 (Accent Emerald):** Payment Voucher Terminal organized as a clean 6/6 internal split:
+         - Left: Hero 48px Amount input with ₹ glyph, quick preset pills (100% Full Dues, 50% Milestone, 25% Token, Clear), remaining balance computation, and official Endorsement Box (`.endorsement-box`) with live Indian currency in words calculation and security shield.
+         - Right: Horizontal Payment Method quick pills (`NEFT/RTGS`, `UPI/QR`, `Cheque`, `Cash`), date selector, depository/bank input, UTR reference input, and quick narration chips.
+       - **Card 4 (Accent Sky):** Compact Recent Payment Receipts table with mono-voucher badges, customer names, date, mode badges, formatted amounts, and View/Print actions.
+  2. **Sticky Floating Action Bar (`.sticky-floating-bar`):**
+     - Bottom persistent action bar detached from viewport edges with glassmorphism backdrop blur:
+       - Left: Selected Target label (`#DS-TEST-14372`) + Live Collection Amount (`₹ 50,000.00`).
+       - Right: Auto-Print Receipt checkbox toggle + Cancel button + Primary `.btn-navy` "Record Payment & Issue Receipt" button.
+  3. **Standardized Control Ergonomics:**
+     - Strict 42px control height, 8px border-radius, `#CBD5E1` clean border, and `#0F172A` high-contrast text.
+     - Horizontal `.quick-pill` controls replace mobile-style vertical segmented boxes.
+  4. **Quality & Verification Evidence:**
+     - Blade templates compiled with 0 errors (`php artisan view:clear; php artisan view:cache`).
+     - Automated test suite passed: `.\vendor\bin\phpunit --filter AccountsModuleTest` (23 tests, 169 assertions — 100% pass).
+     - Full visual verification across initial state, customer loaded state, UPI mode, live Indian words, and confirmation modal via Playwright snapshots.
+- **Last Updated:** 2026-10-01
+
+## Previous Phase: PHASE 7.25 — PAYMENT COLLECTION DESK UI/UX PRO MAX AGENCY-GRADE OVERHAUL & ZERO-SCROLL ERGONOMICS (SWISS MODERNISM & SEGMENTED CONTROLS) (COMPLETED & VERIFIED) ✅
+- **Status:** Executed complete agency-grade UI/UX overhaul of Payment Collection Desk (`/accounts/payments/create`) based on modern FinTech design patterns (Stripe / Razorpay POS / Zoho Books) and GTMS Swiss Modernism tokens.
+
+
+## Previous Phase: PHASE 7.24 — PAYMENT COLLECTION DESK UI/UX PRO MAX OVERHAUL & VISUAL SCREENSHOT VERIFICATION (SWISS MODERNISM 2.0 / BENTO FORM SYSTEM) (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted in-depth visual screenshot analysis via Playwright and executed full UI/UX overhaul of Payment Collection Desk (`/accounts/payments/create`) view adhering to `ui-ux-pro-max` Swiss Modernism 2.0 standards:
+  1. **Visual Screenshot Audit & Defect Root Causes Identified:**
+     - Captured and analyzed full-page screenshots of Payment Collection Desk via Playwright.
+     - Detected 5 key layout, contrast, and functionality defects:
+       - *Defect A (Washed-Out Pink Buttons & Badges):* Top "Receipts Directory" button, dues counter badge ("0 Applications"), and table "View" buttons used Bootstrap's `btn-outline-secondary` / `bg-secondary`, rendering in Dexignlabs faint pink (`#FFA7D7`).
+       - *Defect B (Module Icon & Styling Key Mismatch):* Controller returned short module keys (`lease`, `mining`, `environment`, `ppt`, `dgps`, `drone`, `ec_certificate`, `ec_compliance`) while the Blade JavaScript lookup table expected suffixed keys (`lease_application`, `mining_application`, etc.), causing all statutory cards to fall back to generic coin icons.
+       - *Defect C (Chunky Input Addons & Squeezed Fields):* Issuing Bank & UTR reference fields used bulky 40px icon prefix boxes, cramming user typing space and creating jagged border lines.
+       - *Defect D (Giant Grey Block Cancel Button):* Cancel button was rendered as a full-width grey button that looked like a disabled primary button.
+       - *Defect E (Non-Unified Form Heights):* Select2, inputs, and date fields had mismatched heights and irregular border radius.
+  2. **Executive Fintech Form System & Bento Card Architecture:**
+     - **3-Step Guided Stepper Bar:** Integrated modern stepper (`1. Select Client ➔ 2. Allocate Dossier / Retainer ➔ 3. Record Instrument & Issue`) alongside executive keyboard shortcut indicator (`Ctrl + Enter` Review & Issue | `Esc` General Deposit).
+     - **Bento Card Architecture:** Structured with `.bento-card` featuring crisp `#E2E8F0` borders, subtle box shadows, and colored top accent strips (`#0F1E4D` GTMS Navy for Client, `#1E3A8A` Blue for Dues, `#059669` Emerald for Payment Desk).
+     - **Unified 42px Form Controls:** All inputs, selects, and Select2 dropdowns standardized to 42px height, 8px border-radius, `#CBD5E1` clean border, and high-contrast `#0F172A` text.
+     - **Customer Financial Dossier Banner:** Dark Navy gradient banner (`#0F1E4D` to `#1E3A5F`) displaying verified client tag, contact phone link (`tel:`), GSTIN tag, net outstanding receivables, 3 KPI metric tiles, and Customer Ledger button.
+     - **Interactive Dues Allocation Ledger:** Segmented filter pills (`All`, `Pending Dues`, `Settled`), real-time search, color-coded status badges, and quick "Select & Allocate" buttons. Fixed module key mapping to render authentic icons (Mountain for Mining, Contract for Lease, Satellite for DGPS, Leaf for Environment).
+     - **FinTech Endorsement & Live Currency Words:** Live Indian numbering words (`Rupees ... Only`) with official security shield, remaining balance computation (`Full Settlement` vs `Pending Balance`), and quick preset chips (`Pay Full (100%)`, `Pay 50%`, `Pay 25%`, `Clear`).
+     - **Non-Recursive Select2 Resolver:** Safe event handling via `select2:select`, `select2:clear`, and `change` without recursive DOM dispatch events.
+     - **Confirmation Modal & Double-Click Guard:** Certified payment collection modal with receipt preview, auto-open print voucher checkbox, and submission loading state with spinner.
+  3. **Strict Safety Rules & Verification:**
+     - 0 database migrations, 0 schema alterations, 0 business calculation changes, 0 unrelated module refactors.
+     - Full view compilation passed (`php artisan view:clear; php artisan view:cache` - 0 errors).
+     - Automated test suite verified with `AccountsModuleTest` (23 tests, 169 assertions — 100% pass).
+     - Visually verified via Playwright browser screenshots (`payments_create_refined_initial.png`, `payments_create_refined_loaded.png`, `payments_create_modal.png`, `payments_create_final_verified.png`).
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.23 — QUOTATION CREATE & EDIT FORMS UI/UX PRO MAX OVERHAUL & VISUAL SCREENSHOT VERIFICATION (SWISS MODERNISM 2.0 / EXECUTIVE FINTECH FORM SYSTEM) (COMPLETED & VERIFIED) ✅
+- **Status:** Conducted in-depth visual screenshot analysis via Playwright and executed full UI/UX overhaul of both Quotation Create (`/accounts/quotations/create`) and Quotation Edit (`/accounts/quotations/{id}/edit`) views adhering to `ui-ux-pro-max` Swiss Modernism 2.0 standards:
+  1. **Visual Screenshot Audit & Defect Root Causes Identified:**
+     - Captured and visually analyzed full-page screenshots of both Create and Edit pages using Playwright browser engine.
+     - Detected 4 major layout and contrast defects:
+       - *Defect A (Table Row Vertical Void):* Multiline description textarea forced 100px+ height on column 1 while other single-input columns (SAC, Qty, Unit, Rate, Subtotal, Delete) floated awkwardly in empty white voids.
+       - *Defect B (Inconsistent Icon Addons):* Half of Step 1 form fields had bulky Bootstrap `input-group-text` grey icon prefixes while the adjacent half had none, creating an irregular zigzag appearance.
+       - *Defect C (Dull Subtotal Box & Truncated Labels):* Subtotal rendered in a disabled grey input box without currency prefix; GST select dropdown truncated text (`18% (Standard GS...`); Authorized Signatory field truncated text.
+       - *Defect D (Select2 Call Stack Overflow):* Triggering `customerSelect.dispatchEvent(new Event('change'))` caused infinite recursive loop with jQuery Select2 event listener.
+  2. **Executive Fintech Form System & Bento Card Architecture:**
+     - **Unified Form Controls:** Replaced clunky grey icon boxes with clean, high-contrast, executive inputs with uniform `#CBD5E1` borders, 7px border-radius, `#0F172A` text, and crisp `#1E3A8A` focus rings.
+     - **3-Step Guided Stepper Bar:** Interactive modern Stepper (`1. Client & Concession ➔ 2. Services Scope & Schedule ➔ 3. Terms & Exclusions`) for spatial rhythm and orientation.
+     - **Optimized Services Table:** Compact, auto-resizing single-row description field (`.item-desc-compact`), perfectly aligned tabular numeric inputs (`.financial-number`), and crisp typography line-total cell (`.line-subtotal-cell`) replacing dull grey textboxes.
+     - **Balanced 2-Column Commercial Reconciliation:** Side-by-side equal-height cards for Statutory Endorsement in words (`Rupees ... Only`) with verified security shield, and Commercial Totals with interactive GST pills (`18% Standard`, `0% Exempt`, `5%`, `12%`), exact CGST/SGST tax breakdown, and elevated total value in GTMS Navy.
+     - **Executive Signatory Badge:** Clean profile card displaying Dr. S. Karuppannan, M.Sc., Ph.D., Managing Partner & Recognized Qualified Person (RQP) credentials.
+     - **Non-Recursive Client Resolver:** Eradicated `dispatchEvent` call stack crash by binding directly to `select2:select` and `select2:clear`.
+     - **Sticky Action Bar with Double-Click Prevention:** Live total proposal counter, cancel button, and submission loading state with spinner.
+  3. **Strict Safety Rules & Verification:**
+     - 0 database migrations, 0 schema alterations, 0 business calculation changes, 0 unrelated module refactors.
+     - Full view compilation passed (`php artisan view:clear; php artisan view:cache`).
+     - Automated test suite verified with `AccountsModuleTest` (23 tests, 169 assertions — 100% pass).
+     - Verified visually via Playwright browser screenshots (`edit_new_top_verified.png`, `edit_new_lower.png`, `create_new_top.png`, `create_new_lower.png`).
+- **Last Updated:** 2026-09-30
+
+## Previous Phase: PHASE 7.22 — QUOTATION DOSSIER SHOW PAGE UI/UX PRO MAX OVERHAUL (SWISS MODERNISM 2.0 / WCAG AAA CONTRAST & ERGONOMICS) (COMPLETED & VERIFIED) ✅
 - **Status:** Conducted high-fidelity UI/UX redesign and contrast overhaul of the Quotation Show / Dossier view (`/accounts/quotations/{id}`):
   1. **Eradicated Template Pink/Magenta Text Glitches (WCAG AAA Contrast Fix):**
      - Diagnosed root cause: Dexignlabs template stylesheet `style.css` defined `--bs-secondary: #FFA7D7` (faint pink) and applied it to `.text-secondary` and `.badge.bg-light.text-secondary`.

@@ -190,4 +190,51 @@ Integrate seamlessly into GTMS:
 - [ ] Zero unhandled 500 exceptions across all accounts routes
 - [ ] Database migrations execute and roll back cleanly without constraint errors
 
+## 2026-10-01T04:45:11Z
+
+Complete visual and architectural redesign of the GTMS Payment Collection Desk (`accounts/payments/create`) using an Executive Bento Layout matching the approved standard of `accounts/quotations/create`.
+
+Requested team: Full Multi-Agent Team (UI/UX Architect, Implementation Specialist, Adversarial QA Auditor).
+
+Working directory: c:/xampp/htdocs/GTMS/gtms
+Integrity mode: development
+
+## Requirements
+
+### R1. Executive Bento Grid & Visual Hierarchy
+Reconstruct `resources/views/pages/accounts/payments/create.blade.php` using an Executive Bento Layout:
+- Clean 3-step navigation stepper bar (`Select Client` → `Allocate Dues` → `Record Payment`).
+- Harmonious, un-cramped panels with consistent 8-point spatial rhythm (16px / 24px padding), eliminating awkward nested boxes and double padding.
+- Modern Customer Financial Dossier with clear, spacious KPI tiles (Total Billed, Total Collected, Outstanding Due).
+
+### R2. Spacious & Ergonomic Cashier Voucher Terminal
+Redesign the Payment Voucher form panel:
+- Prominent Amount Input with high-contrast ₹ glyph and elegant Indian Currency in-words preview.
+- Ergonomic 44px+ input fields with spacious 2-column or single-column layout so placeholders (`e.g. State Bank of India`, `e.g. UTR20260929001`) never truncate or feel cramped.
+- Responsive handling of payment modes (auto-dimming/disabling bank inputs when Cash is selected).
+- Relocate recent receipts to a dedicated, full-width history audit trail at the bottom so it never lengthens or clutters the active cashier workflow.
+
+### R3. Preserved Business Logic & Zero Regressions
+- Retain all existing form field names (`customer_id`, `application_type`, `application_id`, `amount_paid`, `payment_mode`, `bank_name`, `reference_number`, `transaction_date`, `notes`).
+- Maintain compatibility with `PaymentCollectionController`, AJAX dues loading endpoint (`accounts/payments/customer-dues/{customer}`), and receipt generation.
+
+## Verification Resources
+- Automated Test Suite: `.\vendor\bin\phpunit --filter AccountsModuleTest` (23 tests, 169 assertions).
+- Visual Inspection: Playwright browser snapshots at `http://127.0.0.1:8002/accounts/payments/create`.
+- View compilation: `php artisan view:clear; php artisan view:cache` (must compile with 0 errors).
+
+## Acceptance Criteria
+
+### Visual & Layout Quality
+- [ ] No double-gutter margin or padding offset from outer layout containers.
+- [ ] No truncated placeholders or cramped field widths on standard desktop viewports (1366px - 1920px).
+- [ ] Both panels (Client & Dues on left, Payment Terminal on right) visually balanced with submit action immediately accessible.
+- [ ] Clean typographic scale matching `accounts/quotations/create` with high-contrast text and uniform input heights.
+
+### Functional & Technical Integrity
+- [ ] All 23 PHPUnit feature tests pass without warnings or failures.
+- [ ] Blade views compile cleanly with zero errors.
+- [ ] Live customer dues AJAX fetching, quick percentage presets (100%, 50%, 25%), and confirmation modal function seamlessly.
+
+
 

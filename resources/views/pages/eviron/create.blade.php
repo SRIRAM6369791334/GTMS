@@ -71,7 +71,7 @@
                       <div class="p-3 rounded border" id="pill_sc1" style="background:#f0fdf4; border-color:#86efac !important;">
                         <div class="d-flex align-items-center justify-content-between">
                           <div class="d-flex align-items-center gap-2">
-                            <input type="radio" name="sub_category" value="TOR" id="radio_sc1" class="form-check-input mt-0" checked required>
+                            <input type="radio" name="sub_category" value="TOR" id="radio_sc1" class="form-check-input mt-0" checked>
                             <div>
                               <span class="small fw-bold text-success">TOR</span>
                               <div class="text-muted" style="font-size:0.75rem;">ToR &amp; Mining Documents (5 Folders)</div>
@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardCatB2.style.background = '#ffffff';
       }
       if (b1SubBox) b1SubBox.classList.remove('d-none');
-      if (radioSc1) radioSc1.checked = true;
+      if (radioSc1) { radioSc1.checked = true; radioSc1.required = true; }
     } else if (radioCatB2 && radioCatB2.checked) {
       if (cardCatB2) {
         cardCatB2.style.borderColor = '#0F1E4D';
@@ -417,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardCatB1.style.background = '#ffffff';
       }
       if (b1SubBox) b1SubBox.classList.add('d-none');
-      if (radioSc1) radioSc1.checked = false;
+      if (radioSc1) { radioSc1.checked = false; radioSc1.required = false; }
     }
   }
 

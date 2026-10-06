@@ -1158,10 +1158,10 @@ class CustomerTrackingController extends Controller
             8 => [
                 'name'        => 'Drone Survey',
                 'short_name'  => 'Drone 3D',
-                'status'      => $droneSurvey ? (in_array(strtolower($droneSurvey->survey_status), ['completed', 'verified']) ? 'completed' : 'in_progress') : 'pending',
+                'status'      => $droneSurvey ? (in_array(strtolower($droneSurvey->survey_status), ['completed', 'verified', 'deliverables_ready', 'report_signed']) ? 'completed' : 'in_progress') : 'pending',
                 'app_no'      => $droneSurvey?->survey_no ?: 'Not scheduled',
                 'date'        => $droneSurvey?->flight_date ? $droneSurvey->flight_date->format('d M Y') : null,
-                'badge_color' => $droneSurvey ? (in_array(strtolower($droneSurvey->survey_status), ['completed', 'verified']) ? 'success' : 'info') : 'secondary',
+                'badge_color' => $droneSurvey ? (in_array(strtolower($droneSurvey->survey_status), ['completed', 'verified', 'deliverables_ready', 'report_signed']) ? 'success' : 'info') : 'secondary',
                 'icon'        => 'bi-camera-video-fill',
                 'url'         => $droneSurvey ? route('drone-survey.show', $droneSurvey->id) : route('drone-survey.step', 1),
             ],

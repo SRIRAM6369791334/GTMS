@@ -928,6 +928,48 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
+
+  // Mandatory Document Validation on Continue to Step 6
+  const btnContinueMimas = document.getElementById('btn_continue_mimas');
+  if (btnContinueMimas) {
+    btnContinueMimas.addEventListener('click', function (e) {
+      const missingMandatory = [];
+      document.querySelectorAll('.checklist-row[data-mandatory="1"]').forEach(row => {
+        if (!row.classList.contains('up')) {
+          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Statutory Document';
+          missingMandatory.push(docName);
+        }
+      });
+
+      if (missingMandatory.length > 0) {
+        e.preventDefault();
+        const missingHtml = '<div class="text-start" style="font-size:0.85rem;"><p class="mb-2 text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> ' + missingMandatory.length + ' Mandatory Document(s) Not Uploaded:</p><ul class="mb-2 ps-3 text-muted" style="max-height:160px; overflow-y:auto;">' +
+          missingMandatory.map(name => '<li>' + name + '</li>').join('') +
+          '</ul><p class="text-muted small mb-0">Statutory guidelines require these documents to be attached. Do you want to stay and upload them now, or proceed with draft?</p></div>';
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Mandatory Documents Missing!',
+            html: missingHtml,
+            showCancelButton: true,
+            confirmButtonColor: '#0F1E4D',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-arrow-right-circle me-1"></i> Proceed Anyway (Save Draft)',
+            cancelButtonText: '<i class="bi bi-upload me-1"></i> Stay & Upload'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = btnContinueMimas.getAttribute('href');
+            }
+          });
+        } else {
+          if (confirm('Warning: ' + missingMandatory.length + ' mandatory documents are missing. Proceed anyway?')) {
+            window.location.href = btnContinueMimas.getAttribute('href');
+          }
+        }
+      }
+    });
+  }
 });
 </script>
 
