@@ -62,6 +62,11 @@ chown -R www-data:www-data \
     /var/lib/nginx/tmp \
     /tmp/php_uploads 2>/dev/null || true
 
+# Purge compiled blade views and bootstrap cache files from persistent storage volume
+# This prevents stale compiled templates from lingering across code deployments
+rm -f /var/www/html/storage/framework/views/*.php 2>/dev/null || true
+rm -f /var/www/html/bootstrap/cache/*.php 2>/dev/null || true
+
 # Apply 775 permissions on storage, public/uploads, and chunks directories
 chmod -R 775 \
     /var/www/html/storage \

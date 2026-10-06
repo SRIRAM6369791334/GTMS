@@ -88,7 +88,12 @@ jobs:
           docker compose exec -T app php artisan migrate --force
           docker compose exec -T app php artisan tinker --execute="if (\Illuminate\Support\Facades\DB::table('users')->count() === 0) { \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]); echo 'Initial seed completed successfully.' . PHP_EOL; } else { echo 'Database already seeded, skipping.' . PHP_EOL; }"
 
+      - name: Clear Blade View & Bootstrap Caches
+        run: |
+          docker compose exec -T app php artisan optimize:clear
+
       - name: Deployment Summary
         run: |
           docker compose ps
+
 
