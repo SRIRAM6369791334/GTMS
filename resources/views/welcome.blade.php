@@ -20,6 +20,12 @@
         @endif
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
+        <!-- CI/CD Live Verification Badge -->
+        <div id="deployment-badge" class="mb-4 px-4 py-2 bg-emerald-500 text-white font-semibold rounded-lg shadow-lg text-sm flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+            <span>GTMS Docker CI/CD Live — Version 2.0 (Automatic Deployment Verified)</span>
+        </div>
+
         <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
