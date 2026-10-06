@@ -54,6 +54,27 @@ jobs:
               exit 1
           }
 
+      - name: Automated Database Backup (Before Migration)
+        shell: powershell
+        run: |
+          $backupDir = "database/backups"
+          if (-not (Test-Path $backupDir)) {
+              New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+          }
+          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+          $backupFile = "$backupDir/gtms_backup_$timestamp.sql"
+          Write-Host "Creating safety backup of gtms_data database to $backupFile..."
+          
+          # Run mysqldump inside MySQL container safely
+          cmd /c "docker compose exec -T db mysqldump -u root -proot_secret gtms_data > $backupFile"
+          
+          if (Test-Path $backupFile) {
+              $size = (Get-Item $backupFile).Length
+              Write-Host "Database backup successfully created! Size: $size bytes"
+          } else {
+              Write-Warning "Could not verify backup file creation, continuing with deployment."
+          }
+
       - name: Run Safe Database Migrations
         run: |
           docker compose exec -T app php artisan migrate --force
@@ -61,3 +82,4 @@ jobs:
       - name: Deployment Summary
         run: |
           docker compose ps
+

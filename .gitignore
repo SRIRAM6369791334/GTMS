@@ -32,6 +32,8 @@ edit_*.png
 quotation_*.png
 *.zip
 *.bak
+*.sql
+/database/backups/
 .env.docker
 .env.local
 
