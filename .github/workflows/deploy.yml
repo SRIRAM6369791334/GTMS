@@ -75,9 +75,10 @@ jobs:
               Write-Warning "Could not verify backup file creation, continuing with deployment."
           }
 
-      - name: Run Safe Database Migrations
+      - name: Run Safe Database Migrations & Initial Seeding
         run: |
           docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app php artisan tinker --execute="if (\Illuminate\Support\Facades\DB::table('users')->count() === 0) { \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]); echo 'Initial seed completed successfully.' . PHP_EOL; } else { echo 'Database already seeded, skipping.' . PHP_EOL; }"
 
       - name: Deployment Summary
         run: |

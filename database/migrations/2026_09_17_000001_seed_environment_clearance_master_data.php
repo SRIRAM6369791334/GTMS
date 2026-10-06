@@ -11,7 +11,17 @@ return new class extends Migration
     public function up(): void
     {
         $now = now();
-        $moduleId = DB::table('modules')->where('code', 'environment')->value('id') ?? 3;
+        $moduleId = DB::table('modules')->where('code', 'environment')->value('id');
+        if (!$moduleId) {
+            $moduleId = DB::table('modules')->insertGetId([
+                'name' => 'Environment & EC',
+                'code' => 'environment',
+                'description' => 'Environmental Clearances & Compliances',
+                'status' => 1,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        }
 
         // 1. Insert B1 Sub Category 2 folders into `folders` table if they don't already exist
         $sc2Folders = [
