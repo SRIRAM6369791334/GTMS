@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DgpsSurvey;
-use App\Models\SurveyDocument;
+use App\Models\DgpsDocument;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
+use App\Models\Folder;
 use App\Models\Customer;
 use App\Models\LeaseApplication;
 use App\Models\ApplicationHandler;
@@ -263,25 +266,83 @@ class DgpsSurveyController extends Controller
     }
 
     /**
-     * Upload Document via AJAX
+     * Upload Document via AJAX (Direct File or Chunked Upload Token)
      */
     public function uploadDocument(Request $request)
     {
         $request->validate([
-            'file'          => 'required|file|max:51200',
+            'file'          => 'required_without:upload_token|nullable|file|max:52428800',
+            'upload_token'  => 'required_without:file|nullable|string',
             'survey_id'     => 'nullable|integer',
-            'document_name' => 'required|string|max:255',
+            'folder_id'     => 'nullable|integer',
+            'document_name' => 'nullable|string|max:255',
         ]);
 
+        $surveyId = $request->input('survey_id');
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $surveyId = $surveyId ?? $upload->reference_id;
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'dgps', $surveyId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            $fileName = $upload->original_name ?? $upload->file_name;
+            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
+            $fileSize = $upload->total_size;
+            $folderId = $request->input('folder_id') ?? ($upload->metadata['folder_id'] ?? (Folder::first()?->id ?? 1));
+            $docName = $request->input('document_name') ?: ($upload->metadata['document_name'] ?? $fileName);
+
+            $docId = null;
+            if ($surveyId) {
+                $doc = DgpsDocument::create([
+                    'dgps_survey_id' => $surveyId,
+                    'folder_id'      => $folderId,
+                    'document_name'  => $docName,
+                    'file_name'      => $fileName,
+                    'file_path'      => $filePath,
+                    'file_type'      => $fileType,
+                    'file_size'      => $fileSize,
+                    'status'         => 'uploaded',
+                ]);
+                $docId = $doc->id;
+
+                $upload->update([
+                    'target_module' => 'dgps',
+                    'reference_id'  => $surveyId,
+                    'status'        => 'completed',
+                ]);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'doc_id'       => $docId,
+                'upload_token' => $upload->upload_token,
+                'file_name'    => $fileName,
+                'file_url'     => asset($filePath),
+                'file_size'    => round($fileSize / 1024) . ' KB',
+                'status'       => 'uploaded',
+            ]);
+        }
+
+        // Direct multipart file upload
         $file = $request->file('file');
         $fileName = time() . '_' . $file->getClientOriginalName();
         $filePath = $file->storeAs('uploads/dgps', $fileName, 'public');
+        $folderId = $request->input('folder_id') ?? (Folder::first()?->id ?? 1);
+        $docName = $request->input('document_name') ?: $file->getClientOriginalName();
 
         $docId = null;
-        if ($surveyId = $request->input('survey_id')) {
-            $doc = SurveyDocument::create([
+        if ($surveyId) {
+            $doc = DgpsDocument::create([
                 'dgps_survey_id' => $surveyId,
-                'document_name'  => $request->input('document_name'),
+                'folder_id'      => $folderId,
+                'document_name'  => $docName,
                 'file_name'      => $file->getClientOriginalName(),
                 'file_path'      => $filePath,
                 'file_type'      => $file->getClientOriginalExtension(),
@@ -297,6 +358,7 @@ class DgpsSurveyController extends Controller
             'file_name' => $file->getClientOriginalName(),
             'file_url'  => asset('storage/' . $filePath),
             'file_size' => round($file->getSize() / 1024) . ' KB',
+            'status'    => 'uploaded',
         ]);
     }
 }

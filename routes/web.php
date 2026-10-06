@@ -26,6 +26,7 @@ use App\Http\Controllers\Accounts\PaymentCollectionController;
 use App\Http\Controllers\Accounts\PaymentReceiptController;
 use App\Http\Controllers\Accounts\CustomerLedgerController;
 use App\Http\Controllers\Accounts\FinancialReportController;
+use App\Http\Controllers\ChunkUploadController;
 
 
 // Guest Authentication Routes
@@ -336,6 +337,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/drone-survey/step/{step}', [DroneSurveyController::class, 'saveStep'])->whereNumber('step')->name('drone-survey.saveStep');
         Route::post('/drone-survey', [DroneSurveyController::class, 'store'])->name('drone-survey.store');
     });
+    Route::middleware('permission:drone.edit|drone.create')->group(function () {
+        Route::post('/drone-survey/upload', [DroneSurveyController::class, 'uploadDocument'])->name('drone-survey.upload');
+    });
 
     // EC Compliance (Half Yearly Compliance)
     Route::middleware('permission:ec_compliance.view')->group(function () {
@@ -442,7 +446,16 @@ Route::middleware('auth')->group(function () {
             ->name('reports.export-csv');
     });
 
+});
 
+// GTMS Resilient Chunked Upload Engine API Routes
+Route::prefix('api/upload/chunk')->group(function () {
+    Route::post('/init', [ChunkUploadController::class, 'init'])->name('api.upload.chunk.init');
+    Route::post('/upload', [ChunkUploadController::class, 'uploadChunk'])->name('api.upload.chunk.upload');
+    Route::get('/status', [ChunkUploadController::class, 'status'])->name('api.upload.chunk.status');
+    Route::post('/assemble', [ChunkUploadController::class, 'assemble'])->name('api.upload.chunk.assemble');
+    Route::post('/cancel', [ChunkUploadController::class, 'cancel'])->name('api.upload.chunk.cancel');
+    Route::delete('/cancel', [ChunkUploadController::class, 'cancel'])->name('api.upload.chunk.cancel.delete');
 });
 
 

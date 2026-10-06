@@ -13,6 +13,8 @@ use App\Models\Mineral;
 use App\Models\ApplicationHandler;
 use App\Models\ApplicationPayment;
 use App\Models\ActivityLog;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -380,32 +382,88 @@ class EcComplianceController extends Controller
     }
 
     /**
-     * Upload Document via AJAX
+     * Upload Document via AJAX (Direct File or Chunked Upload Token)
      */
     public function uploadDocument(Request $request)
     {
         $request->validate([
-            'file'            => 'required|file|max:51200',
+            'file'            => 'required_without:upload_token|nullable|file|max:52428800',
+            'upload_token'    => 'required_without:file|nullable|string',
             'compliance_id'   => 'nullable|integer',
-            'folder_category' => 'required|string',
-            'document_name'   => 'required|string|max:255',
+            'folder_category' => 'nullable|string',
+            'document_name'   => 'nullable|string|max:255',
         ]);
 
+        $complianceId = $request->input('compliance_id');
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $complianceId = $complianceId ?? $upload->reference_id;
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'compliance', $complianceId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            $fileName = $upload->original_name ?? $upload->file_name;
+            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
+            $fileSize = $upload->total_size;
+            $folderCat = $request->input('folder_category', $upload->metadata['folder_category'] ?? 'documents');
+            $docName = $request->input('document_name') ?: ($upload->metadata['document_name'] ?? $fileName);
+
+            $docId = null;
+            if ($complianceId) {
+                $doc = EcComplianceDocument::create([
+                    'ec_compliance_id' => $complianceId,
+                    'folder_category'  => $folderCat,
+                    'document_name'    => $docName,
+                    'file_name'        => $fileName,
+                    'file_path'        => $filePath,
+                    'file_type'        => $fileType,
+                    'file_size'        => $fileSize,
+                    'status'           => 'uploaded',
+                    'uploaded_by'      => Auth::id() ?? 1,
+                ]);
+                $docId = $doc->id;
+
+                $upload->update([
+                    'target_module' => 'compliance',
+                    'reference_id'  => $complianceId,
+                    'status'        => 'completed',
+                ]);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'doc_id'       => $docId,
+                'upload_token' => $upload->upload_token,
+                'file_name'    => $fileName,
+                'file_url'     => asset($filePath),
+                'file_size'    => round($fileSize / 1024) . ' KB',
+                'status'       => 'uploaded',
+            ]);
+        }
+
+        // Direct multipart file upload
         $file = $request->file('file');
         $fileName = time() . '_' . $file->getClientOriginalName();
         $filePath = $file->storeAs('uploads/compliance', $fileName, 'public');
 
         $docId = null;
-        if ($complianceId = $request->input('compliance_id')) {
+        if ($complianceId) {
             $doc = EcComplianceDocument::create([
                 'ec_compliance_id' => $complianceId,
                 'folder_category'  => $request->input('folder_category', 'documents'),
-                'document_name'    => $request->input('document_name'),
+                'document_name'    => $request->input('document_name') ?: $file->getClientOriginalName(),
                 'file_name'        => $file->getClientOriginalName(),
                 'file_path'        => $filePath,
                 'file_type'        => $file->getClientOriginalExtension(),
                 'file_size'        => $file->getSize(),
                 'status'           => 'uploaded',
+                'uploaded_by'      => Auth::id() ?? 1,
             ]);
             $docId = $doc->id;
         }
@@ -416,6 +474,7 @@ class EcComplianceController extends Controller
             'file_name' => $file->getClientOriginalName(),
             'file_url'  => asset('storage/' . $filePath),
             'file_size' => round($file->getSize() / 1024) . ' KB',
+            'status'    => 'uploaded',
         ]);
     }
 

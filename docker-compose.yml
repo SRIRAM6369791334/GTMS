@@ -1,4 +1,7 @@
 services:
+  # ============================================================================
+  # GTMS Web Application (Nginx + PHP-FPM 8.2 Monolith)
+  # ============================================================================
   app:
     build:
       context: .
@@ -13,6 +16,8 @@ services:
       APP_KEY: "${APP_KEY:-base64:A8G4F7r+xOakTQV7PCxcI37eWgUST8Oc2u924f9lBM0=}"
       APP_DEBUG: "${APP_DEBUG:-false}"
       APP_URL: "${APP_URL:-http://localhost:8000}"
+      PUID: "${PUID:-1026}"
+      PGID: "${PGID:-100}"
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
@@ -25,8 +30,18 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_CLIENT: phpredis
+      CHUNKS_STORAGE_PATH: "/var/www/html/storage/app/chunks"
     volumes:
-      - app_storage:/var/www/html/storage
+      # Persistent storage on Synology NAS (208TB storage pool under /volume1/gtms_data/)
+      - gtms_storage:/var/www/html/storage
+      # Persistent statutory uploads directory (prevent ephemeral container overlay loss!)
+      - gtms_uploads:/var/www/html/public/uploads
+      # Chunk staging directory (zero-copy Btrfs inode relocation with storage)
+      - gtms_chunks:/var/www/html/storage/app/chunks
+      # Nginx body temp buffering redirected from container root to NAS
+      - gtms_nginx_temp:/var/lib/nginx/tmp
+      # PHP upload temp directory redirected from /tmp (RAM) to NAS
+      - gtms_php_temp:/tmp/php_uploads
     depends_on:
       db:
         condition: service_healthy
@@ -41,11 +56,57 @@ services:
       retries: 5
       start_period: 20s
 
+  # ============================================================================
+  # Dedicated Asynchronous Queue Worker Container
+  # ============================================================================
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gtms_queue
+    restart: unless-stopped
+    command: ["php", "artisan", "queue:work", "redis", "--queue=uploads,default", "--timeout=3600", "--tries=3", "--memory=1024"]
+    environment:
+      APP_NAME: "${APP_NAME:-GTMS}"
+      APP_ENV: "${APP_ENV:-production}"
+      APP_KEY: "${APP_KEY:-base64:A8G4F7r+xOakTQV7PCxcI37eWgUST8Oc2u924f9lBM0=}"
+      APP_DEBUG: "${APP_DEBUG:-false}"
+      PUID: "${PUID:-1026}"
+      PGID: "${PGID:-100}"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE:-gtms_data}"
+      DB_USERNAME: "${DOCKER_DB_USER:-gtms_user}"
+      DB_PASSWORD: "${DOCKER_DB_PASSWORD:-gtms_secret}"
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CLIENT: phpredis
+      CHUNKS_STORAGE_PATH: "/var/www/html/storage/app/chunks"
+    volumes:
+      - gtms_storage:/var/www/html/storage
+      - gtms_uploads:/var/www/html/public/uploads
+      - gtms_chunks:/var/www/html/storage/app/chunks
+      - gtms_php_temp:/tmp/php_uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gtms_network
+
+  # ============================================================================
+  # In-Memory Cache & Queue Broker (Redis 7)
+  # ============================================================================
   redis:
     image: redis:7-alpine
     container_name: gtms_redis
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "2gb", "--maxmemory-policy", "volatile-lru"]
     volumes:
       - gtms_redis_data:/data
     networks:
@@ -57,10 +118,21 @@ services:
       retries: 5
       start_period: 5s
 
+  # ============================================================================
+  # Relational Database Engine (MySQL 8.0 Enterprise)
+  # ============================================================================
   db:
     image: mysql:8.0
     container_name: gtms_db
     restart: unless-stopped
+    command: [
+      "--default-authentication-plugin=mysql_native_password",
+      "--character-set-server=utf8mb4",
+      "--collation-server=utf8mb4_unicode_ci",
+      "--innodb-buffer-pool-size=4G",
+      "--innodb-log-file-size=512M",
+      "--max-connections=200"
+    ]
     ports:
       - "3307:3306"
     environment:
@@ -79,13 +151,52 @@ services:
       retries: 5
       start_period: 15s
 
+# ==============================================================================
+# Persistent Storage Volumes for Synology NAS (208TB Storage Pool under /volume1/gtms_data/)
+# ==============================================================================
 volumes:
+  gtms_storage:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_STORAGE_PATH:-/volume1/gtms_data/storage}
+  gtms_uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_UPLOADS_PATH:-/volume1/gtms_data/uploads}
+  gtms_chunks:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_CHUNKS_PATH:-/volume1/gtms_data/chunks}
+  gtms_nginx_temp:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_NGINX_TEMP_PATH:-/volume1/gtms_data/temp/nginx}
+  gtms_php_temp:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_PHP_TEMP_PATH:-/volume1/gtms_data/temp/php}
   gtms_mysql_data:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_MYSQL_DATA_PATH:-/volume1/gtms_data/mysql}
   gtms_redis_data:
     driver: local
-  app_storage:
-    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${NAS_REDIS_DATA_PATH:-/volume1/gtms_data/redis}
 
 networks:
   gtms_network:

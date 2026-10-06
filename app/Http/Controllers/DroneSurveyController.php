@@ -7,6 +7,10 @@ use App\Models\ApplicationPayment;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\DroneSurvey;
+use App\Models\DroneDocument;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
+use App\Models\Folder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -267,5 +271,103 @@ class DroneSurveyController extends Controller
             return redirect()->route('drone-survey.step', 8)
                 ->with('error', 'Failed to save Drone Survey: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Upload Drone Survey Document / Deliverable via AJAX (Direct File or Chunked Upload Token)
+     */
+    public function uploadDocument(Request $request)
+    {
+        $request->validate([
+            'file'            => 'required_without:upload_token|nullable|file|max:52428800',
+            'upload_token'    => 'required_without:file|nullable|string',
+            'drone_survey_id' => 'nullable|integer',
+            'survey_id'       => 'nullable|integer',
+            'folder_id'       => 'nullable|integer',
+            'document_name'   => 'nullable|string|max:255',
+        ]);
+
+        $surveyId = $request->input('drone_survey_id') ?? $request->input('survey_id');
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $surveyId = $surveyId ?? $upload->reference_id;
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'drone', $surveyId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            $fileName = $upload->original_name ?? $upload->file_name;
+            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
+            $fileSize = $upload->total_size;
+            $folderId = $request->input('folder_id') ?? ($upload->metadata['folder_id'] ?? (Folder::first()?->id ?? 1));
+            $docName = $request->input('document_name') ?: ($upload->metadata['document_name'] ?? $fileName);
+
+            $docId = null;
+            if ($surveyId) {
+                $doc = DroneDocument::create([
+                    'drone_survey_id' => $surveyId,
+                    'folder_id'       => $folderId,
+                    'document_name'   => $docName,
+                    'file_name'       => $fileName,
+                    'file_path'       => $filePath,
+                    'file_type'       => $fileType,
+                    'file_size'       => $fileSize,
+                    'status'          => 'uploaded',
+                ]);
+                $docId = $doc->id;
+
+                $upload->update([
+                    'target_module' => 'drone',
+                    'reference_id'  => $surveyId,
+                    'status'        => 'completed',
+                ]);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'doc_id'       => $docId,
+                'upload_token' => $upload->upload_token,
+                'file_name'    => $fileName,
+                'file_url'     => asset($filePath),
+                'file_size'    => round($fileSize / 1024) . ' KB',
+                'status'       => 'uploaded',
+            ]);
+        }
+
+        // Direct multipart file upload
+        $file = $request->file('file');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $filePath = $file->storeAs('uploads/drone', $fileName, 'public');
+        $folderId = $request->input('folder_id') ?? (Folder::first()?->id ?? 1);
+        $docName = $request->input('document_name') ?: $file->getClientOriginalName();
+
+        $docId = null;
+        if ($surveyId) {
+            $doc = DroneDocument::create([
+                'drone_survey_id' => $surveyId,
+                'folder_id'       => $folderId,
+                'document_name'   => $docName,
+                'file_name'       => $file->getClientOriginalName(),
+                'file_path'       => $filePath,
+                'file_type'       => $file->getClientOriginalExtension(),
+                'file_size'       => $file->getSize(),
+                'status'          => 'uploaded',
+            ]);
+            $docId = $doc->id;
+        }
+
+        return response()->json([
+            'success'   => true,
+            'doc_id'    => $docId,
+            'file_name' => $file->getClientOriginalName(),
+            'file_url'  => asset('storage/' . $filePath),
+            'file_size' => round($file->getSize() / 1024) . ' KB',
+            'status'    => 'uploaded',
+        ]);
     }
 }

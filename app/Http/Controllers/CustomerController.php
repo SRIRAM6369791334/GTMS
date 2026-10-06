@@ -19,6 +19,8 @@ use App\Models\ActivityLog;
 use App\Models\Folder;
 use App\Models\ApplicationHandler;
 use App\Models\ApplicationPayment;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
@@ -430,20 +432,20 @@ class CustomerController extends Controller
     }
 
     /**
-     * Handle real file upload for individual document items.
+     * Handle real file upload for individual document items (Direct File or Chunked Upload Token).
      * Persists directly to database (Milestone Document Saving).
      */
     public function uploadDocument(Request $request)
     {
         $request->validate([
-            'file'         => 'required|file|max:25600|mimes:pdf,png,jpg,jpeg,kml,xml,txt,doc,docx,dwg',
+            'file'         => 'required_without:upload_token|nullable|file|max:52428800|mimes:pdf,png,jpg,jpeg,kml,xml,txt,doc,docx,dwg',
+            'upload_token' => 'required_without:file|nullable|string',
             'doc_item'     => 'nullable',
             'folder_id'    => 'required|integer',
             'doc_name'     => 'nullable|string|max:255',
             'is_mandatory' => 'nullable',
         ]);
 
-        $file = $request->file('file');
         $rawDocItem = $request->input('doc_item');
         $isCustom = $request->filled('doc_name') || (is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_'));
         $docItem = $isCustom ? ($rawDocItem ?: ('custom_' . time() . '_' . rand(100, 999))) : (int)$rawDocItem;
@@ -455,17 +457,6 @@ class CustomerController extends Controller
         $leaseApp = $draftAppId ? LeaseApplication::find($draftAppId) : null;
 
         $appNo = $leaseApp ? $leaseApp->application_no : ($draft['application_no'] ?? ('DRAFT-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6))));
-
-        $uploadSubdir = 'uploads/lease_applications/' . $appNo;
-        $fullUploadPath = public_path($uploadSubdir);
-        if (!file_exists($fullUploadPath)) {
-            mkdir($fullUploadPath, 0777, true);
-        }
-
-        $fileName = $file->getClientOriginalName();
-        $file->move($fullUploadPath, $fileName);
-        $fileSize = filesize($fullUploadPath . '/' . $fileName);
-        $fileType = mime_content_type($fullUploadPath . '/' . $fileName);
 
         $docNames = [
             1  => '1. Land Document',
@@ -490,6 +481,120 @@ class CustomerController extends Controller
         ];
 
         $resolvedDocName = $isCustom ? ($request->input('doc_name') ?: 'Custom Document') : ($docNames[$docItem] ?? ('Item ' . $docItem));
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'lease_applications/' . $appNo, $draftAppId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            $fileName = $upload->original_name ?? $upload->file_name;
+            $fullUploadPath = public_path($filePath);
+            $fileSize = file_exists($fullUploadPath) ? filesize($fullUploadPath) : $upload->total_size;
+            $fileType = file_exists($fullUploadPath) ? (mime_content_type($fullUploadPath) ?: ($upload->mime_type ?? 'application/octet-stream')) : ($upload->mime_type ?? 'application/octet-stream');
+
+            // Milestone Persistence in MySQL
+            if ($leaseApp) {
+                if ($isCustom) {
+                    $dbDoc = LeaseDocument::create([
+                        'lease_application_id' => $leaseApp->id,
+                        'folder_id'            => $folderId,
+                        'document_field_id'    => null,
+                        'document_name'        => $resolvedDocName,
+                        'file_name'            => $fileName,
+                        'file_path'            => $filePath,
+                        'file_type'            => $fileType,
+                        'file_size'            => $fileSize,
+                        'status'               => 'uploaded',
+                        'uploaded_by'          => Auth::id() ?? 1,
+                        'uploaded_at'          => now(),
+                    ]);
+                    $docItem = 'custom_' . $dbDoc->id;
+                } else {
+                    LeaseDocument::updateOrCreate(
+                        [
+                            'lease_application_id' => $leaseApp->id,
+                            'document_field_id'    => $docItem,
+                        ],
+                        [
+                            'folder_id'      => $folderId,
+                            'document_name'  => $resolvedDocName,
+                            'file_name'      => $fileName,
+                            'file_path'      => $filePath,
+                            'file_type'      => $fileType,
+                            'file_size'      => $fileSize,
+                            'status'         => 'uploaded',
+                            'uploaded_by'    => Auth::id() ?? 1,
+                            'uploaded_at'    => now(),
+                        ]
+                    );
+                }
+                $leaseApp->update(['current_step' => 5]);
+            }
+
+            // Track in session
+            $uploadedDocs = session('lease_draft.uploaded_docs', []);
+            $uploadedDocs[$docItem] = [
+                'doc_name'     => $resolvedDocName,
+                'is_custom'    => $isCustom,
+                'is_mandatory' => $isMandatory,
+                'file_name'    => $fileName,
+                'file_size'    => $fileSize,
+                'file_type'    => $fileType,
+                'folder_id'    => $folderId,
+                'draft_path'   => $filePath,
+                'upload_token' => $upload->upload_token,
+                'uploaded_at'  => now()->format('d M Y, h:i A'),
+            ];
+            $draft['uploaded_docs'] = $uploadedDocs;
+            session(['lease_draft' => $draft]);
+
+            $upload->update([
+                'target_module' => 'lease_application',
+                'reference_id'  => $leaseApp?->id,
+                'status'        => 'completed',
+            ]);
+
+            $customCount = count(array_filter($uploadedDocs, fn($d) => !empty($d['is_custom'])));
+            $totalItems = 19 + $customCount;
+            $uploadedCount = count($uploadedDocs);
+
+            return response()->json([
+                'status'       => 1,
+                'message'      => $fileName . ' uploaded & saved successfully',
+                'is_custom'    => $isCustom,
+                'doc_item'     => $docItem,
+                'doc_name'     => $resolvedDocName,
+                'folder_id'    => $folderId,
+                'is_mandatory' => $isMandatory,
+                'file_name'    => $fileName,
+                'file_path'    => $filePath,
+                'file_url'     => asset($filePath),
+                'file_size'    => $this->formatFileSize($fileSize),
+                'uploaded'     => $uploadedCount,
+                'total'        => $totalItems,
+                'percent'      => min(100, round(($uploadedCount / $totalItems) * 100)),
+                'upload_token' => $upload->upload_token,
+            ]);
+        }
+
+        // Direct multipart file upload
+        $file = $request->file('file');
+        $uploadSubdir = 'uploads/lease_applications/' . $appNo;
+        $fullUploadPath = public_path($uploadSubdir);
+        if (!file_exists($fullUploadPath)) {
+            mkdir($fullUploadPath, 0777, true);
+        }
+
+        $fileName = $file->getClientOriginalName();
+        $file->move($fullUploadPath, $fileName);
+        $fileSize = filesize($fullUploadPath . '/' . $fileName);
+        $fileType = mime_content_type($fullUploadPath . '/' . $fileName);
 
         // Milestone Persistence in MySQL:
         if ($leaseApp) {

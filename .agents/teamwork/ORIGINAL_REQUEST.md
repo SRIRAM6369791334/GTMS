@@ -238,3 +238,34 @@ Redesign the Payment Voucher form panel:
 
 
 
+
+
+## 2026-10-06T09:24:20Z
+
+Architect and implement an enterprise-grade resilient upload and data storage pipeline for GTMS running on a high-capacity Synology NAS (208TB, 32GB RAM), ensuring seamless multi-gigabyte (10GB+) drone video/survey uploads and concurrent user operations without timeouts or server lockups.
+
+Working directory: c:\xampp\htdocs\GTMS\gtms
+Integrity mode: development
+
+## Requirements
+
+### R1. Resilient Chunked/Resumable Large File Uploads (10GB+)
+Implement a robust chunked, resumable file upload mechanism (e.g. Tus / Resumable.js / Dropzone chunks) for all drone survey, environmental, and mining document/video upload endpoints. Even if network drops occur midway, uploads must resume from the last chunk without restarting from 0% or encountering PHP/Nginx timeouts.
+
+### R2. High-Capacity Synology NAS Docker Storage & Permissions Architecture
+Configure persistent volume mapping and Nginx/PHP-FPM execution limits to efficiently handle 10GB+ payloads directly streaming to persistent NAS volumes without exhausting container RAM or container-layer root volumes.
+
+### R3. Asynchronous Video Processing & Background Queues
+Offload heavy file validation, video thumbnail generation, checksum verification, and storage migrations to background queue workers (backed by Redis), preventing web requests from hanging.
+
+### R4. Complete Codebase Upload Endpoints Audit & Hardening
+Audit all existing upload routes and controllers across GTMS (`DgpsSurveyController`, `DroneSurveyController`, `CustomerController`, `EcComplianceController`, etc.) to migrate from synchronous `request()->file()` buffer writes to chunked streaming pipelines.
+
+## Acceptance Criteria
+
+### Verification & Performance
+- [ ] 10GB+ file uploads succeed through the chunked streaming endpoint without exceeding PHP memory limit or Nginx gateway timeout.
+- [ ] Uploads can be paused/interrupted and safely resumed from the last uploaded chunk.
+- [ ] Web requests return immediately with an upload token, while video/document processing is deferred to Redis queue workers.
+- [ ] Nginx and PHP configuration within Docker allows high timeout windows (e.g., `client_max_body_size 0` or tailored chunk limits) specifically tuned for Synology NAS DSM environment.
+- [ ] Automated feature tests verify chunk reassembly, file integrity (SHA256 matching), and queue dispatch.

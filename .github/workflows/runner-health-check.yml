@@ -1,0 +1,45 @@
+name: Runner Health Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: Runner Health Check
+    runs-on: self-hosted
+
+    steps:
+      - name: Runner Information
+        shell: powershell
+        run: |
+          Write-Host "======================================"
+          Write-Host "  RUNNER HEALTH CHECK REPORT"
+          Write-Host "======================================"
+          Write-Host ""
+          Write-Host "Hostname   : $env:COMPUTERNAME"
+          Write-Host "OS         : $([System.Environment]::OSVersion.VersionString)"
+          Write-Host "Runner OS  : $env:RUNNER_OS"
+          Write-Host "Timestamp  : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss K')"
+          Write-Host ""
+
+      - name: Docker Availability
+        shell: powershell
+        run: |
+          Write-Host "--- Docker Status ---"
+          docker version --format "Client: {{.Client.Version}}, Server: {{.Server.Version}}"
+          docker compose version
+          Write-Host ""
+          Write-Host "--- Running Containers ---"
+          docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          Write-Host ""
+
+      - name: Network Connectivity
+        shell: powershell
+        run: |
+          Write-Host "--- Network Check ---"
+          $result = Test-NetConnection github.com -Port 443 -WarningAction SilentlyContinue
+          Write-Host "GitHub.com  : $($result.TcpTestSucceeded)"
+          Write-Host ""
+          Write-Host "======================================"
+          Write-Host "  HEALTH CHECK COMPLETE"
+          Write-Host "======================================"

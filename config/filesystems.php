@@ -47,6 +47,65 @@ return [
             'report' => false,
         ],
 
+        // Dedicated Chunk Staging Disk on Persistent NAS Storage (Zero-Copy Btrfs Inode Relocation)
+        'chunks' => [
+            'driver' => 'local',
+            'root' => env('CHUNKS_STORAGE_PATH', storage_path('app/chunks')),
+            'permissions' => [
+                'file' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+                'dir' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+            ],
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Dedicated High-Capacity Synology NAS Persistent Disk (208TB Storage Pool)
+        'nas' => [
+            'driver' => 'local',
+            'root' => env('NAS_STORAGE_PATH', storage_path('app/public')),
+            'url' => env('APP_URL', 'http://localhost').'/storage',
+            'visibility' => 'public',
+            'permissions' => [
+                'file' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+                'dir' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+            ],
+            'throw' => false,
+            'report' => false,
+        ],
+
+        // Direct Statutory Uploads Disk (Preserving legacy public/uploads compatibility)
+        'uploads' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/uploads',
+            'visibility' => 'public',
+            'permissions' => [
+                'file' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+                'dir' => [
+                    'public' => 0775,
+                    'private' => 0775,
+                ],
+            ],
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
