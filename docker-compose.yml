@@ -152,51 +152,23 @@ services:
       start_period: 15s
 
 # ==============================================================================
-# Persistent Storage Volumes for Synology NAS (208TB Storage Pool under /volume1/gtms_data/)
+# Persistent Storage Volumes (Portable local volumes, compatible with Windows PC & Synology NAS)
 # ==============================================================================
 volumes:
   gtms_storage:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_STORAGE_PATH:-/volume1/gtms_data/storage}
   gtms_uploads:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_UPLOADS_PATH:-/volume1/gtms_data/uploads}
   gtms_chunks:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_CHUNKS_PATH:-/volume1/gtms_data/chunks}
   gtms_nginx_temp:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_NGINX_TEMP_PATH:-/volume1/gtms_data/temp/nginx}
   gtms_php_temp:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_PHP_TEMP_PATH:-/volume1/gtms_data/temp/php}
   gtms_mysql_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_MYSQL_DATA_PATH:-/volume1/gtms_data/mysql}
   gtms_redis_data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${NAS_REDIS_DATA_PATH:-/volume1/gtms_data/redis}
 
 networks:
   gtms_network:
