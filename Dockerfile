@@ -31,9 +31,11 @@ RUN apk add --no-cache \
     oniguruma-dev \
     freetype-dev \
     libjpeg-turbo-dev \
-    mysql-client
+    mysql-client \
+    $PHPIZE_DEPS \
+    linux-headers
 
-# Install PHP extensions required by Laravel
+# Install PHP extensions required by Laravel + phpredis
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
@@ -44,7 +46,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         fileinfo \
         gd \
         zip \
-        opcache
+        opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del $PHPIZE_DEPS linux-headers
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
