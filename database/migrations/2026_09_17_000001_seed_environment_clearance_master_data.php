@@ -16,7 +16,6 @@ return new class extends Migration
             $moduleId = DB::table('modules')->insertGetId([
                 'name' => 'Environment & EC',
                 'code' => 'environment',
-                'description' => 'Environmental Clearances & Compliances',
                 'status' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
