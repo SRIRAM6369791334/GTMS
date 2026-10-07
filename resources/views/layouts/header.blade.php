@@ -1,353 +1,424 @@
-   <div class="nav-header">
-            <a href="/" class="brand-logo">
-               <img src="{{ asset('images/gtmslogo.png') }}" width="50" alt="GTMS Logo" />
-            </a>
-            <div class="nav-control">
-                <div class="hamburger">
-                    <span class="line"></span><span class="line"></span><span class="line"></span>
-                </div>
-            </div>
+<!-- GTMS Enterprise SaaS Header Component (ui-ux-pro-max standard) -->
+<style>
+    /* =========================================================
+       GTMS HEADER STYLING (Harmonized with Dexignlabs Theme)
+       ========================================================= */
+    .nav-header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #eef2f6 !important;
+        border-right: 1px solid #eef2f6 !important;
+    }
+
+    .nav-header .brand-logo {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding-left: 1.5rem !important;
+    }
+
+    .nav-header .brand-logo img {
+        height: 38px !important;
+        width: auto !important;
+        object-fit: contain !important;
+    }
+
+    .nav-header .brand-text {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #1b2653;
+        letter-spacing: -0.02em;
+        margin-left: 0.6rem;
+    }
+
+    .header {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #eef2f6 !important;
+        box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03) !important;
+    }
+
+    .header-left .dashboard_bar {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        letter-spacing: -0.02em !important;
+    }
+
+    /* SEARCH INPUT */
+    .header-search-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 250px;
+        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .header-search-wrap:focus-within {
+        width: 320px;
+    }
+
+    .header-search-wrap .search-icon {
+        position: absolute;
+        left: 12px;
+        color: #94a3b8;
+        font-size: 0.88rem;
+        pointer-events: none;
+        transition: color 0.2s ease;
+    }
+
+    .header-search-wrap:focus-within .search-icon {
+        color: #1b2653;
+    }
+
+    .header-search-input {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 0.45rem 1rem 0.45rem 2.25rem !important;
+        font-size: 0.82rem !important;
+        color: #0f172a !important;
+        height: 38px !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .header-search-input:focus {
+        background: #ffffff !important;
+        border-color: #1b2653 !important;
+        box-shadow: 0 0 0 3px rgba(27, 38, 83, 0.08) !important;
+    }
+
+    .header-search-input::placeholder {
+        color: #94a3b8 !important;
+        font-size: 0.82rem !important;
+    }
+
+    /* ACTION BUTTONS (Theme Toggle & Notification Bell) */
+    .header-action-btn {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #475569 !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+        position: relative !important;
+        padding: 0 !important;
+    }
+
+    .header-action-btn:hover {
+        background: #eff6ff !important;
+        border-color: #cbd5e1 !important;
+        color: #1b2653 !important;
+    }
+
+    .header-action-btn i {
+        font-size: 1.05rem !important;
+    }
+
+    .notification-indicator {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 8px;
+        height: 8px;
+        background: #ef4444;
+        border-radius: 50%;
+        border: 1.5px solid #ffffff;
+    }
+
+    /* DROPDOWNS STRICT ANCHORING & ELEVATION */
+    .header-right .notification_dropdown,
+    .header-right .header-profile {
+        position: relative !important;
+    }
+
+    .header-right .notification_dropdown .dropdown-menu,
+    .header-right .header-profile .dropdown-menu {
+        position: absolute !important;
+        right: 0 !important;
+        left: auto !important;
+        top: calc(100% + 8px) !important;
+        margin: 0 !important;
+        transform: none !important;
+    }
+
+    .header-menu-card {
+        border-radius: 14px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        box-shadow: 
+            0 4px 6px -1px rgba(15, 23, 42, 0.05),
+            0 20px 25px -5px rgba(15, 23, 42, 0.08) !important;
+        overflow: hidden;
+    }
+
+    /* NOTIFICATION CARD STYLING */
+    .notif-item {
+        transition: background 0.15s ease;
+        text-decoration: none !important;
+        padding: 0.75rem 1rem !important;
+    }
+
+    .notif-item:hover {
+        background: #f8fafc !important;
+    }
+
+    .notif-icon-badge {
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+
+    .notif-title {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #0f172a;
+        line-height: 1.25;
+    }
+
+    .notif-desc {
+        font-size: 0.76rem;
+        color: #475569;
+        line-height: 1.35;
+        margin-top: 2px;
+    }
+
+    .notif-time {
+        font-size: 0.7rem;
+        color: #94a3b8;
+        margin-top: 3px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .notif-footer-link {
+        color: #1b2653;
+        font-weight: 600;
+        font-size: 0.78rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: color 0.15s ease;
+    }
+
+    .notif-footer-link:hover {
+        color: #2a3875;
+        text-decoration: underline;
+    }
+
+    /* USER PROFILE PILL */
+    .user-profile-pill {
+        padding: 0.28rem 0.7rem 0.28rem 0.32rem !important;
+        border-radius: 9999px !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 0.55rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer;
+    }
+
+    .user-profile-pill:hover {
+        background: #ffffff !important;
+        border-color: #cbd5e1 !important;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+    }
+
+    .user-avatar-initials {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1b2653 0%, #2e4182 100%);
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(27, 38, 83, 0.2);
+    }
+
+    .user-avatar-img {
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .user-name-text {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .user-role-chip {
+        font-size: 0.68rem;
+        color: #1b2653;
+        background: #eff4fe;
+        border: 1px solid #dbe6fe;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-weight: 600;
+        display: inline-block;
+    }
+</style>
+
+<!-- Top Left: Logo Brand & Sidebar Control -->
+<div class="nav-header">
+    <a href="/" class="brand-logo">
+        <img src="{{ asset('images/gtmslogo.png') }}" alt="GTMS Logo" />
+        <span class="brand-text d-none d-sm-inline-block">GTMS</span>
+    </a>
+    <div class="nav-control">
+        <div class="hamburger">
+            <span class="line"></span><span class="line"></span><span class="line"></span>
         </div>
-        <!--**********************************
-            Nav header end
-        ***********************************-->
+    </div>
+</div>
 
-        <!--**********************************
-            Chat box start
-        ***********************************-->
+<!-- Main Top Header -->
+<div class="header">
+    <div class="header-content">
+        <nav class="navbar navbar-expand">
+            <div class="collapse navbar-collapse justify-content-between">
+                
+                <!-- Left Title -->
+                <div class="header-left">
+                    <div class="dashboard_bar">
+                        @yield('title', 'Dashboard')
+                    </div>
+                </div>
 
-        <!--**********************************
-            Chat box End
-        ***********************************-->
+                <!-- Right Actions -->
+                <ul class="navbar-nav header-right align-items-center gap-2">
+                    
+                    <!-- Search Input -->
+                    <li class="nav-item d-none d-lg-flex align-items-center me-2">
+                        <div class="header-search-wrap">
+                            <i class="bi bi-search search-icon"></i>
+                            <input type="text" class="form-control header-search-input" placeholder="Search applications, clients...">
+                        </div>
+                    </li>
 
-        <!--**********************************
-            Header start
-        ***********************************-->
-        <div class="header">
-            <div class="header-content">
-                <nav class="navbar navbar-expand">
-                    <div class="collapse navbar-collapse justify-content-between">
-                        <div class="header-left">
-                            <div class="dashboard_bar">
-                                @yield('title', 'Dashboard')
+                    <!-- Dark / Light Theme Mode Toggle -->
+                    <li class="nav-item">
+                        <a class="header-action-btn dz-theme-mode" href="javascript:void(0);" title="Toggle theme">
+                            <i id="icon-light" class="fas fa-sun text-warning"></i>
+                            <i id="icon-dark" class="fas fa-moon text-secondary"></i>
+                        </a>
+                    </li>
+
+                    <!-- Notifications Dropdown -->
+                    <li class="nav-item dropdown notification_dropdown">
+                        <a class="header-action-btn" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="Notifications">
+                            <i class="bi bi-bell"></i>
+                            <span class="notification-indicator"></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end header-menu-card p-0" style="min-width: 320px; width: 320px;">
+                            <div class="d-flex align-items-center justify-content-between px-3 py-2.5 border-bottom bg-white">
+                                <h6 class="mb-0 fw-bold" style="font-size: 0.88rem; color: #0f172a;">Notifications</h6>
+                                <span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; font-size: 0.72rem; font-weight: 600; border-radius: 9999px; padding: 2px 8px;">3 New</span>
+                            </div>
+                            <div class="py-1 bg-white" style="max-height: 290px; overflow-y: auto;">
+                                <a href="{{ route('application.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
+                                    <div class="notif-icon-badge" style="background: #eff6ff; color: #2563eb;">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="notif-title">New Lease Application</div>
+                                        <div class="notif-desc">Application submitted for scrutiny review</div>
+                                        <div class="notif-time"><i class="bi bi-clock"></i> 10m ago</div>
+                                    </div>
+                                </a>
+                                <a href="{{ route('miningplan.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
+                                    <div class="notif-icon-badge" style="background: #fffbeb; color: #d97706;">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="notif-title">Mining Plan Update</div>
+                                        <div class="notif-desc">Draft document uploaded for verification</div>
+                                        <div class="notif-time"><i class="bi bi-clock"></i> 1h ago</div>
+                                    </div>
+                                </a>
+                                <a href="{{ route('dgps-survey.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5">
+                                    <div class="notif-icon-badge" style="background: #ecfdf5; color: #059669;">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="notif-title">Survey Completed</div>
+                                        <div class="notif-desc">DGPS survey boundary coordinates approved</div>
+                                        <div class="notif-time"><i class="bi bi-clock"></i> Yesterday</div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="px-3 py-2 border-top text-center" style="background: #f8fafc;">
+                                <a href="{{ route('application.index') }}" class="notif-footer-link">
+                                    <span>View All Applications</span>
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
-                        <ul class="navbar-nav header-right">
+                    </li>
 
-                            <li class="nav-item d-flex align-items-center">
-                                <div class="input-group search-area">
-                                    <input type="text" class="form-control" placeholder="Search here...">
-                                    <span class="input-group-text"><a href="javascript:void(0)"><i
-                                                class="flaticon-381-search-2"></i></a></span>
+                    <!-- User Profile Dropdown -->
+                    <li class="nav-item dropdown header-profile ms-1">
+                        <a class="user-profile-pill" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                            @if(Auth::check() && Auth::user()->image && file_exists(public_path('uploads/users/' . Auth::user()->image)))
+                                <img src="{{ asset('uploads/users/' . Auth::user()->image) }}" class="user-avatar-img" alt="User Image">
+                            @else
+                                <div class="user-avatar-initials">
+                                    {{ strtoupper(substr(Auth::check() ? Auth::user()->name : 'A', 0, 1)) }}
                                 </div>
-                            </li>
-                            <li class="nav-item dropdown notification_dropdown">
-                                <a class="nav-link bell dz-theme-mode" href="javascript:void(0);">
-                                    <i id="icon-light" class="fas fa-sun"></i>
-                                    <i id="icon-dark" class="fas fa-moon"></i>
+                            @endif
+                            <div class="d-none d-sm-block text-start" style="line-height: 1.15;">
+                                <span class="user-name-text d-block">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</span>
+                                <span class="user-role-chip">{{ Auth::check() && Auth::user()->roles->first() ? Auth::user()->roles->first()->name : (Auth::check() && Auth::user()->role ? Auth::user()->role->name : 'Admin') }}</span>
+                            </div>
+                            <i class="bi bi-chevron-down d-none d-sm-inline-block text-muted" style="font-size: 0.72rem; margin-right: 2px;"></i>
+                        </a>
 
+                        <div class="dropdown-menu dropdown-menu-end header-menu-card p-0" style="min-width: 220px;">
+                            <div class="p-3 border-bottom bg-white">
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem;">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</div>
+                                <div class="text-muted text-truncate" style="font-size: 0.76rem;">{{ Auth::check() ? Auth::user()->email : 'admin@gtms.com' }}</div>
+                            </div>
+                            <div class="py-1 bg-white">
+                                <a href="{{ route('user.index') }}" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark" style="font-size: 0.82rem;">
+                                    <i class="bi bi-people text-muted"></i>
+                                    <span>User Management</span>
                                 </a>
-                            </li>
-                            {{-- <li class="nav-item dropdown notification_dropdown">
-                                <a class="nav-link " href="javascript:void(0);" data-bs-toggle="dropdown">
-                                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M26.7727 10.8757C26.7043 10.6719 26.581 10.4909 26.4163 10.3528C26.2516 10.2146 26.0519 10.1247 25.8393 10.0929L18.3937 8.95535L15.0523 1.83869C14.9581 1.63826 14.8088 1.46879 14.6218 1.35008C14.4349 1.23137 14.218 1.16833 13.9965 1.16833C13.775 1.16833 13.5581 1.23137 13.3712 1.35008C13.1842 1.46879 13.0349 1.63826 12.9407 1.83869L9.59934 8.95535L2.15367 10.0929C1.9416 10.1252 1.74254 10.2154 1.57839 10.3535C1.41423 10.4916 1.29133 10.6723 1.22321 10.8757C1.15508 11.0791 1.14436 11.2974 1.19222 11.5065C1.24008 11.7156 1.34468 11.9075 1.49451 12.061L6.92067 17.6167L5.63734 25.4777C5.60232 25.6934 5.6286 25.9147 5.7132 26.1162C5.79779 26.3177 5.93729 26.4914 6.1158 26.6175C6.29432 26.7436 6.50466 26.817 6.72287 26.8294C6.94108 26.8418 7.15838 26.7926 7.35001 26.6875L14 23.0149L20.65 26.6875C20.8416 26.7935 21.0592 26.8434 21.2779 26.8316C21.4965 26.8197 21.7075 26.7466 21.8865 26.6205C22.0655 26.4944 22.2055 26.3204 22.2903 26.1186C22.3751 25.9167 22.4014 25.695 22.3662 25.4789L21.0828 17.6179L26.5055 12.061C26.6546 11.9071 26.7585 11.715 26.8056 11.5059C26.8527 11.2968 26.8413 11.0787 26.7727 10.8757Z"
-                                            fill="#717579" />
-                                    </svg>
-                                    <span class="badge light text-white bg-secondary rounded-circle">76</span>
+                                <a href="{{ route('roles.index') }}" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-dark" style="font-size: 0.82rem;">
+                                    <i class="bi bi-shield-check text-muted"></i>
+                                    <span>Roles & Permissions</span>
                                 </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <div class="p-3 pb-0">
-                                        <div class="row">
-                                            <div class="col-xl-12 border-bottom">
-                                                <h5 class="">Related Apps</h5>
-                                            </div>
-                                            <div class="col-4 my-3">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/angular.svg" alt="">
-                                                        <div class="content">
-                                                            <small>Angular</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                            </div>
+                            <div class="border-top py-1 bg-white">
+                                <form method="POST" action="{{ route('logout') }}" id="header-logout-form" style="display: none;">
+                                    @csrf
+                                </form>
+                                <a href="javascript:void(0);" onclick="document.getElementById('header-logout-form').submit();" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-danger" style="font-size: 0.82rem;">
+                                    <i class="bi bi-box-arrow-right"></i>
+                                    <span>Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
 
-                                            </div>
-                                            <div class="col-4 my-3">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/figma.svg" alt="">
-                                                        <div class="content">
-                                                            <small>Figma</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-4 my-3">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/dribbble.svg" alt="">
-                                                        <div class="content">
-                                                            <small>Dribbble</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/instagram.svg" alt="">
-                                                        <div class="content">
-                                                            <small>instagram</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/laravel-2.svg" alt="">
-                                                        <div class="content">
-                                                            <small>Laravel</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-4">
-                                                <div class="text-center">
-                                                    <div class="angular-svg">
-                                                        <img src="images/svg/react-2.svg" alt="">
-                                                        <div class="content">
-                                                            <small>React</small>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li> --}}
-                            <li class="nav-item dropdown notification_dropdown">
-                                <a class="nav-link" href="javascript:void(0);" role="button"
-                                    data-bs-toggle="dropdown">
-                                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M23.3333 19.8333H23.1187C23.2568 19.4597 23.3295 19.065 23.3333 18.6666V12.8333C23.3294 10.7663 22.6402 8.75902 21.3735 7.12565C20.1068 5.49228 18.3343 4.32508 16.3333 3.80679V3.49996C16.3333 2.88112 16.0875 2.28763 15.6499 1.85004C15.2123 1.41246 14.6188 1.16663 14 1.16663C13.3812 1.16663 12.7877 1.41246 12.3501 1.85004C11.9125 2.28763 11.6667 2.88112 11.6667 3.49996V3.80679C9.66574 4.32508 7.89317 5.49228 6.6265 7.12565C5.35983 8.75902 4.67058 10.7663 4.66667 12.8333V18.6666C4.67053 19.065 4.74316 19.4597 4.88133 19.8333H4.66667C4.35725 19.8333 4.0605 19.9562 3.84171 20.175C3.62292 20.3938 3.5 20.6905 3.5 21C3.5 21.3094 3.62292 21.6061 3.84171 21.8249C4.0605 22.0437 4.35725 22.1666 4.66667 22.1666H23.3333C23.6428 22.1666 23.9395 22.0437 24.1583 21.8249C24.3771 21.6061 24.5 21.3094 24.5 21C24.5 20.6905 24.3771 20.3938 24.1583 20.175C23.9395 19.9562 23.6428 19.8333 23.3333 19.8333Z"
-                                            fill="#717579" />
-                                        <path
-                                            d="M9.9819 24.5C10.3863 25.2088 10.971 25.7981 11.6766 26.2079C12.3823 26.6178 13.1838 26.8337 13.9999 26.8337C14.816 26.8337 15.6175 26.6178 16.3232 26.2079C17.0288 25.7981 17.6135 25.2088 18.0179 24.5H9.9819Z"
-                                            fill="#717579" />
-                                    </svg>
-                                    <span class="badge light text-white bg-warning rounded-circle">12</span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <div id="DZ_W_Notification1" class="widget-media dlab-scroll p-3"
-                                        style="height:380px;">
-                                        <ul class="timeline">
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2">
-                                                        <img alt="image" width="50" src="/images/avatar/1.jpg">
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Dr sultads Send you Photo</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2 media-info">
-                                                        KG
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Resport created successfully</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2 media-success">
-                                                        <i class="fa fa-home"></i>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Reminder : Treatment Time!</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2">
-                                                        <img alt="image" width="50" src="/images/avatar/1.jpg">
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Dr sultads Send you Photo</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2 media-danger">
-                                                        KG
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Resport created successfully</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-panel">
-                                                    <div class="media me-2 media-primary">
-                                                        <i class="fa fa-home"></i>
-                                                    </div>
-                                                    <div class="media-body">
-                                                        <h6 class="mb-1">Reminder : Treatment Time!</h6>
-                                                        <small class="d-block">29 July 2020 - 02:26 PM</small>
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                    <a class="all-notification" href="javascript:void(0);">See all notifications <i
-                                            class="ti-arrow-end"></i></a>
-                                </div>
-                            </li>
-                            {{-- <li class="nav-item dropdown notification_dropdown">
-                                <a class="nav-link bell-link " href="javascript:void(0);">
-                                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M27.076 6.24662C26.962 5.48439 26.5787 4.78822 25.9955 4.28434C25.4123 3.78045 24.6679 3.50219 23.8971 3.5H4.10289C3.33217 3.50219 2.58775 3.78045 2.00456 4.28434C1.42137 4.78822 1.03803 5.48439 0.924011 6.24662L14 14.7079L27.076 6.24662Z"
-                                            fill="#717579" />
-                                        <path
-                                            d="M14.4751 16.485C14.3336 16.5765 14.1686 16.6252 14 16.6252C13.8314 16.6252 13.6664 16.5765 13.5249 16.485L0.875 8.30025V21.2721C0.875926 22.1279 1.2163 22.9484 1.82145 23.5536C2.42659 24.1587 3.24707 24.4991 4.10288 24.5H23.8971C24.7529 24.4991 25.5734 24.1587 26.1786 23.5536C26.7837 22.9484 27.1241 22.1279 27.125 21.2721V8.29938L14.4751 16.485Z"
-                                            fill="#717579" />
-                                    </svg>
-                                    <span class="badge light text-white bg-danger rounded-circle">76</span>
-                                </a>
-                            </li> --}}
-
-
-                            {{-- <li class="nav-item dropdown notification_dropdown">
-                                <a class="nav-link " href="javascript:void(0);" data-bs-toggle="dropdown">
-                                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none"
-                                        xmlns="http://www.w3.org/2000/svg">
-                                        <path
-                                            d="M22.1666 5.83331H20.9999V3.49998C20.9999 3.19056 20.877 2.89381 20.6582 2.67502C20.4394 2.45623 20.1427 2.33331 19.8333 2.33331C19.5238 2.33331 19.2271 2.45623 19.0083 2.67502C18.7895 2.89381 18.6666 3.19056 18.6666 3.49998V5.83331H9.33325V3.49998C9.33325 3.19056 9.21034 2.89381 8.99154 2.67502C8.77275 2.45623 8.47601 2.33331 8.16659 2.33331C7.85717 2.33331 7.56042 2.45623 7.34163 2.67502C7.12284 2.89381 6.99992 3.19056 6.99992 3.49998V5.83331H5.83325C4.90499 5.83331 4.01476 6.20206 3.35838 6.85844C2.702 7.51482 2.33325 8.40506 2.33325 9.33331V10.5H25.6666V9.33331C25.6666 8.40506 25.2978 7.51482 24.6415 6.85844C23.9851 6.20206 23.0948 5.83331 22.1666 5.83331Z"
-                                            fill="#717579" />
-                                        <path
-                                            d="M2.33325 22.1666C2.33325 23.0949 2.702 23.9851 3.35838 24.6415C4.01476 25.2979 4.90499 25.6666 5.83325 25.6666H22.1666C23.0948 25.6666 23.9851 25.2979 24.6415 24.6415C25.2978 23.9851 25.6666 23.0949 25.6666 22.1666V12.8333H2.33325V22.1666Z"
-                                            fill="#717579" />
-                                    </svg>
-                                    <span class="badge light text-white bg-success rounded-circle">!</span>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <div id="DZ_W_TimeLine02"
-                                        class="widget-timeline dlab-scroll style-1 ps ps--active-y p-3 height370">
-                                        <ul class="timeline">
-                                            <li>
-                                                <div class="timeline-badge primary"></div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>10 minutes ago</span>
-                                                    <h6 class="mb-0">Youtube, a video-sharing website, goes live
-                                                        <strong class="text-primary">$500</strong>.</h6>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-badge info">
-                                                </div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>20 minutes ago</span>
-                                                    <h6 class="mb-0">New order placed <strong
-                                                            class="text-info">#XF-2356.</strong></h6>
-                                                    <p class="mb-0">Quisque a consequat ante Sit amet magna at
-                                                        volutapt...</p>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-badge danger">
-                                                </div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>30 minutes ago</span>
-                                                    <h6 class="mb-0">john just buy your product <strong
-                                                            class="text-warning">Sell $250</strong></h6>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-badge success">
-                                                </div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>15 minutes ago</span>
-                                                    <h6 class="mb-0">StumbleUpon is acquired by eBay. </h6>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-badge warning">
-                                                </div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>20 minutes ago</span>
-                                                    <h6 class="mb-0">Mashable, a news website and blog, goes live.
-                                                    </h6>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="timeline-badge dark">
-                                                </div>
-                                                <a class="timeline-panel text-muted" href="javascript:void(0);">
-                                                    <span>20 minutes ago</span>
-                                                    <h6 class="mb-0">Mashable, a news website and blog, goes live.
-                                                    </h6>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </li> --}}
-
-                            <li class="nav-item dropdown header-profile">
-                                <a class="nav-link d-flex align-items-center" href="javascript:void(0);" role="button"
-                                    data-bs-toggle="dropdown">
-                                    @if(Auth::check() && Auth::user()->image)
-                                        <img src="{{ asset('uploads/users/' . Auth::user()->image) }}" width="40" height="40" class="rounded-circle" alt="">
-                                    @else
-                                        <img src="{{ asset('images/user.jpg') }}" width="40" height="40" class="rounded-circle" alt="">
-                                    @endif
-                                    <div class="header-info ms-2 d-none d-sm-inline-block text-start">
-                                        <span class="fs-14 fw-bold text-dark d-block">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</span>
-                                        <small class="fs-12 text-muted badge bg-light text-primary border">{{ Auth::check() && Auth::user()->roles->first() ? Auth::user()->roles->first()->name : (Auth::check() && Auth::user()->role ? Auth::user()->role->name : 'User') }}</small>
-                                    </div>
-                                </a>
-                                <div class="dropdown-menu dropdown-menu-end">
-                                    <div class="px-3 py-2 border-bottom d-sm-none">
-                                        <div class="fw-bold">{{ Auth::check() ? Auth::user()->name : 'Guest' }}</div>
-                                        <div class="text-muted small">{{ Auth::check() ? Auth::user()->email : '' }}</div>
-                                    </div>
-                                    <form method="POST" action="{{ route('logout') }}" id="header-logout-form" style="display: none;">
-                                        @csrf
-                                    </form>
-                                    <a href="javascript:void(0);" onclick="document.getElementById('header-logout-form').submit();" class="dropdown-item ai-icon text-danger">
-                                        <svg id="icon-logout" xmlns="http://www.w3.org/2000/svg" class="text-danger"
-                                            width="18" height="18" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
-                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                            <polyline points="16 17 21 12 16 7"></polyline>
-                                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                                        </svg>
-                                        <span class="ms-2">Logout </span>
-                                    </a>
-                                </div>
-                            </li>
-
-                        </ul>
-                    </div>
-                </nav>
+                </ul>
             </div>
-        </div>
+        </nav>
+    </div>
+</div>

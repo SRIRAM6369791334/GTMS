@@ -60,10 +60,19 @@ Route::middleware('auth')->group(function () {
         $archivedCount = \App\Models\LeaseApplication::onlyTrashed()->count() 
                        + \App\Models\MiningApplication::onlyTrashed()->count();
 
+        // Technical Operations & Surveys
+        $dgpsTotal = \App\Models\DgpsSurvey::count();
+        $dgpsCompleted = \App\Models\DgpsSurvey::where('survey_status', 'completed')->count();
+        $droneTotal = \App\Models\DroneSurvey::count();
+        $droneReady = \App\Models\DroneSurvey::where('survey_status', 'deliverables_ready')->count();
+        $envProjectsTotal = \App\Models\EnvironmentProject::count();
+        $ecComplianceTotal = \App\Models\EcCompliance::count();
+
         // Recent applications
         $recentLeases = \App\Models\LeaseApplication::with(['customer', 'district', 'mineral'])->orderBy('created_at', 'desc')->take(5)->get();
         $recentApplications = $recentLeases->map(function($lease) {
             return (object)[
+                'id' => $lease->id,
                 'client' => $lease->customer->company_name ?? $lease->customer->customer_name ?? 'N/A',
                 'district' => $lease->district->name ?? 'N/A',
                 'mineral' => $lease->mineral->name ?? 'N/A',
@@ -84,7 +93,58 @@ Route::middleware('auth')->group(function () {
             ];
         });
 
-        // Applications by district
+        // Recent Technical Surveys (combining DGPS and Drone surveys)
+        $recentDgps = \App\Models\DgpsSurvey::with('customer')->latest()->take(3)->get()->map(function($s) {
+            return (object)[
+                'id' => $s->id,
+                'survey_no' => $s->survey_no,
+                'client' => $s->customer->company_name ?? $s->customer->customer_name ?? 'N/A',
+                'location' => $s->location ?? 'N/A',
+                'type' => 'DGPS Demarcation',
+                'type_class' => 'primary',
+                'status' => ucwords(str_replace('_', ' ', $s->survey_status ?? 'completed')),
+                'status_class' => ($s->survey_status === 'completed') ? 'ok' : 'warn',
+                'url' => route('dgps-survey.show', $s->id),
+                'date' => $s->created_at?->format('d M Y') ?? 'Recent'
+            ];
+        });
+
+        $recentDrones = \App\Models\DroneSurvey::with('customer')->latest()->take(3)->get()->map(function($s) {
+            return (object)[
+                'id' => $s->id,
+                'survey_no' => $s->survey_no,
+                'client' => $s->customer->company_name ?? $s->customer->customer_name ?? 'N/A',
+                'location' => $s->location ?? 'N/A',
+                'type' => 'Drone Topography',
+                'type_class' => 'info',
+                'status' => ucwords(str_replace('_', ' ', $s->survey_status ?? 'scheduled')),
+                'status_class' => ($s->survey_status === 'deliverables_ready') ? 'ok' : 'navy',
+                'url' => route('drone-survey.show', $s->id),
+                'date' => $s->created_at?->format('d M Y') ?? 'Recent'
+            ];
+        });
+
+        $recentSurveys = $recentDgps->concat($recentDrones)->take(5);
+
+        // Recent Activity Logs
+        $recentActivities = \App\Models\ActivityLog::with('user')->latest()->take(6)->get()->map(function($l) {
+            return (object)[
+                'id' => $l->id,
+                'user' => $l->user?->name ?? 'System Officer',
+                'action' => ucwords(str_replace(['_', '.'], ' ', $l->action ?? 'Activity')),
+                'description' => $l->description ?? 'No details provided',
+                'time_ago' => $l->created_at?->diffForHumans() ?? 'Recently',
+                'date' => $l->created_at?->format('d M, H:i') ?? '',
+                'badge_class' => match(true) {
+                    str_contains($l->action, 'approve') || str_contains($l->action, 'validate') => 'chip-ok',
+                    str_contains($l->action, 'reject') || str_contains($l->action, 'revision') => 'chip-danger',
+                    str_contains($l->action, 'submit') => 'chip-navy',
+                    default => 'chip-warn'
+                }
+            ];
+        });
+
+        // District Breakdown
         $districtStats = \App\Models\LeaseApplication::join('districts', 'lease_applications.district_id', '=', 'districts.id')
             ->select('districts.name', \Illuminate\Support\Facades\DB::raw('count(*) as total'))
             ->groupBy('districts.name')
@@ -93,24 +153,34 @@ Route::middleware('auth')->group(function () {
             ->get();
 
         // Financial Snapshot
-        $totalPaid = \App\Models\ApplicationPayment::sum('paid_amount') ?? 0;
-        $totalPending = \App\Models\ApplicationPayment::sum('pending_amount') ?? 0;
+        $totalPaid = (float)(\App\Models\ApplicationPayment::sum('paid_amount') ?? 0);
+        $totalPending = (float)(\App\Models\ApplicationPayment::sum('pending_amount') ?? 0);
+        $totalBilled = $totalPaid + $totalPending;
+        $recoveryRate = $totalBilled > 0 ? round(($totalPaid / $totalBilled) * 100, 1) : 0;
 
         // Breakdown for Chart
         $chartData = [
-            'labels' => ['Lease', 'Mining', 'Environment', 'DGPS', 'Drone'],
+            'labels' => ['DGPS Demarcation', 'Drone Topo', 'Environment Clearances', 'Lease Applications', 'Mining Plans'],
             'data' => [
+                $dgpsTotal,
+                $droneTotal,
+                $envProjectsTotal,
                 \App\Models\LeaseApplication::count() ?? 0,
-                \App\Models\MiningApplication::count() ?? 0,
-                \App\Models\EnvironmentProject::count() ?? 0,
-                \App\Models\DgpsSurvey::count() ?? 0,
-                \App\Models\DroneSurvey::count() ?? 0
+                \App\Models\MiningApplication::count() ?? 0
             ]
         ];
 
+        // Dynamic Greeting & Jurisdiction Region
+        $hour = (int)date('H');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+        $regionName = auth()->user()?->branch?->name ?? 'Statutory Mining Jurisdiction';
+
         return view('pages.index', compact(
-            'activeCount', 'pendingCount', 'approvedCount', 'archivedCount', 'recentApplications', 'districtStats',
-            'totalPaid', 'totalPending', 'chartData'
+            'activeCount', 'pendingCount', 'approvedCount', 'archivedCount',
+            'dgpsTotal', 'dgpsCompleted', 'droneTotal', 'droneReady', 'envProjectsTotal', 'ecComplianceTotal',
+            'recentApplications', 'recentSurveys', 'recentActivities', 'districtStats',
+            'totalPaid', 'totalPending', 'totalBilled', 'recoveryRate',
+            'chartData', 'greeting', 'regionName'
         ));
     })->middleware('permission:dashboard.view')->name('dashboard');
 

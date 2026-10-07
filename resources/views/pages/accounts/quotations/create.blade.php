@@ -216,6 +216,86 @@
         background-color: #F8FAFC;
     }
 
+    /* ─── STEP 2 DROPDOWN & STACKING CONTEXT RESILIENCY ─── */
+    #section-services,
+    #section-services .card-body,
+    #section-services .table-responsive {
+        overflow: visible !important;
+    }
+
+    /* Elevate table dropdown menus above all rows, inputs, and card footers */
+    #section-services .dropdown-menu,
+    .table-items .dropdown-menu {
+        z-index: 1070 !important;
+        min-width: 360px;
+        max-width: 540px;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.22), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
+        border: 1px solid #CBD5E1 !important;
+        background-color: #FFFFFF !important;
+        border-radius: 8px !important;
+    }
+
+    /* Stacking context management for table rows */
+    .table-items tbody tr.item-main-row {
+        position: relative;
+        z-index: 2;
+    }
+    .table-items tbody tr.item-desc-row {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* When a row's dropdown is open, elevate that specific row and its cells above all other rows */
+    .table-items tbody tr.item-main-row:has(.dropdown-menu.show),
+    .table-items tbody tr.item-main-row.has-dropdown-open {
+        position: relative;
+        z-index: 1060 !important;
+    }
+    .table-items tbody tr.item-main-row:has(.dropdown-menu.show) td,
+    .table-items tbody tr.item-main-row.has-dropdown-open td {
+        position: relative;
+        z-index: 1060 !important;
+    }
+    .table-items tbody tr.item-main-row:has(.dropdown-menu.show) .input-group,
+    .table-items tbody tr.item-main-row.has-dropdown-open .input-group {
+        position: relative;
+        z-index: 1065 !important;
+    }
+
+    /* Polish catalog split button to eliminate pink outline and harmonize with GTMS Navy */
+    .btn-catalog-picker {
+        border-color: #CBD5E1 !important;
+        background-color: #F8FAFC !important;
+        color: #1E3A8A !important;
+        transition: all 0.15s ease;
+    }
+    .btn-catalog-picker:hover,
+    .btn-catalog-picker:focus,
+    .btn-catalog-picker[aria-expanded="true"] {
+        background-color: #EFF6FF !important;
+        border-color: #1E3A8A !important;
+        color: #1E3A8A !important;
+        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.12) !important;
+    }
+
+    /* Dropdown item styling inside table */
+    .table-items .dropdown-item {
+        padding: 8px 12px !important;
+        border-bottom: 1px solid #F1F5F9;
+        white-space: normal;
+        transition: background-color 0.12s ease;
+    }
+    .table-items .dropdown-item:last-child {
+        border-bottom: none;
+    }
+    .table-items .dropdown-item:hover,
+    .table-items .dropdown-item:focus {
+        background-color: #EFF6FF !important;
+    }
+    .table-items .dropdown-item:hover strong {
+        color: #1E3A8A !important;
+    }
+
     .table-items .form-control,
     .table-items .form-select {
         height: 38px !important;
@@ -615,7 +695,7 @@
                     <!-- Quick Catalog Insertion Bar -->
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold" type="button" id="quickCatalogDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <button class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold" type="button" id="quickCatalogDropdown" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                                 <i class="fas fa-bolt text-warning me-1"></i> Quick-Add from Catalog
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="quickCatalogDropdown" style="min-width: 320px; max-height: 350px; overflow-y: auto;">
@@ -683,8 +763,8 @@
                                     <td>
                                         <div class="input-group input-group-sm">
                                             <input type="text" name="items[{{ $index }}][service_name]" class="form-control item-service-name fw-bold text-dark" value="{{ $item['service_name'] ?? '' }}" placeholder="Service Name" required>
-                                            <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Switch from Catalog"></button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 300px; max-height: 250px; overflow-y: auto;">
+                                            <button type="button" class="btn btn-outline-primary btn-catalog-picker dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" title="Switch from Catalog"></button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 360px; max-height: 260px; overflow-y: auto;">
                                                 <li class="dropdown-header small text-uppercase fw-bold text-muted">Select Standard Service</li>
                                                 @foreach($services as $s)
                                                     <li>
@@ -1056,8 +1136,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>
                 <div class="input-group input-group-sm">
                     <input type="text" name="items[${rowIndex}][service_name]" class="form-control item-service-name fw-bold text-dark" value="${sName}" placeholder="Service Name" required>
-                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Switch from Catalog"></button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 300px; max-height: 250px; overflow-y: auto;">
+                    <button type="button" class="btn btn-outline-primary btn-catalog-picker dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" title="Switch from Catalog"></button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 360px; max-height: 260px; overflow-y: auto;">
                         <li class="dropdown-header small text-uppercase fw-bold text-muted">Select Standard Service</li>
                         ${catalogOptionsHtml}
                     </ul>
@@ -1177,6 +1257,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 descRow.querySelector('.item-desc').value = pickItem.getAttribute('data-desc');
             }
             recalculateTotals();
+        }
+    });
+
+    // Elevate row z-index when Bootstrap dropdown opens/closes to prevent stacking conflicts
+    document.addEventListener('show.bs.dropdown', function (e) {
+        const mainRow = e.target.closest('.item-main-row');
+        if (mainRow) {
+            mainRow.classList.add('has-dropdown-open');
+            mainRow.style.zIndex = '1060';
+        }
+    });
+    document.addEventListener('hidden.bs.dropdown', function (e) {
+        const mainRow = e.target.closest('.item-main-row');
+        if (mainRow) {
+            mainRow.classList.remove('has-dropdown-open');
+            mainRow.style.removeProperty('z-index');
         }
     });
 
