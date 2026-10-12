@@ -3,10 +3,15 @@
     /* =========================================================
        GTMS HEADER STYLING (Harmonized with Dexignlabs Theme)
        ========================================================= */
-    .nav-header {
+    body:not([data-theme-version="dark"]) .nav-header {
         background-color: #ffffff !important;
         border-bottom: 1px solid #eef2f6 !important;
         border-right: 1px solid #eef2f6 !important;
+    }
+    body[data-theme-version="dark"] .nav-header {
+        background-color: #161717 !important;
+        border-bottom: 1px solid #2d3139 !important;
+        border-right: 1px solid #2d3139 !important;
     }
 
     .nav-header .brand-logo {
@@ -29,17 +34,31 @@
         letter-spacing: -0.02em;
         margin-left: 0.6rem;
     }
+    body[data-theme-version="dark"] .nav-header .brand-text {
+        color: #f8fafc !important;
+    }
 
-    .header {
+    body:not([data-theme-version="dark"]) .header {
         background-color: #ffffff !important;
         border-bottom: 1px solid #eef2f6 !important;
         box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03) !important;
     }
+    body[data-theme-version="dark"] .header {
+        background-color: #202020 !important;
+        border-bottom: 1px solid #2d3139 !important;
+        box-shadow: none !important;
+    }
 
-    .header-left .dashboard_bar {
+    body:not([data-theme-version="dark"]) .header-left .dashboard_bar {
         font-size: 1.25rem !important;
         font-weight: 700 !important;
         color: #0f172a !important;
+        letter-spacing: -0.02em !important;
+    }
+    body[data-theme-version="dark"] .header-left .dashboard_bar {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #f8fafc !important;
         letter-spacing: -0.02em !important;
     }
 
@@ -321,52 +340,114 @@
                         </a>
                     </li>
 
-                    <!-- Notifications Dropdown -->
+                    <!-- Notifications Dropdown (ui-ux-pro-max standard) -->
+                    @php
+                        $headerUser = Auth::user();
+                        $headerUnreadCount = $headerUser ? $headerUser->unreadNotifications()->count() : 0;
+                        $headerNotifications = $headerUser ? $headerUser->notifications()->latest()->take(4)->get() : collect([]);
+                    @endphp
                     <li class="nav-item dropdown notification_dropdown">
                         <a class="header-action-btn" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false" title="Notifications">
                             <i class="bi bi-bell"></i>
-                            <span class="notification-indicator"></span>
+                            @if($headerUnreadCount > 0)
+                                <span class="notification-indicator"></span>
+                            @endif
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end header-menu-card p-0" style="min-width: 320px; width: 320px;">
+                        <div class="dropdown-menu dropdown-menu-end header-menu-card p-0" style="min-width: 330px; width: 330px;">
                             <div class="d-flex align-items-center justify-content-between px-3 py-2.5 border-bottom bg-white">
-                                <h6 class="mb-0 fw-bold" style="font-size: 0.88rem; color: #0f172a;">Notifications</h6>
-                                <span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; font-size: 0.72rem; font-weight: 600; border-radius: 9999px; padding: 2px 8px;">3 New</span>
-                            </div>
-                            <div class="py-1 bg-white" style="max-height: 290px; overflow-y: auto;">
-                                <a href="{{ route('application.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
-                                    <div class="notif-icon-badge" style="background: #eff6ff; color: #2563eb;">
-                                        <i class="bi bi-file-earmark-text"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="notif-title">New Lease Application</div>
-                                        <div class="notif-desc">Application submitted for scrutiny review</div>
-                                        <div class="notif-time"><i class="bi bi-clock"></i> 10m ago</div>
-                                    </div>
-                                </a>
-                                <a href="{{ route('miningplan.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
-                                    <div class="notif-icon-badge" style="background: #fffbeb; color: #d97706;">
-                                        <i class="bi bi-geo-alt"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="notif-title">Mining Plan Update</div>
-                                        <div class="notif-desc">Draft document uploaded for verification</div>
-                                        <div class="notif-time"><i class="bi bi-clock"></i> 1h ago</div>
-                                    </div>
-                                </a>
-                                <a href="{{ route('dgps-survey.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5">
-                                    <div class="notif-icon-badge" style="background: #ecfdf5; color: #059669;">
-                                        <i class="bi bi-check-circle"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="notif-title">Survey Completed</div>
-                                        <div class="notif-desc">DGPS survey boundary coordinates approved</div>
-                                        <div class="notif-time"><i class="bi bi-clock"></i> Yesterday</div>
-                                    </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <h6 class="mb-0 fw-bold" style="font-size: 0.88rem; color: #0f172a;">Notifications</h6>
+                                    @if($headerUnreadCount > 0)
+                                        <span class="badge" style="background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; font-size: 0.72rem; font-weight: 600; border-radius: 9999px; padding: 2px 8px;">{{ $headerUnreadCount }} New</span>
+                                    @else
+                                        <span class="badge" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-size: 0.70rem; font-weight: 600; border-radius: 9999px; padding: 2px 8px;">All Caught Up</span>
+                                    @endif
+                                </div>
+                                <a href="{{ route('notifications.index') }}" class="text-muted" style="font-size: 0.75rem; text-decoration: none;" title="Open Notification Center">
+                                    <i class="bi bi-sliders2"></i>
                                 </a>
                             </div>
+
+                            <div class="py-1 bg-white" style="max-height: 310px; overflow-y: auto;">
+                                @if($headerNotifications->isNotEmpty())
+                                    @foreach($headerNotifications as $hNotif)
+                                        @php
+                                            $hCat = strtolower($hNotif->data['category'] ?? 'system');
+                                            $hIsUnread = is_null($hNotif->read_at);
+                                            $hIcon = match($hCat) {
+                                                'lease' => 'bi-file-earmark-text',
+                                                'mining' => 'bi-geo-alt',
+                                                'survey', 'dgps' => 'bi-check-circle',
+                                                'drone' => 'bi-send',
+                                                'environment', 'ec' => 'bi-leaf',
+                                                'accounts' => 'bi-credit-card-2-front',
+                                                default => 'bi-bell'
+                                            };
+                                            $hColor = match($hCat) {
+                                                'lease' => ['bg' => '#eff6ff', 'text' => '#2563eb'],
+                                                'mining' => ['bg' => '#fffbeb', 'text' => '#d97706'],
+                                                'survey', 'dgps' => ['bg' => '#ecfdf5', 'text' => '#059669'],
+                                                'drone' => ['bg' => '#faf5ff', 'text' => '#7c3aed'],
+                                                'environment', 'ec' => ['bg' => '#f0fdf4', 'text' => '#16a34a'],
+                                                'accounts' => ['bg' => '#eef2ff', 'text' => '#4f46e5'],
+                                                default => ['bg' => '#f8fafc', 'text' => '#475569'],
+                                            };
+                                            $hUrl = $hNotif->data['action_url'] ?? route('notifications.index');
+                                        @endphp
+                                        <a href="{{ $hUrl }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light {{ $hIsUnread ? 'bg-blue-light' : '' }}" style="{{ $hIsUnread ? 'background-color: #f8fbff;' : '' }}">
+                                            <div class="notif-icon-badge" style="background: {{ $hColor['bg'] }}; color: {{ $hColor['text'] }};">
+                                                <i class="bi {{ $hIcon }}"></i>
+                                            </div>
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <div class="d-flex align-items-center justify-content-between">
+                                                    <div class="notif-title text-truncate {{ $hIsUnread ? 'fw-bold' : 'fw-semibold' }}">{{ $hNotif->data['title'] ?? 'Notification' }}</div>
+                                                    @if($hIsUnread)
+                                                        <span style="width: 6px; height: 6px; background-color: #2563eb; border-radius: 50%; display: inline-block; flex-shrink: 0; margin-left: 4px;"></span>
+                                                    @endif
+                                                </div>
+                                                <div class="notif-desc text-truncate">{{ $hNotif->data['message'] ?? '' }}</div>
+                                                <div class="notif-time"><i class="bi bi-clock"></i> {{ $hNotif->created_at?->diffForHumans() ?? 'Just now' }}</div>
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                @else
+                                    {{-- Standard Fallback Notifications matching initial system presets --}}
+                                    <a href="{{ route('application.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
+                                        <div class="notif-icon-badge" style="background: #eff6ff; color: #2563eb;">
+                                            <i class="bi bi-file-earmark-text"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="notif-title">New Lease Application</div>
+                                            <div class="notif-desc">Application submitted for scrutiny review</div>
+                                            <div class="notif-time"><i class="bi bi-clock"></i> 10m ago</div>
+                                        </div>
+                                    </a>
+                                    <a href="{{ route('miningplan.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5 border-bottom border-light">
+                                        <div class="notif-icon-badge" style="background: #fffbeb; color: #d97706;">
+                                            <i class="bi bi-geo-alt"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="notif-title">Mining Plan Update</div>
+                                            <div class="notif-desc">Draft document uploaded for verification</div>
+                                            <div class="notif-time"><i class="bi bi-clock"></i> 1h ago</div>
+                                        </div>
+                                    </a>
+                                    <a href="{{ route('dgps-survey.index') }}" class="dropdown-item notif-item d-flex align-items-start gap-2.5">
+                                        <div class="notif-icon-badge" style="background: #ecfdf5; color: #059669;">
+                                            <i class="bi bi-check-circle"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="notif-title">Survey Completed</div>
+                                            <div class="notif-desc">DGPS survey boundary coordinates approved</div>
+                                            <div class="notif-time"><i class="bi bi-clock"></i> Yesterday</div>
+                                        </div>
+                                    </a>
+                                @endif
+                            </div>
+
                             <div class="px-3 py-2 border-top text-center" style="background: #f8fafc;">
-                                <a href="{{ route('application.index') }}" class="notif-footer-link">
-                                    <span>View All Applications</span>
+                                <a href="{{ route('notifications.index') }}" class="notif-footer-link">
+                                    <span>View All Notifications</span>
                                     <i class="bi bi-arrow-right"></i>
                                 </a>
                             </div>

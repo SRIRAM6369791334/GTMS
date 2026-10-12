@@ -3,562 +3,556 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quotation &bull; {{ $quotation->quotation_number }} &bull; {{ $quotation->company_name ?: $quotation->customer_name }} &bull; GTMS</title>
+  <title>Quotation - {{ $quotation->quotation_number }} - {{ $quotation->company_name ?: $quotation->customer_name }}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Reset & Page Setup */
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm;
+    }
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
     body {
-      font-family: 'Times New Roman', Times, serif;
+      font-family: "Times New Roman", Times, serif;
       background-color: #525659;
-      color: #000;
-      -webkit-font-smoothing: antialiased;
-      padding: 20px 0;
+      color: #000000;
+      line-height: 1.4;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
     }
 
-    /* Floating Screen Action Bar */
-    .no-print-bar {
+    /* Screen Action Bar (Hidden in Print) */
+    .screen-action-bar {
       width: 210mm;
-      margin: 0 auto 15px auto;
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #0F1E4D;
-      color: #fff;
+      color: #ffffff;
       padding: 10px 20px;
-      border-radius: 6px;
-      font-family: system-ui, -apple-system, sans-serif;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    .no-print-bar a, .no-print-bar button {
-      background: #2563eb;
-      color: #fff;
+    .screen-action-bar a, .screen-action-bar button {
+      background: #2563EB;
+      color: #ffffff;
       border: none;
       padding: 8px 16px;
-      border-radius: 4px;
-      font-size: 14px;
+      border-radius: 5px;
+      font-size: 13.5px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
       transition: background 0.15s ease;
     }
-    .no-print-bar button:hover, .no-print-bar a:hover {
-      background: #1d4ed8;
+    .screen-action-bar a:hover, .screen-action-bar button:hover {
+      background: #1D4ED8;
     }
-    .no-print-bar a.secondary {
+    .screen-action-bar a.btn-back {
       background: #334155;
     }
-    .no-print-bar a.secondary:hover {
-      background: #1e293b;
+    .screen-action-bar a.btn-back:hover {
+      background: #1E293B;
     }
 
-    /* A4 Physical Paper Simulation */
-    .sheet {
+    /* A4 Physical Sheet Simulation */
+    .page {
+      background: #ffffff;
       width: 210mm;
       min-height: 297mm;
-      margin: 0 auto;
-      background: #fff;
-      padding: 12mm 14mm 10mm 14mm;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+      padding: 12mm 15mm 15mm 15mm;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
       position: relative;
+      page-break-after: always;
+    }
+    .page:last-child {
+      page-break-after: auto;
     }
 
-    /* Master Table Grid */
-    .qtn-table {
+    .header-banner {
       width: 100%;
-      border-collapse: collapse;
-      border: 1.5px solid #000;
-      table-layout: fixed;
+      margin-bottom: 6px;
     }
-    .qtn-table td, .qtn-table th {
-      border: 1px solid #000;
-      padding: 4px 6px;
-      vertical-align: middle;
-      font-size: 10pt;
-      line-height: 1.25;
-    }
-
-    /* Corporate Header Elements */
-    .company-logo {
-      width: 105px;
+    .header-banner img {
+      width: 100%;
       height: auto;
       display: block;
-      margin: 0 auto 3px auto;
     }
-    .company-title {
-      font-size: 11pt;
-      font-weight: bold;
-      text-align: left;
-      margin-bottom: 2px;
-      letter-spacing: 0.3px;
-    }
-    .iso-tag {
-      font-size: 9.5pt;
-      font-weight: bold;
-      text-align: left;
-      margin-bottom: 2px;
-    }
-    .company-address {
-      font-size: 9pt;
-      line-height: 1.3;
-      text-align: left;
+    .company-contact-strip {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      border-bottom: 1.5px solid #000000;
+      padding-bottom: 5px;
+      margin-bottom: 12px;
+      line-height: 1.35;
     }
 
-    .title-cell {
+    .doc-title {
       text-align: center;
-      vertical-align: middle;
-      padding: 8px 0 !important;
-    }
-    .quotation-heading {
-      color: #0F1E4D;
-      font-size: 20pt;
+      font-size: 21px;
       font-weight: bold;
-      letter-spacing: 1px;
-      display: inline-block;
+      text-decoration: underline;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
     }
-    .quotation-subheading {
-      font-size: 9pt;
+    .meta-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
       font-weight: bold;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-top: 2px;
+      margin-bottom: 12px;
     }
 
-    /* Metadata Subtable */
-    .meta-subtable {
+    table {
       width: 100%;
       border-collapse: collapse;
-      border: none;
+      font-size: 13.5px;
     }
-    .meta-subtable td {
-      border: none;
-      border-top: 1px solid #000;
-      padding: 3px 5px;
-      font-size: 9.5pt;
+    table, th, td {
+      border: 1px solid #000000;
     }
-    .meta-subtable tr:first-child td {
-      border-top: 1px solid #000;
-    }
-    .meta-subtable td.label-col {
-      font-weight: bold;
-      width: 38%;
-      border-right: 1px solid #000;
-    }
-    .meta-subtable td.val-col {
-      width: 62%;
+    th, td {
+      padding: 6px 8px;
     }
 
-    /* Section Subheaders */
-    .section-banner {
-      background-color: #f1f5f9;
+    .consignee-table {
+      margin-bottom: 16px;
+    }
+    .consignee-table td.header-cell {
       font-weight: bold;
-      font-size: 9.5pt;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 4px 6px;
-      border-top: 1px solid #000;
-      border-bottom: 1px solid #000;
+      width: 42%;
+      vertical-align: top;
+    }
+    .consignee-table td.value-cell {
+      width: 58%;
+      vertical-align: top;
+    }
+    .subject-row td {
+      padding: 6px 8px;
     }
 
-    .info-label {
+    .section-heading-main {
+      font-size: 15px;
       font-weight: bold;
-      font-size: 9.5pt;
-      width: 30%;
-    }
-    .info-val {
-      font-size: 9.5pt;
-    }
-    .client-title {
-      font-size: 11pt;
-      font-weight: bold;
-      color: #0F1E4D;
-      font-style: italic;
-    }
-
-    /* Items Table */
-    .items-header th {
-      font-size: 9.5pt;
-      font-weight: bold;
-      text-align: center;
-      background-color: #f8fafc;
-      padding: 5px 4px;
-    }
-    .item-num {
-      text-align: center;
-      font-size: 9.5pt;
-    }
-    .item-desc-cell {
-      padding: 6px 8px !important;
-      font-size: 9.5pt;
-    }
-    .item-scope-text {
-      font-size: 8.5pt;
-      color: #334155;
-      margin-top: 3px;
-      line-height: 1.3;
-    }
-    .text-center-cell {
-      text-align: center;
-      font-size: 9.5pt;
-    }
-    .amount-cell {
-      text-align: right;
-      font-size: 9.5pt;
-      padding-right: 8px !important;
-    }
-
-    /* Summary & Totals */
-    .tax-summary-label {
-      text-align: right;
-      font-size: 9.5pt;
-      font-weight: normal;
-      padding-right: 12px !important;
-    }
-    .total-row td {
-      font-weight: bold;
-      font-size: 10.5pt;
-      padding: 5px 8px !important;
-      background-color: #f8fafc;
-    }
-
-    /* Terms & Footer */
-    .terms-heading {
-      font-weight: bold;
-      font-size: 9.5pt;
       text-decoration: underline;
-      margin-bottom: 3px;
+      margin: 12px 0 10px 0;
     }
-    .terms-text {
-      font-size: 8.5pt;
-      line-height: 1.35;
-      white-space: pre-line;
-      color: #1e293b;
+    .section-heading {
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: underline;
+      margin: 10px 0 4px 0;
+    }
+    ul.scope-list {
+      margin-left: 24px;
+      margin-bottom: 8px;
+      list-style-type: disc;
+    }
+    ul.scope-list li {
+      margin-bottom: 3px;
+      font-size: 13.5px;
     }
 
-    .bank-table {
-      width: 95%;
-      border-collapse: collapse;
-      border: 1px solid #000;
+    .cost-table {
+      margin-top: 10px;
+      margin-bottom: 18px;
+    }
+    .cost-table th {
+      font-weight: bold;
+      text-align: center;
+      padding: 6px;
+    }
+    .cost-table td.cell-project {
+      width: 35%;
+      vertical-align: middle;
+      font-weight: 500;
+      padding: 8px;
+    }
+    .cost-table td.cell-item {
+      width: 40%;
+      padding: 4px 8px;
+    }
+    .cost-table td.cell-amount {
+      width: 25%;
+      text-align: right;
+      padding: 4px 8px;
+      font-weight: 500;
+    }
+    .cost-table tr.row-total td.label {
+      text-align: right;
+      font-weight: bold;
+      font-style: italic;
+      padding-right: 12px;
+    }
+    .cost-table tr.row-total td.val {
+      text-align: right;
+      font-weight: bold;
+      padding-right: 8px;
+    }
+
+    .terms-box {
+      margin-top: 14px;
+      margin-bottom: 18px;
+      font-size: 13.5px;
+    }
+    .terms-box ol {
+      margin-left: 20px;
       margin-top: 6px;
     }
-    .bank-table td {
-      border: 1px solid #000;
-      padding: 3px 5px;
-      font-size: 8.5pt;
-    }
-    .bank-table td.b-label {
-      font-weight: bold;
-      width: 32%;
+    .terms-box li {
+      margin-bottom: 6px;
+      line-height: 1.4;
     }
 
-    .signatory-box {
+    .account-table {
+      width: 75%;
+      margin-top: 8px;
+    }
+    .account-table td.lbl {
+      width: 140px;
+      font-weight: bold;
+    }
+
+    .page-footer-num {
       text-align: center;
-      padding: 6px 10px;
-      float: right;
-      width: 220px;
-    }
-    .stamp-img {
-      width: 145px;
-      height: auto;
-      display: block;
-      margin: 0 auto 3px auto;
-    }
-    .signatory-name {
-      font-size: 10pt;
-      font-weight: bold;
-      line-height: 1.25;
-    }
-    .signatory-title {
-      font-size: 9pt;
-      line-height: 1.2;
+      margin-top: auto;
+      font-size: 12px;
+      color: #6b7280;
+      padding-top: 10px;
     }
 
-    /* Print CSS Media Queries */
     @media print {
-      @page {
-        size: A4 portrait;
-        margin: 10mm;
-      }
       body {
-        background: transparent;
+        background: none;
         padding: 0;
+        gap: 0;
       }
-      .no-print-bar {
+      .screen-action-bar {
         display: none !important;
       }
-      .sheet {
+      .page {
         box-shadow: none;
+        padding: 10mm 12mm;
         margin: 0;
-        padding: 0;
         width: 100%;
-        min-height: auto;
+        min-height: 100%;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Screen Action Bar -->
-  <div class="no-print-bar">
-    <div>
-      <strong>GTMS Statutory Quotation</strong> &nbsp;|&nbsp; Ref: {{ $quotation->quotation_number }} &bull; {{ $quotation->company_name ?: $quotation->customer_name }}
+  <!-- Screen Floating Action Bar (Hidden during Print) -->
+  <div class="screen-action-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <a href="{{ route('accounts.quotations.show', $quotation->id) }}" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Quotation
+      </a>
+      <span style="font-size: 13px; font-weight: 500; opacity: 0.9;">
+        Document: <strong>{{ $quotation->quotation_number }}</strong>
+      </span>
     </div>
     <div style="display: flex; gap: 10px;">
-      <a href="{{ route('accounts.quotations.show', $quotation->id) }}" class="secondary">
-        &larr; Back to Details
-      </a>
-      <a href="{{ route('accounts.quotations.index') }}" class="secondary">
-        Quotations Directory
-      </a>
-      <button onclick="window.print()">
-        🖨️ Print Standalone A4 / Save as PDF
+      <button onclick="window.print()" style="background: #059669;">
+        <i class="fas fa-print"></i> Print / Save as PDF
       </button>
     </div>
   </div>
 
-  <!-- A4 Document Sheet -->
-  <div class="sheet">
-    <table class="qtn-table">
-      <colgroup>
-        <col style="width: 52%;">
-        <col style="width: 48%;">
-      </colgroup>
+  @php
+      // Resolve Dynamic Scope Sections
+      $scopeSections = is_array($quotation->scope_sections) && count($quotation->scope_sections) > 0
+          ? $quotation->scope_sections
+          : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultScopeSections();
 
-      <!-- Row 1: Corporate Letterhead & Document Title -->
-      <tr>
-        <td style="padding: 8px 10px; vertical-align: top;">
-          <div style="text-align: center; margin-bottom: 4px;">
-            <img src="{{ asset('images/invoices/gtms_logo.png') }}" class="company-logo" alt="GTMS Logo">
-          </div>
-          <div class="company-title">GEO TECHNICAL MINING SOLUTIONS</div>
-          <div class="iso-tag">AN ISO 9001 : 2015 CERTIFIED COMPANY</div>
-          <div class="company-address">
-            1/237, AR Complex, Salem Main Road,<br>
-            Meyyanur, Salem – 636 004, Tamil Nadu, India.<br>
-            GSTIN: 33ABCDE1234F1Z5 &bull; PAN: ABCDE1234F<br>
-            Mobile: +91 94432 12345 / 94432 54321<br>
-            Email: info@gtmsmining.com &bull; Web: www.gtmsmining.com
-          </div>
-        </td>
+      // Split scope sections cleanly across Page 1 and Page 2
+      // Use 3 sections on Page 1 to ensure room for Consignee & Quarry Particulars table
+      $totalSections = count($scopeSections);
+      $splitCount = $totalSections > 3 ? 3 : $totalSections;
+      $page1Sections = array_slice($scopeSections, 0, $splitCount);
+      $page2Sections = array_slice($scopeSections, $splitCount);
 
-        <td style="vertical-align: top; padding: 0;">
-          <div class="title-cell">
-            <span class="quotation-heading">QUOTATION</span>
-            <div class="quotation-subheading">Statutory Mining Consultancy & Engineering Services</div>
-          </div>
-          <table class="meta-subtable">
-            <tr>
-              <td class="label-col">QUOTATION NO.</td>
-              <td class="val-col"><strong>{{ $quotation->quotation_number }}</strong></td>
-            </tr>
-            <tr>
-              <td class="label-col">DATE</td>
-              <td class="val-col">{{ $quotation->created_at->format('d-M-Y') }}</td>
-            </tr>
-            <tr>
-              <td class="label-col">OFFER VALIDITY</td>
-              <td class="val-col">{{ $quotation->validity_days }} Days (until {{ $quotation->created_at->addDays($quotation->validity_days)->format('d-M-Y') }})</td>
-            </tr>
-            <tr>
-              <td class="label-col">STATE / CODE</td>
-              <td class="val-col">Tamil Nadu (Code : 33)</td>
-            </tr>
-            <tr>
-              <td class="label-col">PREPARED BY</td>
-              <td class="val-col">Managing Partner / RQP Division</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+      // Resolve Milestones
+      $milestones = is_array($quotation->milestones) && count($quotation->milestones) > 0
+          ? $quotation->milestones
+          : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultMilestones();
 
-      <!-- Row 2: Client Profile (Left) & Quarry Concession Details (Right) -->
-      <tr>
-        <td class="section-banner">CLIENT / PROPOSAL TO</td>
-        <td class="section-banner">QUARRY CONCESSION &amp; LOCATION</td>
-      </tr>
+      // Subject
+      $subject = $quotation->subject ?: 'Quotation for Environmental Clearance falls in "B2" Category Project';
+  @endphp
 
-      <tr>
-        <!-- Left: Client Info -->
-        <td style="vertical-align: top; padding: 8px 10px;">
-          <div class="client-title">
-            {{ strtoupper($quotation->company_name ?: $quotation->customer_name) }}
-          </div>
-          @if($quotation->customer_name && $quotation->company_name && $quotation->customer_name !== $quotation->company_name)
-            <div style="font-size: 9pt; color: #334155; margin-bottom: 3px;">
-              <strong>Kind Attn:</strong> Thiru. {{ $quotation->customer_name }}
-            </div>
-          @endif
-          <div style="font-size: 9pt; line-height: 1.35; margin-top: 4px;">
-            <strong>Address:</strong> {{ $quotation->address ?: ($quotation->village ? $quotation->village . ', ' . ($quotation->district?->name ?? 'Tamil Nadu') : 'Mining Concession Zone, Tamil Nadu') }}<br>
+  <!-- PAGE 1 -->
+  <div class="page">
+    <header class="header-banner">
+      <img src="{{ asset('assets/images/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+    </header>
+
+    <div class="company-contact-strip">
+      <div>
+        <strong>GEO TECHNICAL MINING SOLUTIONS</strong> (A NABET Accredited &amp; ISO Certified)<br>
+        No: 2/548/D, Thadangam, Thokkampatti (post), Dharmapuri-636705. Tamil Nadu.
+      </div>
+      <div style="text-align: right;">
+        Mob: +91 9790462882, 7010076633<br>
+        E-mail: info.gtmsdpi@gmail.com | Website: www.gtmsind.com
+      </div>
+    </div>
+
+    <h1 class="doc-title">QUOTATION</h1>
+
+    <div class="meta-bar">
+      <span>Quot No : {{ $quotation->quotation_number }}</span>
+      <span>Date: {{ $quotation->created_at ? $quotation->created_at->format('d.m.Y') : date('d.m.Y') }}</span>
+    </div>
+
+    <table class="consignee-table">
+      <tbody>
+        <tr>
+          <td class="header-cell">Name and Address of the Consignee</td>
+          <td class="value-cell">
+            <strong>M/s. {{ $quotation->company_name ?: $quotation->customer_name }},</strong><br>
+            @if($quotation->address)
+              {!! nl2br(e($quotation->address)) !!}<br>
+            @else
+              @if($quotation->village) {{ $quotation->village }}, @endif
+              @if($quotation->taluk) {{ $quotation->taluk }}, @endif
+              {{ $quotation->district?->name ?? 'Tamil Nadu' }}<br>
+            @endif
+            Tamil Nadu State.
             @if($quotation->gst_number)
-              <strong>GSTIN:</strong> {{ $quotation->gst_number }}<br>
+              <div style="margin-top: 3px;"><strong>GSTIN:</strong> {{ $quotation->gst_number }}</div>
             @endif
-            @if($quotation->phone)
-              <strong>Contact:</strong> {{ $quotation->phone }}<br>
-            @endif
+          </td>
+        </tr>
+        <tr>
+          <td class="header-cell">Contact Person &amp; Designation</td>
+          <td class="value-cell">
+            {{ $quotation->customer_name ?: 'Authorized Representative' }}<br>
+            {{ $quotation->phone ? '+91 ' . preg_replace('/^\+?91\s*/', '', $quotation->phone) : 'N/A' }}
             @if($quotation->email)
-              <strong>Email:</strong> {{ $quotation->email }}
+              | {{ $quotation->email }}
             @endif
-          </div>
-        </td>
-
-        <!-- Right: Quarry Info -->
-        <td style="vertical-align: top; padding: 8px 10px;">
-          <div style="font-size: 10pt; font-weight: bold; color: #0F1E4D; margin-bottom: 3px;">
-            {{ $quotation->quarry_name ?: ($quotation->village ? $quotation->village . ' Quarry' : 'Quarry Concession') }}
-          </div>
-          <div style="font-size: 9pt; line-height: 1.35;">
-            <strong>S.F. Numbers:</strong> {{ $quotation->survey_numbers ?: 'N/A' }}<br>
-            <strong>Village / Taluk:</strong> {{ $quotation->village ?: 'N/A' }}, {{ $quotation->taluk ?: 'N/A' }}<br>
-            <strong>District:</strong> {{ $quotation->district?->name ?? 'Tamil Nadu' }}<br>
-            <strong>Sanctioned Extent:</strong> {{ $quotation->area_extent_ha ? number_format($quotation->area_extent_ha, 4) . ' Hectares' : 'N/A' }}<br>
-            <strong>Target Mineral:</strong> {{ $quotation->mineral_name ?: 'Rough Stone / Multi-Coloured Granite' }}
-          </div>
-        </td>
-      </tr>
+          </td>
+        </tr>
+        @if($quotation->quarry_name || $quotation->survey_numbers || $quotation->area_extent_ha)
+        <tr>
+          <td class="header-cell">Quarry / Project Particulars</td>
+          <td class="value-cell">
+            @if($quotation->quarry_name)<strong>{{ $quotation->quarry_name }}</strong>@endif
+            @if($quotation->survey_numbers) &bull; S.F. No: {{ $quotation->survey_numbers }}@endif
+            @if($quotation->area_extent_ha) &bull; Extent: {{ number_format($quotation->area_extent_ha, 4) }} Ha @endif
+            @if($quotation->mineral_name) &bull; Mineral: {{ $quotation->mineral_name }}@endif
+            @if($quotation->village || $quotation->taluk)
+              <br><span style="font-size: 12px; color: #333333;">Location: {{ implode(', ', array_filter([$quotation->village, $quotation->taluk, $quotation->district?->name])) }}</span>
+            @endif
+          </td>
+        </tr>
+        @endif
+        <tr class="subject-row">
+          <td colspan="2">
+            <strong>Subject:</strong> {{ $subject }}
+          </td>
+        </tr>
+      </tbody>
     </table>
 
-    <!-- Table 2: Services Scope & Line Items Breakdown -->
-    <table class="qtn-table" style="border-top: none;">
-      <colgroup>
-        <col style="width: 5%;">
-        <col style="width: 45%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-        <col style="width: 10%;">
-      </colgroup>
-      <tr class="items-header">
-        <th style="border-top: none;">S.No</th>
-        <th style="border-top: none;">STATUTORY SERVICE DESCRIPTION &amp; SCOPE</th>
-        <th style="border-top: none;">SAC CODE</th>
-        <th style="border-top: none;">QTY / AREA</th>
-        <th style="border-top: none;">UNIT</th>
-        <th style="border-top: none;">RATE (INR)</th>
-        <th style="border-top: none;">SUBTOTAL (INR)</th>
-      </tr>
+    <div class="section-heading-main">Sub: Complete Scope (All Department)</div>
 
-      @foreach($quotation->items as $item)
-      <tr>
-        <td class="item-num">{{ $loop->iteration }}</td>
-        <td class="item-desc-cell">
-          <strong>{{ $item->service_name }}</strong>
-          @if($item->description)
-            <div class="item-scope-text">{{ $item->description }}</div>
-          @endif
-        </td>
-        <td class="text-center-cell">{{ $item->sac_code ?: '998341' }}</td>
-        <td class="text-center-cell">{{ number_format($item->quantity, 2) }}</td>
-        <td class="text-center-cell">{{ $item->unit ?: 'Nos' }}</td>
-        <td class="amount-cell">{{ number_format($item->unit_rate, 2) }}</td>
-        <td class="amount-cell">{{ number_format($item->subtotal, 2) }}</td>
-      </tr>
-      @endforeach
+    @foreach($page1Sections as $section)
+      <div class="section-heading">{{ $section['title'] }}</div>
+      <ul class="scope-list">
+        @foreach((array) ($section['items'] ?? []) as $item)
+          <li>{{ $item }}</li>
+        @endforeach
+      </ul>
+    @endforeach
 
-      <!-- Subtotal Row -->
-      <tr>
-        <td colspan="6" class="tax-summary-label"><strong>SERVICES SUBTOTAL</strong></td>
-        <td class="amount-cell"><strong>{{ number_format($quotation->subtotal, 2) }}</strong></td>
-      </tr>
+    <div class="page-footer-num">-- 1 of 3 --</div>
+  </div>
 
-      <!-- CGST Row -->
-      <tr>
-        <td colspan="6" class="tax-summary-label">CGST @ {{ number_format($quotation->tax_rate / 2, 2) }} %</td>
-        <td class="amount-cell">{{ number_format($quotation->tax_amount / 2, 2) }}</td>
-      </tr>
+  <!-- PAGE 2 -->
+  <div class="page">
+    <header class="header-banner">
+      <img src="{{ asset('assets/images/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+    </header>
 
-      <!-- SGST Row -->
-      <tr>
-        <td colspan="6" class="tax-summary-label">SGST @ {{ number_format($quotation->tax_rate / 2, 2) }} %</td>
-        <td class="amount-cell">{{ number_format($quotation->tax_amount / 2, 2) }}</td>
-      </tr>
+    <div class="company-contact-strip">
+      <div>
+        <strong>GEO TECHNICAL MINING SOLUTIONS</strong> (A NABET Accredited &amp; ISO Certified)<br>
+        No: 2/548/D, Thadangam, Thokkampatti (post), Dharmapuri-636705. Tamil Nadu.
+      </div>
+      <div style="text-align: right;">
+        Mob: +91 9790462882, 7010076633<br>
+        E-mail: info.gtmsdpi@gmail.com | Website: www.gtmsind.com
+      </div>
+    </div>
 
-      <!-- Total Row -->
-      <tr class="total-row">
-        <td colspan="6" style="text-align: right; padding-right: 12px !important;">
-          TOTAL QUOTATION VALUE (INR):
-        </td>
-        <td class="amount-cell" style="font-weight: bold; font-size: 11pt;">
-          ₹ {{ number_format($quotation->total_amount, 2) }}
-        </td>
-      </tr>
+    @foreach($page2Sections as $section)
+      <div class="section-heading">{{ $section['title'] }}</div>
+      <ul class="scope-list">
+        @foreach((array) ($section['items'] ?? []) as $item)
+          <li>{{ $item }}</li>
+        @endforeach
+      </ul>
+    @endforeach
 
-      <!-- Amount in Words Row -->
-      <tr>
-        <td colspan="7" style="padding: 6px 10px; background-color: #fcfcfc;">
-          <strong>Amount Chargeable (in words):</strong>
-          <span style="font-style: italic; font-weight: bold; color: #0F1E4D;">{{ $quotation->amount_in_words }}</span>
-        </td>
-      </tr>
+    <div class="section-heading-main" style="margin-top: 20px;">Payment Details</div>
+
+    <table style="width: 75%; margin-top: 8px;">
+      <thead>
+        <tr>
+          <th style="width: 15%; text-align: center;">S. No</th>
+          <th style="width: 60%; text-align: left;">Description</th>
+          <th style="width: 25%; text-align: center;">Amount in lakhs</th>
+        </tr>
+      </thead>
+      <tbody>
+        @foreach($milestones as $m)
+          <tr>
+            <td style="text-align: center;">{{ $m['s_no'] ?? $loop->iteration }}</td>
+            <td>{{ $m['description'] ?? '' }}</td>
+            <td style="text-align: center; font-weight: bold;">{{ $m['amount_lakhs'] ?? '' }}</td>
+          </tr>
+        @endforeach
+      </tbody>
     </table>
 
-    <!-- Commercial Terms & Statutory Exclusions Section -->
-    <table class="qtn-table" style="border-top: none;">
-      <colgroup>
-        <col style="width: 50%;">
-        <col style="width: 50%;">
-      </colgroup>
-      <tr>
-        <td style="vertical-align: top; padding: 6px 10px;">
-          <div class="terms-heading">MILESTONE PAYMENT TERMS:</div>
-          <div class="terms-text">{{ $quotation->payment_terms ?: "1. 50% Mobilization advance along with confirmed work order.\n2. 30% upon preparation & submission of draft statutory mining / environmental documentation.\n3. 20% upon final statutory clearance & dispatch of statutory order copies." }}</div>
-        </td>
-        <td style="vertical-align: top; padding: 6px 10px;">
-          <div class="terms-heading">GOVERNMENT STATUTORY EXCLUSIONS:</div>
-          <div class="terms-text">{{ $quotation->exclusions ?: "1. Statutory government scrutiny fees, SEIAA presentation fees, TNPCB consent application fees, and district DMF levies are to be paid directly by the client via government challans.\n2. In-person client representation before statutory committees if required." }}</div>
-        </td>
-      </tr>
+    <div class="page-footer-num">-- 2 of 3 --</div>
+  </div>
+
+  <!-- PAGE 3 -->
+  <div class="page">
+    <header class="header-banner">
+      <img src="{{ asset('assets/images/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+    </header>
+
+    <div class="company-contact-strip">
+      <div>
+        <strong>GEO TECHNICAL MINING SOLUTIONS</strong> (A NABET Accredited &amp; ISO Certified)<br>
+        No: 2/548/D, Thadangam, Thokkampatti (post), Dharmapuri-636705. Tamil Nadu.
+      </div>
+      <div style="text-align: right;">
+        Mob: +91 9790462882, 7010076633<br>
+        E-mail: info.gtmsdpi@gmail.com | Website: www.gtmsind.com
+      </div>
+    </div>
+
+    <table class="cost-table">
+      <thead>
+        <tr>
+          <th>Project Details</th>
+          <th>Description</th>
+          <th>Amount Rs.</th>
+        </tr>
+      </thead>
+      <tbody>
+        @php
+            $itemsCount = $quotation->items->count();
+        @endphp
+        @forelse($quotation->items as $index => $item)
+          <tr>
+            @if($index === 0)
+              <td class="cell-project" rowspan="{{ max(1, $itemsCount) }}">
+                {{ $subject }}
+              </td>
+            @endif
+            <td class="cell-item">{{ $item->service_name }}</td>
+            <td class="cell-amount">{{ number_format($item->subtotal, 2) }}</td>
+          </tr>
+        @empty
+          <tr>
+            <td class="cell-project">{{ $subject }}</td>
+            <td class="cell-item">Statutory Mining Scope Services</td>
+            <td class="cell-amount">{{ number_format($quotation->subtotal, 2) }}</td>
+          </tr>
+        @endforelse
+
+        <tr class="row-total">
+          <td colspan="2" class="label">TOTAL</td>
+          <td class="val">{{ number_format($quotation->subtotal, 2) }}</td>
+        </tr>
+        <tr class="row-total">
+          <td colspan="2" class="label">SGST &amp; CGST @ {{ number_format($quotation->tax_rate, 0) }}%</td>
+          <td class="val">{{ number_format($quotation->tax_amount, 2) }}</td>
+        </tr>
+        <tr class="row-total">
+          <td colspan="2" class="label" style="font-style: normal; text-align: left; padding-left: 8px;">
+            TOTAL ({{ $quotation->amount_in_words }})
+          </td>
+          <td class="val">{{ number_format($quotation->total_amount, 2) }}</td>
+        </tr>
+      </tbody>
     </table>
 
-    <!-- Bank Coordinates & Signatory Footer -->
-    <table class="qtn-table" style="border-top: none;">
-      <colgroup>
-        <col style="width: 55%;">
-        <col style="width: 45%;">
-      </colgroup>
-      <tr>
-        <!-- Bank Details -->
-        <td style="vertical-align: top; padding: 6px 10px;">
-          <div style="font-weight: bold; font-size: 9pt; text-transform: uppercase;">Bank Remittance Coordinates:</div>
-          <table class="bank-table">
-            <tr>
-              <td class="b-label">Beneficiary Name</td>
-              <td><strong>GEO TECHNICAL MINING SOLUTIONS</strong></td>
-            </tr>
-            <tr>
-              <td class="b-label">Current Account No.</td>
-              <td><strong>38472910482</strong></td>
-            </tr>
-            <tr>
-              <td class="b-label">Bank &amp; Branch</td>
-              <td>State Bank of India, Meyyanur Branch, Salem</td>
-            </tr>
-            <tr>
-              <td class="b-label">IFSC Code</td>
-              <td><strong>SBIN0001234</strong></td>
-            </tr>
-          </table>
-        </td>
+    <div class="terms-box">
+      <div class="section-heading">Terms &amp; Conditions:</div>
+      <ol>
+        @if($quotation->payment_terms)
+          @foreach(preg_split('/\r\n|\r|\n/', $quotation->payment_terms) as $line)
+            @php $clean = trim(preg_replace('/^\d+[\.\)]\s*/', '', $line)); @endphp
+            @if(!empty($clean))
+              <li>{{ $clean }}</li>
+            @endif
+          @endforeach
+        @else
+          <li>All payments shall be made by Online payment or Demand Draft or Cheque, payable at GTMS</li>
+          <li>All the applicable statutory fees at various stages of the approvals (towards EC shall be paid by the project proponent and is not included in the scope of this proposal.</li>
+          <li>The scope of our consultancy services includes Environmental Clearance (EC) from SEIAA</li>
+        @endif
+      </ol>
 
-        <!-- Seal & Signatory -->
-        <td style="vertical-align: top; text-align: center; padding: 6px 10px;">
-          <div class="signatory-box">
-            <img src="{{ asset('images/invoices/gtms_stamp.png') }}" class="stamp-img" alt="Official Seal">
-            <div class="signatory-name">Dr. S. Karuppannan, M.Sc., Ph.D.</div>
-            <div class="signatory-title">Managing Partner / RQP</div>
-            <div style="font-size: 8pt; color: #475569;">(Authorised Signatory)</div>
-          </div>
-        </td>
-      </tr>
-    </table>
+      @if($quotation->exclusions)
+        <div class="section-heading" style="margin-top: 10px;">Exclusions:</div>
+        <ol>
+          @foreach(preg_split('/\r\n|\r|\n/', $quotation->exclusions) as $line)
+            @php $cleanEx = trim(preg_replace('/^\d+[\.\)]\s*/', '', $line)); @endphp
+            @if(!empty($cleanEx))
+              <li>{{ $cleanEx }}</li>
+            @endif
+          @endforeach
+        </ol>
+      @endif
+    </div>
+
+    <div>
+      <div class="section-heading">Account Details</div>
+      <table class="account-table">
+        <tbody>
+          <tr>
+            <td class="lbl">Name</td>
+            <td>Geo Technical Mining Solutions</td>
+          </tr>
+          <tr>
+            <td class="lbl">Account No.</td>
+            <td>107302000001265</td>
+          </tr>
+          <tr>
+            <td class="lbl">Bank/Branch</td>
+            <td>Indian Overseas Bank/ Oddapatti, Dharmapuri</td>
+          </tr>
+          <tr>
+            <td class="lbl">IFSC Code</td>
+            <td>IOBA0001073</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="page-footer-num">-- 3 of 3 --</div>
   </div>
 
 </body>

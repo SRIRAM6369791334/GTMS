@@ -32,9 +32,10 @@ function getUrlParams(dParam)
         direction = 'ltr'; 
     } */
 	
+	var currentVersion = getCookie('version') || jQuery('body').attr('data-theme-version') || "light";
 	dlabSettingsOptions = {
 			typography: "poppins",
-			version: "light",
+			version: currentVersion,
 			layout: "vertical",
 			primary: "color_1",
 			headerBg: "color_1",

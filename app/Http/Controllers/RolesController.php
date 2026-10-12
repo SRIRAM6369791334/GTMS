@@ -33,6 +33,7 @@ class RolesController extends Controller
             'product' => 'Products',
             'unit' => 'Units',
             'account' => 'Accounts & Financials',
+            'notification' => 'Notifications',
         ];
 
 

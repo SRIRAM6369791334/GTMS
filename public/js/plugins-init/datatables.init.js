@@ -42,6 +42,9 @@ let dataSet = [
 
 (function($) {
     "use strict"
+    if ($.fn.dataTable) {
+        $.fn.dataTable.ext.errMode = 'none';
+    }
     //example 1
     var table = $('#example').DataTable({
 		
@@ -131,7 +134,8 @@ let dataSet = [
 	});
 
 	// dataTable5
-	var table = $('#example10').DataTable({
+	if ($('#example10').length) {
+		var table = $('#example10').DataTable({
 		searching: false,
 		paging:true,
 		select: false,
@@ -149,6 +153,7 @@ let dataSet = [
 		  
 		
 	}); 
+	}
 	
 	// dataTable5
 	var table = $('#example5').DataTable({

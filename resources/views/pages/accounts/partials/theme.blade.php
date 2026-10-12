@@ -85,8 +85,29 @@
     .content-body .small.text-muted {
         color: #334155 !important; /* Deep Slate 700 (9.5:1 WCAG AAA contrast ratio vs white) */
     }
-    .content-body .text-secondary {
+    .content-body .text-secondary,
+    .quotation-wrapper .text-secondary {
         color: #475569 !important; /* Neutral Slate 600 instead of Dexignlabs pink (#FFA7D7) */
+    }
+    .content-body .text-info,
+    .quotation-wrapper .text-info {
+        color: #0284C7 !important; /* Sky Blue instead of Dexignlabs pink */
+    }
+    .content-body .text-primary,
+    .quotation-wrapper .text-primary {
+        color: #0F1E4D !important; /* Signature GTMS Navy */
+    }
+    .content-body .text-success,
+    .quotation-wrapper .text-success {
+        color: #059669 !important; /* Emerald */
+    }
+    .content-body .text-warning,
+    .quotation-wrapper .text-warning {
+        color: #D97706 !important; /* Amber */
+    }
+    .content-body .text-danger,
+    .quotation-wrapper .text-danger {
+        color: #DC2626 !important; /* Rose Red */
     }
     .content-body .form-label {
         color: #0F172A !important; /* Slate 900 */
@@ -122,6 +143,103 @@
         cursor: not-allowed !important;
         opacity: 0.8 !important;
         box-shadow: none !important;
+    }
+
+    /* ─── GTMS EXECUTIVE FINTECH BUTTON NORMALIZATION ─── */
+    .content-body .btn-outline-secondary,
+    .quotation-wrapper .btn-outline-secondary,
+    .btn-outline-secondary {
+        color: #334155 !important;
+        border-color: #CBD5E1 !important;
+        background-color: #FFFFFF !important;
+    }
+    .content-body .btn-outline-secondary:hover,
+    .quotation-wrapper .btn-outline-secondary:hover,
+    .btn-outline-secondary:hover {
+        color: #0F172A !important;
+        border-color: #94A3B8 !important;
+        background-color: #F1F5F9 !important;
+    }
+    .content-body .btn-secondary,
+    .quotation-wrapper .btn-secondary {
+        color: #FFFFFF !important;
+        background-color: #475569 !important;
+        border-color: #475569 !important;
+    }
+    .content-body .btn-secondary:hover,
+    .quotation-wrapper .btn-secondary:hover {
+        background-color: #334155 !important;
+        border-color: #334155 !important;
+    }
+    .content-body .btn-light,
+    .quotation-wrapper .btn-light {
+        color: #334155 !important;
+        background-color: #F8FAFC !important;
+        border-color: #E2E8F0 !important;
+    }
+    .content-body .btn-light:hover,
+    .quotation-wrapper .btn-light:hover {
+        color: #0F172A !important;
+        background-color: #F1F5F9 !important;
+        border-color: #CBD5E1 !important;
+    }
+    .content-body .btn-outline-danger,
+    .quotation-wrapper .btn-outline-danger {
+        color: #DC2626 !important;
+        border-color: #FECACA !important;
+        background-color: #FFFFFF !important;
+    }
+    .content-body .btn-outline-danger:hover,
+    .quotation-wrapper .btn-outline-danger:hover {
+        color: #FFFFFF !important;
+        background-color: #DC2626 !important;
+        border-color: #DC2626 !important;
+    }
+    .content-body .btn-outline-primary,
+    .quotation-wrapper .btn-outline-primary {
+        color: #1E3A8A !important;
+        border-color: #BFDBFE !important;
+        background-color: #FFFFFF !important;
+    }
+    .content-body .btn-outline-primary:hover,
+    .quotation-wrapper .btn-outline-primary:hover {
+        color: #FFFFFF !important;
+        background-color: #1E3A8A !important;
+        border-color: #1E3A8A !important;
+    }
+    .content-body .btn-outline-success,
+    .quotation-wrapper .btn-outline-success {
+        color: #059669 !important;
+        border-color: #A7F3D0 !important;
+        background-color: #FFFFFF !important;
+    }
+    .content-body .btn-outline-success:hover,
+    .quotation-wrapper .btn-outline-success:hover {
+        color: #FFFFFF !important;
+        background-color: #059669 !important;
+        border-color: #059669 !important;
+    }
+
+    /* Copy micro-interaction button */
+    .copy-bank-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        color: #475569 !important;
+        border-radius: 6px !important;
+        width: 24px !important;
+        height: 24px !important;
+        padding: 0 !important;
+        font-size: 0.72rem !important;
+        cursor: pointer !important;
+        transition: all 0.15s ease !important;
+    }
+    .copy-bank-btn:hover {
+        background: #F1F5F9 !important;
+        border-color: #94A3B8 !important;
+        color: #0F172A !important;
     }
 
     /* ─── P0.5: ACTIVE FILTER CHIPS STYLES ─── */

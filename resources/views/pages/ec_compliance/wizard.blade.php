@@ -644,11 +644,11 @@ $labels = [
             <a href="{{ $step === 1 ? route('ec-compliance.index') : route('ec-compliance.step', $step - 1) }}" class="btn btn-outline-navy btn-sm">
               <i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}
             </a>
-            @can('environment.view')
+            @canany(['ec_compliance.create', 'environment.view'])
               <button type="submit" class="btn {{ $step === 8 ? 'btn-green' : 'btn-navy' }} px-4">
                 {{ $step === 8 ? 'Finish & Save Compliance Filing' : 'Save & Continue' }} <i class="bi {{ $step === 8 ? 'bi-check2-circle' : 'bi-arrow-right' }}"></i>
               </button>
-            @endcan
+            @endcanany
           </div>
         </form>
       </div>

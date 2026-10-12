@@ -144,11 +144,11 @@
         </ol>
       </div>
       <div class="col-lg-6 text-end">
-        @can('environment.create')
+        @canany(['ec_certificate.create', 'environment.create'])
         <a href="{{ route('ec-certificate.step', 1) }}" class="btn btn-navy" style="background:#0F1E4D; color:#fff;">
           <i class="fa fa-plus me-1"></i> Issue EC Certificate
         </a>
-        @endcan
+        @endcanany
       </div>
     </div>
 
@@ -385,11 +385,11 @@
                   <div class="text-muted mb-3"><i class="fa fa-certificate fa-3x opacity-25"></i></div>
                   <div class="fw-semibold fs-6">No EC Certificates recorded yet</div>
                   <div class="small text-muted mt-1">Issue the first certificate using the step-by-step wizard.</div>
-                  @can('environment.create')
+                  @canany(['ec_certificate.create', 'environment.create'])
                   <a href="{{ route('ec-certificate.step', 1) }}" class="btn btn-navy btn-sm mt-3" style="background:#0F1E4D; color:#fff;">
                     <i class="fa fa-plus me-1"></i> Issue EC Certificate
                   </a>
-                  @endcan
+                  @endcanany
                 </td>
               </tr>
               @endforelse

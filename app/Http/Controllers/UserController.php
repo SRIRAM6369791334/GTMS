@@ -156,7 +156,8 @@ class UserController extends Controller
             ]);
         }
 
-        if ($user->hasRole('Admin') && User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->count() <= 1) {
+        if (($user->hasRole('Admin') && User::whereHas('roles', fn($q) => $q->where('name', 'Admin'))->count() <= 1)
+            || ($user->hasRole('Super Admin') && User::whereHas('roles', fn($q) => $q->where('name', 'Super Admin'))->count() <= 1)) {
             return response()->json([
                 'status' => 0,
                 'message' => 'The last Admin account cannot be deleted.',

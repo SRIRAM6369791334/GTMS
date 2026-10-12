@@ -216,7 +216,7 @@
                     </div>
                 </div>
                 <div class="table-responsive p-3">
-                    <table id="example10" class="table table-hover align-middle mb-0 display" style="width:100%">
+                    <table id="customersTable" class="table table-hover align-middle mb-0 display" style="width:100%">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -229,7 +229,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($customers as $customer)
+                            @foreach($customers as $customer)
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
                                 <td>
@@ -329,14 +329,7 @@
                                     </div>
                                 </td>
                             </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
-                                    <i class="fa fa-folder-open fa-2x mb-2 d-block"></i>
-                                    No customers found. Click "Add Customer" to create the first record.
-                                </td>
-                            </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>

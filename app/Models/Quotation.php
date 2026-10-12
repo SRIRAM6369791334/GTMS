@@ -21,6 +21,7 @@ class Quotation extends Model
         'lease_application_id',
         'customer_name',
         'company_name',
+        'subject',
         'phone',
         'email',
         'gst_number',
@@ -32,12 +33,14 @@ class Quotation extends Model
         'survey_numbers',
         'area_extent_ha',
         'mineral_name',
+        'scope_sections',
         'subtotal',
         'tax_rate',
         'tax_amount',
         'total_amount',
         'validity_days',
         'payment_terms',
+        'milestones',
         'exclusions',
         'notes',
         'status',
@@ -52,6 +55,8 @@ class Quotation extends Model
         'total_amount'   => 'decimal:2',
         'area_extent_ha' => 'decimal:4',
         'validity_days'  => 'integer',
+        'scope_sections' => 'array',
+        'milestones'     => 'array',
     ];
 
     /**

@@ -159,8 +159,10 @@ class QuotationController extends Controller implements HasMiddleware
         }
 
         $services = $this->defaultServices;
+        $defaultScopeSections = $this->getDefaultScopeSections();
+        $defaultMilestones = $this->getDefaultMilestones();
 
-        return view('pages.accounts.quotations.create', compact('customers', 'districts', 'services'));
+        return view('pages.accounts.quotations.create', compact('customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones'));
     }
 
     /**
@@ -173,6 +175,7 @@ class QuotationController extends Controller implements HasMiddleware
             'lease_application_id' => 'nullable|exists:lease_applications,id',
             'customer_name'        => 'nullable|string|max:255',
             'company_name'         => 'nullable|string|max:255',
+            'subject'              => 'nullable|string|max:500',
             'phone'                => 'nullable|string|max:50',
             'email'                => 'nullable|email|max:255',
             'gst_number'           => 'nullable|string|max:50',
@@ -184,6 +187,8 @@ class QuotationController extends Controller implements HasMiddleware
             'survey_numbers'       => 'nullable|string|max:255',
             'area_extent_ha'       => 'nullable|numeric|min:0',
             'mineral_name'         => 'nullable|string|max:255',
+            'scope_sections'       => 'nullable',
+            'milestones'           => 'nullable',
             'validity_days'        => 'nullable|integer|min:1|max:365',
             'tax_rate'             => 'nullable|numeric|min:0|max:100',
             'payment_terms'        => 'nullable|string',
@@ -276,12 +281,17 @@ class QuotationController extends Controller implements HasMiddleware
 
             $user = Auth::user();
 
+            $subject = trim($request->input('subject') ?: 'Quotation for Environmental Clearance falls in "B2" Category Project');
+            $scopeSections = $this->parseScopeSections($request->input('scope_sections'));
+            $milestones = $this->parseMilestones($request->input('milestones'));
+
             $quotation = Quotation::create([
                 'quotation_number'     => $quotationNumber,
                 'customer_id'          => $customer->id,
                 'lease_application_id' => $request->input('lease_application_id'),
                 'customer_name'        => $customerName,
                 'company_name'         => $companyName,
+                'subject'              => $subject,
                 'phone'                => $phone,
                 'email'                => $email,
                 'gst_number'           => $gstNumber,
@@ -293,12 +303,14 @@ class QuotationController extends Controller implements HasMiddleware
                 'survey_numbers'       => $surveyNumbers,
                 'area_extent_ha'       => $areaExtentHa,
                 'mineral_name'         => $mineralName,
+                'scope_sections'       => $scopeSections,
                 'subtotal'             => $calculatedSubtotal,
                 'tax_rate'             => $taxRate,
                 'tax_amount'           => $taxAmount,
                 'total_amount'         => $totalAmount,
                 'validity_days'        => (int) ($request->input('validity_days', 30)),
                 'payment_terms'        => $request->input('payment_terms') ?? "1. 50% Mobilization advance along with confirmed work order.\n2. 30% upon preparation & submission of draft statutory mining / environmental documentation.\n3. 20% upon final statutory clearance, presentation approval & dispatch of statutory order copies.",
+                'milestones'           => $milestones,
                 'exclusions'           => $request->input('exclusions') ?? "1. Government statutory scrutiny fees, SEIAA presentation fees, TNPCB consent application fees, and district DMF levies are to be paid directly by the client via government challans.\n2. In-person client representation before statutory committees if required.",
                 'notes'                => $request->input('notes'),
                 'status'               => $request->input('status', 'draft'),
@@ -356,8 +368,10 @@ class QuotationController extends Controller implements HasMiddleware
         }
 
         $services = $this->defaultServices;
+        $defaultScopeSections = $this->getDefaultScopeSections();
+        $defaultMilestones = $this->getDefaultMilestones();
 
-        return view('pages.accounts.quotations.edit', compact('quotation', 'customers', 'districts', 'services'));
+        return view('pages.accounts.quotations.edit', compact('quotation', 'customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones'));
     }
 
     /**
@@ -370,6 +384,7 @@ class QuotationController extends Controller implements HasMiddleware
             'lease_application_id' => 'nullable|exists:lease_applications,id',
             'customer_name'        => 'nullable|string|max:255',
             'company_name'         => 'nullable|string|max:255',
+            'subject'              => 'nullable|string|max:500',
             'phone'                => 'nullable|string|max:50',
             'email'                => 'nullable|email|max:255',
             'gst_number'           => 'nullable|string|max:50',
@@ -381,6 +396,8 @@ class QuotationController extends Controller implements HasMiddleware
             'survey_numbers'       => 'nullable|string|max:255',
             'area_extent_ha'       => 'nullable|numeric|min:0',
             'mineral_name'         => 'nullable|string|max:255',
+            'scope_sections'       => 'nullable',
+            'milestones'           => 'nullable',
             'validity_days'        => 'nullable|integer|min:1|max:365',
             'tax_rate'             => 'nullable|numeric|min:0|max:100',
             'payment_terms'        => 'nullable|string',
@@ -429,6 +446,7 @@ class QuotationController extends Controller implements HasMiddleware
                 'lease_application_id' => $request->input('lease_application_id'),
                 'customer_name'        => trim($request->input('customer_name') ?: $customer->customer_name),
                 'company_name'         => trim($request->input('company_name') ?: ($customer->company_name ?: $customer->customer_name)),
+                'subject'              => trim($request->input('subject') ?: ($quotation->subject ?: 'Quotation for Environmental Clearance falls in "B2" Category Project')),
                 'phone'                => trim($request->input('phone') ?: ($customer->mobile_num ?: '')),
                 'email'                => trim($request->input('email') ?: ($customer->email ?: '')),
                 'gst_number'           => trim($request->input('gst_number') ?: ($customer->gstin ?: '')),
@@ -440,12 +458,14 @@ class QuotationController extends Controller implements HasMiddleware
                 'survey_numbers'       => trim($request->input('survey_numbers') ?? ''),
                 'area_extent_ha'       => $request->filled('area_extent_ha') ? (float) $request->input('area_extent_ha') : null,
                 'mineral_name'         => trim($request->input('mineral_name') ?? ''),
+                'scope_sections'       => $this->parseScopeSections($request->input('scope_sections')),
                 'subtotal'             => $calculatedSubtotal,
                 'tax_rate'             => $taxRate,
                 'tax_amount'           => $taxAmount,
                 'total_amount'         => $totalAmount,
                 'validity_days'        => (int) ($request->input('validity_days', 30)),
                 'payment_terms'        => $request->input('payment_terms'),
+                'milestones'           => $this->parseMilestones($request->input('milestones')),
                 'exclusions'           => $request->input('exclusions'),
                 'notes'                => $request->input('notes'),
                 'status'               => $request->input('status', $quotation->status),
@@ -600,5 +620,155 @@ class QuotationController extends Controller implements HasMiddleware
         }
 
         return $candidate;
+    }
+
+    /**
+     * Standard pre-configured scope of work blocks (Q-28 Standard).
+     */
+    public function getDefaultScopeSections(): array
+    {
+        return [
+            [
+                'title' => 'Feasibility Study',
+                'items' => [
+                    'Field Visit at proposed quarry area.',
+                    'Preparation of Lease Plan and Surface Plan,',
+                    'Preparation of Satellite Imagery plan with 500m radius',
+                ],
+            ],
+            [
+                'title' => 'Online Lease Application',
+                'items' => [
+                    'Fresh Lease Application.',
+                    'New Lease Marking.',
+                    'Application Preparation.',
+                    'Technical assistance in Uploading of lease application',
+                ],
+            ],
+            [
+                'title' => 'Mining Plan',
+                'items' => [
+                    'Mining Survey and data collection at proposed quarry area.',
+                    'Preparation of Mining Plan',
+                    'Three Copies of Mining Plan Print out of each project.',
+                ],
+            ],
+            [
+                'title' => 'DGPS Survey',
+                'items' => [
+                    'DGPS Survey (static points, fixed coordinates, create pillar ID).',
+                    'Boundary demarcation and contour.',
+                ],
+            ],
+            [
+                'title' => 'Drone Survey',
+                'items' => [
+                    'Site Inspection.',
+                    'Preparation of Report',
+                    'Drone Survey for Accurate Topographical Mapping',
+                    'Boundary demarcation and contour',
+                    'DGPS Survey for GCP Marking',
+                ],
+            ],
+            [
+                'title' => 'Preparation of EC Report',
+                'items' => [
+                    'Preparation of EC Report as Form 1 & Pre-Feasibility Report, PMCP, Base Line Report, HGR.',
+                    'Registration in Parivesh portal',
+                    'Online submission of EC Report',
+                    'Technical assistance during application submission at SEIAA.',
+                    'Thirteen Copies of Reports to the State Appraisal Committee Member.',
+                    'Preparation of power point presentation for the State Expert Appraisal Committee (SEAC) of SEIAA.',
+                    'Technical assistance during the presentation of project proposal and Environmental Management Plan to the State Expert Appraisal Committee (SEAC) of SEIAA',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Standard pre-configured milestone payment schedule (Q-28 Standard).
+     */
+    public function getDefaultMilestones(): array
+    {
+        return [
+            ['s_no' => 1, 'description' => 'Preparation of Mining plan', 'amount_lakhs' => '0.70'],
+            ['s_no' => 2, 'description' => 'DGPS report will submit to DGM', 'amount_lakhs' => '0.72'],
+            ['s_no' => 3, 'description' => 'DRONE report will submit to DGM', 'amount_lakhs' => '0.40'],
+        ];
+    }
+
+    /**
+     * Parse scope sections from form submission.
+     */
+    protected function parseScopeSections($input): array
+    {
+        if (empty($input)) {
+            return $this->getDefaultScopeSections();
+        }
+
+        if (is_string($input)) {
+            $decoded = json_decode($input, true);
+            if (is_array($decoded)) {
+                $input = $decoded;
+            }
+        }
+
+        if (!is_array($input)) {
+            return $this->getDefaultScopeSections();
+        }
+
+        $sections = [];
+        foreach ($input as $sec) {
+            $title = trim($sec['title'] ?? '');
+            $items = $sec['items'] ?? [];
+            if (is_string($items)) {
+                $items = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n/', $items))));
+            }
+            if (!empty($title) || !empty($items)) {
+                $sections[] = [
+                    'title' => $title ?: 'Scope Section',
+                    'items' => is_array($items) ? array_values(array_filter($items)) : [],
+                ];
+            }
+        }
+
+        return !empty($sections) ? $sections : $this->getDefaultScopeSections();
+    }
+
+    /**
+     * Parse payment milestones from form submission.
+     */
+    protected function parseMilestones($input): array
+    {
+        if (empty($input)) {
+            return $this->getDefaultMilestones();
+        }
+
+        if (is_string($input)) {
+            $decoded = json_decode($input, true);
+            if (is_array($decoded)) {
+                $input = $decoded;
+            }
+        }
+
+        if (!is_array($input)) {
+            return $this->getDefaultMilestones();
+        }
+
+        $milestones = [];
+        $i = 1;
+        foreach ($input as $m) {
+            $desc = trim($m['description'] ?? '');
+            $amt  = trim($m['amount_lakhs'] ?? $m['amount'] ?? '');
+            if (!empty($desc) || !empty($amt)) {
+                $milestones[] = [
+                    's_no'         => $i++,
+                    'description'  => $desc,
+                    'amount_lakhs' => $amt,
+                ];
+            }
+        }
+
+        return !empty($milestones) ? $milestones : $this->getDefaultMilestones();
     }
 }

@@ -338,7 +338,15 @@ class CustomerDirectoryCrudTest extends TestCase
      */
     public function test_customer_show_dossier_page_renders_successfully(): void
     {
-        $customer = Customer::where('slug', 'fk-cust-4834')->first() ?: Customer::first();
+        $random = rand(10000, 99999);
+        $customer = Customer::create([
+            'mimas_no'      => 'ZERO-CUST-' . $random,
+            'customer_name' => 'Zero State Client ' . $random,
+            'company_name'  => 'Zero Quarry ' . $random,
+            'mobile_num'    => '98765' . rand(10000, 99999),
+            'district_id'   => $this->district->id,
+            'status'        => 1,
+        ]);
         $response = $this->actingAs($this->adminUser)->get(route('customers.show', $customer->slug));
         $response->assertStatus(200);
         $response->assertSee('Enterprise Dossier');

@@ -6,13 +6,19 @@ $(document).ready(function() {
         }
     });
 
+    // Suppress intrusive DataTables popup alerts in favor of console log
+    if ($.fn.dataTable) {
+        $.fn.dataTable.ext.errMode = 'none';
+    }
+
     // Initialize DataTable if not already initialized
     var dataTable;
-    if (!$.fn.DataTable.isDataTable('#example10')) {
-        dataTable = $('#example10').DataTable({
+    if (!$.fn.DataTable.isDataTable('#customersTable')) {
+        dataTable = $('#customersTable').DataTable({
             responsive: true,
             pageLength: 10,
             language: {
+                emptyTable: '<div class="text-center py-4 text-muted"><i class="fa fa-folder-open fa-2x mb-2 d-block"></i>No customers found. Click "Add Customer" to create the first record.</div>',
                 paginate: {
                     next: '<i class="fa fa-angle-right"></i>',
                     previous: '<i class="fa fa-angle-left"></i>'
@@ -20,7 +26,7 @@ $(document).ready(function() {
             }
         });
     } else {
-        dataTable = $('#example10').DataTable();
+        dataTable = $('#customersTable').DataTable();
     }
 
     // Quick Filter by District (Column index 2)

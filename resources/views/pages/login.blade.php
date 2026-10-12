@@ -423,7 +423,7 @@
       <div class="mb-3">
         <span class="portal-badge">
           <span class="badge-pulse"></span>
-          <span>GTMS Portal</span>
+          <span>GTMS Mining Statutory Portal</span>
         </span>
       </div>
 

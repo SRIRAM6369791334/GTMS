@@ -52,7 +52,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if($role->name === 'Admin')
+                                                    @if($role->name === 'Admin' || $role->name === 'Super Admin')
                                                         <span class="badge bg-success-subtle text-success border border-success px-2 py-1">
                                                             <i class="fa fa-infinity me-1"></i> All Permissions (Super Admin)
                                                         </span>

@@ -269,3 +269,47 @@ Audit all existing upload routes and controllers across GTMS (`DgpsSurveyControl
 - [ ] Web requests return immediately with an upload token, while video/document processing is deferred to Redis queue workers.
 - [ ] Nginx and PHP configuration within Docker allows high timeout windows (e.g., `client_max_body_size 0` or tailored chunk limits) specifically tuned for Synology NAS DSM environment.
 - [ ] Automated feature tests verify chunk reassembly, file integrity (SHA256 matching), and queue dispatch.
+
+
+## 2026-10-12T12:05:56Z
+
+Perform an exhaustive, 100% codebase reverse-engineering audit and deep architectural inspection of the GTMS (Granite / Mining Tracking Management System) Laravel ERP platform. The team of autonomous agents will analyze every single Model in `app/Models/`, every Controller and action method in `app/Http/Controllers/`, every Blade template and input/form element in `resources/views/`, and all routes in `routes/web.php` and `routes/api.php`, producing a comprehensive Master Function Catalog, Schema Relationship Map, and 100% Test Specification Matrix.
+
+Working directory: c:\xampp\htdocs\GTMS\gtms
+Integrity mode: development
+
+## Requirements
+
+### R1. Comprehensive Model & Database Schema Reverse-Engineering
+Parse every Eloquent model in `app/Models/` and schema migrations in `database/migrations/`. Document all table mappings, fillable and guarded attributes, field casts, relationships (`belongsTo`, `hasMany`, `belongsToMany`, polymorphic relationships), query scopes, accessors/mutators, and underlying business rules for each entity.
+
+### R2. Exhaustive Controller & Action Method Catalog
+Parse every controller in `app/Http/Controllers/` (including all sub-namespaces such as `Accounts/`). For every public and private action method, document:
+- Route URI and HTTP method mapping
+- Request parameter validation constraints (required, numeric, min, max, regex, mimes, exists, unique)
+- Internal query logic, state mutations, calculations, and database side effects
+- Return responses (view renders, redirects, JSON API payloads, HTTP status codes, flash messages)
+- Access control middleware and authorization gates (`permission:`, `role:`, `@can`)
+
+### R3. Full-Scope Blade View & Form Field Catalog
+Parse every Blade template in `resources/views/` (including layout partials, components, step wizards, and modals). Document every form, input field, Select2 dropdown, checkbox, radio group, file upload slot, modal dialog, and dynamic JavaScript/Ajax event handler, noting all client-side validation rules (HTML5 attributes, SweetAlert checks, jQuery validation).
+
+### R4. Complete Route & Authorization Architecture Map
+Audit all route definitions in `routes/web.php` and `routes/api.php`. Cross-reference every route name with controller action methods and Blade view usages. Identify route groups, prefixing, route-model bindings, parameter constraints, and potential orphan or unhandled endpoints.
+
+### R5. Master 100% QA Traceability & Test Execution Matrix
+Compile a bidirectional Traceability and Test Plan Matrix linking:
+- Module & Route → Controller Action → Database Mutation → Blade UI Field → Valid (Positive) Input Dataset → Boundary / Invalid (Negative) Inputs → Expected System State & Alerts.
+
+## Acceptance Criteria
+
+### Completeness & Codebase Coverage
+- [ ] 100% of models in `app/Models/` cataloged with properties, relationships, and business logic.
+- [ ] 100% of controller methods in `app/Http/Controllers/` cataloged with input parameters, validation rules, and return types.
+- [ ] 100% of views in `resources/views/` cataloged with all form controls, modals, and file upload slots.
+- [ ] 100% of routes in `routes/web.php` and `routes/api.php` mapped with middleware and controllers.
+
+### Master Deliverables on Disk
+- [ ] Master Markdown documentation saved to `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.md` (or artifact directory).
+- [ ] Interactive standalone HTML specification dossier saved to `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.html` for executive inspection.
+- [ ] Exhaustive test matrix detailing exact positive and negative test datasets for every identified form and function.

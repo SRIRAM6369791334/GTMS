@@ -326,20 +326,20 @@
 
             <!-- Header Action Controls -->
             <div class="col-lg-6 col-md-12 p-md-0 justify-content-lg-end mt-3 mt-lg-0 d-flex align-items-center gap-2 flex-wrap">
-                <a href="{{ route('accounts.quotations.index') }}" class="btn btn-light border shadow-sm fw-semibold" style="color: #334155; font-size: 0.84rem;">
-                    <i class="fas fa-arrow-left me-1"></i> Back to Directory
-                </a>
-                <button type="button" class="btn btn-success shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quotationDossierExportModal" style="font-size: 0.84rem;">
-                    <i class="fas fa-file-export me-1"></i> Export Quotation
-                </button>
-                <a href="{{ route('accounts.quotations.print', $quotation->id) }}" target="_blank" class="btn btn-navy shadow-sm fw-semibold" style="font-size: 0.84rem;">
-                    <i class="fas fa-print me-1"></i> Standalone A4 Print / PDF
+                <a href="{{ route('accounts.quotations.index') }}" class="btn btn-sm btn-light border fw-semibold" style="color: #334155; font-size: 0.84rem;">
+                    <i class="fas fa-arrow-left me-1"></i> Directory
                 </a>
                 @can('account.edit')
-                <a href="{{ route('accounts.quotations.edit', $quotation->id) }}" class="btn btn-outline-warning border shadow-sm fw-semibold" style="font-size: 0.84rem;">
-                    <i class="fas fa-edit me-1"></i> Edit Quotation
+                <a href="{{ route('accounts.quotations.edit', $quotation->id) }}" class="btn btn-sm btn-outline-primary border fw-semibold" style="font-size: 0.84rem;">
+                    <i class="fas fa-edit me-1"></i> Edit Dossier
                 </a>
                 @endcan
+                <button type="button" class="btn btn-sm btn-outline-success fw-semibold" data-bs-toggle="modal" data-bs-target="#quotationDossierExportModal" style="font-size: 0.84rem;">
+                    <i class="fas fa-file-export me-1"></i> Export
+                </button>
+                <a href="{{ route('accounts.quotations.print', $quotation->id) }}" target="_blank" class="btn btn-sm btn-navy shadow-sm fw-semibold" style="font-size: 0.84rem;">
+                    <i class="fas fa-print me-1"></i> Print A4 Dossier
+                </a>
             </div>
         </div>
 
@@ -357,6 +357,19 @@
                 <div>{{ session('error') }}</div>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+        @endif
+
+        <!-- Quotation Subject Banner -->
+        @if($quotation->subject)
+        <div class="alert alert-light border py-3 px-4 mb-4 rounded-3 d-flex align-items-center gap-3 bg-white shadow-sm" style="border-left: 4px solid #1E3A8A !important;">
+            <div class="p-2 bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                <i class="fas fa-heading fs-5"></i>
+            </div>
+            <div>
+                <span class="text-uppercase fw-bold text-muted small" style="font-size: 0.70rem; letter-spacing: 0.06em;">Proposal Official Subject Line</span>
+                <div class="fw-bold text-dark" style="font-size: 1.02rem; color: #0F1E4D !important;">{{ $quotation->subject }}</div>
+            </div>
+        </div>
         @endif
 
         <!-- Row 1: Bento Profile Snapshots (Client & Quarry Concession) -->
@@ -658,6 +671,151 @@
             </div>
         </div>
 
+        <!-- Row 2B: Sub: Complete Scope (All Department) & Payment Details Schedule -->
+        @php
+            $showScopeSections = is_array($quotation->scope_sections) && count($quotation->scope_sections) > 0
+                ? $quotation->scope_sections
+                : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultScopeSections();
+
+            $showMilestones = is_array($quotation->milestones) && count($quotation->milestones) > 0
+                ? $quotation->milestones
+                : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultMilestones();
+        @endphp
+
+        <div class="row g-4 mb-4">
+            <!-- Left Column: Sub: Complete Scope (All Department) -->
+            <div class="col-lg-7">
+                <div class="bento-card card-accent-emerald h-100">
+                    <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
+                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                            <i class="fas fa-sitemap text-success me-2"></i>Sub: Complete Scope (All Department)
+                        </h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
+                            {{ count($showScopeSections) }} Departments
+                        </span>
+                    </div>
+                    <div class="p-4 bg-white rounded-bottom">
+                        <div class="row g-3">
+                            @foreach($showScopeSections as $secIdx => $sec)
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded-3 border bg-white h-100 shadow-sm" style="border-color: #E2E8F0 !important; transition: all 0.2s ease;">
+                                        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size: 0.70rem;">
+                                                Phase {{ $secIdx + 1 }}
+                                            </span>
+                                            <span class="text-muted fw-bold" style="font-size: 0.72rem;">{{ count((array)($sec['items'] ?? [])) }} Items</span>
+                                        </div>
+                                        <div class="fw-bold text-dark mb-2 d-flex align-items-center gap-2" style="font-size: 0.86rem; color: #0F1E4D !important;">
+                                            <i class="fas fa-check-circle text-success small"></i>
+                                            <span>{{ $sec['title'] ?? 'Scope Category' }}</span>
+                                        </div>
+                                        <ul class="mb-0 ps-3 small text-secondary" style="line-height: 1.55; color: #334155 !important;">
+                                            @foreach((array)($sec['items'] ?? []) as $it)
+                                                @if(trim($it) !== '')
+                                                    <li>{{ trim($it) }}</li>
+                                                @endif
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Payment Details Schedule + Remittance Bank Details -->
+            <div class="col-lg-5 d-flex flex-column gap-4">
+                <!-- Payment Details Schedule -->
+                <div class="bento-card card-accent-blue mb-0">
+                    <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
+                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                            <i class="fas fa-list-ol text-primary me-2"></i>Payment Details Schedule
+                        </h6>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">
+                            {{ count($showMilestones) }} Milestones
+                        </span>
+                    </div>
+                    <div class="p-0 bg-white">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 12%; text-align: center;">#</th>
+                                        <th>Milestone Description</th>
+                                        <th style="width: 38%; text-align: right;">Amount (Lakhs)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $totalLakhs = 0; @endphp
+                                    @foreach($showMilestones as $mIdx => $m)
+                                    @php $amt = floatval($m['amount_lakhs'] ?? 0); $totalLakhs += $amt; @endphp
+                                    <tr>
+                                        <td class="text-center fw-bold text-muted">{{ $mIdx + 1 }}</td>
+                                        <td class="small fw-semibold text-dark">{{ $m['description'] ?? '' }}</td>
+                                        <td style="text-align: right;" class="fw-bold text-primary small financial-number">
+                                            ₹ {{ number_format($amt, 2) }} Lakhs
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                    <tr class="table-light border-top">
+                                        <td colspan="2" class="text-end fw-bold small text-muted">Total Schedule:</td>
+                                        <td style="text-align: right;" class="fw-bold text-dark small financial-number">
+                                            ₹ {{ number_format($totalLakhs, 2) }} Lakhs
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Official GTMS Remittance Bank Account Card -->
+                <div class="bento-card card-accent-sky mb-0">
+                    <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
+                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+                            <i class="fas fa-university text-primary me-2"></i>Official Remittance Bank Details
+                        </h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold small">
+                            <i class="fas fa-shield-alt me-1"></i>Verified
+                        </span>
+                    </div>
+                    <div class="p-3 bg-white rounded-bottom">
+                        <div class="p-3 rounded border" style="background-color: #F8FAFC; border-color: #CBD5E1 !important;">
+                            <div class="mb-2">
+                                <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-building text-primary"></i> Beneficiary Name</div>
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem; color: #0F1E4D !important;">GEO TECHNICAL MINING SOLUTIONS</div>
+                            </div>
+                            <div class="row g-2 pt-2 border-top">
+                                <div class="col-6">
+                                    <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-hashtag text-primary"></i> Current Account No.</div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <span class="font-monospace fw-bold text-dark" style="font-size: 0.86rem;">107302000001265</span>
+                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('107302000001265', this)" title="Copy Account Number">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-key text-primary"></i> IFSC Code</div>
+                                    <div class="d-flex align-items-center gap-1 mt-1">
+                                        <span class="badge bg-light text-dark border px-2 py-1 fw-bold font-monospace" style="font-size: 0.82rem;">IOBA0001073</span>
+                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('IOBA0001073', this)" title="Copy IFSC">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-12 mt-2 pt-2 border-top">
+                                    <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-code-branch text-primary"></i> Bank &amp; Branch</div>
+                                    <div class="small text-muted" style="font-size: 0.78rem;">Indian Overseas Bank / Oddapatti, Dharmapuri</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Row 3: Statutory Milestones, Validity & Exclusions Cards -->
         <div class="row g-4 mb-4">
             <!-- Payment Milestones & Validity -->
@@ -684,7 +842,6 @@
                         <div class="mt-2">
                             @foreach($termsLines as $index => $line)
                                 @php
-                                    // Strip leading numbering like '1.', '2.' if present
                                     $cleanLine = preg_replace('/^\d+[\.\)]\s*/', '', $line);
                                 @endphp
                                 <div class="milestone-step-item">

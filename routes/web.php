@@ -27,6 +27,7 @@ use App\Http\Controllers\Accounts\PaymentReceiptController;
 use App\Http\Controllers\Accounts\CustomerLedgerController;
 use App\Http\Controllers\Accounts\FinancialReportController;
 use App\Http\Controllers\ChunkUploadController;
+use App\Http\Controllers\NotificationController;
 
 
 // Guest Authentication Routes
@@ -41,6 +42,15 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Notifications Management Routes (ui-ux-pro-max standard)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+    Route::post('/notifications/{id}/mark-as-unread', [NotificationController::class, 'markAsUnread'])->name('notifications.mark-as-unread');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+    Route::post('/notifications/seed-demo', [NotificationController::class, 'seedDemo'])->name('notifications.seed-demo');
 
     Route::get('/dashboard', function () {
         // Active applications (not draft, not approved)
@@ -193,8 +203,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/customer-tracking/{customer}', [CustomerTrackingController::class, 'show'])->name('customer-tracking.show');
         Route::get('/customer-tracking/{customer}/proforma-invoice', [CustomerTrackingController::class, 'proformaInvoice'])->name('customer-tracking.proforma-invoice');
         Route::get('/customer-tracking/{customer}/tax-invoice', [CustomerTrackingController::class, 'taxInvoice'])->name('customer-tracking.tax-invoice');
+        Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->where('mimas_no', '.*')->name('customers.lookup.mimas');
     });
-    Route::get('/customers/lookup-mimas/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->where('mimas_no', '.*')->name('customers.lookup.mimas');
     Route::post('/customeradd', [CustomerDirectoryController::class, 'store'])->name('customeradd')->middleware('permission:customer.create');
     Route::post('/customeredit', [CustomerDirectoryController::class, 'update'])->name('customeredit')->middleware('permission:customer.edit');
     Route::post('/customerdelete', [CustomerDirectoryController::class, 'destroy'])->name('customerdelete')->middleware('permission:customer.delete');

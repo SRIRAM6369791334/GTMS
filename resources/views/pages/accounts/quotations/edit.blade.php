@@ -27,17 +27,18 @@
     .card-accent-emerald { border-top: 3px solid #059669; }
     .card-accent-sky { border-top: 3px solid #0284C7; }
 
-    /* Step Navigation Stepper */
+    /* Executive Stepper Navigation (ui-ux-pro-max standard) */
     .form-stepper {
         display: flex;
         align-items: center;
-        gap: 16px;
+        justify-content: space-between;
         background: #FFFFFF;
-        padding: 10px 20px;
-        border-radius: 10px;
+        padding: 10px 18px;
+        border-radius: 12px;
         border: 1px solid #E2E8F0;
         margin-bottom: 1.5rem;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+        overflow-x: auto;
     }
     .stepper-item {
         display: flex;
@@ -47,31 +48,48 @@
         font-weight: 700;
         color: #64748B;
         text-decoration: none;
-        transition: color 0.15s ease;
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        white-space: nowrap;
     }
-    .stepper-item:hover { color: #1E3A8A; }
-    .stepper-item.active { color: #0F1E4D; }
+    .stepper-item:hover {
+        color: #0F1E4D;
+        background: #F8FAFC;
+    }
+    .stepper-item.active {
+        color: #0F1E4D;
+        background: #EFF6FF;
+    }
     .stepper-num {
-        width: 26px;
-        height: 26px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.76rem;
+        font-size: 0.78rem;
         font-weight: 800;
         background: #F1F5F9;
         color: #475569;
-        border: 1px solid #CBD5E1;
+        border: 1.5px solid #CBD5E1;
+        transition: all 0.2s ease;
     }
     .stepper-item.active .stepper-num {
         background: #0F1E4D;
         color: #FFFFFF;
         border-color: #0F1E4D;
+        box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.15);
+    }
+    .stepper-item.completed .stepper-num {
+        background: #059669;
+        color: #FFFFFF;
+        border-color: #059669;
     }
     .stepper-separator {
         color: #CBD5E1;
-        font-size: 0.85rem;
+        font-size: 0.95rem;
+        user-select: none;
     }
 
     /* Section Step Pill */
@@ -230,7 +248,10 @@
         background-color: #F8FAFC;
     }
 
-    /* ─── STEP 2 DROPDOWN & STACKING CONTEXT RESILIENCY ─── */
+    /* ─── COMMERCIAL SCHEDULE DROPDOWN & STACKING CONTEXT RESILIENCY ─── */
+    #section-commercial,
+    #section-commercial .card-body,
+    #section-commercial .table-responsive,
     #section-services,
     #section-services .card-body,
     #section-services .table-responsive {
@@ -238,6 +259,7 @@
     }
 
     /* Elevate table dropdown menus above all rows, inputs, and card footers */
+    #section-commercial .dropdown-menu,
     #section-services .dropdown-menu,
     .table-items .dropdown-menu {
         z-index: 1070 !important;
@@ -542,21 +564,31 @@
             </div>
         </div>
 
-        <!-- Section Navigation Stepper Bar -->
+        <!-- Section Navigation Stepper Bar (Matching Q-28.html 3-Page Flow) -->
         <div class="form-stepper">
-            <a href="#section-client" class="stepper-item active">
+            <a href="#section-consignee" class="stepper-item active">
                 <span class="stepper-num">1</span>
-                <span>Client & Concession</span>
+                <span>Page 1: Consignee &amp; Subject</span>
             </a>
             <span class="stepper-separator">&rarr;</span>
-            <a href="#section-services" class="stepper-item">
+            <a href="#section-scope" class="stepper-item">
                 <span class="stepper-num">2</span>
-                <span>Services Scope & Schedule</span>
+                <span>Page 1 &amp; 2: Complete Scope</span>
+            </a>
+            <span class="stepper-separator">&rarr;</span>
+            <a href="#section-milestones" class="stepper-item">
+                <span class="stepper-num">3</span>
+                <span>Page 2: Payment Details</span>
+            </a>
+            <span class="stepper-separator">&rarr;</span>
+            <a href="#section-commercial" class="stepper-item">
+                <span class="stepper-num">4</span>
+                <span>Page 3: Commercial Cost Table</span>
             </a>
             <span class="stepper-separator">&rarr;</span>
             <a href="#section-terms" class="stepper-item">
-                <span class="stepper-num">3</span>
-                <span>Terms & Exclusions</span>
+                <span class="stepper-num">5</span>
+                <span>Page 3: Terms &amp; Bank Details</span>
             </a>
         </div>
 
@@ -580,13 +612,13 @@
             @csrf
             @method('PUT')
 
-            <!-- Section 1: Client & Concession Selection Bento Card -->
-            <div class="bento-card card-accent-blue" id="section-client">
+            <!-- STEP 1 (Page 1): Consignee Particulars, Quarry Reference & Subject -->
+            <div class="bento-card card-accent-blue" id="section-consignee">
                 <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
                         <span class="step-badge">Step 1</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-user-tie text-primary me-2"></i>Client Profile & Quarry Concession Coordinates
+                            <i class="fas fa-user-tie text-primary me-2"></i>Page 1: Consignee Particulars &amp; Quotation Subject
                         </h5>
                     </div>
                     <span class="badge bg-light text-dark border px-2 py-1 small">
@@ -594,11 +626,11 @@
                     </span>
                 </div>
                 <div class="card-body p-4 bg-white">
-                    <!-- Client & Concession Dropdowns -->
+                    <!-- Client Profile & Manual Quarry Concession Input -->
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="form-label">
-                                <i class="fas fa-building text-primary me-1"></i>Select Registered Client <span class="text-danger">*</span>
+                                <i class="fas fa-building text-primary me-1"></i>Select Registered Client Profile <span class="text-danger">*</span>
                             </label>
                             <select name="customer_id" id="customer_select" class="form-select @error('customer_id') is-invalid @enderror" required>
                                 <option value="">-- Choose Client Profile --</option>
@@ -608,20 +640,15 @@
                                     </option>
                                 @endforeach
                             </select>
+                            <div class="form-text small text-muted">Select an existing client to auto-fill Company, Address &amp; Contact info below.</div>
                         </div>
 
                         <div class="col-md-6">
                             <label class="form-label">
-                                <i class="fas fa-mountain text-primary me-1"></i>Linked Quarry Concession / Lease Application
+                                <i class="fas fa-mountain text-primary me-1"></i>Linked Quarry Concession / Lease Application (Manual Entry)
                             </label>
-                            <select name="lease_application_id" id="lease_application_select" class="form-select">
-                                <option value="">-- Select Concession or Enter Manually Below --</option>
-                                @if($quotation->leaseApplication)
-                                    <option value="{{ $quotation->lease_application_id }}" selected>
-                                        {{ $quotation->quarry_name ?: 'Concession #' . $quotation->lease_application_id }} (Current Linked Concession)
-                                    </option>
-                                @endif
-                            </select>
+                            <input type="text" name="quarry_name" id="quarry_name" class="form-control" value="{{ old('quarry_name', $quotation->quarry_name) }}" placeholder="e.g. Chinnagoundanur Rough Stone Quarry / Lease Application No.">
+                            <div class="form-text small text-muted">Manually enter quarry site name or lease application reference.</div>
                         </div>
                     </div>
 
@@ -657,6 +684,31 @@
                         <div class="col-md-6">
                             <label class="form-label">Registered Billing Address</label>
                             <input type="text" name="address" id="address" class="form-control" value="{{ old('address', $quotation->address) }}" placeholder="Door No, Street, Town/District, Pincode">
+                        </div>
+                    </div>
+
+                    <!-- Quotation Official Subject -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12">
+                            <label class="form-label">
+                                <i class="fas fa-heading text-primary me-1"></i>Quotation Subject (Printed on Letterhead) <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" name="subject" id="subject_input" class="form-control"
+                                   value="{{ old('subject', $quotation->subject ?? 'Quotation for Environmental Clearance falls in “B2” Category Project') }}"
+                                   placeholder="e.g. Quotation for Environmental Clearance falls in “B2” Category Project" required>
+                            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                                <span class="small text-muted fw-bold"><i class="fas fa-bolt text-warning me-1"></i>Quick Presets:</span>
+                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Environmental Clearance falls in “B2” Category Project">
+                                    B2 Category EC
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Mining Plan Preparation &amp; DGPS Boundary Demarcation">
+                                    Mining Plan &amp; DGPS
+                                </button>
+                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Baseline Environmental Study &amp; EIA/EMP Report Preparation">
+                                    EIA/EMP Baseline
+                                </button>
+                            </div>
+                            <div class="form-text small text-muted">Official proposal subject line printed on the Consignee Table and the Commercial Schedule table.</div>
                         </div>
                     </div>
 
@@ -709,15 +761,107 @@
                         </div>
                     </div>
                 </div>
+                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <span class="text-muted small"><i class="fas fa-check-circle text-success me-1"></i> Step 1: Consignee &amp; Subject ready</span>
+                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-scope">
+                        Next: Complete Scope (Step 2) <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Section 2: Dynamic Multi-Service Line Items Bento Card -->
-            <div class="bento-card card-accent-navy" id="section-services">
+            <!-- STEP 2 (Page 1 & 2): Sub: Complete Scope (All Department) -->
+            <div class="bento-card card-accent-emerald mb-4" id="section-scope">
                 <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 2</span>
+                        <span class="step-badge" style="background-color: #ECFDF5; color: #059669; border-color: #A7F3D0;">Step 2</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-tasks text-primary me-2"></i>Statutory Services Scope & Commercial Schedule
+                            <i class="fas fa-sitemap text-success me-2"></i>Page 1 &amp; 2: Sub: Complete Scope (All Department)
+                        </h5>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" id="btnResetScopeQ28" title="Reload Standard Q-28 Scope Template">
+                            <i class="fas fa-undo me-1"></i> Load Q-28 Scope Template
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success fw-semibold" id="btnAddScopeSection">
+                            <i class="fas fa-plus me-1"></i> Add Scope Section
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <div class="alert alert-light border small text-muted mb-3 d-flex align-items-center gap-2">
+                        <i class="fas fa-info-circle text-primary fs-5"></i>
+                        Each section heading will appear as a category on Page 1 &amp; Page 2 of the letterhead quotation, with its bullet items listed beneath. Enter each bullet point on a new line.
+                    </div>
+                    <div id="scopeSectionsContainer" class="d-flex flex-column gap-3">
+                        <!-- Dynamic Scope Cards will be rendered by JS -->
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-consignee">
+                        <i class="fas fa-arrow-left me-1"></i> Previous: Consignee &amp; Subject
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-milestones">
+                        Next: Payment Details (Step 3) <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 3 (Page 2): Payment Details Schedule (Milestones Table) -->
+            <div class="bento-card card-accent-blue mb-4" id="section-milestones">
+                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="step-badge">Step 3</span>
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-list-ol text-primary me-2"></i>Page 2: Payment Details Schedule (Amount in Lakhs)
+                        </h5>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark border px-3 py-2 fw-bold" id="milestonesTotalBadge">
+                            <i class="fas fa-calculator text-primary me-1"></i> Total Milestones: <span id="milestoneSumDisplay">₹ 3.89 Lakhs</span>
+                        </span>
+                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" id="btnAddMilestone">
+                            <i class="fas fa-plus me-1"></i> Add Milestone Row
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-4 bg-white">
+                    <p class="small text-muted mb-3">
+                        <i class="fas fa-info-circle text-primary me-1"></i>
+                        This milestone schedule is printed directly on Page 2 under <strong>"Payment Details"</strong>.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0" id="milestonesTable" style="max-width: 850px;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 10%; text-align: center;">S. No</th>
+                                    <th style="width: 60%;">Milestone Stage / Description</th>
+                                    <th style="width: 22%; text-align: center;">Amount (₹ in Lakhs)</th>
+                                    <th style="width: 8%; text-align: center;">Act</th>
+                                </tr>
+                            </thead>
+                            <tbody id="milestonesTbody">
+                                <!-- Dynamic Milestone Rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-scope">
+                        <i class="fas fa-arrow-left me-1"></i> Previous: Complete Scope
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-commercial">
+                        Next: Commercial Cost Table (Step 4) <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 4 (Page 3): Commercial Cost Table Bento Card -->
+            <div class="bento-card card-accent-navy mb-4" id="section-commercial">
+                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="step-badge">Step 4</span>
+                        <h5 class="mb-0 fw-bold text-dark">
+                            <i class="fas fa-tasks text-primary me-2"></i>Page 3: Commercial Cost Table &amp; Pricing Schedule
                         </h5>
                     </div>
 
@@ -747,6 +891,9 @@
                             </ul>
                         </div>
 
+                        <button type="button" class="btn btn-sm btn-outline-success fw-semibold" id="btnReloadQ28Items" title="Reset line items to standard 6 Q-28 proposal services (Total ₹3,89,400.00)">
+                            <i class="fas fa-magic me-1"></i> Load Q-28 Items (₹3.89L)
+                        </button>
                         <button type="button" class="btn btn-sm btn-navy fw-semibold" id="btnAddItem">
                             <i class="fas fa-plus me-1"></i> Add Custom Item
                         </button>
@@ -887,7 +1034,7 @@
                                     </div>
                                     <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top" style="font-size: 0.78rem; color: #475569;">
                                         <i class="fas fa-shield-alt text-success fs-6"></i>
-                                        <span>Statutory Goods & Services Tax (CGST 9% + SGST 9%) computed automatically.</span>
+                                        <span>Statutory Goods &amp; Services Tax (CGST 9% + SGST 9%) computed automatically.</span>
                                     </div>
                                 </div>
                             </div>
@@ -929,17 +1076,26 @@
                         </div>
                     </div>
                 </div>
+                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-milestones">
+                        <i class="fas fa-arrow-left me-1"></i> Previous: Payment Details
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-terms">
+                        Next: Terms &amp; Bank Details (Step 5) <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
             </div>
 
-            <!-- Section 3: Statutory Terms, Conditions & Validity Bento Card -->
+            <!-- STEP 5 (Page 3): Statutory Terms, Conditions, Bank Details & Status -->
             <div class="bento-card card-accent-sky" id="section-terms">
                 <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 3</span>
+                        <span class="step-badge">Step 5</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-file-contract text-primary me-2"></i>Commercial Terms & Statutory Exclusions
+                            <i class="fas fa-file-contract text-primary me-2"></i>Page 3: Commercial Terms, Conditions &amp; Remittance Details
                         </h5>
                     </div>
+                    <span class="badge bg-light text-muted border small">Q-28 Page 3 Finale</span>
                 </div>
                 <div class="card-body p-4 bg-white">
                     <div class="row g-3 mb-4">
@@ -979,18 +1135,19 @@
                         </div>
                     </div>
 
-                    <div class="row g-3">
+                    <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label mb-0">Payment Terms & Milestones</label>
+                                <label class="form-label mb-0">Payment Terms &amp; Conditions</label>
                                 <div class="d-flex gap-1">
+                                    <span class="quick-pill" onclick="setPaymentPreset('q28')">Q-28 Terms</span>
                                     <span class="quick-pill" onclick="setPaymentPreset('50-30-20')">50-30-20</span>
                                     <span class="quick-pill" onclick="setPaymentPreset('50-50')">50-50</span>
                                     <span class="quick-pill" onclick="setPaymentPreset('100')">100% Adv</span>
                                 </div>
                             </div>
-                            <textarea name="payment_terms" id="payment_terms_textarea" rows="4" class="form-control">{{ old('payment_terms', $quotation->payment_terms) }}</textarea>
-                            <div class="form-text small text-muted">Standard 3-stage milestone breakdown per statutory consultancy agreement.</div>
+                            <textarea name="payment_terms" id="payment_terms_textarea" rows="4" class="form-control">{{ old('payment_terms', $quotation->payment_terms ?: "1. All payments shall be made by Online payment or Demand Draft or Cheque, payable at GTMS.\n2. All the applicable statutory fees at various stages of the approvals (towards EC) shall be paid by the project proponent and is not included in the scope of this proposal.\n3. The scope of our consultancy services includes Environmental Clearance (EC) from SEIAA.") }}</textarea>
+                            <div class="form-text small text-muted">Standard 3 conditions from Q-28 proposal letterhead.</div>
                         </div>
 
                         <div class="col-md-6">
@@ -1001,14 +1158,64 @@
                                     <span class="quick-pill" onclick="setExclusionsPreset('strict')">Strict Govt Fees</span>
                                 </div>
                             </div>
-                            <textarea name="exclusions" id="exclusions_textarea" rows="4" class="form-control">{{ old('exclusions', $quotation->exclusions) }}</textarea>
+                            <textarea name="exclusions" id="exclusions_textarea" rows="4" class="form-control">{{ old('exclusions', $quotation->exclusions ?: "1. Government statutory scrutiny fees, SEIAA presentation fees, TNPCB consent application fees, and district DMF levies are to be paid directly by the client via government challans.\n2. In-person client representation before statutory committees if required.") }}</textarea>
                             <div class="form-text small text-muted">Statutory exclusions payable by client via government treasury challans.</div>
                         </div>
+                    </div>
 
+                    <!-- Bank Account Details Card (Matching Q-28 Page 3) -->
+                    <div class="p-3 rounded border mb-3" style="background-color: #F8FAFC; border-color: #CBD5E1 !important;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="fw-bold text-dark small d-flex align-items-center gap-2">
+                                <i class="fas fa-university text-primary"></i>
+                                <span>Official GTMS Remittance Bank Account (Printed on Page 3)</span>
+                            </div>
+                            <span class="badge bg-white text-muted border small">Q-28 Letterhead Details</span>
+                        </div>
+                        <div class="row g-2 small text-muted">
+                            <div class="col-md-3">
+                                <span class="d-block fw-semibold text-dark">Name:</span>
+                                <span>Geo Technical Mining Solutions</span>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="d-block fw-semibold text-dark">Account No.:</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="font-monospace fw-bold text-dark">107302000001265</span>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 copy-bank-btn" data-copy="107302000001265" title="Copy Account Number"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="d-block fw-semibold text-dark">Bank / Branch:</span>
+                                <span>Indian Overseas Bank / Oddapatti, Dharmapuri</span>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="d-block fw-semibold text-dark">IFSC Code:</span>
+                                <div class="d-flex align-items-center gap-1">
+                                    <span class="font-monospace fw-bold text-primary">IOBA0001073</span>
+                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 copy-bank-btn" data-copy="IOBA0001073" title="Copy IFSC"><i class="fas fa-copy"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label">Internal Remarks & Workflow Instructions (Optional)</label>
+                            <label class="form-label">Internal Remarks &amp; Workflow Instructions (Optional)</label>
                             <textarea name="notes" rows="2" class="form-control" placeholder="Any special notes or concession history...">{{ old('notes', $quotation->notes) }}</textarea>
                         </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-commercial">
+                        <i class="fas fa-arrow-left me-1"></i> Previous: Commercial Cost Table
+                    </button>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('accounts.quotations.show', $quotation->id) }}" class="btn btn-outline-secondary fw-semibold">
+                            <i class="fas fa-eye me-1"></i> View Dossier
+                        </a>
+                        <button type="submit" class="btn btn-navy px-4 fw-semibold shadow-sm">
+                            <i class="fas fa-check-circle me-1"></i> Save &amp; Update Quotation
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1039,7 +1246,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const customerSelect = document.getElementById('customer_select');
-    const concessionSelect = document.getElementById('lease_application_select');
     const itemsTbody = document.getElementById('itemsTbody');
     const btnAddItem = document.getElementById('btnAddItem');
     const taxRateSelect = document.getElementById('tax_rate_select');
@@ -1052,12 +1258,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 1. Customer Concession Resolver
     function handleCustomerChange(customerId) {
-        if (!customerId) {
-            if (concessionSelect) {
-                concessionSelect.innerHTML = '<option value="">-- Select Concession or Enter Manually Below --</option>';
-            }
-            return;
-        }
+        if (!customerId) return;
 
         fetch('{{ url("accounts/quotations/customer-concessions") }}/' + customerId, {
             headers: {
@@ -1079,20 +1280,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     document.getElementById('district_id').value = c.district_id;
                 }
 
-                // Populate Concessions
+                // If customer has a linked concession, auto-fill quarry coordinates
                 loadedConcessions = data.concessions || [];
-                concessionSelect.innerHTML = '<option value="">-- Select Concession or Enter Manually Below --</option>';
-
-                loadedConcessions.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.id;
-                    opt.textContent = (c.quarry_name || 'Concession #' + c.id) + ' (' + (c.village ? c.village + ', ' : '') + (c.district_name || '') + ')';
-                    concessionSelect.appendChild(opt);
-                });
-
-                // If exactly one concession exists, select it automatically
-                if (loadedConcessions.length === 1) {
-                    concessionSelect.value = loadedConcessions[0].id;
+                if (loadedConcessions.length > 0) {
                     fillConcessionData(loadedConcessions[0]);
                 }
             }
@@ -1100,34 +1290,18 @@ document.addEventListener('DOMContentLoaded', function () {
         .catch(err => console.error('Error fetching concessions:', err));
     }
 
-    // Initialize Select2 on customer dropdown without recursive event triggers
+    // Initialize Select2 on customer dropdown
     if (window.jQuery && jQuery.fn.select2 && $('#customer_select').length) {
         $('#customer_select').select2({
             placeholder: '-- Choose Client Profile --',
             allowClear: true,
             width: '100%'
-        }).on('select2:select select2:clear', function () {
+        }).on('select2:select select2:clear change', function () {
             handleCustomerChange(this.value);
         });
-    }
-
-    // Native fallback if Select2 is not used
-    if (customerSelect) {
+    } else if (customerSelect) {
         customerSelect.addEventListener('change', function () {
-            if (window.jQuery && jQuery.fn.select2 && $(this).data('select2')) {
-                return; // Handled by select2 event
-            }
             handleCustomerChange(this.value);
-        });
-    }
-
-    if (concessionSelect) {
-        concessionSelect.addEventListener('change', function () {
-            const selectedId = parseInt(this.value);
-            const found = loadedConcessions.find(c => c.id === selectedId);
-            if (found) {
-                fillConcessionData(found);
-            }
         });
     }
 
@@ -1495,6 +1669,276 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // -------------------------------------------------------------------------
+    // DYNAMIC SCOPE OF WORK SECTIONS BUILDER (Q-28 Letterhead Complete Scope)
+    // -------------------------------------------------------------------------
+    const initialScopeSections = @json(old('scope_sections', $quotation->scope_sections ?? $defaultScopeSections));
+    const defaultQ28Scope = @json($defaultScopeSections);
+    let scopeSectionsList = Array.isArray(initialScopeSections) && initialScopeSections.length > 0 
+        ? initialScopeSections 
+        : JSON.parse(JSON.stringify(defaultQ28Scope));
+
+    const scopeContainer = document.getElementById('scopeSectionsContainer');
+    const btnAddScope = document.getElementById('btnAddScopeSection');
+    const btnResetScope = document.getElementById('btnResetScopeQ28');
+
+    function renderScopeSections() {
+        if (!scopeContainer) return;
+        scopeContainer.innerHTML = '';
+
+        if (scopeSectionsList.length === 0) {
+            scopeContainer.innerHTML = '<div class="text-center py-4 text-muted small border rounded bg-light">No departmental scope sections added. Click "+ Add Scope Section" or "Load Q-28 Scope Template" above.</div>';
+            return;
+        }
+
+        scopeSectionsList.forEach((sec, idx) => {
+            const card = document.createElement('div');
+            card.className = 'scope-card-item rounded-3 p-3 bg-white shadow-sm mb-3';
+            card.style.cssText = 'border: 1px solid #E2E8F0 !important; border-left: 4px solid #059669 !important; background: #FFFFFF !important;';
+            
+            const rawItems = Array.isArray(sec.items) ? sec.items.join('\n') : (sec.items || '');
+            const titleVal = escapeHtml(sec.title || '');
+            const itemsVal = escapeHtml(rawItems);
+
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1" style="font-size: 0.72rem;">Phase ${idx + 1}</span>
+                        <span class="fw-bold text-dark small">${titleVal || 'New Scope Category'}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-light border text-danger fw-semibold btn-delete-scope" data-index="${idx}" title="Delete Section">
+                        <i class="fas fa-trash-alt me-1"></i> Delete
+                    </button>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold text-muted mb-1">Section Heading</label>
+                        <input type="text" name="scope_sections[${idx}][title]" class="form-control scope-title-input" data-index="${idx}" value="${titleVal}" placeholder="e.g. Feasibility Study" required>
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label small fw-bold text-muted mb-1">Scope Bullet Points (One per line)</label>
+                        <textarea name="scope_sections[${idx}][items]" class="form-control scope-items-input" data-index="${idx}" rows="3" placeholder="Field Visit at proposed quarry area.\nPreparation of Lease Plan and Surface Plan,\nPreparation of Satellite Imagery plan with 500m radius">${itemsVal}</textarea>
+                    </div>
+                </div>
+            `;
+            scopeContainer.appendChild(card);
+        });
+
+        // Attach listeners
+        scopeContainer.querySelectorAll('.scope-title-input').forEach(inp => {
+            inp.addEventListener('input', function() {
+                const i = parseInt(this.dataset.index);
+                if (scopeSectionsList[i]) scopeSectionsList[i].title = this.value;
+            });
+        });
+        scopeContainer.querySelectorAll('.scope-items-input').forEach(inp => {
+            inp.addEventListener('input', function() {
+                const i = parseInt(this.dataset.index);
+                if (scopeSectionsList[i]) {
+                    scopeSectionsList[i].items = this.value.split('\n');
+                }
+            });
+        });
+        scopeContainer.querySelectorAll('.btn-delete-scope').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const i = parseInt(this.dataset.index);
+                scopeSectionsList.splice(i, 1);
+                renderScopeSections();
+            });
+        });
+    }
+
+    if (btnAddScope) {
+        btnAddScope.addEventListener('click', function() {
+            scopeSectionsList.push({
+                title: 'New Departmental Scope',
+                items: ['New scope specification item.']
+            });
+            renderScopeSections();
+            const cards = scopeContainer.querySelectorAll('.border.rounded');
+            if (cards.length > 0) {
+                cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    }
+
+    if (btnResetScope) {
+        btnResetScope.addEventListener('click', function() {
+            if (confirm('Load the standard Q-28 complete departmental scope template? Any unsaved custom scope edits will be replaced.')) {
+                scopeSectionsList = JSON.parse(JSON.stringify(defaultQ28Scope));
+                renderScopeSections();
+            }
+        });
+    }
+
+    renderScopeSections();
+
+    // -------------------------------------------------------------------------
+    // PAYMENT DETAILS SCHEDULE (Page 2 Milestone Table)
+    // -------------------------------------------------------------------------
+    const initialMilestones = @json(old('milestones', $quotation->milestones ?? $defaultMilestones));
+    const defaultQ28Milestones = @json($defaultMilestones);
+    let milestonesList = Array.isArray(initialMilestones) && initialMilestones.length > 0
+        ? initialMilestones
+        : JSON.parse(JSON.stringify(defaultQ28Milestones));
+
+    const milestonesTbody = document.getElementById('milestonesTbody');
+    const btnAddMilestone = document.getElementById('btnAddMilestone');
+
+    function renderMilestones() {
+        if (!milestonesTbody) return;
+        milestonesTbody.innerHTML = '';
+
+        milestonesList.forEach((m, idx) => {
+            const tr = document.createElement('tr');
+            const desc = escapeHtml(m.description || '');
+            const amt = escapeHtml(m.amount_lakhs || '');
+
+            tr.innerHTML = `
+                <td class="text-center fw-bold text-muted">${idx + 1}</td>
+                <td>
+                    <input type="text" name="milestones[${idx}][description]" class="form-control milestone-desc-input" data-index="${idx}" value="${desc}" placeholder="Milestone description..." required>
+                </td>
+                <td>
+                    <div class="input-group input-group-sm">
+                        <input type="text" name="milestones[${idx}][amount_lakhs]" class="form-control text-center fw-bold milestone-amt-input" data-index="${idx}" value="${amt}" placeholder="e.g. 0.70" required>
+                        <span class="input-group-text bg-light">Lakhs</span>
+                    </div>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-light border text-danger btn-delete-milestone" data-index="${idx}" title="Remove row">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+            `;
+            milestonesTbody.appendChild(tr);
+        });
+
+        milestonesTbody.querySelectorAll('.milestone-desc-input').forEach(inp => {
+            inp.addEventListener('input', function() {
+                const i = parseInt(this.dataset.index);
+                if (milestonesList[i]) milestonesList[i].description = this.value;
+            });
+        });
+        milestonesTbody.querySelectorAll('.milestone-amt-input').forEach(inp => {
+            inp.addEventListener('input', function() {
+                const i = parseInt(this.dataset.index);
+                if (milestonesList[i]) milestonesList[i].amount_lakhs = this.value;
+                updateMilestonesTotal();
+            });
+        });
+        milestonesTbody.querySelectorAll('.btn-delete-milestone').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const i = parseInt(this.dataset.index);
+                milestonesList.splice(i, 1);
+                renderMilestones();
+                updateMilestonesTotal();
+            });
+        });
+        updateMilestonesTotal();
+    }
+
+    function updateMilestonesTotal() {
+        let totalLakhs = 0;
+        if (milestonesTbody) {
+            milestonesTbody.querySelectorAll('.milestone-amt-input').forEach(inp => {
+                totalLakhs += parseFloat(inp.value) || 0;
+            });
+        }
+        const disp = document.getElementById('milestoneSumDisplay');
+        if (disp) {
+            disp.textContent = '₹ ' + totalLakhs.toFixed(2) + ' Lakhs';
+        }
+    }
+
+    if (btnAddMilestone) {
+        btnAddMilestone.addEventListener('click', function() {
+            milestonesList.push({
+                s_no: milestonesList.length + 1,
+                description: 'Final report and clearance submission',
+                amount_lakhs: '0.50'
+            });
+            renderMilestones();
+            updateMilestonesTotal();
+        });
+    }
+
+    renderMilestones();
+
+    // -------------------------------------------------------------------------
+    // STEP NAVIGATION & PRESET LISTENERS
+    // -------------------------------------------------------------------------
+    document.querySelectorAll('.btn-step-nav, .stepper-item').forEach(el => {
+        el.addEventListener('click', function(e) {
+            const target = this.dataset.target || this.getAttribute('href');
+            if (target && target.startsWith('#')) {
+                e.preventDefault();
+                const targetEl = document.querySelector(target);
+                if (targetEl) {
+                    const yOffset = -80;
+                    const y = targetEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                    document.querySelectorAll('.stepper-item').forEach(item => item.classList.remove('active'));
+                    const stepLink = document.querySelector(`.stepper-item[href="${target}"]`);
+                    if (stepLink) stepLink.classList.add('active');
+
+                    // Highlight card border briefly
+                    targetEl.style.transition = 'box-shadow 0.3s ease';
+                    targetEl.style.boxShadow = '0 0 0 3px rgba(30, 58, 138, 0.25)';
+                    setTimeout(() => { targetEl.style.boxShadow = ''; }, 1200);
+                }
+            }
+        });
+    });
+
+    // Subject Presets
+    document.querySelectorAll('.quick-subject-preset').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const subjectInput = document.getElementById('subject_input');
+            if (subjectInput) {
+                subjectInput.value = this.dataset.text;
+                subjectInput.focus();
+            }
+        });
+    });
+
+    // Copy Bank Account & IFSC Buttons
+    document.querySelectorAll('.copy-bank-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const textToCopy = this.dataset.copy;
+            if (!textToCopy) return;
+            const originalHtml = this.innerHTML;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                setTimeout(() => { this.innerHTML = originalHtml; }, 1800);
+            }).catch(() => {
+                this.innerHTML = '<i class="fas fa-check text-success"></i>';
+                setTimeout(() => { this.innerHTML = originalHtml; }, 1800);
+            });
+        });
+    });
+
+    // Reload Q-28 Standard Line Items
+    const btnReloadQ28 = document.getElementById('btnReloadQ28Items');
+    if (btnReloadQ28) {
+        btnReloadQ28.addEventListener('click', function() {
+            if (confirm('Load standard 6 Q-28 services totaling ₹3,89,400.00? Any custom services will be replaced.')) {
+                itemsTbody.innerHTML = '';
+                rowIndex = 0;
+                const defaultQ28Items = [
+                    { service_name: "Mining Plan Preparation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "60000.00", subtotal: "60000.00", description: "Preparation of Mining Plan by Recognized Qualified Person (RQP) and statutory approval from Department of Geology and Mining." },
+                    { service_name: "Baseline Environmental Study (1 Month)", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "70000.00", subtotal: "70000.00", description: "Baseline environmental quality monitoring for Ambient Air Quality, Water Quality, Soil Quality, and Noise levels as per MoEF&CC / CPCB norms." },
+                    { service_name: "EIA/EMP Report Preparation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "80000.00", subtotal: "80000.00", description: "Preparation of comprehensive Environmental Impact Assessment and Environmental Management Plan report by NABET Accredited EIA Consultant." },
+                    { service_name: "Form-I, Form-1M & Project Presentation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "40000.00", subtotal: "40000.00", description: "Preparation and filing of Form-1, Form-1M, Pre-Feasibility Report, and PowerPoint presentation for SEAC appraisal committee." },
+                    { service_name: "Environmental Clearance (SEIAA/DEIAA)", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "50000.00", subtotal: "50000.00", description: "Technical presentation and follow-up liaison before State Expert Appraisal Committee (SEAC) and obtaining Environmental Clearance order." },
+                    { service_name: "Post-EC Compliance & Documentation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "30000.00", subtotal: "30000.00", description: "Half-yearly environmental compliance documentation, newspaper advertisement filing, and TNPCB CTO statutory documentation." }
+                ];
+                defaultQ28Items.forEach(item => addServiceRow(item));
+                recalculateTotals();
+            }
+        });
+    }
+
     // Initial calculation on load
     recalculateTotals();
 });
@@ -1502,7 +1946,9 @@ document.addEventListener('DOMContentLoaded', function () {
 // Quick Helper Functions for Presets
 function setPaymentPreset(type) {
     const textarea = document.getElementById('payment_terms_textarea');
-    if (type === '50-30-20') {
+    if (type === 'q28') {
+        textarea.value = "1. All payments shall be made by Online payment or Demand Draft or Cheque, payable at GTMS.\n2. All the applicable statutory fees at various stages of the approvals (towards EC) shall be paid by the project proponent and is not included in the scope of this proposal.\n3. The scope of our consultancy services includes Environmental Clearance (EC) from SEIAA.";
+    } else if (type === '50-30-20') {
         textarea.value = "1. 50% Mobilization advance along with confirmed work order.\n2. 30% upon preparation & submission of draft statutory mining / environmental documentation.\n3. 20% upon final statutory clearance, presentation approval & dispatch of statutory order copies.";
     } else if (type === '50-50') {
         textarea.value = "1. 50% Mobilization advance along with confirmed work order.\n2. 50% upon final statutory documentation clearance and dispatch of official government order copies.";

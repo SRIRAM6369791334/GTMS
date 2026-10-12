@@ -64,6 +64,9 @@ class RolePermissionSeeder extends Seeder
 
             // Environment Clearance
             'environment.view',
+            'environment.create',
+            'environment.edit',
+            'environment.delete',
             'environment.b1.view',
             'environment.b2.view',
             'environment.b2.create',
@@ -112,6 +115,10 @@ class RolePermissionSeeder extends Seeder
             'account.edit',
             'account.delete',
 
+            // Notifications
+            'notification.view',
+            'notification.manage',
+
             // Masters (Category, Product, Unit)
             'category.view',
             'category.create',
@@ -122,8 +129,10 @@ class RolePermissionSeeder extends Seeder
             'product.edit',
             'product.delete',
             'unit.view',
+            'unit.create',
+            'unit.edit',
+            'unit.delete',
         ];
-
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
@@ -139,7 +148,14 @@ class RolePermissionSeeder extends Seeder
         ]);
         $adminRole->syncPermissions(Permission::all());
 
-        // 2. Staff Role (Basic viewing permissions)
+        // 2. Super Admin Role (Has all permissions)
+        $superAdminRole = Role::firstOrCreate([
+            'name' => 'Super Admin',
+            'guard_name' => 'web',
+        ]);
+        $superAdminRole->syncPermissions(Permission::all());
+
+        // 3. Staff Role (Basic viewing permissions)
         $staffRole = Role::firstOrCreate([
             'name' => 'Staff',
             'guard_name' => 'web',
@@ -150,6 +166,7 @@ class RolePermissionSeeder extends Seeder
             'application.view',
             'mining.view',
             'environment.view',
+            'environment.b1.view',
             'environment.b2.view',
             'users.view',
             'ec_certificate.view',
@@ -158,9 +175,13 @@ class RolePermissionSeeder extends Seeder
             'dgps.view',
             'drone.view',
             'account.view',
+            'notification.view',
+            'category.view',
+            'product.view',
+            'unit.view',
         ]);
 
-        // 3. Officer Role
+        // 4. Officer Role (Operational and field management permissions)
         $officerRole = Role::firstOrCreate([
             'name' => 'Officer',
             'guard_name' => 'web',
@@ -177,10 +198,14 @@ class RolePermissionSeeder extends Seeder
             'mining.create',
             'mining.edit',
             'environment.view',
+            'environment.create',
+            'environment.edit',
+            'environment.b1.view',
             'environment.b2.view',
             'environment.b2.create',
             'environment.b2.upload',
             'environment.b2.review',
+            'environment.b2.status',
             'ec_certificate.view',
             'ec_certificate.create',
             'ec_certificate.edit',
@@ -205,6 +230,17 @@ class RolePermissionSeeder extends Seeder
             'account.create',
             'account.edit',
             'account.delete',
+            'notification.view',
+            'notification.manage',
+            'category.view',
+            'category.create',
+            'category.edit',
+            'product.view',
+            'product.create',
+            'product.edit',
+            'unit.view',
+            'unit.create',
+            'unit.edit',
         ]);
 
 

@@ -14,11 +14,11 @@
         </ol>
       </div>
       <div class="col-lg-5 col-12 text-lg-end">
-        @can('environment.view')
+        @canany(['ec_compliance.create', 'environment.view'])
         <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-navy shadow-sm">
           <i class="fa fa-plus me-1"></i> New Compliance Filing
         </a>
-        @endcan
+        @endcanany
       </div>
     </div>
 
@@ -230,11 +230,11 @@
                   <td colspan="9" class="text-center py-5 text-muted">
                     <i class="fas fa-clipboard-check fa-3x mb-3 text-muted opacity-50"></i>
                     <p class="mb-2">No EC Half-Yearly Compliance filings registered yet.</p>
-                    @can('environment.view')
+                    @canany(['ec_compliance.create', 'environment.view'])
                     <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-sm btn-navy">
                       <i class="fa fa-plus me-1"></i> Start New Compliance Filing
                     </a>
-                    @endcan
+                    @endcanany
                   </td>
                 </tr>
               @endforelse
