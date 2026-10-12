@@ -495,6 +495,9 @@
                     <li class="breadcrumb-item" style="color: #334155; font-weight: 600;">Accounts</li>
                     <li class="breadcrumb-item active text-primary fw-bold">Quotations</li>
                 </ol>
+                <button type="button" class="btn btn-outline-success me-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#quotationsExportModal" style="height: 38px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.86rem; border-radius: 8px;">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
                 @can('account.create')
                 <a href="{{ route('accounts.quotations.create') }}" class="btn btn-create-quote">
                     <i class="fas fa-plus"></i> Create Quotation
@@ -1054,4 +1057,11 @@
     }
 </script>
 @endpush
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'quotationsExportModal',
+    'title' => 'Quotations Directory',
+    'tableSelector' => 'table.table-quotations',
+    'filename' => 'GTMS_Quotations_' . date('Ymd')
+])
 @endsection

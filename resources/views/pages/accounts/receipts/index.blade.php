@@ -75,6 +75,9 @@
             <a href="{{ route('accounts.quotations.index') }}" class="btn btn-outline-primary ms-2 shadow-sm">
                 <i class="fas fa-file-invoice me-1"></i> Quotations
             </a>
+            <button type="button" class="btn btn-outline-success ms-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#receiptsExportModal">
+                <i class="fas fa-file-export me-1"></i> Export
+            </button>
         </div>
     </div>
 
@@ -392,6 +395,12 @@
         </div>
     </div>
 </div>
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'receiptsExportModal',
+    'title' => 'Official Money Receipts Ledger',
+    'tableSelector' => 'table.receipts-table',
+    'filename' => 'GTMS_Payment_Receipts_' . date('Ymd')
+])
 </div>
 @endsection
 

@@ -49,9 +49,9 @@
                 </div>
             </div>
             <div class="col-sm-6 p-md-0 justify-content-sm-end mt-2 mt-sm-0 d-flex gap-2">
-                <a href="{{ route('accounts.reports.export-csv', request()->all()) }}" class="btn btn-success shadow-sm">
-                    <i class="fas fa-file-csv me-1"></i> Export Streamed CSV
-                </a>
+                <button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#reportsExportModal">
+                    <i class="fas fa-file-export me-1"></i> Export Report
+                </button>
                 @can('account.create')
                 <a href="{{ route('accounts.payments.create') }}" class="btn btn-navy shadow-sm">
                     <i class="fas fa-cash-register me-1"></i> Collect Payment
@@ -246,9 +246,9 @@
                             <button type="submit" class="btn btn-sm btn-navy flex-grow-1">
                                 <i class="fas fa-filter me-1"></i> Apply Filters
                             </button>
-                            <a href="{{ route('accounts.reports.export-csv', request()->all()) }}" class="btn btn-sm btn-outline-success" title="Export Filtered CSV">
-                                <i class="fas fa-file-csv"></i>
-                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#reportsExportModal" title="Export Filtered Report">
+                                <i class="fas fa-file-export"></i>
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -441,6 +441,14 @@
         </div>
     </div>
 </div>
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'reportsExportModal',
+    'title' => 'Financial Reports & Reconciliation',
+    'tableSelector' => 'table.report-table',
+    'filename' => 'GTMS_Financial_Report_' . date('Ymd'),
+    'serverCsvUrl' => route('accounts.reports.export-csv', request()->all())
+])
 @endsection
 
 @push('scripts')

@@ -61,6 +61,9 @@
                     <i class="fas fa-cash-register me-1"></i> Collect Payment
                 </a>
                 @endcan
+                <button type="button" class="btn btn-outline-success shadow-sm" data-bs-toggle="modal" data-bs-target="#ledgerExportModal">
+                    <i class="fas fa-file-export me-1"></i> Export
+                </button>
                 <a href="{{ route('accounts.reports.index') }}" class="btn btn-outline-primary shadow-sm">
                     <i class="fas fa-chart-line me-1"></i> Reports
                 </a>
@@ -341,4 +344,11 @@
         </div>
     </div>
 </div>
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'ledgerExportModal',
+    'title' => 'Customer Financial Ledger Directory',
+    'tableSelector' => 'table.ledger-table',
+    'filename' => 'GTMS_Customer_Ledger_' . date('Ymd')
+])
 @endsection

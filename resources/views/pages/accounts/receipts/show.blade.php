@@ -70,6 +70,9 @@
                 <a href="{{ route('accounts.receipts.print', $receipt->id) }}" target="_blank" class="btn btn-primary btn-sm shadow-sm">
                     <i class="fas fa-print me-1"></i> Print Voucher (A4/A5)
                 </a>
+                <button type="button" class="btn btn-outline-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#receiptVoucherExportModal">
+                    <i class="fas fa-file-export me-1"></i> Export Voucher
+                </button>
                 @can('account.create')
                 <a href="{{ route('accounts.payments.create') }}" class="btn btn-navy btn-sm shadow-sm">
                     <i class="fas fa-plus me-1"></i> New Payment
@@ -281,4 +284,11 @@
     </div>
 </div>
 </div>
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'receiptVoucherExportModal',
+    'title' => 'Money Receipt Voucher ' . $receipt->receipt_number,
+    'tableSelector' => 'table.detail-table',
+    'filename' => 'GTMS_Receipt_' . str_replace('/', '_', $receipt->receipt_number)
+])
 @endsection

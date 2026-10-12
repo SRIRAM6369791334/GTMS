@@ -329,6 +329,9 @@
                 <a href="{{ route('accounts.quotations.index') }}" class="btn btn-light border shadow-sm fw-semibold" style="color: #334155; font-size: 0.84rem;">
                     <i class="fas fa-arrow-left me-1"></i> Back to Directory
                 </a>
+                <button type="button" class="btn btn-success shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quotationDossierExportModal" style="font-size: 0.84rem;">
+                    <i class="fas fa-file-export me-1"></i> Export Quotation
+                </button>
                 <a href="{{ route('accounts.quotations.print', $quotation->id) }}" target="_blank" class="btn btn-navy shadow-sm fw-semibold" style="font-size: 0.84rem;">
                     <i class="fas fa-print me-1"></i> Standalone A4 Print / PDF
                 </a>
@@ -539,9 +542,14 @@
                 <h5 class="mb-0 fw-bold text-dark d-flex align-items-center">
                     <i class="fas fa-list-ol text-primary me-2"></i>Statutory Services Scope & Commercial Schedule
                 </h5>
-                <span class="badge bg-light text-dark border px-2 py-1 fw-bold" style="font-size: 0.8rem;">
-                    <i class="fas fa-cubes text-primary me-1"></i>{{ $quotation->items->count() }} Line {{ \Illuminate\Support\Str::plural('Item', $quotation->items->count()) }}
-                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border px-2 py-1 fw-bold" style="font-size: 0.8rem;">
+                        <i class="fas fa-cubes text-primary me-1"></i>{{ $quotation->items->count() }} Line {{ \Illuminate\Support\Str::plural('Item', $quotation->items->count()) }}
+                    </span>
+                    <button type="button" class="btn btn-sm btn-outline-success border" data-bs-toggle="modal" data-bs-target="#quotationDossierExportModal" title="Export Quotation Schedule">
+                        <i class="fas fa-download me-1"></i> Export
+                    </button>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -794,6 +802,13 @@
 
     </div>
 </div>
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'quotationDossierExportModal',
+    'title' => 'Quotation Commercial Schedule • ' . $quotation->quotation_number,
+    'tableSelector' => 'table.table-line-items',
+    'filename' => 'GTMS_Quotation_' . str_replace(['/', '\\'], '_', $quotation->quotation_number) . '_' . date('Ymd')
+])
 
 @push('scripts')
 <script>

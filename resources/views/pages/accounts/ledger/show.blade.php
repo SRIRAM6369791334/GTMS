@@ -63,6 +63,9 @@
                 <a href="{{ route('accounts.ledger.print', array_merge(['customer' => $customer->slug ?: $customer->id], request()->only(['from_date', 'to_date']))) }}" target="_blank" class="btn btn-outline-dark shadow-sm">
                     <i class="fas fa-print me-1"></i> Print Statement
                 </a>
+                <button type="button" class="btn btn-outline-success shadow-sm" data-bs-toggle="modal" data-bs-target="#ledgerDossierExportModal">
+                    <i class="fas fa-file-export me-1"></i> Export Dossier
+                </button>
                 @can('account.create')
                 <a href="{{ route('accounts.payments.create', ['customer_id' => $customer->id]) }}" class="btn btn-navy shadow-sm">
                     <i class="fas fa-cash-register me-1"></i> Collect Payment
@@ -410,4 +413,11 @@
         @endif
     </div>
 </div>
+
+@include('pages.accounts.partials.export_modal', [
+    'id' => 'ledgerDossierExportModal',
+    'title' => 'Customer Financial Dossier - ' . ($customer->company_name ?: $customer->customer_name),
+    'tableSelector' => 'table.ledger-table',
+    'filename' => 'GTMS_Ledger_' . ($customer->slug ?: 'customer') . '_' . date('Ymd')
+])
 @endsection
