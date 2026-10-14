@@ -495,6 +495,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('permission:account.view')
             ->name('receipts.index');
 
+        Route::get('/receipts/application-history/{type}/{id}', [PaymentReceiptController::class, 'getApplicationReceipts'])
+            ->middleware('permission:account.view')
+            ->name('receipts.application-history');
+
         Route::get('/receipts/{receipt}', [PaymentReceiptController::class, 'show'])
             ->middleware('permission:account.view')
             ->name('receipts.show');
@@ -524,6 +528,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/reports/export-csv', [FinancialReportController::class, 'exportCsv'])
             ->middleware('permission:account.view')
             ->name('reports.export-csv');
+
+        // Invoice Seal & Signature Management (Manual Upload & Blank Space Mode)
+        Route::post('/invoices/seal-upload', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'upload'])
+            ->name('invoices.seal.upload');
+        Route::post('/invoices/seal-remove', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'remove'])
+            ->name('invoices.seal.remove');
+        Route::get('/invoices/seal-status', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'status'])
+            ->name('invoices.seal.status');
     });
 
 });

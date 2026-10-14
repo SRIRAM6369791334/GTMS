@@ -3,43 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tax Invoice &bull; {{ $customer->company_name ?: $customer->customer_name }} &bull; GTMS</title>
+  <title>Tax Invoice &bull; {{ $tiInvoiceNo }} &bull; {{ $customer->company_name ?: $customer->customer_name }} &bull; GTMS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Reset & Page Setup */
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm;
+    }
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
     body {
-      font-family: 'Times New Roman', Times, serif;
+      font-family: "Times New Roman", Times, serif;
       background-color: #525659;
-      color: #000;
-      -webkit-font-smoothing: antialiased;
+      color: #000000;
+      line-height: 1.35;
       padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Screen Action Bar */
+    /* Floating Screen Action Bar */
     .no-print-bar {
       width: 210mm;
-      margin: 0 auto 15px auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0F1E4D;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 10px;
+      z-index: 9999;
+    }
+    .bar-row-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #0F1E4D;
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 6px;
-      font-family: system-ui, -apple-system, sans-serif;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+      width: 100%;
     }
-    .no-print-bar a, .no-print-bar button {
+    .bar-row-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 12px;
+    }
+    .bar-section-label {
+      font-weight: 600;
+      color: #94a3b8;
+      font-size: 11.5px;
+      margin-right: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .format-switcher-group {
+      display: inline-flex;
+      background: #1e293b;
+      padding: 3px;
+      border-radius: 6px;
+      gap: 4px;
+    }
+    .doc-switch-btn {
+      background: transparent;
+      color: #cbd5e1;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .doc-switch-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .doc-switch-btn.active {
+      background: #059669;
+      color: #ffffff;
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.4);
+    }
+    .action-links {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .action-btn {
       background: #2563eb;
       color: #fff;
       border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      font-size: 14px;
+      padding: 7px 14px;
+      border-radius: 5px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
@@ -48,455 +118,738 @@
       gap: 6px;
       transition: background 0.15s ease;
     }
-    .no-print-bar button:hover, .no-print-bar a:hover {
+    .action-btn:hover {
       background: #1d4ed8;
+      color: #fff;
     }
-    .no-print-bar a.secondary {
+    .action-btn.secondary {
       background: #334155;
     }
-    .no-print-bar a.secondary:hover {
+    .action-btn.secondary:hover {
       background: #1e293b;
     }
+    .action-btn.filter-btn {
+      background: #d97706;
+    }
+    .action-btn.filter-btn:hover {
+      background: #b45309;
+    }
 
-    /* A4 Paper Sheet */
-    .sheet {
+    /* A4 Document Page */
+    .ti-page {
+      background: #ffffff;
       width: 210mm;
       min-height: 297mm;
-      margin: 0 auto;
-      background: #fff;
-      padding: 14mm 14mm 10mm 14mm;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
-      position: relative;
+      padding: 12mm 15mm;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
     }
-
-    /* Outer Wrapper Table */
-    .invoice-table {
+    .ti-invoice-grid {
       width: 100%;
       border-collapse: collapse;
-      border: 1.5px solid #000;
-      table-layout: fixed;
+      font-size: 13.5px;
+      border: 1px solid #000000;
     }
-    .invoice-table td, .invoice-table th {
-      border: 1px solid #000;
-      padding: 4px 6px;
+    .ti-invoice-grid, .ti-invoice-grid th, .ti-invoice-grid td {
+      border: 1px solid #000000;
+    }
+    .ti-invoice-grid td, .ti-invoice-grid th {
+      padding: 5px 8px;
       vertical-align: middle;
-      font-size: 11pt;
-      line-height: 1.25;
     }
-
-    /* Header Section */
-    .header-logo-cell {
+    .ti-top-logo-cell {
+      width: 45%;
       text-align: center;
-      padding: 8px 6px 4px 6px !important;
-      border-bottom: 1px solid #000;
+      padding: 10px;
     }
-    .company-logo {
-      width: 115px;
+    .ti-top-logo-cell img {
+      width: 125px;
       height: auto;
       display: block;
-      margin: 0 auto 4px auto;
+      margin: 0 auto;
     }
-    .company-title {
-      font-size: 11pt;
-      font-weight: bold;
-      text-align: left;
-      margin-bottom: 2px;
-    }
-    .iso-tag {
-      font-size: 10.5pt;
-      font-weight: bold;
-      text-align: left;
-      margin-bottom: 2px;
-    }
-    .company-address {
-      font-size: 10.5pt;
-      line-height: 1.35;
-      text-align: left;
-    }
-
-    .title-cell {
+    .ti-top-title-cell {
+      width: 55%;
       text-align: center;
       vertical-align: middle;
-      padding: 10px 0 !important;
     }
-    .tax-invoice-heading {
+    .ti-tax-invoice-heading {
       color: #c00000;
-      font-size: 22pt;
+      font-size: 24px;
       font-weight: bold;
-      letter-spacing: 0.5px;
-      display: inline-block;
+      letter-spacing: 1px;
     }
-
-    /* Meta Table inside right column */
-    .meta-subtable {
+    .ti-company-info-cell {
+      vertical-align: top;
+      line-height: 1.4;
+      padding: 8px;
+    }
+    .ti-company-name {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+    .ti-company-iso {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .ti-meta-sub-table {
       width: 100%;
       border-collapse: collapse;
       border: none;
     }
-    .meta-subtable td {
-      border: none;
-      border-top: 1px solid #000;
+    .ti-meta-sub-table td {
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      border-bottom: 1px solid #000000;
+      padding: 4px 6px;
+    }
+    .ti-meta-sub-table tr:last-child td {
       border-bottom: none;
-      padding: 3.5px 6px;
-      font-size: 10.5pt;
     }
-    .meta-subtable tr:first-child td {
-      border-top: 1px solid #000;
-    }
-    .meta-subtable td.label-col {
+    .ti-meta-sub-table td.m-lbl {
+      width: 105px;
       font-weight: bold;
-      width: 32%;
-      border-right: 1px solid #000;
     }
-    .meta-subtable td.val-col {
-      width: 68%;
-    }
-
-    /* Information Rows */
-    .row-label {
+    .ti-label-col {
       font-weight: bold;
-      font-size: 10.5pt;
       width: 25%;
-      letter-spacing: 0.2px;
     }
-    .client-name-val {
-      color: #c00000;
-      font-weight: bold;
-      font-style: italic;
-      font-size: 12pt;
+    .ti-value-col {
+      width: 75%;
     }
-    .italic-val {
-      font-style: italic;
-    }
-    .bold-italic-val {
-      font-weight: bold;
-      font-style: italic;
-    }
-
-    /* Items / Work Description Table */
-    .items-header th {
-      font-size: 11pt;
+    .ti-table-header th {
       font-weight: bold;
       text-align: center;
       padding: 6px;
+      background: #f8fafc;
     }
-    .work-desc-cell {
+    .ti-desc-cell {
+      width: 80%;
+      padding: 12px 10px;
       vertical-align: top;
-      padding: 12px 14px !important;
-      min-height: 110px;
     }
-    .work-desc-list {
-      list-style-type: none;
-      padding-left: 0;
-      margin: 0;
+    .ti-desc-cell ul {
+      margin-left: 20px;
+      list-style-type: disc;
     }
-    .work-desc-list li {
-      position: relative;
-      padding-left: 18px;
-      margin-bottom: 7px;
-      font-size: 10.5pt;
-      line-height: 1.35;
+    .ti-desc-cell li {
+      margin-bottom: 5px;
     }
-    .work-desc-list li::before {
-      content: "•";
-      position: absolute;
-      left: 2px;
-      font-size: 14pt;
-      line-height: 1;
-      top: -1px;
-    }
-    .amount-cell {
-      text-align: center;
-      vertical-align: middle;
-      font-size: 11pt;
-      font-weight: normal;
-    }
-
-    /* Tax & Total rows */
-    .tax-label {
+    .ti-amount-cell {
+      width: 20%;
       text-align: right;
-      font-weight: normal;
-      font-size: 10.5pt;
-      padding-right: 15px !important;
-    }
-    .total-row td {
-      font-weight: bold;
-      font-size: 11pt;
-      padding: 6px !important;
-    }
-    .total-label {
-      text-align: center;
+      padding-right: 14px !important;
+      vertical-align: top;
       font-weight: bold;
     }
-
-    /* Bank & Signatory Section */
-    .footer-section {
+    .ti-subtotal-row td.subtotal-label {
+      text-align: right;
+      padding-right: 14px;
+      font-weight: bold;
+    }
+    .ti-subtotal-row td.subtotal-val {
+      text-align: right;
+      padding-right: 14px;
+      font-weight: bold;
+    }
+    .ti-total-row td.total-label {
+      text-align: right;
+      padding-right: 14px;
+      font-weight: bold;
+    }
+    .ti-total-row td.total-val {
+      text-align: right;
+      padding-right: 14px;
+      font-weight: bold;
+    }
+    .ti-bank-inner-table {
       width: 100%;
       border-collapse: collapse;
       border: none;
     }
-    .footer-section td {
-      border: none;
-      vertical-align: bottom;
-      padding: 0;
-    }
-    .bank-table {
-      width: 90%;
-      border-collapse: collapse;
-      border: 1px solid #000;
-      margin-top: 15px;
-    }
-    .bank-table td {
-      border: 1px solid #000;
+    .ti-bank-inner-table td {
+      border: 1px solid #000000;
       padding: 4px 6px;
-      font-size: 10pt;
-      height: 23px;
     }
-    .bank-table td.b-label {
+    .ti-bank-inner-table td.b-lbl {
+      width: 110px;
       font-weight: bold;
-      width: 32%;
     }
-
-    .signatory-box {
+    .ti-sign-box-cell {
       text-align: center;
-      padding: 10px 10px 5px 10px;
-      float: right;
-      width: 220px;
+      vertical-align: bottom;
+      padding: 10px;
+      width: 38%;
     }
-    .stamp-img {
-      width: 165px;
+    .ti-sign-box-cell img {
+      width: 130px;
       height: auto;
       display: block;
-      margin: 0 auto 3px auto;
+      margin: 0 auto 6px auto;
     }
-    .signatory-name {
-      font-size: 10.5pt;
+    .ti-sign-person-title {
       font-weight: bold;
-      line-height: 1.3;
-    }
-    .signatory-title {
-      font-size: 10pt;
+      font-size: 13px;
       line-height: 1.3;
     }
 
-    /* Print Styles */
+    /* Multi-Select Applications Modal Styles */
+    .app-modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .app-modal-backdrop.show {
+      display: flex;
+    }
+    .app-modal-box {
+      background: #ffffff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 760px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .app-modal-header {
+      padding: 16px 22px;
+      background: #0F1E4D;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .app-modal-header h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .app-modal-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .app-modal-close:hover {
+      color: #ffffff;
+    }
+    .app-modal-toolbar {
+      padding: 10px 22px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .app-modal-body {
+      padding: 16px 22px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .app-choice-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      background: #ffffff;
+    }
+    .app-choice-card:hover {
+      border-color: #93c5fd;
+      background: #f8fafc;
+    }
+    .app-choice-card.selected {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    .app-choice-card input[type="checkbox"] {
+      margin-top: 4px;
+      width: 17px;
+      height: 17px;
+      cursor: pointer;
+      accent-color: #2563eb;
+    }
+    .app-choice-info {
+      flex: 1;
+    }
+    .app-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      margin-right: 6px;
+    }
+    .app-title-text {
+      font-weight: 600;
+      color: #0f172a;
+      font-size: 14px;
+    }
+    .app-sub-detail {
+      font-size: 12.5px;
+      color: #475569;
+      margin-top: 3px;
+    }
+    .app-amount-tag {
+      font-weight: 700;
+      color: #059669;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .app-modal-footer {
+      padding: 14px 22px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .app-summary-pills {
+      font-size: 13px;
+      color: #334155;
+    }
+
+    /* Print Media Rules */
     @media print {
-      @page {
-        size: A4 portrait;
-        margin: 10mm;
-      }
       body {
-        background: transparent;
-        padding: 0;
+        background: transparent !important;
+        padding: 0 !important;
+        gap: 0 !important;
       }
-      .no-print-bar {
+      .no-print-bar, .app-modal-backdrop {
         display: none !important;
       }
-      .sheet {
-        box-shadow: none;
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        min-height: auto;
+      .ti-page {
+        box-shadow: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        min-height: auto !important;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Screen Action Bar -->
+  <!-- Floating Screen Action Bar -->
   <div class="no-print-bar">
-    <div>
-      <strong>GTMS Official Tax Invoice</strong> &nbsp;|&nbsp; Ref: {{ $invoiceNo }} &bull; {{ $customer->company_name ?: $customer->customer_name }}
+    <div class="bar-row-top">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="bar-section-label">Document:</span>
+        <div class="format-switcher-group">
+          <button type="button" class="doc-switch-btn active">
+            <i class="fa fa-receipt"></i> Tax Invoice
+          </button>
+          <a href="{{ route('customer-tracking.proforma-invoice', array_merge(['customer' => $customer->slug ?? $customer->id], request()->has('apps') ? ['apps' => request('apps')] : (count($selectedAppKeys) ? ['apps' => implode(',', $selectedAppKeys)] : []))) }}" class="doc-switch-btn">
+            <i class="fa fa-file-invoice"></i> Switch to Proforma Invoice
+          </a>
+        </div>
+      </div>
+
+      <div class="action-links">
+        <button type="button" class="action-btn seal-status-btn blank-mode" onclick="openSealModal()" id="sealActionBtn" title="Seal & Signature Setup">
+          <i class="fa fa-stamp"></i> <span id="sealStatusLabel">Seal: Blank (Manual)</span>
+        </button>
+        <button type="button" class="action-btn filter-btn" onclick="openAppsModal()">
+          <i class="fa fa-sliders"></i> Filter Applications ({{ count($items) }}/{{ count($allCustomerApps) }})
+        </button>
+        <button type="button" class="action-btn" onclick="window.print()">
+          <i class="fa fa-print"></i> Print Invoice
+        </button>
+        <a href="{{ route('customer-tracking.show', $customer->slug ?? $customer->id) }}" class="action-btn secondary">
+          <i class="fa fa-arrow-left"></i> Back to Tracking
+        </a>
+      </div>
     </div>
-    <div style="display: flex; gap: 10px;">
-      <a href="{{ route('customer-tracking.show', $customer->slug ?? $customer->id) }}" class="secondary">
-        &larr; Back to Customer 360
-      </a>
-      <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" class="secondary">
-        View Proforma Invoice &rarr;
-      </a>
-      <button onclick="window.print()">
-        🖨️ Print / Save as PDF
-      </button>
+
+    <div class="bar-row-bottom">
+      <div>
+        <strong>Client:</strong> {{ $customer->company_name ?: $customer->customer_name }}
+        @if($customer->mimas_no) &bull; <span style="color:#93c5fd;">{{ $customer->mimas_no }}</span> @endif
+      </div>
+      <div>
+        <span>Mode: <strong>{{ $isConsolidated ? 'Consolidated (' . count($items) . ' Applications)' : 'Single Application' }}</strong></span>
+        &bull; <span>Subtotal: <strong>₹{{ number_format($subtotal, 2) }}</strong></span>
+        &bull; <span>GST: <strong>₹{{ number_format($cgst + $sgst, 2) }}</strong></span>
+        &bull; <span>Grand Total: <strong style="color:#34d399;">₹{{ number_format($grandTotal, 2) }}</strong></span>
+      </div>
     </div>
   </div>
 
-  <!-- A4 Document Sheet -->
-  <div class="sheet">
-    <table class="invoice-table">
-      <colgroup>
-        <col style="width: 50%;">
-        <col style="width: 50%;">
-      </colgroup>
+  <!-- A4 TAX INVOICE SHEET -->
+  <div class="ti-page">
+    <table class="ti-invoice-grid">
+      <tbody>
+        <!-- Top Row: Logo & Heading -->
+        <tr>
+          <td class="ti-top-logo-cell">
+            <img src="{{ asset('images/invoices/gtms_logo.png') }}" alt="GTMS Logo">
+          </td>
+          <td class="ti-top-title-cell">
+            <div class="ti-tax-invoice-heading">TAX INVOICE</div>
+          </td>
+        </tr>
 
-      <!-- Row 1: Company Header (Left) & Tax Invoice Meta (Right) -->
-      <tr>
-        <td style="padding: 10px 12px; vertical-align: top;">
-          <div style="text-align: center; margin-bottom: 6px;">
-            <img src="{{ asset('images/invoices/gtms_logo.png') }}" class="company-logo" alt="GTMS Logo">
-          </div>
-          <div class="company-title">GEO TECHNICAL MINING SOLUTIONS</div>
-          <div class="iso-tag">AN ISO 9001 : 2015 CERTIFIED COMPANY</div>
-          <div class="company-address">
-            1/237, AR Complex, Salem Main Road,<br>
-            Meyyanur, Salem – 636 004, Tamil Nadu, India.<br>
-            GSTIN: 33ABCDE1234F1Z5 &bull; PAN: ABCDE1234F<br>
-            Mobile: +91 94432 12345 / 94432 54321<br>
-            Email: info@gtmsmining.com &bull; Web: www.gtmsmining.com
-          </div>
-        </td>
+        <!-- Company Details & Invoice Meta -->
+        <tr>
+          <td class="ti-company-info-cell">
+            <div class="ti-company-name">GEO TECHNICAL MINING SOLUTIONS</div>
+            <div class="ti-company-iso">(ISO 9001: 2015 Certified Company)</div>
+            <div>No: 2/548/D, Thadangam,</div>
+            <div>Thokkampatti Post,</div>
+            <div>Dharmapuri-636705.</div>
+            <div style="margin-top: 4px;">Ph: +91 9443937841, 70100 76633.</div>
+            <div>Ofc Ph.: 04342-232777</div>
+            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;04342-292377</div>
+            <div style="margin-top: 2px;">E-mail: info.gtmsdpi@gmail.com.</div>
+          </td>
+          <td style="padding: 0; vertical-align: top;">
+            <table class="ti-meta-sub-table">
+              <tr>
+                <td class="m-lbl">Invoice No.:</td>
+                <td><strong>{{ $tiInvoiceNo }}</strong></td>
+              </tr>
+              <tr>
+                <td class="m-lbl">Invoice Date:</td>
+                <td><strong>{{ $invoiceDate }}</strong></td>
+              </tr>
+              <tr>
+                <td class="m-lbl">GSTIN:</td>
+                <td><strong>33AAQFG5164R1ZN</strong></td>
+              </tr>
+              <tr>
+                <td class="m-lbl">PAN:</td>
+                <td><strong>AAQFG5164R</strong></td>
+              </tr>
+              <tr>
+                <td class="m-lbl">Web:</td>
+                <td>www.gtmsind.com</td>
+              </tr>
+              <tr>
+                <td class="m-lbl">Ofc Ph.:</td>
+                <td>04342-232777<br>04342-292377</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-        <td style="vertical-align: top; padding: 0;">
-          <div class="title-cell">
-            <span class="tax-invoice-heading">TAX INVOICE</span>
-          </div>
-          <table class="meta-subtable">
-            <tr>
-              <td class="label-col">INVOICE NO.</td>
-              <td class="val-col">{{ $invoiceNo }}</td>
-            </tr>
-            <tr>
-              <td class="label-col">DATE</td>
-              <td class="val-col">{{ $invoiceDate }}</td>
-            </tr>
-            <tr>
-              <td class="label-col">REVERSE CHARGE</td>
-              <td class="val-col">No</td>
-            </tr>
-            <tr>
-              <td class="label-col">STATE</td>
-              <td class="val-col">Tamil Nadu (Code : 33)</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
+        <!-- Client Info Rows -->
+        <tr>
+          <td class="ti-label-col">CLIENT NAME</td>
+          <td class="ti-value-col" style="color: #c00000; font-style: italic; font-weight: bold;">
+            {{ strtoupper($customer->company_name ?: $customer->customer_name) }}
+          </td>
+        </tr>
+        <tr>
+          <td class="ti-label-col">CLIENT ADDRESS</td>
+          <td class="ti-value-col" style="font-style: italic;">
+            {{ $customer->address ?: ($customer->area ?: 'Concession Site, ' . $districtName . ' District, Tamil Nadu') }}
+          </td>
+        </tr>
+        <tr>
+          <td class="ti-label-col">GSTIN</td>
+          <td class="ti-value-col">
+            {{ $customer->gstin ?: ($customer->pan ?: 'Unregistered / Exempt') }}
+          </td>
+        </tr>
+        <tr>
+          <td class="ti-label-col">WORK AUTHORIZED BY</td>
+          <td class="ti-value-col">
+            Dr.S.Karuppannan,<br>
+            Managing Partner,<br>
+            Geo Technical Mining Solutions.
+          </td>
+        </tr>
+        <tr>
+          <td class="ti-label-col">PARTICULARS</td>
+          <td class="ti-value-col">
+            <strong><em>{{ $particulars }}</em></strong>
+          </td>
+        </tr>
+        <tr>
+          <td class="ti-label-col">REFERENCE</td>
+          <td class="ti-value-col">
+            <em>{{ $mineralName }} quarry lease {{ $locationDetails }}</em>
+          </td>
+        </tr>
 
-      <!-- Client Name -->
-      <tr>
-        <td class="row-label">CLIENT NAME</td>
-        <td class="client-name-val">{{ strtoupper($customer->company_name ?: $customer->customer_name) }}</td>
-      </tr>
+        <!-- Items Table Header -->
+        <tr class="ti-table-header">
+          <th>WORK DESCRIPTION</th>
+          <th>AMOUNT</th>
+        </tr>
 
-      <!-- Client Address -->
-      <tr>
-        <td class="row-label">CLIENT ADDRESS</td>
-        <td class="italic-val">
-          {{ $customer->address ?: ($customer->area ? $customer->area . ', ' . $districtName : 'Concession Zone, ' . $districtName . ' District, Tamil Nadu') }}
-        </td>
-      </tr>
+        <!-- Dynamic Items Rows -->
+        @foreach($items as $item)
+        <tr>
+          <td class="ti-desc-cell">
+            <div style="font-weight: bold; font-size: 13.5px; color: #0F1E4D; margin-bottom: 4px;">
+              @if($isConsolidated)
+                {{ $item['sl'] }}.
+              @endif
+              {{ $item['service_name'] }}
+              @if(!empty($item['sac']))
+                <span style="font-weight: normal; font-size: 11px; color: #475569;">(SAC: {{ $item['sac'] }})</span>
+              @endif
+            </div>
+            @if(!empty($item['ref']))
+              <div style="font-size: 11.5px; color: #c00000; font-weight: bold; margin-bottom: 5px; font-style: italic;">
+                {{ $item['ref'] }}
+              </div>
+            @endif
+            @if(!empty($item['bullets']) && count($item['bullets']) > 0)
+              <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 6px;">
+                @foreach($item['bullets'] as $bullet)
+                  <li style="margin-bottom: 3px; font-size: 12.5px;">{{ $bullet }}</li>
+                @endforeach
+              </ul>
+            @endif
+          </td>
+          <td class="ti-amount-cell">
+            Rs. {{ number_format($item['amount'], 2) }}
+          </td>
+        </tr>
+        @endforeach
 
-      <!-- GSTIN -->
-      <tr>
-        <td class="row-label">GSTIN</td>
-        <td>{{ $customer->gstin ?: ($customer->pan ? '33' . $customer->pan . '1Z5' : '33AAACK5706F1Z8') }}</td>
-      </tr>
+        <!-- Subtotal Row -->
+        <tr class="ti-subtotal-row">
+          <td class="subtotal-label">TOTAL</td>
+          <td class="subtotal-val">Rs. {{ number_format($subtotal, 2) }}</td>
+        </tr>
 
-      <!-- Work Authorized By -->
-      <tr>
-        <td class="row-label">WORK AUTHORIZED BY</td>
-        <td class="italic-val" style="line-height: 1.35;">
-          Dr. S. Karuppannan, M.Sc., Ph.D.,<br>
-          Managing Partner,<br>
-          Geo Technical Mining Solutions.
-        </td>
-      </tr>
+        <!-- CGST Row -->
+        <tr class="ti-subtotal-row">
+          <td class="subtotal-label">ADD: CGST @ 9%</td>
+          <td class="subtotal-val">Rs. {{ number_format($cgst, 2) }}</td>
+        </tr>
 
-      <!-- Particulars -->
-      <tr>
-        <td class="row-label">PARTICULARS</td>
-        <td class="bold-italic-val">Statutory Mining Consultancy, Mineral Concession &amp; Environmental Approvals</td>
-      </tr>
+        <!-- SGST Row -->
+        <tr class="ti-subtotal-row">
+          <td class="subtotal-label">ADD: SGST @ 9%</td>
+          <td class="subtotal-val">Rs. {{ number_format($sgst, 2) }}</td>
+        </tr>
 
-      <!-- Reference -->
-      <tr>
-        <td class="row-label">REFERENCE</td>
-        <td class="italic-val">{{ $locationDetails }}</td>
-      </tr>
-    </table>
+        <!-- Grand Total Row -->
+        <tr class="ti-total-row">
+          <td class="total-label">GRAND TOTAL</td>
+          <td class="total-val">Rs. {{ number_format($grandTotal, 2) }}</td>
+        </tr>
 
-    <!-- Work Description Table -->
-    <table class="invoice-table" style="border-top: none;">
-      <colgroup>
-        <col style="width: 80%;">
-        <col style="width: 20%;">
-      </colgroup>
-      <tr class="items-header">
-        <th style="border-top: none;">WORK DESCRIPTION</th>
-        <th style="border-top: none;">AMOUNT (INR)</th>
-      </tr>
-      <tr>
-        <td class="work-desc-cell">
-          <ul class="work-desc-list">
-            @foreach($items as $item)
-              <li>
-                <strong>{{ $item['name'] }}</strong>
-                @if(!empty($item['sac']))
-                  <span style="font-size:9.5pt; color:#475569;">[SAC: {{ $item['sac'] }}]</span>
-                @endif
-              </li>
-            @endforeach
-          </ul>
-        </td>
-        <td class="amount-cell">{{ number_format($subtotal, 2) }}</td>
-      </tr>
+        <!-- Amount In Words Row -->
+        <tr>
+          <td colspan="2" style="padding: 8px; font-size: 13.5px;">
+            <strong>Amount in Words:</strong> Rupees {{ $amountInWords }}.
+          </td>
+        </tr>
 
-      <!-- SGST Row -->
-      <tr>
-        <td class="tax-label">SGST @ 9 %</td>
-        <td class="amount-cell">{{ number_format($sgst, 2) }}</td>
-      </tr>
-
-      <!-- CGST Row -->
-      <tr>
-        <td class="tax-label">CGST @ 9 %</td>
-        <td class="amount-cell">{{ number_format($cgst, 2) }}</td>
-      </tr>
-
-      <!-- Total Row -->
-      <tr class="total-row">
-        <td class="total-label">TOTAL ({{ $amountInWords }})</td>
-        <td class="amount-cell" style="font-weight: bold;">₹ {{ number_format($grandTotal, 2) }}</td>
-      </tr>
-    </table>
-
-    <!-- Footer: Bank Details (Left) & Signatory Stamp (Right) -->
-    <table class="footer-section" style="margin-top: 15px;">
-      <tr>
-        <!-- Bank Details -->
-        <td style="width: 58%; vertical-align: top;">
-          <table class="bank-table">
-            <tr>
-              <td class="b-label">Name</td>
-              <td>GEO TECHNICAL MINING SOLUTIONS</td>
-            </tr>
-            <tr>
-              <td class="b-label">Account No.</td>
-              <td>38472910482</td>
-            </tr>
-            <tr>
-              <td class="b-label">Bank/Branch</td>
-              <td>State Bank of India, Meyyanur, Salem</td>
-            </tr>
-            <tr>
-              <td class="b-label">IFSC Code</td>
-              <td>SBIN0001234</td>
-            </tr>
-          </table>
-        </td>
-
-        <!-- Seal & Signatory -->
-        <td style="width: 42%; vertical-align: top; text-align: center;">
-          <div class="signatory-box">
-            <img src="{{ asset('images/invoices/gtms_stamp.png') }}" class="stamp-img" alt="Official Seal">
-            <div class="signatory-name">Dr. S. Karuppannan, M.Sc., Ph.D.</div>
-            <div class="signatory-title">Managing Partner / RQP</div>
-            <div style="font-size:8.5pt; color:#64748b;">(Authorised Signatory)</div>
-          </div>
-        </td>
-      </tr>
+        <!-- Bank Details & Authorized Signatory Footer Row -->
+        <tr>
+          <td style="padding: 0; vertical-align: top;">
+            <table class="ti-bank-inner-table">
+              <tr>
+                <td colspan="2" style="font-weight: bold; background-color: #ffffff; text-align: left; padding: 4px 6px;">
+                  Bank Details:
+                </td>
+              </tr>
+              <tr>
+                <td class="b-lbl">Bank Name:</td>
+                <td>Karur Vysya Bank</td>
+              </tr>
+              <tr>
+                <td class="b-lbl">Branch:</td>
+                <td>Dharmapuri Branch</td>
+              </tr>
+              <tr>
+                <td class="b-lbl">A/C No.:</td>
+                <td style="font-weight: bold; font-size: 14px; letter-spacing: 0.5px;">1124 135 0000 13745</td>
+              </tr>
+              <tr>
+                <td class="b-lbl">IFSC Code:</td>
+                <td style="font-weight: bold;">KVBL0001124</td>
+              </tr>
+            </table>
+          </td>
+          <td class="ti-sign-box-cell">
+            <div style="font-weight: bold; font-size: 11.5px; margin-bottom: 4px;">
+              For GEO TECHNICAL MINING SOLUTIONS
+            </div>
+            <div class="invoice-seal-slot">
+              @if(!empty($sealImageUrl))
+                <img src="{{ $sealImageUrl }}" alt="Authorized Signatory Seal" class="invoice-seal-img">
+                <div class="seal-empty-space" style="display: none;"></div>
+              @else
+                <img src="" alt="Authorized Signatory Seal" class="invoice-seal-img" style="display: none;">
+                <div class="seal-empty-space"></div>
+              @endif
+            </div>
+            <div class="ti-sign-person-title">
+              Dr.S.Karuppannan, Ph.D.<br>
+              Authorized Signatory
+            </div>
+          </td>
+        </tr>
+      </tbody>
     </table>
   </div>
 
+  <!-- MULTI-SELECT APPLICATIONS MODAL (IDEA 2) -->
+  <div id="appsModal" class="app-modal-backdrop" onclick="handleBackdropClick(event)">
+    <div class="app-modal-box">
+      <div class="app-modal-header">
+        <h3><i class="fa fa-sliders text-warning"></i> Customize Applications for Tax Invoice</h3>
+        <button type="button" class="app-modal-close" onclick="closeAppsModal()">&times;</button>
+      </div>
+
+      <div class="app-modal-toolbar">
+        <div>
+          <button type="button" class="action-btn secondary" style="padding: 4px 10px; font-size: 12px;" onclick="toggleAllApps(true)">
+            <i class="fa fa-check-square"></i> Select All
+          </button>
+          <button type="button" class="action-btn secondary" style="padding: 4px 10px; font-size: 12px; margin-left: 6px;" onclick="toggleAllApps(false)">
+            <i class="fa fa-square"></i> Clear All
+          </button>
+        </div>
+        <div style="font-weight: 600; color: #475569;">
+          Total Registered: {{ count($allCustomerApps) }} Applications
+        </div>
+      </div>
+
+      <form id="filterAppsForm" method="GET" action="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}">
+        <div class="app-modal-body">
+          @forelse($allCustomerApps as $app)
+            @php $isSelected = in_array($app['key'], $selectedAppKeys); @endphp
+            <label class="app-choice-card {{ $isSelected ? 'selected' : '' }}" id="card-{{ $app['key'] }}">
+              <input type="checkbox" name="apps[]" value="{{ $app['key'] }}" {{ $isSelected ? 'checked' : '' }} onchange="onAppCheckChange(this)" data-amount="{{ $app['amount'] }}">
+              <div class="app-choice-info">
+                <div>
+                  <span class="app-badge" style="background: {{ $app['badge_color'] }}; color: #ffffff;">{{ $app['module_label'] }}</span>
+                  <span class="app-title-text">{{ $app['app_no'] }}</span>
+                  @if(!empty($app['status']))
+                    <span style="font-size: 11px; background: #e2e8f0; color: #334155; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">{{ $app['status'] }}</span>
+                  @endif
+                </div>
+                <div class="app-sub-detail">
+                  <strong>Location:</strong> {{ $app['location'] ?: 'Concession site' }}
+                  @if(!empty($app['extent'])) &bull; <strong>Extent:</strong> {{ $app['extent'] }} @endif
+                </div>
+              </div>
+              <div class="app-amount-tag">
+                ₹ {{ number_format($app['amount'], 2) }}
+              </div>
+            </label>
+          @empty
+            <div style="text-align: center; padding: 20px; color: #64748b;">
+              No applications recorded for this customer.
+            </div>
+          @endforelse
+        </div>
+
+        <div class="app-modal-footer">
+          <div class="app-summary-pills">
+            <span id="modalSelectedCount">{{ count($selectedAppKeys) }}</span> selected &bull;
+            Estimated Subtotal: <strong id="modalSubtotal" style="color:#059669;">₹{{ number_format($subtotal, 2) }}</strong>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="action-btn secondary" onclick="closeAppsModal()">Cancel</button>
+            <button type="submit" class="action-btn" style="background:#059669;">
+              <i class="fa fa-refresh"></i> Update Tax Invoice
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function openAppsModal() {
+      document.getElementById('appsModal').classList.add('show');
+      recalcModalSummary();
+    }
+
+    function closeAppsModal() {
+      document.getElementById('appsModal').classList.remove('show');
+    }
+
+    function handleBackdropClick(e) {
+      if (e.target.id === 'appsModal') {
+        closeAppsModal();
+      }
+    }
+
+    function onAppCheckChange(cb) {
+      var card = document.getElementById('card-' + cb.value);
+      if (card) {
+        if (cb.checked) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      }
+      recalcModalSummary();
+    }
+
+    function toggleAllApps(select) {
+      var checkboxes = document.querySelectorAll('#filterAppsForm input[type="checkbox"]');
+      checkboxes.forEach(function(cb) {
+        cb.checked = select;
+        var card = document.getElementById('card-' + cb.value);
+        if (card) {
+          if (select) card.classList.add('selected');
+          else card.classList.remove('selected');
+        }
+      });
+      recalcModalSummary();
+    }
+
+    function recalcModalSummary() {
+      var checkboxes = document.querySelectorAll('#filterAppsForm input[type="checkbox"]:checked');
+      var total = 0;
+      checkboxes.forEach(function(cb) {
+        var amt = parseFloat(cb.getAttribute('data-amount') || 0);
+        total += amt;
+      });
+      var countEl = document.getElementById('modalSelectedCount');
+      var subEl = document.getElementById('modalSubtotal');
+      if (countEl) countEl.innerText = checkboxes.length;
+      if (subEl) subEl.innerText = '₹' + total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  </script>
+
+  @include('pages.accounts.partials.invoice_seal_modal')
 </body>
 </html>

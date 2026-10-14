@@ -1,5 +1,11 @@
 # GTMS — Project State & Memory
 
+## ACTIVE GOVERNANCE: TEST DATA LIFECYCLE & DATABASE SAFETY PROTOCOL V1.0 (ENFORCED) 🛡️
+- **Protocol Document:** `TEST_DATA_SAFETY_PROTOCOL.md`
+- **Core Standard:** Senior PHP/Laravel Developer, Database Safety Engineer, QA Automation Engineer, and Test Data Lifecycle Manager.
+- **Operating Rule:** Every change request, bug fix, or feature enhancement must follow the 8-stage lifecycle (Pre-test inspection → Identify test environment → Create controlled test data → Execute tests → Verify results → Clean up test data → Verify cleanup → Report evidence). No test is complete without cleanup verification.
+- **Enforcement:** Zero `TRUNCATE`, zero `migrate:fresh`/`db:wipe`, transactions prioritized, non-transactional tests tagged with `TEST_RUN_ID = qa_<timestamp>_<uuid>`, cascading foreign-key teardown, and explicit status reporting (`TESTS_PASSED_CLEANUP_VERIFIED`).
+
 ## Current Phase: PHASE 9.0 — MASTER DELIVERABLE FORENSIC AUDIT & 100% CODEBASE VERIFICATION (COMPLETED & VERIFIED) ✅
 - **Status:** Conducted 100% forensic cross-verification of master deliverables `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.md` (547 KB, 9,134 lines) and `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.html` (2.28 MB, 37,578 lines) against live codebase ground truth:
   1. **Data Layer Verification:**

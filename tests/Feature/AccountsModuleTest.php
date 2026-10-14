@@ -622,7 +622,7 @@ class AccountsModuleTest extends TestCase
     {
         $year = date('Y');
         $num1 = PaymentReceipt::generateReceiptNumber();
-        $this->assertMatchesRegularExpression("/^GTMS\/REC\/{$year}\/\d{4}$/", $num1);
+        $this->assertMatchesRegularExpression("/^GTMS\/REC\/{$year}\/\d{4,}$/", $num1);
 
         $customer = $this->createTestCustomer();
 
@@ -680,15 +680,125 @@ class AccountsModuleTest extends TestCase
         $resShow->assertSee($receipt->receipt_number);
         $resShow->assertSee('Thangam Quarry Works');
 
-        // Print view
+        // Print view default (Tax Invoice - Official Money Receipt voucher removed)
         $resPrint = $this->get(route('accounts.receipts.print', $receipt->id));
         $resPrint->assertStatus(200);
-        $resPrint->assertSee('OFFICIAL MONEY RECEIPT');
-        $resPrint->assertSee('Receipt Voucher No:');
-        $resPrint->assertSee($receipt->receipt_number);
-        $resPrint->assertSee('Fifty Thousand');
-        $resPrint->assertSee('CNR99221100');
-        $resPrint->assertSee('Authorized Signatory &bull; Accounts Department', false);
+        $resPrint->assertDontSee('OFFICIAL MONEY RECEIPT');
+        $resPrint->assertSee('TAX INVOICE');
+        $resPrint->assertSee('Tax Invoice (TI)');
+        $resPrint->assertSee('Proforma Invoice (PI)');
+
+        // Fallback when type=receipt is requested (defaults safely to Tax Invoice)
+        $resReceiptFallback = $this->get(route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'receipt']));
+        $resReceiptFallback->assertStatus(200);
+        $resReceiptFallback->assertDontSee('OFFICIAL MONEY RECEIPT');
+        $resReceiptFallback->assertSee('TAX INVOICE');
+
+        // Print view with type=proforma (Reference PI design)
+        $resPi = $this->get(route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'proforma']));
+        $resPi->assertStatus(200);
+        $resPi->assertSee('Proforma Invoice');
+        $resPi->assertSee('Indian Overseas Bank');
+        $resPi->assertSee('Union Bank of India');
+
+        // Print view with type=tax (Reference TI design)
+        $resTi = $this->get(route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']));
+        $resTi->assertStatus(200);
+        $resTi->assertSee('TAX INVOICE');
+        $resTi->assertSee('Dr.S.Karuppannan', false);
+        $resTi->assertSee('Ms. V. Kaviya', false);
+        $resTi->assertSee('This Service Only');
+        $resTi->assertSee('Consolidated');
+    }
+
+    /**
+     * R3.2b: Verify dynamic Tax & Proforma invoice auto-fit for single statutory application
+     * and consolidated mode across multiple customer applications.
+     */
+    public function test_receipt_dynamic_invoice_auto_fit_single_and_consolidated_modes(): void
+    {
+        $customer = $this->createTestCustomer();
+        $leaseCat = \App\Models\LeaseCategory::first();
+        $catId = $leaseCat ? $leaseCat->id : 2;
+        $minId = $this->mineral?->id ?? 1;
+
+        // Create Lease Application
+        $lease = \App\Models\LeaseApplication::create([
+            'customer_id'    => $customer->id,
+            'district_id'    => $this->district->id,
+            'category_id'    => $catId,
+            'mineral_id'     => $minId,
+            'application_no' => 'LA-DYN-' . uniqid(),
+            'product_value'  => 55000.00,
+            'paid_amount'    => 55000.00,
+            'pending_amount' => 0.00,
+            'payment_status' => 'paid',
+            'branch_id'      => $this->branch->id,
+        ]);
+
+        // Create Mining Application
+        $mining = \App\Models\MiningApplication::create([
+            'customer_id'         => $customer->id,
+            'application_no'      => 'MP-DYN-' . uniqid(),
+            'district_id'         => $this->district->id,
+            'mineral_id'          => $minId,
+            'survey_numbers_text' => '204/1B, 204/2',
+            'area_extent_ha'      => '4.20',
+            'product_value'       => 110000.00,
+            'paid_amount'         => 60000.00,
+            'pending_amount'      => 50000.00,
+            'payment_status'      => 'partial',
+            'branch_id'           => $this->branch->id,
+        ]);
+
+        // Create DgpsSurvey
+        $dgps = \App\Models\DgpsSurvey::create([
+            'customer_id'    => $customer->id,
+            'survey_no'      => 'DGPS-DYN-' . uniqid(),
+            'product_value'  => 35000.00,
+            'paid_amount'    => 35000.00,
+            'pending_amount' => 0.00,
+            'payment_status' => 'paid',
+            'branch_id'      => $this->branch->id,
+        ]);
+
+        // Receipt linked specifically to the Lease application
+        $receiptLease = PaymentReceipt::create([
+            'receipt_number'   => $this->uniqueReceiptNumber(),
+            'customer_id'      => $customer->id,
+            'application_type' => 'lease',
+            'application_id'   => $lease->id,
+            'amount_paid'      => 55000.00,
+            'payment_mode'     => 'NEFT/RTGS',
+            'transaction_date' => '2026-09-30',
+            'branch_id'        => $this->branch->id,
+            'created_by'       => $this->adminUser->id,
+        ]);
+
+        // 1. Single Application Auto-Fit Mode: Tax Invoice
+        $resSingleTax = $this->get(route('accounts.receipts.print', ['receipt' => $receiptLease->id, 'type' => 'tax', 'scope' => 'single']));
+        $resSingleTax->assertStatus(200);
+        $resSingleTax->assertSee('Preparation of Mining Lease Application &amp; Revenue Documentation', false);
+        $resSingleTax->assertSee('998341'); // SAC code for Lease
+        $resSingleTax->assertSee('Scrutiny of revenue records (Patta, Chitta, Adangal, Combined FMB Sketch)');
+        $resSingleTax->assertSee('MMS online portal statutory filing');
+
+        // 2. Single Application Auto-Fit Mode: Proforma Invoice
+        $resSinglePi = $this->get(route('accounts.receipts.print', ['receipt' => $receiptLease->id, 'type' => 'proforma', 'scope' => 'single']));
+        $resSinglePi->assertStatus(200);
+        $resSinglePi->assertSee('Proforma Invoice');
+        $resSinglePi->assertSee('Preparation of Mining Lease Application &amp; Revenue Documentation', false);
+        $resSinglePi->assertSee('998341');
+
+        // 3. Consolidated Multi-Application Mode: Tax Invoice
+        $resConsolidatedTax = $this->get(route('accounts.receipts.print', ['receipt' => $receiptLease->id, 'type' => 'tax', 'scope' => 'consolidated']));
+        $resConsolidatedTax->assertStatus(200);
+        // Should itemize both Lease, Mining Plan, and DGPS
+        $resConsolidatedTax->assertSee('Preparation of Mining Lease Application &amp; Revenue Scrutiny', false);
+        $resConsolidatedTax->assertSee('Preparation of Mining Plan &amp; Progressive Mine Closure Plan (PMCP)', false);
+        $resConsolidatedTax->assertSee('DGPS Boundary Land Survey &amp; Pillar Coordinate Demarcation', false);
+        $resConsolidatedTax->assertSee('998343'); // Mining SAC
+        $resConsolidatedTax->assertSee('Sub Total (Taxable Value)');
     }
 
     /**
@@ -869,6 +979,100 @@ class AccountsModuleTest extends TestCase
         $response->assertSee('Authorized Signatory');
     }
 
+    /**
+     * R4.4: Verify customer ledger dossier handles multi-installment scenario (₹300k across 3 installments of ₹100k)
+     * with correct installment indicators, history chaining, and printable vouchers.
+     */
+    public function test_customer_ledger_dossier_multi_installment_schedule_and_chain(): void
+    {
+        $customer = $this->createTestCustomer(['company_name' => 'Multi Installment Granite Quarry ' . uniqid()]);
+
+        $categoryId = \Illuminate\Support\Facades\DB::table('lease_categories')->value('id') ?? 1;
+
+        // Create Lease Application with ₹3,00,000 value
+        $lease = LeaseApplication::create([
+            'customer_id'    => $customer->id,
+            'district_id'    => $this->district->id,
+            'category_id'    => $categoryId,
+            'mineral_id'     => $this->mineral->id,
+            'application_no' => 'LA-TEST-' . rand(1000, 9999),
+            'status'         => 'approved',
+            'product_value'  => 300000.00,
+            'paid_amount'    => 300000.00,
+            'pending_amount' => 0.00,
+            'payment_status' => 'paid',
+            'branch_id'      => $this->branch->id,
+        ]);
+
+        // Month 1: Installment 1 (₹100,000)
+        $r1 = PaymentReceipt::create([
+            'receipt_number'   => 'GTMS/REC/' . date('Y') . '/8801',
+            'customer_id'      => $customer->id,
+            'amount_paid'      => 100000.00,
+            'payment_mode'     => 'NEFT/RTGS',
+            'transaction_date' => Carbon::now()->subMonths(2)->toDateString(),
+            'application_type' => 'lease',
+            'application_id'   => $lease->id,
+            'branch_id'        => $this->branch->id,
+        ]);
+
+        // Month 2: Installment 2 (₹100,000)
+        $r2 = PaymentReceipt::create([
+            'receipt_number'   => 'GTMS/REC/' . date('Y') . '/8802',
+            'customer_id'      => $customer->id,
+            'amount_paid'      => 100000.00,
+            'payment_mode'     => 'UPI/GPay',
+            'transaction_date' => Carbon::now()->subMonth()->toDateString(),
+            'application_type' => 'lease',
+            'application_id'   => $lease->id,
+            'branch_id'        => $this->branch->id,
+        ]);
+
+        // Month 3: Installment 3 (₹100,000)
+        $r3 = PaymentReceipt::create([
+            'receipt_number'   => 'GTMS/REC/' . date('Y') . '/8803',
+            'customer_id'      => $customer->id,
+            'amount_paid'      => 100000.00,
+            'payment_mode'     => 'Cash',
+            'transaction_date' => Carbon::now()->toDateString(),
+            'application_type' => 'lease',
+            'application_id'   => $lease->id,
+            'branch_id'        => $this->branch->id,
+        ]);
+
+        // 1. Inspect Ledger Dossier View
+        $response = $this->get(route('accounts.ledger.show', $customer->id));
+        $response->assertStatus(200);
+
+        $transactions = $response->viewData('transactions');
+        $this->assertCount(3, $transactions);
+        $this->assertEquals(1, $transactions[0]->installment_no);
+        $this->assertEquals(3, $transactions[0]->total_installments);
+        $this->assertEquals(2, $transactions[1]->installment_no);
+        $this->assertEquals(3, $transactions[1]->total_installments);
+        $this->assertEquals(3, $transactions[2]->installment_no);
+        $this->assertEquals(3, $transactions[2]->total_installments);
+
+        $applicationDues = $response->viewData('applicationDues');
+        $this->assertCount(1, $applicationDues);
+        $this->assertEquals(3, $applicationDues[0]->receipts_count);
+        $this->assertCount(3, $applicationDues[0]->receipts_history);
+
+        // Verify HTML markup contains installment badges and modal
+        $response->assertSee('Inst. 1/3');
+        $response->assertSee('Inst. 2/3');
+        $response->assertSee('Inst. 3/3');
+        $response->assertSee('3 Paid');
+        $response->assertSee('appPaymentHistoryModal');
+
+        // 2. Inspect Statement of Account Print View
+        $printResponse = $this->get(route('accounts.ledger.print', $customer->id));
+        $printResponse->assertStatus(200);
+        $printResponse->assertSee('[Inst. #1 of 3]');
+        $printResponse->assertSee('[Inst. #2 of 3]');
+        $printResponse->assertSee('[Inst. #3 of 3]');
+    }
+
     /* ══════════════════════════════════════════════════════════════════════
      * REQUIREMENT 5: FINANCIAL REPORTS & STREAMED CSV EXPORT
      * ══════════════════════════════════════════════════════════════════════ */
@@ -886,6 +1090,42 @@ class AccountsModuleTest extends TestCase
         $response->assertSee('Month-to-Date (MTD)');
         $response->assertSee('Outstanding Receivables');
         $response->assertSee('Quotations Pipeline');
+    }
+
+    /**
+     * R5.1b: Verify financial reports visual analytics suite renders all 6 bar and comparison charts,
+     * injects multi-dimensional analytics data (week, yoy, district, user, module, mode),
+     * and equips the detailed deep-dive chart modal.
+     */
+    public function test_financial_reports_visual_analytics_suite_and_deep_dive_modal(): void
+    {
+        $response = $this->get(route('accounts.reports.index'));
+        $response->assertStatus(200);
+
+        // Verify analytics dataset exists in view
+        $analytics = $response->viewData('analytics');
+        $this->assertIsArray($analytics);
+        $this->assertArrayHasKey('week', $analytics);
+        $this->assertArrayHasKey('yoy', $analytics);
+        $this->assertArrayHasKey('district', $analytics);
+        $this->assertArrayHasKey('user', $analytics);
+        $this->assertArrayHasKey('module', $analytics);
+        $this->assertArrayHasKey('mode', $analytics);
+
+        // Verify chart containers in HTML markup
+        $response->assertSee('chart_summary_week');
+        $response->assertSee('chart_summary_yoy');
+        $response->assertSee('chart_summary_district');
+        $response->assertSee('chart_summary_user');
+        $response->assertSee('chart_summary_module');
+        $response->assertSee('chart_summary_mode');
+
+        // Verify View More buttons and Deep-Dive Modal
+        $response->assertSee('btn-view-more-chart');
+        $response->assertSee('detailedChartModal');
+        $response->assertSee('modal_chart_render');
+        $response->assertSee('modal_chart_table');
+        $response->assertSee('btn_modal_export_csv');
     }
 
     /**

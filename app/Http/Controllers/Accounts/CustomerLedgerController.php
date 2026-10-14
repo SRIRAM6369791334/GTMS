@@ -129,6 +129,31 @@ class CustomerLedgerController extends Controller implements HasMiddleware
         }
         $receipts = $receiptsQuery->get();
 
+        // 3.1 Precompute installment sequence map across all customer receipts to eliminate N+1 queries
+        $installmentMap = [];
+        $allCustomerReceiptsForMap = PaymentReceipt::where('customer_id', $customer->id)
+            ->whereNotNull('application_type')
+            ->whereNotNull('application_id')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'application_type', 'application_id']);
+
+        $groupedForMap = $allCustomerReceiptsForMap->groupBy(function ($item) {
+            $t = strtolower($item->application_type);
+            if ($t === 'ec') $t = 'ec_certificate';
+            return $t . '_' . $item->application_id;
+        });
+
+        foreach ($groupedForMap as $gKey => $gReceipts) {
+            $total = $gReceipts->count();
+            $idx = 1;
+            foreach ($gReceipts as $gr) {
+                $installmentMap[$gr->id] = [
+                    'installment' => $idx++,
+                    'total' => $total,
+                ];
+            }
+        }
+
         // 4. Merge chronologically
         $items = collect();
 
@@ -163,7 +188,13 @@ class CustomerLedgerController extends Controller implements HasMiddleware
 
         foreach ($receipts as $r) {
             $date = Carbon::parse($r->transaction_date ?: $r->created_at);
+            $inst = $installmentMap[$r->id] ?? null;
+            $instLabel = $inst ? " (Installment #{$inst['installment']} of {$inst['total']})" : '';
+
             $desc = 'Payment Receipt: ' . $r->receipt_number;
+            if ($instLabel) {
+                $desc .= $instLabel;
+            }
             if ($r->payment_mode) {
                 $desc .= ' via ' . $r->payment_mode;
             }
@@ -171,21 +202,32 @@ class CustomerLedgerController extends Controller implements HasMiddleware
                 $desc .= ' (Ref: ' . $r->reference_number . ')';
             }
 
+            $appRef = $r->application_reference;
+            $moduleLabel = $r->application_type ? ucfirst(str_replace('_', ' ', $r->application_type)) : 'Statutory Payment';
+            if ($appRef && $appRef !== 'General / Direct Receipt') {
+                $moduleLabel .= " ({$appRef})";
+            }
+
             $items->push([
-                'id'           => $r->id,
-                'date'         => $date,
-                'date_sort'    => $date->timestamp,
-                'type'         => 'payment',
-                'type_label'   => 'Payment (Credit)',
-                'badge_class'  => 'bg-success-subtle text-success border border-success-subtle',
-                'ref_no'       => $r->receipt_number,
-                'description'  => $desc,
-                'module'       => $r->application_type ? ucfirst(str_replace('_', ' ', $r->application_type)) : 'Statutory Payment',
-                'debit'        => 0.0,
-                'credit'       => (float) $r->amount_paid,
-                'print_url'    => route('accounts.receipts.print', $r->id),
-                'view_url'     => route('accounts.receipts.show', $r->id),
-                'status'       => 'Settled',
+                'id'                 => $r->id,
+                'date'               => $date,
+                'date_sort'          => $date->timestamp,
+                'type'               => 'payment',
+                'type_label'         => 'Payment (Credit)',
+                'badge_class'        => 'bg-success-subtle text-success border border-success-subtle',
+                'ref_no'             => $r->receipt_number,
+                'description'        => $desc,
+                'module'             => $moduleLabel,
+                'debit'              => 0.0,
+                'credit'             => (float) $r->amount_paid,
+                'print_url'          => route('accounts.receipts.print', $r->id),
+                'view_url'           => route('accounts.receipts.show', $r->id),
+                'status'             => 'Settled',
+                'application_type'   => $r->application_type,
+                'application_id'     => $r->application_id,
+                'application_ref'    => $appRef,
+                'installment_no'     => $inst ? $inst['installment'] : null,
+                'total_installments' => $inst ? $inst['total'] : null,
             ]);
         }
 
@@ -273,6 +315,31 @@ class CustomerLedgerController extends Controller implements HasMiddleware
         }
         $receipts = $receiptsQuery->get();
 
+        // 3.1 Precompute installment sequence map across all customer receipts to eliminate N+1 queries
+        $installmentMap = [];
+        $allCustomerReceiptsForMap = PaymentReceipt::where('customer_id', $customer->id)
+            ->whereNotNull('application_type')
+            ->whereNotNull('application_id')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'application_type', 'application_id']);
+
+        $groupedForMap = $allCustomerReceiptsForMap->groupBy(function ($item) {
+            $t = strtolower($item->application_type);
+            if ($t === 'ec') $t = 'ec_certificate';
+            return $t . '_' . $item->application_id;
+        });
+
+        foreach ($groupedForMap as $gKey => $gReceipts) {
+            $total = $gReceipts->count();
+            $idx = 1;
+            foreach ($gReceipts as $gr) {
+                $installmentMap[$gr->id] = [
+                    'installment' => $idx++,
+                    'total' => $total,
+                ];
+            }
+        }
+
         // 4. Merge chronologically
         $items = collect();
 
@@ -302,7 +369,19 @@ class CustomerLedgerController extends Controller implements HasMiddleware
 
         foreach ($receipts as $r) {
             $date = Carbon::parse($r->transaction_date ?: $r->created_at);
+            $inst = $installmentMap[$r->id] ?? null;
+            $instLabel = $inst ? " [Inst. #{$inst['installment']} of {$inst['total']}]" : '';
+
             $desc = 'Payment: ' . $r->receipt_number;
+            if ($instLabel) {
+                $desc .= $instLabel;
+            }
+
+            $appRef = $r->application_reference;
+            if ($r->application_type && $appRef && $appRef !== 'General / Direct Receipt') {
+                $desc .= ' • ' . ucfirst(str_replace('_', ' ', $r->application_type)) . " ({$appRef})";
+            }
+
             if ($r->payment_mode) {
                 $desc .= ' via ' . $r->payment_mode;
             }
@@ -384,6 +463,46 @@ class CustomerLedgerController extends Controller implements HasMiddleware
     {
         $dues = [];
 
+        // Preload all customer receipts grouped by application to attach installment history and counts
+        $allCustomerReceipts = PaymentReceipt::where('customer_id', $customer->id)
+            ->whereNotNull('application_type')
+            ->whereNotNull('application_id')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'receipt_number', 'amount_paid', 'payment_mode', 'transaction_date', 'application_type', 'application_id']);
+
+        $receiptsByApp = $allCustomerReceipts->groupBy(function ($r) {
+            $type = strtolower($r->application_type);
+            if ($type === 'ec') $type = 'ec_certificate';
+            return $type . '_' . $r->application_id;
+        });
+
+        $buildAppDue = function (string $module, string $ref, float $val, float $paid, float $pending, ?string $status, string $appType, $appId) use ($receiptsByApp) {
+            $key = ($appType === 'ec' ? 'ec_certificate' : $appType) . '_' . $appId;
+            $hist = $receiptsByApp->get($key, collect());
+            $receiptsCount = $hist->count();
+            $nextInstallmentNo = $receiptsCount + 1;
+
+            return (object) [
+                'module'              => $module,
+                'ref'                 => $ref,
+                'total'               => $val,
+                'paid'                => $paid,
+                'pending'             => $pending,
+                'status'              => $status ?: ($pending <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')),
+                'app_type'            => $appType,
+                'app_id'              => $appId,
+                'receipts_count'      => $receiptsCount,
+                'next_installment_no' => $nextInstallmentNo,
+                'receipts_history'    => $hist->map(fn($r) => [
+                    'id'               => $r->id,
+                    'receipt_number'   => $r->receipt_number,
+                    'amount_paid'      => (float) $r->amount_paid,
+                    'payment_mode'     => $r->payment_mode,
+                    'transaction_date' => $r->transaction_date ? Carbon::parse($r->transaction_date)->format('d M Y') : '-',
+                ])->toArray(),
+            ];
+        };
+
         // 1. Lease Applications
         $leases = LeaseApplication::where('customer_id', $customer->id)->with('district')->get();
         foreach ($leases as $item) {
@@ -391,16 +510,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'Lease Application',
-                    'ref'         => $item->application_no ?? ('LA-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'lease',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'Lease Application',
+                    $item->application_no ?? ('LA-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'lease',
+                    $item->id
+                );
             }
         }
 
@@ -411,16 +530,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'Mining Plan',
-                    'ref'         => $item->application_no ?? ('MP-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'mining',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'Mining Plan',
+                    $item->application_no ?? ('MP-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'mining',
+                    $item->id
+                );
             }
         }
 
@@ -431,16 +550,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'Environmental Clearance',
-                    'ref'         => $item->project_code ?? ('ECP-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'environment',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'Environmental Clearance',
+                    $item->project_code ?? ('ECP-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'environment',
+                    $item->id
+                );
             }
         }
 
@@ -451,16 +570,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'PPT Department',
-                    'ref'         => $item->application_no ?? ('PPT-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'ppt',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'PPT Department',
+                    $item->application_no ?? ('PPT-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'ppt',
+                    $item->id
+                );
             }
         }
 
@@ -471,16 +590,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'DGPS Survey',
-                    'ref'         => $item->survey_no ?? ('DGPS-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'dgps',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'DGPS Survey',
+                    $item->survey_no ?? ('DGPS-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'dgps',
+                    $item->id
+                );
             }
         }
 
@@ -491,16 +610,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'Drone Survey',
-                    'ref'         => $item->survey_no ?? ('DRONE-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'drone',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'Drone Survey',
+                    $item->survey_no ?? ('DRONE-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'drone',
+                    $item->id
+                );
             }
         }
 
@@ -511,16 +630,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'EC Certificate',
-                    'ref'         => $item->ec_ref_no ?? ('ECC-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'ec_certificate',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'EC Certificate',
+                    $item->ec_ref_no ?? ('ECC-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'ec_certificate',
+                    $item->id
+                );
             }
         }
 
@@ -531,16 +650,16 @@ class CustomerLedgerController extends Controller implements HasMiddleware
             $paid = (float) ($item->paid_amount ?? 0);
             $pending = ($item->pending_amount > 0) ? (float) $item->pending_amount : max(0.0, round($val - $paid, 2));
             if ($val > 0 || $pending > 0) {
-                $dues[] = (object) [
-                    'module'      => 'EC Compliance',
-                    'ref'         => $item->compliance_no ?? ('HYC-' . $item->id),
-                    'total'       => $val,
-                    'paid'        => $paid,
-                    'pending'     => $pending,
-                    'status'      => $item->payment_status ?: ($pending <= 0 ? 'paid' : 'pending'),
-                    'app_type'    => 'ec_compliance',
-                    'app_id'      => $item->id,
-                ];
+                $dues[] = $buildAppDue(
+                    'EC Compliance',
+                    $item->compliance_no ?? ('HYC-' . $item->id),
+                    $val,
+                    $paid,
+                    $pending,
+                    $item->payment_status,
+                    'ec_compliance',
+                    $item->id
+                );
             }
         }
 

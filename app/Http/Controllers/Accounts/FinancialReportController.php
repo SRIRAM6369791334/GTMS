@@ -57,23 +57,27 @@ class FinancialReportController extends Controller implements HasMiddleware
             'quotations_value'  => $totalQuotationsValue,
         ];
 
-        // 2. Build filtered transactions query
+        // 2. Build multi-dimensional analytics for charts (Week, Year, District, User, Module, Mode)
+        $analytics = $this->buildAnalyticsData($request);
+
+        // 3. Build filtered transactions query
         $query = $this->buildFilteredQuery($request);
 
-        // 3. Paginated results
+        // 4. Paginated results
         $receipts = $query->orderByDesc('transaction_date')
             ->orderByDesc('id')
             ->paginate(20)
             ->withQueryString();
 
-        // 4. Dropdown list of customers
+        // 5. Dropdown list of customers
         $customers = Customer::orderBy('customer_name')
             ->get(['id', 'customer_name', 'company_name']);
 
         return view('pages.accounts.reports.index', compact(
             'receipts',
             'customers',
-            'kpis'
+            'kpis',
+            'analytics'
         ));
     }
 
@@ -208,5 +212,303 @@ class FinancialReportController extends Controller implements HasMiddleware
         }
 
         return $query;
+    }
+
+    /**
+     * Compute multi-dimensional financial analytics for interactive bar & comparison charts:
+     * - Week-wise intake velocity
+     * - Year-on-Year (YoY) / Month-wise comparative intake
+     * - District-wise revenue breakdown
+     * - User / Collector performance ranking
+     * - Statutory Service module distribution
+     * - Payment Mode collection split
+     */
+    protected function buildAnalyticsData(Request $request): array
+    {
+        // 1. Weekly collections (Last 8 active weeks)
+        $rawWeeks = PaymentReceipt::selectRaw("
+                YEAR(COALESCE(transaction_date, created_at)) as yr,
+                WEEK(COALESCE(transaction_date, created_at), 1) as wk,
+                MIN(COALESCE(transaction_date, created_at)) as start_date,
+                MAX(COALESCE(transaction_date, created_at)) as end_date,
+                SUM(amount_paid) as total_amount,
+                COUNT(id) as receipt_count
+            ")
+            ->groupBy('yr', 'wk')
+            ->orderByDesc('yr')
+            ->orderByDesc('wk')
+            ->take(8)
+            ->get()
+            ->reverse()
+            ->values();
+
+        $weekLabels = [];
+        $weekAmounts = [];
+        $weekCounts = [];
+        $weekTable = [];
+
+        foreach ($rawWeeks as $w) {
+            $label = 'Wk ' . $w->wk . ' (' . date('M d', strtotime($w->start_date)) . ')';
+            $amount = (float) $w->total_amount;
+            $count = (int) $w->receipt_count;
+
+            $weekLabels[] = $label;
+            $weekAmounts[] = $amount;
+            $weekCounts[] = $count;
+            $weekTable[] = [
+                'label'       => $label,
+                'year'        => $w->yr,
+                'week'        => $w->wk,
+                'range'       => date('d M Y', strtotime($w->start_date)) . ' - ' . date('d M Y', strtotime($w->end_date)),
+                'amount'      => $amount,
+                'count'       => $count,
+                'avg_ticket'  => $count > 0 ? round($amount / $count, 2) : 0,
+            ];
+        }
+
+        // 2. Year-on-Year & Month-wise collections (12 months comparison: Current Year vs Previous Year)
+        $currYear = (int) date('Y');
+        $prevYear = $currYear - 1;
+
+        $rawMonths = PaymentReceipt::selectRaw("
+                YEAR(COALESCE(transaction_date, created_at)) as yr,
+                MONTH(COALESCE(transaction_date, created_at)) as mo,
+                SUM(amount_paid) as total_amount,
+                COUNT(id) as receipt_count
+            ")
+            ->whereRaw("YEAR(COALESCE(transaction_date, created_at)) IN (?, ?)", [$prevYear, $currYear])
+            ->groupBy('yr', 'mo')
+            ->get();
+
+        $monthMap = [];
+        foreach ($rawMonths as $rm) {
+            $monthMap[$rm->yr . '_' . $rm->mo] = [
+                'amount' => (float) $rm->total_amount,
+                'count'  => (int) $rm->receipt_count,
+            ];
+        }
+
+        $monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        $currYearAmounts = [];
+        $prevYearAmounts = [];
+        $yoyTable = [];
+
+        for ($m = 1; $m <= 12; $m++) {
+            $mName = $monthNames[$m - 1];
+            $currVal = $monthMap[$currYear . '_' . $m]['amount'] ?? 0.0;
+            $prevVal = $monthMap[$prevYear . '_' . $m]['amount'] ?? 0.0;
+            $currCount = $monthMap[$currYear . '_' . $m]['count'] ?? 0;
+            $prevCount = $monthMap[$prevYear . '_' . $m]['count'] ?? 0;
+
+            $currYearAmounts[] = $currVal;
+            $prevYearAmounts[] = $prevVal;
+
+            $diff = round($currVal - $prevVal, 2);
+            $growthPct = ($prevVal > 0) ? round(($diff / $prevVal) * 100, 1) : ($currVal > 0 ? 100.0 : 0.0);
+
+            $yoyTable[] = [
+                'month_no'    => $m,
+                'month_name'  => $mName,
+                'current'     => $currVal,
+                'previous'    => $prevVal,
+                'diff'        => $diff,
+                'growth_pct'  => $growthPct,
+                'curr_count'  => $currCount,
+                'prev_count'  => $prevCount,
+            ];
+        }
+
+        // 3. District-wise Revenue Breakdown
+        $totalCollectedAllTime = (float) PaymentReceipt::sum('amount_paid');
+        $rawDistricts = PaymentReceipt::join('customers', 'customers.id', '=', 'payment_receipts.customer_id')
+            ->leftJoin('districts', 'districts.id', '=', 'customers.district_id')
+            ->selectRaw("
+                COALESCE(districts.name, 'Unassigned') as district_name,
+                SUM(payment_receipts.amount_paid) as total_amount,
+                COUNT(payment_receipts.id) as receipt_count
+            ")
+            ->groupBy('districts.name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $districtLabels = [];
+        $districtAmounts = [];
+        $districtCounts = [];
+        $districtTable = [];
+
+        foreach ($rawDistricts as $d) {
+            $amount = (float) $d->total_amount;
+            $count = (int) $d->receipt_count;
+            $share = ($totalCollectedAllTime > 0) ? round(($amount / $totalCollectedAllTime) * 100, 1) : 0;
+
+            $districtLabels[] = $d->district_name;
+            $districtAmounts[] = $amount;
+            $districtCounts[] = $count;
+            $districtTable[] = [
+                'district_name' => $d->district_name,
+                'amount'        => $amount,
+                'count'         => $count,
+                'share_pct'     => $share,
+                'avg_ticket'    => $count > 0 ? round($amount / $count, 2) : 0,
+            ];
+        }
+
+        // 4. User / Collector Performance Breakdown
+        $rawUsers = PaymentReceipt::leftJoin('users', 'users.id', '=', 'payment_receipts.created_by')
+            ->selectRaw("
+                COALESCE(users.name, 'System Administrator') as staff_name,
+                COALESCE(users.user_code, 'ADM') as staff_code,
+                SUM(payment_receipts.amount_paid) as total_amount,
+                COUNT(payment_receipts.id) as receipt_count
+            ")
+            ->groupBy('users.name', 'users.user_code')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $userLabels = [];
+        $userAmounts = [];
+        $userCounts = [];
+        $userTable = [];
+
+        foreach ($rawUsers as $u) {
+            $amount = (float) $u->total_amount;
+            $count = (int) $u->receipt_count;
+            $share = ($totalCollectedAllTime > 0) ? round(($amount / $totalCollectedAllTime) * 100, 1) : 0;
+
+            $userLabels[] = $u->staff_name;
+            $userAmounts[] = $amount;
+            $userCounts[] = $count;
+            $userTable[] = [
+                'staff_name' => $u->staff_name,
+                'staff_code' => $u->staff_code,
+                'amount'     => $amount,
+                'count'      => $count,
+                'share_pct'  => $share,
+                'avg_ticket' => $count > 0 ? round($amount / $count, 2) : 0,
+            ];
+        }
+
+        // 5. Statutory Module Distribution Breakdown
+        $moduleNamesMap = [
+            'lease'          => 'Lease Applications',
+            'mining'         => 'Mining Plans',
+            'environment'    => 'Environmental Clearance',
+            'ppt'            => 'PPT Department',
+            'dgps'           => 'DGPS Surveys',
+            'drone'          => 'Drone Surveys',
+            'ec'             => 'EC Certificates',
+            'ec_certificate' => 'EC Certificates',
+            'ec_compliance'  => 'EC Compliance',
+            'direct'         => 'General / Retainer',
+        ];
+
+        $rawModules = PaymentReceipt::selectRaw("
+                COALESCE(application_type, 'direct') as app_type,
+                SUM(amount_paid) as total_amount,
+                COUNT(id) as receipt_count
+            ")
+            ->groupBy('app_type')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $moduleLabels = [];
+        $moduleAmounts = [];
+        $moduleCounts = [];
+        $moduleTable = [];
+
+        foreach ($rawModules as $m) {
+            $cleanType = strtolower(trim($m->app_type));
+            $label = $moduleNamesMap[$cleanType] ?? ucfirst(str_replace('_', ' ', $cleanType));
+            $amount = (float) $m->total_amount;
+            $count = (int) $m->receipt_count;
+            $share = ($totalCollectedAllTime > 0) ? round(($amount / $totalCollectedAllTime) * 100, 1) : 0;
+
+            $moduleLabels[] = $label;
+            $moduleAmounts[] = $amount;
+            $moduleCounts[] = $count;
+            $moduleTable[] = [
+                'module_type' => $cleanType,
+                'module_name' => $label,
+                'amount'      => $amount,
+                'count'       => $count,
+                'share_pct'   => $share,
+                'avg_ticket'  => $count > 0 ? round($amount / $count, 2) : 0,
+            ];
+        }
+
+        // 6. Payment Mode Distribution
+        $rawModes = PaymentReceipt::selectRaw("
+                COALESCE(payment_mode, 'Cash') as mode_name,
+                SUM(amount_paid) as total_amount,
+                COUNT(id) as receipt_count
+            ")
+            ->groupBy('mode_name')
+            ->orderByDesc('total_amount')
+            ->get();
+
+        $modeLabels = [];
+        $modeAmounts = [];
+        $modeCounts = [];
+        $modeTable = [];
+
+        foreach ($rawModes as $pm) {
+            $amount = (float) $pm->total_amount;
+            $count = (int) $pm->receipt_count;
+            $share = ($totalCollectedAllTime > 0) ? round(($amount / $totalCollectedAllTime) * 100, 1) : 0;
+
+            $modeLabels[] = $pm->mode_name;
+            $modeAmounts[] = $amount;
+            $modeCounts[] = $count;
+            $modeTable[] = [
+                'mode_name'  => $pm->mode_name,
+                'amount'     => $amount,
+                'count'      => $count,
+                'share_pct'  => $share,
+                'avg_ticket' => $count > 0 ? round($amount / $count, 2) : 0,
+            ];
+        }
+
+        return [
+            'week' => [
+                'labels'  => $weekLabels,
+                'amounts' => $weekAmounts,
+                'counts'  => $weekCounts,
+                'table'   => $weekTable,
+            ],
+            'yoy' => [
+                'months'     => $monthNames,
+                'curr_year'  => $currYear,
+                'prev_year'  => $prevYear,
+                'curr_series'=> $currYearAmounts,
+                'prev_series'=> $prevYearAmounts,
+                'table'      => $yoyTable,
+                'curr_total' => array_sum($currYearAmounts),
+                'prev_total' => array_sum($prevYearAmounts),
+            ],
+            'district' => [
+                'labels'  => $districtLabels,
+                'amounts' => $districtAmounts,
+                'counts'  => $districtCounts,
+                'table'   => $districtTable,
+            ],
+            'user' => [
+                'labels'  => $userLabels,
+                'amounts' => $userAmounts,
+                'counts'  => $userCounts,
+                'table'   => $userTable,
+            ],
+            'module' => [
+                'labels'  => $moduleLabels,
+                'amounts' => $moduleAmounts,
+                'counts'  => $moduleCounts,
+                'table'   => $moduleTable,
+            ],
+            'mode' => [
+                'labels'  => $modeLabels,
+                'amounts' => $modeAmounts,
+                'counts'  => $modeCounts,
+                'table'   => $modeTable,
+            ],
+        ];
     }
 }

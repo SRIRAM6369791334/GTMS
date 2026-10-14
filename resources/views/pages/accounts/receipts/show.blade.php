@@ -67,9 +67,26 @@
                 <a href="{{ route('accounts.receipts.index') }}" class="btn btn-outline-secondary btn-sm shadow-sm">
                     <i class="fas fa-arrow-left me-1"></i> Receipts List
                 </a>
-                <a href="{{ route('accounts.receipts.print', $receipt->id) }}" target="_blank" class="btn btn-primary btn-sm shadow-sm">
-                    <i class="fas fa-print me-1"></i> Print Voucher (A4/A5)
-                </a>
+                <div class="btn-group shadow-sm">
+                    <a href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-print me-1"></i> Print Tax Invoice
+                    </a>
+                    <button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Choose Invoice Format">
+                        <span class="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank">
+                                <i class="fas fa-receipt text-success me-2"></i> Tax Invoice (TI)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'proforma']) }}" target="_blank">
+                                <i class="fas fa-file-alt text-warning me-2"></i> Proforma Invoice (PI)
+                            </a>
+                        </li>
+                    </ul>
+                </div>
                 <button type="button" class="btn btn-outline-success btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#receiptVoucherExportModal">
                     <i class="fas fa-file-export me-1"></i> Export Voucher
                 </button>
@@ -99,7 +116,14 @@
             <div class="voucher-banner">
                 <div class="d-flex flex-wrap justify-content-between align-items-center">
                     <div>
-                        <span class="badge bg-warning text-dark fw-bold mb-2 px-3 py-1">OFFICIAL MONEY RECEIPT</span>
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge bg-warning text-dark fw-bold px-3 py-1">OFFICIAL MONEY RECEIPT</span>
+                            @if($receipt->total_installments > 1)
+                                <span class="badge bg-info text-dark fw-bold px-2 py-1">
+                                    <i class="fas fa-layer-group me-1"></i> INSTALLMENT #{{ $receipt->installment_number }} OF {{ $receipt->total_installments }}
+                                </span>
+                            @endif
+                        </div>
                         <h3 class="fw-bold mb-0 text-white">{{ $receipt->receipt_number }}</h3>
                         <div class="opacity-75 small mt-1">Granite / Mining Tracking Management System (GTMS) ERP</div>
                     </div>
@@ -250,6 +274,74 @@
                     </table>
                 </div>
 
+                @if(isset($siblingReceipts) && $siblingReceipts->count() > 1)
+                <!-- Complete Application Installment Chain Schedule -->
+                <div class="mb-4">
+                    <div class="card border rounded-3 overflow-hidden shadow-sm" style="border-color: #CBD5E1 !important;">
+                        <div class="card-header py-2.5 px-3 bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <span class="fw-bold text-dark small">
+                                <i class="fas fa-layer-group text-primary me-1"></i> Application Payment Schedule &amp; Installment Chain ({{ $siblingReceipts->count() }} Payments Recorded)
+                            </span>
+                            <span class="badge bg-primary text-white" style="font-size: 0.70rem;">
+                                Active: Installment #{{ $receipt->installment_number }}
+                            </span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                                <thead class="table-light text-uppercase text-muted" style="font-size: 0.70rem;">
+                                    <tr>
+                                        <th class="ps-3 py-2">Installment #</th>
+                                        <th>Date</th>
+                                        <th>Receipt #</th>
+                                        <th>Mode</th>
+                                        <th class="text-end">Amount Paid</th>
+                                        <th class="text-end">Balance After</th>
+                                        <th class="text-center pe-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($siblingReceipts as $idx => $sRec)
+                                        <tr class="{{ $sRec->id === $receipt->id ? 'table-primary bg-primary-subtle fw-semibold' : '' }}">
+                                            <td class="ps-3 py-2">
+                                                <span class="badge {{ $sRec->id === $receipt->id ? 'bg-primary text-white' : 'bg-light text-dark border' }}">
+                                                    Installment #{{ $idx + 1 }}
+                                                </span>
+                                                @if($sRec->id === $receipt->id)
+                                                    <span class="badge bg-dark text-white ms-1" style="font-size:0.65rem;">Active Voucher</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $sRec->transaction_date ? $sRec->transaction_date->format('d M Y') : '-' }}</td>
+                                            <td>
+                                                <a href="{{ route('accounts.receipts.show', $sRec->id) }}" class="fw-bold text-decoration-none {{ $sRec->id === $receipt->id ? 'text-primary' : 'text-dark' }}">
+                                                    {{ $sRec->receipt_number }}
+                                                </a>
+                                            </td>
+                                            <td><span class="badge bg-light text-secondary border">{{ $sRec->payment_mode }}</span></td>
+                                            <td class="text-end text-success fw-bold">₹ {{ number_format($sRec->amount_paid, 2) }}</td>
+                                            <td class="text-end {{ $sRec->balance_due > 0 ? 'text-danger' : 'text-success' }}">
+                                                {{ $sRec->balance_due > 0 ? '₹ ' . number_format($sRec->balance_due, 2) : 'Settled' }}
+                                            </td>
+                                            <td class="text-center pe-3">
+                                                <div class="btn-group btn-group-sm">
+                                                    @if($sRec->id !== $receipt->id)
+                                                        <a href="{{ route('accounts.receipts.show', $sRec->id) }}" class="btn btn-outline-secondary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="View Voucher">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                    @endif
+                                                    <a href="{{ route('accounts.receipts.print', $sRec->id) }}" target="_blank" class="btn btn-outline-primary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="Print Voucher">
+                                                        <i class="fas fa-print"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Audit Footnote & Signatory Zone -->
                 <div class="row align-items-end mt-4 pt-3 border-top">
                     <div class="col-sm-7">
@@ -276,8 +368,8 @@
             <!-- Footer Action Bar -->
             <div class="card-footer bg-light border-top py-3 px-4 d-flex justify-content-between align-items-center">
                 <span class="small text-muted">Computer-generated official receipt voucher issued under GTMS ERP.</span>
-                <a href="{{ route('accounts.receipts.print', $receipt->id) }}" target="_blank" class="btn btn-navy btn-sm">
-                    <i class="fas fa-print me-1"></i> Print / Save as PDF
+                <a href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank" class="btn btn-navy btn-sm">
+                    <i class="fas fa-print me-1"></i> Print Tax Invoice
                 </a>
             </div>
         </div>

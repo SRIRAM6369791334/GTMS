@@ -254,9 +254,16 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border small fw-normal">
-                                        {{ ucfirst($receipt->application_type ?: 'General') }}
-                                    </span>
+                                    <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="badge bg-light text-dark border small fw-normal">
+                                            {{ ucfirst(str_replace('_', ' ', $receipt->application_type ?: 'General')) }}
+                                        </span>
+                                        @if(isset($installmentMap[$receipt->id]))
+                                            <span class="badge bg-primary-subtle text-primary border" style="font-size: 0.68rem;" title="{{ $installmentMap[$receipt->id]['label'] }}">
+                                                <i class="fas fa-layer-group me-1"></i>Inst. {{ $installmentMap[$receipt->id]['installment'] }} of {{ $installmentMap[$receipt->id]['total'] }}
+                                            </span>
+                                        @endif
+                                    </div>
                                     <div class="fw-semibold text-secondary small mt-1 text-truncate" style="max-width: 180px;" title="{{ $receipt->application_reference }}">
                                         {{ $receipt->application_reference }}
                                     </div>
@@ -287,12 +294,39 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="btn-group btn-group-sm" role="group">
+                                        @if($receipt->application_type && $receipt->application_id)
+                                            <button type="button" class="btn btn-outline-info btn-view-app-history"
+                                                    data-type="{{ $receipt->application_type }}"
+                                                    data-id="{{ $receipt->application_id }}"
+                                                    data-ref="{{ $receipt->application_reference }}"
+                                                    data-client="{{ $receipt->customer->company_name ?: ($receipt->customer->customer_name ?? 'Client') }}"
+                                                    title="View All Installments & Receipts for this Application">
+                                                <i class="fas fa-history"></i>
+                                            </button>
+                                        @endif
                                         <a href="{{ route('accounts.receipts.show', $receipt->id) }}" class="btn btn-outline-secondary" title="View Voucher Overview">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ route('accounts.receipts.print', $receipt->id) }}" target="_blank" class="btn btn-outline-primary" title="Print Official Voucher (A4/A5)">
-                                            <i class="fas fa-print"></i>
-                                        </a>
+                                        <div class="btn-group">
+                                            <a href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank" class="btn btn-outline-primary" title="Print Tax Invoice (TI)">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Choose Invoice Format">
+                                                <span class="visually-hidden">Toggle</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow">
+                                                <li>
+                                                    <a class="dropdown-item py-1" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank">
+                                                        <i class="fas fa-receipt text-success me-2"></i> Tax Invoice (TI)
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item py-1" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'proforma']) }}" target="_blank">
+                                                        <i class="fas fa-file-alt text-warning me-2"></i> Proforma Invoice (PI)
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -346,7 +380,14 @@
                         @if($receipt->application_type)
                         <div class="account-mobile-card-row">
                             <span class="account-mobile-card-label">Statutory Service:</span>
-                            <span class="account-mobile-card-value text-truncate" style="max-width:210px;">{{ ucfirst(str_replace('_', ' ', $receipt->application_type)) }}</span>
+                            <span class="account-mobile-card-value text-truncate" style="max-width:210px;">
+                                {{ ucfirst(str_replace('_', ' ', $receipt->application_type)) }}
+                                @if(isset($installmentMap[$receipt->id]))
+                                    <span class="badge bg-primary-subtle text-primary border ms-1" style="font-size:0.68rem;">
+                                        Inst. {{ $installmentMap[$receipt->id]['installment'] }}/{{ $installmentMap[$receipt->id]['total'] }}
+                                    </span>
+                                @endif
+                            </span>
                         </div>
                         @endif
                         <div class="account-mobile-card-row">
@@ -360,12 +401,38 @@
                         </div>
                         @endif
                         <div class="account-mobile-card-actions">
+                            @if($receipt->application_type && $receipt->application_id)
+                                <button type="button" class="btn btn-sm btn-outline-info btn-view-app-history"
+                                        data-type="{{ $receipt->application_type }}"
+                                        data-id="{{ $receipt->application_id }}"
+                                        data-ref="{{ $receipt->application_reference }}"
+                                        data-client="{{ $receipt->customer->company_name ?: ($receipt->customer->customer_name ?? 'Client') }}">
+                                    <i class="fas fa-history me-1"></i> History
+                                </button>
+                            @endif
                             <a href="{{ route('accounts.receipts.show', $receipt->id) }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="fas fa-eye me-1"></i> View
                             </a>
-                            <a href="{{ route('accounts.receipts.print', $receipt->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-print me-1"></i> Print
-                            </a>
+                            <div class="btn-group">
+                                <a href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-print me-1"></i> Print
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false" title="Choose Invoice Format">
+                                    <span class="visually-hidden">Toggle</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow">
+                                    <li>
+                                        <a class="dropdown-item py-1" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'tax']) }}" target="_blank">
+                                            <i class="fas fa-receipt text-success me-2"></i> Tax Invoice (TI)
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item py-1" href="{{ route('accounts.receipts.print', ['receipt' => $receipt->id, 'type' => 'proforma']) }}" target="_blank">
+                                            <i class="fas fa-file-alt text-warning me-2"></i> Proforma Invoice (PI)
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 @empty
@@ -395,6 +462,82 @@
         </div>
     </div>
 </div>
+
+{{-- ═══════════════════════════════════════════════════════════════════
+     APPLICATION PAYMENT & INSTALLMENTS HISTORY MODAL
+═══════════════════════════════════════════════════════════════════ --}}
+<div class="modal fade" id="appPaymentHistoryModal" tabindex="-1" aria-labelledby="appHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header border-0 py-3 px-4" style="background: linear-gradient(135deg, #0F1E4D 0%, #1E3A8A 100%); color: #FFFFFF;">
+                <div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="appHistoryModalLabel" style="color: #FFFFFF !important;">
+                        <i class="fas fa-layer-group text-warning me-2"></i> Application Installments &amp; Receipt History
+                    </h5>
+                    <div class="small opacity-75 mt-0.5 text-white-50" id="modal_app_subtitle">Loading application ledger...</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                {{-- Financial Summary Strip --}}
+                <div class="row g-2 mb-3 p-3 rounded-3" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Total Agreed Value</div>
+                        <div class="fw-bold fs-6 text-dark" id="modal_hist_val">₹ 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Total Received</div>
+                        <div class="fw-bold fs-6 text-success" id="modal_hist_paid">₹ 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Balance Due</div>
+                        <div class="fw-bold fs-6 text-danger" id="modal_hist_balance">₹ 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Settlement Status</div>
+                        <div id="modal_hist_status"><span class="badge bg-secondary">Loading</span></div>
+                    </div>
+                </div>
+
+                {{-- Loader --}}
+                <div id="modal_hist_loader" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="small ms-2 fw-semibold text-muted">Retrieving statutory installment records...</span>
+                </div>
+
+                {{-- Installments Table --}}
+                <div id="modal_hist_table_wrap" style="display: none; max-height: 280px; overflow-y: auto;">
+                    <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                        <thead style="background: #F1F5F9; color: #475569; font-size: 0.72rem; text-transform: uppercase;">
+                            <tr>
+                                <th class="ps-2 py-2">Installment #</th>
+                                <th>Date</th>
+                                <th>Receipt Voucher #</th>
+                                <th>Mode &amp; Ref</th>
+                                <th class="text-end">Amount Paid</th>
+                                <th class="text-end">Balance After</th>
+                                <th class="text-center pe-2">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal_hist_tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between align-items-center">
+                <div class="small text-muted" id="modal_hist_footer_count">0 Installment(s) found</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-dismiss="modal">Close</button>
+                    @can('account.create')
+                    <a href="{{ route('accounts.payments.create') }}" class="btn btn-navy btn-sm" id="modal_hist_collect_btn">
+                        <i class="fas fa-plus me-1"></i> Collect Next Installment
+                    </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('pages.accounts.partials.export_modal', [
     'id' => 'receiptsExportModal',
     'title' => 'Official Money Receipts Ledger',
@@ -415,6 +558,111 @@
                 width: '100%'
             });
         }
+
+        function formatInr(val) {
+            return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Handle Application Payment History Modal Trigger
+        const appModalEl = document.getElementById('appPaymentHistoryModal');
+        const appModal = appModalEl ? new bootstrap.Modal(appModalEl) : null;
+
+        document.querySelectorAll('.btn-view-app-history').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const appType   = this.getAttribute('data-type');
+                const appId     = this.getAttribute('data-id');
+                const appRef    = this.getAttribute('data-ref') || 'Application';
+                const clientName= this.getAttribute('data-client') || 'Client';
+
+                if (!appType || !appId || !appModal) return;
+
+                document.getElementById('modal_app_subtitle').textContent = clientName + ' • ' + appRef;
+                document.getElementById('modal_hist_loader').style.display = 'block';
+                document.getElementById('modal_hist_table_wrap').style.display = 'none';
+                document.getElementById('modal_hist_tbody').innerHTML = '';
+
+                appModal.show();
+
+                const url = '{{ url("accounts/receipts/application-history") }}/' + encodeURIComponent(appType) + '/' + encodeURIComponent(appId);
+                fetch(url, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('modal_hist_loader').style.display = 'none';
+                    if (!data.success) {
+                        alert('Could not load application payment history.');
+                        return;
+                    }
+
+                    const app = data.application;
+                    document.getElementById('modal_hist_val').textContent     = '₹ ' + formatInr(app.product_value);
+                    document.getElementById('modal_hist_paid').textContent    = '₹ ' + formatInr(app.total_paid);
+                    document.getElementById('modal_hist_balance').textContent = '₹ ' + formatInr(app.pending_amount);
+
+                    let statusBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border">Pending</span>';
+                    if (app.payment_status === 'paid' || app.pending_amount <= 0) {
+                        statusBadge = '<span class="badge bg-success-subtle text-success border">Settled</span>';
+                    } else if (app.payment_status === 'partial') {
+                        statusBadge = '<span class="badge bg-primary-subtle text-primary border">Partial</span>';
+                    }
+                    document.getElementById('modal_hist_status').innerHTML = statusBadge;
+                    document.getElementById('modal_hist_footer_count').textContent = data.installments.length + ' Installment Receipt(s) recorded';
+
+                    const collectBtn = document.getElementById('modal_hist_collect_btn');
+                    if (collectBtn) {
+                        collectBtn.href = '{{ route("accounts.payments.create") }}?application_type=' + encodeURIComponent(app.type) + '&application_id=' + encodeURIComponent(app.id);
+                    }
+
+                    const tbody = document.getElementById('modal_hist_tbody');
+                    tbody.innerHTML = '';
+                    if (data.installments.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-3 text-muted">No payment records found.</td></tr>';
+                    } else {
+                        data.installments.forEach(inst => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="ps-2 py-2 fw-bold text-dark">
+                                    <span class="badge bg-light text-dark border">${inst.installment_label}</span>
+                                </td>
+                                <td>${inst.formatted_date}</td>
+                                <td>
+                                    <a href="${inst.view_url}" target="_blank" class="fw-bold text-primary text-decoration-none">
+                                        <i class="fas fa-receipt me-1"></i>${inst.receipt_number}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border">${inst.payment_mode}</span>
+                                    ${inst.reference_number ? `<br><small class="text-muted font-monospace" style="font-size:0.68rem;">Ref: ${inst.reference_number}</small>` : ''}
+                                </td>
+                                <td class="text-end fw-bold text-success">₹ ${formatInr(inst.amount_paid)}</td>
+                                <td class="text-end ${inst.balance_due > 0 ? 'text-danger fw-semibold' : 'text-success fw-bold'}">
+                                    ${inst.balance_due > 0 ? '₹ ' + formatInr(inst.balance_due) : '<span class="badge bg-success-subtle text-success">Settled</span>'}
+                                </td>
+                                <td class="text-center pe-2">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="${inst.view_url}" target="_blank" class="btn btn-outline-secondary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="View Voucher">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="${inst.print_url}" target="_blank" class="btn btn-outline-primary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="Print Voucher">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                    document.getElementById('modal_hist_table_wrap').style.display = 'block';
+                })
+                .catch(err => {
+                    document.getElementById('modal_hist_loader').style.display = 'none';
+                    console.error('Failed to load application history:', err);
+                    alert('Network error while retrieving application history.');
+                });
+            });
+        });
     });
 </script>
 @endpush

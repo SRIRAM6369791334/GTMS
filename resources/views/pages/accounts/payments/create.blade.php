@@ -746,6 +746,73 @@
                         </div>
                     </div>
 
+                    {{-- ── SECTION 3.5: Selected Application Payment & Installment History Panel ──── --}}
+                    <div id="app_installment_history_wrapper" class="mb-4" style="display: none;">
+                        <div class="card border shadow-sm" style="border-radius: 10px; overflow: hidden; border-color: #CBD5E1 !important;">
+                            <div class="card-header py-2.5 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%); border-bottom: 1px solid #E2E8F0;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary text-white px-2 py-1" style="font-size: 0.70rem;">
+                                        <i class="fas fa-history me-1"></i> Payment &amp; Installment History
+                                    </span>
+                                    <span class="fw-bold text-dark" id="hist_app_title" style="font-size: 0.84rem;">
+                                        Application Payment Records
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <div class="small text-muted" style="font-size: 0.74rem;">
+                                        <span>Total Value:</span> <strong class="text-dark" id="hist_val_agreed">₹ 0.00</strong>
+                                    </div>
+                                    <div class="small text-muted" style="font-size: 0.74rem;">
+                                        <span>Total Received:</span> <strong class="text-success" id="hist_val_paid">₹ 0.00</strong>
+                                    </div>
+                                    <div class="small text-muted" style="font-size: 0.74rem;">
+                                        <span>Balance Due:</span> <strong class="text-danger" id="hist_val_balance">₹ 0.00</strong>
+                                    </div>
+                                    <span class="badge border bg-white text-primary fw-bold" id="hist_installment_badge" style="font-size: 0.72rem;">
+                                        Installment #1
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                {{-- If no previous receipts exist --}}
+                                <div id="hist_no_receipts_msg" class="p-3 text-center text-muted" style="font-size: 0.80rem; background: #FAFBFD;">
+                                    <i class="fas fa-info-circle text-primary me-1"></i>
+                                    No prior payment receipts recorded for this application. Current transaction will be recorded as <strong>Installment #1 (Initial Advance)</strong>.
+                                </div>
+
+                                {{-- If previous receipts exist: Table of receipts --}}
+                                <div id="hist_table_container" style="display: none; max-height: 220px; overflow-y: auto;">
+                                    <table class="table table-sm align-middle mb-0" style="font-size: 0.80rem;">
+                                        <thead style="background: #F8FAFC; color: #475569; font-size: 0.72rem; text-transform: uppercase;">
+                                            <tr>
+                                                <th class="ps-3 py-2" style="width: 14%;">Installment #</th>
+                                                <th style="width: 13%;">Payment Date</th>
+                                                <th style="width: 18%;">Receipt Voucher #</th>
+                                                <th style="width: 14%;">Mode &amp; Ref</th>
+                                                <th class="text-end" style="width: 14%;">Amount Received</th>
+                                                <th class="text-end" style="width: 13%;">Balance After</th>
+                                                <th class="text-center pe-3" style="width: 14%;">Print / View</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="hist_tbody">
+                                            {{-- Rows inserted via JS --}}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="card-footer py-2 px-3 bg-white border-top d-flex justify-content-between align-items-center flex-wrap gap-2" style="font-size: 0.74rem;">
+                                <div id="hist_footer_action_note" class="text-primary fw-semibold">
+                                    <i class="fas fa-check-circle text-success me-1"></i> Collecting payment for this application.
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger fw-bold py-0 px-2" id="btn_quick_fill_balance" style="font-size: 0.72rem; height: 26px;">
+                                        <i class="fas fa-wallet me-1"></i> Collect Full Balance (<span id="quick_balance_label">₹ 0</span>)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- ── SECTION 4: Footer & Execution ──────────────────────── --}}
                     <div class="voucher-section-divider"></div>
 
@@ -1076,7 +1143,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             <i class="fas ${meta.icon}"></i>
                         </div>
                         <div>
-                            <div class="fw-bold" style="color: #0F172A; font-size: 0.84rem;">${escapeHtml(d.service_label)}</div>
+                            <div class="d-flex align-items-center gap-1.5 flex-wrap">
+                                <span class="fw-bold" style="color: #0F172A; font-size: 0.84rem;">${escapeHtml(d.service_label)}</span>
+                                ${d.receipts_count > 0 ? `<span class="badge bg-primary-subtle text-primary border" style="font-size: 0.65rem; padding: 2px 5px;"><i class="fas fa-layer-group me-1"></i>${d.receipts_count} ${d.receipts_count === 1 ? 'Receipt' : 'Receipts'}</span>` : ''}
+                            </div>
                             <div class="text-muted" style="font-size: 0.70rem;">
                                 ${d.concession_info ? '<i class="fas fa-map-marker-alt text-danger me-1"></i>' + escapeHtml(d.concession_info) : 'Quarry Area'}
                             </div>
@@ -1102,16 +1172,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Row click event
             tr.addEventListener('click', function () {
-                selectApplication({
-                    application_type: d.application_type,
-                    application_id:   d.application_id,
-                    service_label:    d.service_label,
-                    reference_number: d.reference_number,
-                    concession_info:  d.concession_info,
-                    product_value:    parseFloat(d.product_value) || 0,
-                    pending_amount:   parseFloat(d.pending_amount) || 0,
-                    status_text:      badgeTxt
-                });
+                selectApplication(d);
             });
 
             cardsContainer.appendChild(tr);
@@ -1128,24 +1189,110 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    /* ── 8. Selection Logic ────────────────────────────────────── */
+    /* ── 8. Selection Logic & Installment History Binding ──────── */
     function selectApplication(item) {
         formAppType.value   = item.application_type;
         formAppId.value     = item.application_id;
-        selectedItemPending = item.pending_amount || 0;
+        selectedItemPending = parseFloat(item.pending_amount) || 0;
 
         dispService.textContent    = item.service_label;
         dispRef.textContent        = item.service_label + ' • #' + item.reference_number;
         dispConcession.textContent = item.concession_info || 'Quarry Area';
-        dispValue.textContent      = '₹ ' + formatIndianNumber(item.product_value);
-        dispPending.textContent    = '₹ ' + formatIndianNumber(item.pending_amount);
+        dispValue.textContent      = '₹ ' + formatIndianNumber(item.product_value || 0);
+        dispPending.textContent    = '₹ ' + formatIndianNumber(item.pending_amount || 0);
         dispStatus.textContent     = item.status_text || (item.pending_amount > 0 ? 'Pending' : 'Settled');
 
         // Pre-fill amount
-        if (item.pending_amount > 0) {
-            amountInput.value = item.pending_amount.toFixed(2);
+        if (selectedItemPending > 0) {
+            amountInput.value = selectedItemPending.toFixed(2);
         } else {
             amountInput.value = '';
+        }
+
+        // Bind Application Payment & Installment History Panel
+        const histWrapper = document.getElementById('app_installment_history_wrapper');
+        const histTitle   = document.getElementById('hist_app_title');
+        const histAgreed  = document.getElementById('hist_val_agreed');
+        const histPaid    = document.getElementById('hist_val_paid');
+        const histBalance = document.getElementById('hist_val_balance');
+        const histBadge   = document.getElementById('hist_installment_badge');
+        const histNoRec   = document.getElementById('hist_no_receipts_msg');
+        const histTableBox= document.getElementById('hist_table_container');
+        const histTbody   = document.getElementById('hist_tbody');
+        const quickBalLbl = document.getElementById('quick_balance_label');
+        const histNote    = document.getElementById('hist_footer_action_note');
+
+        if (histWrapper) {
+            histWrapper.style.display = 'block';
+            histTitle.textContent = (item.service_label || 'Application') + ' • #' + (item.reference_number || '');
+            histAgreed.textContent = '₹ ' + formatIndianNumber(item.product_value || 0);
+            histPaid.textContent = '₹ ' + formatIndianNumber(item.paid_amount || 0);
+            histBalance.textContent = '₹ ' + formatIndianNumber(item.pending_amount || 0);
+            if (quickBalLbl) quickBalLbl.textContent = '₹ ' + formatIndianNumber(item.pending_amount || 0);
+
+            const historyList = item.receipts_history || [];
+            if (historyList.length > 0) {
+                if (histNoRec) histNoRec.style.display = 'none';
+                if (histTableBox) histTableBox.style.display = 'block';
+                if (histTbody) {
+                    histTbody.innerHTML = '';
+                    historyList.forEach(r => {
+                        const htr = document.createElement('tr');
+                        htr.innerHTML = `
+                            <td class="ps-3 py-2 fw-bold text-dark">
+                                <span class="badge bg-light text-dark border">${escapeHtml(r.installment_label)}</span>
+                            </td>
+                            <td>${escapeHtml(r.formatted_date || '-')}</td>
+                            <td>
+                                <a href="${r.view_url}" target="_blank" class="fw-bold text-primary text-decoration-none">
+                                    <i class="fas fa-receipt me-1"></i>${escapeHtml(r.receipt_number)}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-secondary border" style="font-size:0.72rem;">${escapeHtml(r.payment_mode)}</span>
+                                ${r.reference_number ? `<br><small class="text-muted font-monospace" style="font-size:0.68rem;">Ref: ${escapeHtml(r.reference_number)}</small>` : ''}
+                            </td>
+                            <td class="text-end fw-bold text-success tabular-nums">
+                                ₹ ${formatIndianNumber(r.amount_paid)}
+                            </td>
+                            <td class="text-end tabular-nums ${r.balance_due > 0 ? 'text-danger fw-semibold' : 'text-success fw-bold'}">
+                                ${r.balance_due > 0 ? '₹ ' + formatIndianNumber(r.balance_due) : '<span class="badge bg-success-subtle text-success">Settled</span>'}
+                            </td>
+                            <td class="text-center pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <a href="${r.view_url}" target="_blank" class="btn btn-outline-secondary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="View Voucher Overview">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="${r.print_url}" target="_blank" class="btn btn-outline-primary py-0 px-2" style="font-size: 0.72rem; height: 24px;" title="Print Official Voucher">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        `;
+                        histTbody.appendChild(htr);
+                    });
+                }
+
+                const nextInstallment = historyList.length + 1;
+                if (histBadge) {
+                    histBadge.textContent = 'Collecting Installment #' + nextInstallment;
+                    histBadge.className = 'badge bg-primary text-white fw-bold';
+                }
+                if (histNote) {
+                    histNote.innerHTML = `<i class="fas fa-info-circle text-primary me-1"></i> Currently collecting <strong>Installment #${nextInstallment}</strong> for this application. Total previously collected: <strong>₹ ${formatIndianNumber(item.paid_amount || 0)}</strong> across <strong>${historyList.length}</strong> voucher(s).`;
+                }
+            } else {
+                if (histNoRec) histNoRec.style.display = 'block';
+                if (histTableBox) histTableBox.style.display = 'none';
+                if (histTbody) histTbody.innerHTML = '';
+                if (histBadge) {
+                    histBadge.textContent = 'Installment #1 (Initial Advance)';
+                    histBadge.className = 'badge bg-success-subtle text-success border border-success-subtle fw-bold';
+                }
+                if (histNote) {
+                    histNote.innerHTML = `<i class="fas fa-star text-warning me-1"></i> Recording initial advance payment (<strong>Installment #1</strong>) towards agreed statutory fee of <strong>₹ ${formatIndianNumber(item.product_value || 0)}</strong>.`;
+                }
+            }
         }
 
         updatePresetPillsState();
@@ -1181,6 +1328,9 @@ document.addEventListener('DOMContentLoaded', function () {
         dispPending.textContent    = '₹ 0.00';
         dispStatus.textContent     = 'General';
 
+        const histWrapper = document.getElementById('app_installment_history_wrapper');
+        if (histWrapper) histWrapper.style.display = 'none';
+
         document.querySelectorAll('#dues_cards_container tr').forEach(r => {
             r.classList.remove('selected');
             const radio = r.querySelector('input[type="radio"]');
@@ -1189,6 +1339,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
         updatePresetPillsState();
         recalculateBalance();
+    }
+
+    // Quick fill remaining balance button handler
+    const quickBalanceBtn = document.getElementById('btn_quick_fill_balance');
+    if (quickBalanceBtn) {
+        quickBalanceBtn.addEventListener('click', function () {
+            if (selectedItemPending > 0) {
+                amountInput.value = selectedItemPending.toFixed(2);
+                recalculateBalance();
+            }
+        });
     }
 
     /* ── 10. Quick Preset Pills ────────────────────────────────── */

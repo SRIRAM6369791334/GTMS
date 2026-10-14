@@ -1172,12 +1172,12 @@
                 </div>
                 <div class="col-md-5 text-end align-self-center mt-3 mt-md-0">
                     @if($customer)
-                        <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="btn btn-sm text-white me-1 shadow-sm rounded-pill px-3" style="background:#0F1E4D;">
+                        <button type="button" onclick="openCustomerInvoiceModal('proforma')" class="btn btn-sm text-white me-1 shadow-sm rounded-pill px-3" style="background:#0F1E4D;">
                             <i class="bi bi-file-earmark-text me-1 text-warning"></i> Proforma Invoice
-                        </a>
-                        <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="btn btn-success btn-sm me-1 shadow-sm rounded-pill px-3">
+                        </button>
+                        <button type="button" onclick="openCustomerInvoiceModal('tax')" class="btn btn-success btn-sm me-1 shadow-sm rounded-pill px-3">
                             <i class="bi bi-receipt me-1"></i> Tax Invoice
-                        </a>
+                        </button>
                         <button type="button" onclick="window.print()" class="btn btn-primary btn-sm me-1 shadow-sm rounded-pill px-3">
                             <i class="bi bi-printer me-1"></i> Print Dossier
                         </button>
@@ -1648,10 +1648,10 @@
                                             <i class="bi bi-pencil-square text-warning"></i> <strong>Edit Profile</strong>
                                         </a>
                                         @endcan
-                                        <a href="{{ route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-primary shadow-sm" style="color:#0F1E4D;">
+                                        <a href="javascript:void(0)" onclick="openCustomerInvoiceModal('proforma')" class="ct-meta-pill text-decoration-none bg-white border-primary shadow-sm" style="color:#0F1E4D;">
                                             <i class="bi bi-file-earmark-text text-primary"></i> <strong>Proforma Invoice &nearr;</strong>
                                         </a>
-                                        <a href="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}" target="_blank" class="ct-meta-pill text-decoration-none bg-white border-success shadow-sm" style="color:#059669;">
+                                        <a href="javascript:void(0)" onclick="openCustomerInvoiceModal('tax')" class="ct-meta-pill text-decoration-none bg-white border-success shadow-sm" style="color:#059669;">
                                             <i class="bi bi-receipt text-success"></i> <strong>Tax Invoice &nearr;</strong>
                                         </a>
                                     </div>
@@ -3227,6 +3227,105 @@
 
             </div>
             <!-- End printable dossier area -->
+
+            @if(isset($customerAppsCatalog))
+            <!-- Multi-Select Applications Invoice Modal (Idea 2) -->
+            <div class="modal fade" id="customerInvoiceModal" tabindex="-1" aria-labelledby="customerInvoiceModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                        <div class="modal-header text-white" style="background: #0F1E4D; padding: 16px 24px;">
+                            <h5 class="modal-title fs-16 fw-bold d-flex align-items-center gap-2" id="customerInvoiceModalLabel">
+                                <i class="bi bi-receipt text-warning fs-18"></i>
+                                <span>Generate Official Invoice &bull; {{ $customer->company_name ?: $customer->customer_name }}</span>
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        
+                        <form id="customerInvoiceForm" method="GET" target="_blank" action="{{ route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) }}">
+                            <div class="modal-body p-4 bg-light">
+                                <!-- Format Selection Switcher -->
+                                <div class="bg-white p-3 rounded-3 border mb-3 shadow-sm">
+                                    <label class="form-label fs-12 text-uppercase fw-bold text-muted mb-2">1. Select Invoice Document Format</label>
+                                    <div class="d-flex gap-3">
+                                        <label class="btn btn-outline-success flex-fill d-flex align-items-center justify-content-center gap-2 py-2" id="labelOptTax">
+                                            <input type="radio" name="invoice_doc_type" id="optTaxInvoice" value="tax" checked onchange="updateInvoiceDocType('tax')">
+                                            <span class="fw-bold">Tax Invoice (TI)</span>
+                                        </label>
+                                        <label class="btn btn-outline-primary flex-fill d-flex align-items-center justify-content-center gap-2 py-2" id="labelOptProforma">
+                                            <input type="radio" name="invoice_doc_type" id="optProformaInvoice" value="proforma" onchange="updateInvoiceDocType('proforma')">
+                                            <span class="fw-bold">Proforma Invoice (PI)</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Multi-Select Applications List -->
+                                <div class="bg-white p-3 rounded-3 border shadow-sm">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <label class="form-label fs-12 text-uppercase fw-bold text-muted mb-0">2. Select Applications to Include in Invoice</label>
+                                            <div class="fs-12 text-muted">Choose single or multiple applications. Deliverables &amp; GST will compute dynamically.</div>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleIndexModalApps(true)">
+                                                <i class="bi bi-check-all"></i> Select All
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleIndexModalApps(false)">
+                                                <i class="bi bi-x"></i> Clear
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex flex-column gap-2" style="max-height: 340px; overflow-y: auto; padding-right: 4px;">
+                                        @forelse($customerAppsCatalog as $app)
+                                            <label class="p-3 rounded border d-flex align-items-start gap-3 ct-app-choice-row" id="row-{{ $app['key'] }}" style="cursor: pointer; transition: background 0.15s ease; background: #eff6ff; border-color: #93c5fd;">
+                                                <input type="checkbox" name="apps[]" value="{{ $app['key'] }}" class="form-check-input mt-1 app-calc-cb" checked onchange="onIndexAppCheckChange(this)" data-amount="{{ $app['amount'] }}" style="width: 18px; height: 18px;">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <span class="badge" style="background: {{ $app['badge_color'] }};">{{ $app['module_label'] }}</span>
+                                                        <strong class="fs-13 text-dark">{{ $app['app_no'] }}</strong>
+                                                        @if(!empty($app['status']))
+                                                            <span class="badge bg-light text-secondary border">{{ $app['status'] }}</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="fs-12 text-muted">
+                                                        <i class="bi bi-geo-alt text-danger"></i> {{ $app['location'] ?: 'Quarry concession area' }}
+                                                        @if(!empty($app['extent'])) &bull; <strong>Extent:</strong> {{ $app['extent'] }} @endif
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="fs-14 fw-bold text-success">₹{{ number_format($app['amount'], 2) }}</span>
+                                                    <div class="fs-11 text-muted">SAC: {{ $app['sac'] }}</div>
+                                                </div>
+                                            </label>
+                                        @empty
+                                            <div class="p-4 text-center text-muted">
+                                                <i class="bi bi-inbox fs-24 d-block mb-1"></i>
+                                                No recorded applications found for this customer. A standard statutory Mining Plan package will be generated.
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer bg-white d-flex justify-content-between align-items-center py-3 px-4">
+                                <div>
+                                    <span id="indexSelectedCount" class="fw-bold text-dark">{{ count($customerAppsCatalog ?? []) }}</span> selected &bull;
+                                    Subtotal: <strong id="indexSubtotal" class="text-success">₹0.00</strong> &bull;
+                                    GST (18%): <strong id="indexGst" class="text-secondary">₹0.00</strong> &bull;
+                                    Total: <strong id="indexGrandTotal" class="text-primary fs-15">₹0.00</strong>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-light border px-3" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-success px-4 fw-bold" id="btnSubmitInvoice">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Generate Tax Invoice
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endif
         @endif
 
     </div>
@@ -3234,7 +3333,88 @@
 
 @section('scripts')
 <script>
+window.openCustomerInvoiceModal = function(type) {
+    if (type === 'proforma') {
+        const optPi = document.getElementById('optProformaInvoice');
+        if (optPi) optPi.checked = true;
+        window.updateInvoiceDocType('proforma');
+    } else {
+        const optTi = document.getElementById('optTaxInvoice');
+        if (optTi) optTi.checked = true;
+        window.updateInvoiceDocType('tax');
+    }
+    const modalEl = document.getElementById('customerInvoiceModal');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+        window.recalcIndexModalSummary();
+    }
+};
+
+window.updateInvoiceDocType = function(type) {
+    const form = document.getElementById('customerInvoiceForm');
+    const submitBtn = document.getElementById('btnSubmitInvoice');
+    if (!form || !submitBtn) return;
+    const taxRoute = "{{ $customer ? route('customer-tracking.tax-invoice', $customer->slug ?? $customer->id) : '' }}";
+    const piRoute = "{{ $customer ? route('customer-tracking.proforma-invoice', $customer->slug ?? $customer->id) : '' }}";
+
+    if (type === 'proforma') {
+        form.action = piRoute;
+        submitBtn.className = 'btn btn-primary px-4 fw-bold';
+        submitBtn.innerHTML = '<i class="bi bi-file-earmark-text me-1 text-warning"></i> Generate Proforma Invoice';
+    } else {
+        form.action = taxRoute;
+        submitBtn.className = 'btn btn-success px-4 fw-bold';
+        submitBtn.innerHTML = '<i class="bi bi-receipt me-1"></i> Generate Tax Invoice';
+    }
+};
+
+window.onIndexAppCheckChange = function(cb) {
+    const row = document.getElementById('row-' + cb.value);
+    if (row) {
+        if (cb.checked) {
+            row.style.background = '#eff6ff';
+            row.style.borderColor = '#93c5fd';
+        } else {
+            row.style.background = '#ffffff';
+            row.style.borderColor = '#dee2e6';
+        }
+    }
+    window.recalcIndexModalSummary();
+};
+
+window.toggleIndexModalApps = function(select) {
+    const checkboxes = document.querySelectorAll('#customerInvoiceForm .app-calc-cb');
+    checkboxes.forEach(cb => {
+        cb.checked = select;
+        window.onIndexAppCheckChange(cb);
+    });
+};
+
+window.recalcIndexModalSummary = function() {
+    const checkboxes = document.querySelectorAll('#customerInvoiceForm .app-calc-cb:checked');
+    let subtotal = 0;
+    checkboxes.forEach(cb => {
+        subtotal += parseFloat(cb.getAttribute('data-amount') || 0);
+    });
+    const gst = subtotal * 0.18;
+    const grand = subtotal + gst;
+
+    const countEl = document.getElementById('indexSelectedCount');
+    const subEl = document.getElementById('indexSubtotal');
+    const gstEl = document.getElementById('indexGst');
+    const grandEl = document.getElementById('indexGrandTotal');
+
+    if (countEl) countEl.innerText = checkboxes.length;
+    if (subEl) subEl.innerText = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (gstEl) gstEl.innerText = '₹' + gst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (grandEl) grandEl.innerText = '₹' + grand.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
 document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('customerInvoiceModal')) {
+        window.recalcIndexModalSummary();
+    }
     const searchInput = document.getElementById('universalSearchInput');
     const searchDropdown = document.getElementById('searchResultsDropdown');
     const clearBtn = document.getElementById('searchClearBtn');

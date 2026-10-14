@@ -261,8 +261,10 @@ class CustomerTrackingController extends Controller
         }
 
         $dossierData = null;
+        $customerAppsCatalog = collect();
         if ($customer) {
             $dossierData = $this->buildCustomerDossier($customer);
+            $customerAppsCatalog = $this->getCustomerApplicationsCatalog($customer);
         }
 
         return view('pages.customer_tracking.index', compact(
@@ -278,7 +280,8 @@ class CustomerTrackingController extends Controller
             'customersList',
             'recentCustomers',
             'isFiltered',
-            'dossierData'
+            'dossierData',
+            'customerAppsCatalog'
         ));
     }
 
@@ -331,6 +334,7 @@ class CustomerTrackingController extends Controller
         $recentCustomers = $customersList;
 
         $dossierData = $this->buildCustomerDossier($customer);
+        $customerAppsCatalog = $this->getCustomerApplicationsCatalog($customer);
         $query = $customer->mimas_no ?: $customer->customer_name;
 
         return view('pages.customer_tracking.index', compact(
@@ -346,7 +350,8 @@ class CustomerTrackingController extends Controller
             'customersList',
             'recentCustomers',
             'isFiltered',
-            'dossierData'
+            'dossierData',
+            'customerAppsCatalog'
         ));
     }
 
@@ -1370,20 +1375,22 @@ class CustomerTrackingController extends Controller
     /**
      * Render the official consolidated Proforma Invoice
      */
-    public function proformaInvoice($customer)
+    public function proformaInvoice($customer, Request $request = null)
     {
+        $request = $request ?: request();
         $customerModel = $this->resolveCustomer($customer);
-        $invoiceData = $this->buildInvoiceData($customerModel, 'proforma');
+        $invoiceData = $this->buildInvoiceData($customerModel, 'proforma', $request);
         return view('pages.customer_tracking.proforma_invoice', $invoiceData);
     }
 
     /**
      * Render the official Tax Invoice
      */
-    public function taxInvoice($customer)
+    public function taxInvoice($customer, Request $request = null)
     {
+        $request = $request ?: request();
         $customerModel = $this->resolveCustomer($customer);
-        $invoiceData = $this->buildInvoiceData($customerModel, 'tax');
+        $invoiceData = $this->buildInvoiceData($customerModel, 'tax', $request);
         return view('pages.customer_tracking.tax_invoice', $invoiceData);
     }
 
@@ -1408,231 +1415,504 @@ class CustomerTrackingController extends Controller
     }
 
     /**
-     * Assemble dynamic invoice data aggregated across all 7 applications
+     * Build an exhaustive catalog of all customer applications across all 8 modules
      */
-    protected function buildInvoiceData(Customer $customer, string $type): array
+    public function getCustomerApplicationsCatalog(Customer $customer): \Illuminate\Support\Collection
     {
         $customer->loadMissing([
             'district',
             'mineral',
-            'leaseApplications',
+            'leaseApplications.district',
+            'leaseApplications.mineral',
             'miningApplications.district',
             'miningApplications.mineral',
-            'environmentProjects',
+            'environmentProjects.district',
             'ecCertificates',
-            'ecCompliances',
-            'pptApplications',
+            'ecCompliances.district',
+            'ecCompliances.mineral',
+            'pptApplications.district',
+            'pptApplications.mineral',
             'dgpsSurveys',
             'droneSurveys',
         ]);
 
-        $miningApp = $customer->miningApplications->first();
-        $leaseApp = $customer->leaseApplications->first();
-        $envProj = $customer->environmentProjects->first();
-        $ecCert = $customer->ecCertificates->first();
-        $ecCompliance = $customer->ecCompliances->first();
-        $pptApp = $customer->pptApplications->first();
-        $dgps = $customer->dgpsSurveys->first();
-        $drone = $customer->droneSurveys->first();
+        $catalog = collect();
 
-        // Concession Profile context
-        $mineralName = $customer->mineral?->name
-            ?: ($miningApp?->mineral?->name
-            ?: ($leaseApp?->mineral?->name ?: 'Rough Stone and Gravel'));
+        // 1. Mining Plan Applications
+        foreach ($customer->miningApplications as $m) {
+            $dist = $m->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $m->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+            $loc = trim(($m->survey_numbers_text ? 'S.F.Nos. ' . $m->survey_numbers_text . ', ' : '') .
+                        ($m->village ? $m->village . ' Village, ' : '') .
+                        ($m->taluk ? $m->taluk . ' Taluk, ' : '') .
+                        "{$dist} Dist.");
+            $val = (float)$m->product_value;
+            $amt = $val > 0 ? $val : 120000.00;
 
-        $districtName = $customer->district?->name
-            ?: ($miningApp?->district?->name
-            ?: ($leaseApp?->district?->name ?: 'Tamil Nadu'));
-
-        $locationDetails = $miningApp
-            ? "over an extent of " . ($miningApp->area_extent_ha ?: '3.85.0') . " Hectares in S.F.Nos. " . ($miningApp->survey_numbers_text ?: '102/1A, 102/1B') . ", " . ($miningApp->village ?: 'Alathur') . " Village, " . ($miningApp->taluk ?: 'Sankari') . " Taluk, {$districtName} District, Tamil Nadu."
-            : ($leaseApp
-                ? "in respect of {$mineralName} Quarry over patta lands in {$districtName} District, Tamil Nadu."
-                : "in respect of proposed {$mineralName} Quarry Project, {$districtName} District, Tamil Nadu.");
-
-        $items = [];
-
-        if ($type === 'tax') {
-            // Tax Invoice: Detailed statutory deliverables
-            $recordedServices = [];
-
-            if ($miningApp && (float)$miningApp->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "Preparation of Mining Plan and Progressive Mine Closure Plan (PMCP) under Rule 41 of Tamil Nadu Minor Mineral Concession Rules, 1959 in respect of {$mineralName} Quarry {$locationDetails}",
-                    'sac'    => '998343',
-                    'amount' => (float)$miningApp->product_value,
-                ];
-            }
-            if ($leaseApp && (float)$leaseApp->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "Preparation of Mining Lease Application, Revenue Scrutiny & Statutory MMS Filing for {$mineralName} Quarry {$locationDetails}",
-                    'sac'    => '998341',
-                    'amount' => (float)$leaseApp->product_value,
-                ];
-            }
-            if ($envProj && (float)$envProj->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "Environmental Clearance (EC) Project Formulation, Form-1, Form-2 & Baseline EMP for {$mineralName} Quarry {$locationDetails}",
-                    'sac'    => '998349',
-                    'amount' => (float)$envProj->product_value,
-                ];
-            }
-            if ($ecCert && (float)$ecCert->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "SEIAA Environmental Clearance Certificate Order Verification, Compliance Docket & Archive for {$mineralName} Quarry",
-                    'sac'    => '998349',
-                    'amount' => (float)$ecCert->product_value,
-                ];
-            }
-            if ($pptApp && (float)$pptApp->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "PPT Statutory Presentation Formulation & SEAC/SEIAA Technical Appraisal Defense for {$mineralName} Quarry",
-                    'sac'    => '998311',
-                    'amount' => (float)$pptApp->product_value,
-                ];
-            }
-            if ($dgps && (float)$dgps->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "DGPS Boundary Survey, Baseline Control Fixation & Pillar Coordinates Demarcation Plan for {$mineralName} Quarry",
-                    'sac'    => '998341',
-                    'amount' => (float)$dgps->product_value,
-                ];
-            }
-            if ($drone && (float)$drone->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "Drone Aerial Photogrammetry Survey, High-Resolution Orthomosaic & 3D Volumetric Computation Report for {$mineralName} Quarry",
-                    'sac'    => '998342',
-                    'amount' => (float)$drone->product_value,
-                ];
-            }
-            if ($ecCompliance && (float)$ecCompliance->product_value > 0) {
-                $recordedServices[] = [
-                    'name'   => "Environmental Clearance Half-Yearly Compliance Monitoring, NABL Lab Environmental Testing & MoEFCC Parivesh Portal Filing for {$mineralName} Quarry",
-                    'sac'    => '998349',
-                    'amount' => (float)$ecCompliance->product_value,
-                ];
-            }
-
-            // Standard fallback if none recorded yet
-            if (empty($recordedServices)) {
-                $recordedServices[] = [
-                    'name'   => "Preparation of Mining Plan and Progressive Mine Closure Plan (PMCP) under Rule 41 of Tamil Nadu Minor Mineral Concession Rules, 1959 in respect of {$mineralName} Quarry {$locationDetails}",
-                    'sac'    => '998343',
-                    'amount' => 150000.00,
-                ];
-            }
-
-            $items = $recordedServices;
-            $subtotal = collect($items)->sum('amount');
-        } else {
-            // Proforma Invoice: 4-Pillar Package matching Reference PI standard
-            $mpVal = ($miningApp && (float)$miningApp->product_value > 0) ? (float)$miningApp->product_value : 120000.00;
-            $ecVal = ($envProj && (float)$envProj->product_value > 0) ? (float)$envProj->product_value : 80000.00;
-            $dgpsVal = ($dgps && (float)$dgps->product_value > 0) ? (float)$dgps->product_value : 35000.00;
-            $droneVal = ($drone && (float)$drone->product_value > 0) ? (float)$drone->product_value : 50000.00;
-
-            $items = [
-                [
-                    'title'   => 'Preparation of Mining Plan',
-                    'sac'     => '998343',
-                    'bullets' => [
-                        'DGPS Survey and demarcation of boundary pillars',
-                        'Mine Plan drafting, geological reserve estimation & year-wise production scheduling',
-                        'Progressive Mine Closure Plan (PMCP) & environmental safeguard designs',
-                        'Statutory submission to the Department of Geology and Mining for approval',
-                    ],
-                    'amount'  => $mpVal,
+            $catalog->push([
+                'key'            => 'mining_' . $m->id,
+                'id'             => $m->id,
+                'module'         => 'mining',
+                'module_label'   => 'Mining Plan',
+                'badge_class'    => 'bg-primary text-white',
+                'badge_color'    => '#2563eb',
+                'app_no'         => $m->application_no ?: ('MP-' . str_pad($m->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => $m->common_id,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => $m->area_extent_ha ? ($m->area_extent_ha . ' Ha') : null,
+                'status'         => $m->status ?: 'Active',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$m->paid_amount,
+                'sac'            => '998343',
+                'tax_title'      => "Preparation of Mining Plan and Progressive Mine Closure Plan (PMCP) under Rule 41 of Tamil Nadu Minor Mineral Concession Rules, 1959",
+                'proforma_title' => "Preparation of Mining Plan",
+                'bullets'        => [
+                    "DGPS Survey and demarcation of boundary pillars with precise georeferencing",
+                    "Mine Plan drafting, geological reserve estimation & year-wise production scheduling",
+                    "Progressive Mine Closure Plan (PMCP) & environmental safeguard designs",
+                    "Statutory submission to the Department of Geology and Mining for approval",
                 ],
-                [
-                    'title'   => 'Preparation of Form-1, Form-2, PFR & EMP for Environmental Clearance',
-                    'sac'     => '998349',
-                    'bullets' => [
-                        'Preparation of statutory Form-1, Form-2, and Pre-Feasibility Report (PFR)',
-                        'Baseline Environmental Management Plan (EMP) & mitigation safeguards',
-                        'Online portal submission on PARIVESH (MoEFCC / SEIAA-TN)',
-                        'Preparation of PowerPoint Presentation (PPT) for SEAC Appraisal Committee meeting',
-                    ],
-                    'amount'  => $ecVal,
-                ],
-                [
-                    'title'   => 'DGPS Land Survey & Boundary Demarcation',
-                    'sac'     => '998341',
-                    'bullets' => [
-                        'Differential GPS baseline observation & high-precision pillar coordinate table',
-                        'Geo-referenced KML file preparation and overlay with Survey of India Topo-sheet',
-                        'Comprehensive boundary demarcation map with certified survey sketch',
-                    ],
-                    'amount'  => $dgpsVal,
-                ],
-                [
-                    'title'   => 'Drone Aerial Volumetric Survey & 3D Modeling',
-                    'sac'     => '998342',
-                    'bullets' => [
-                        'DGCA-compliant UAV aerial photogrammetry survey of quarry concession area',
-                        'High-resolution orthomosaic map, Digital Elevation Model (DEM / DTM) generation',
-                        'Precise cut and fill volumetric excavation analysis report for statutory compliance',
-                    ],
-                    'amount'  => $droneVal,
-                ],
-            ];
-
-            if ($leaseApp && (float)$leaseApp->product_value > 0) {
-                $items[] = [
-                    'title'   => 'Mining Lease Application & Revenue Documentation',
-                    'sac'     => '998341',
-                    'bullets' => [
-                        'Collation and scrutiny of Patta, Chitta, Adangal, and FMB sketches',
-                        'Affidavit verification, combined village sketch & online MMS statutory filing',
-                    ],
-                    'amount'  => (float)$leaseApp->product_value,
-                ];
-            }
-
-            if ($pptApp && (float)$pptApp->product_value > 0) {
-                $items[] = [
-                    'title'   => 'PPT Department Presentation & SEIAA Appraisal Defense',
-                    'sac'     => '998311',
-                    'bullets' => [
-                        'Comprehensive appraisal slide deck formulation & SEAC queries liaison',
-                        'CER undertaking documents, SPCB demand note assistance & hearing assistance',
-                    ],
-                    'amount'  => (float)$pptApp->product_value,
-                ];
-            }
-
-            $subtotal = collect($items)->sum('amount');
+            ]);
         }
 
+        // 2. Mining Lease Applications
+        foreach ($customer->leaseApplications as $l) {
+            $dist = $l->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $l->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+            $loc = trim(($l->village ? $l->village . ' Village, ' : '') .
+                        ($l->taluk ? $l->taluk . ' Taluk, ' : '') .
+                        "{$dist} Dist.");
+            $val = (float)$l->product_value;
+            $amt = $val > 0 ? $val : 150000.00;
+
+            $catalog->push([
+                'key'            => 'lease_' . $l->id,
+                'id'             => $l->id,
+                'module'         => 'lease',
+                'module_label'   => 'Lease Application',
+                'badge_class'    => 'bg-success text-white',
+                'badge_color'    => '#059669',
+                'app_no'         => $l->application_no ?: ('LA-' . str_pad($l->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => $l->common_id,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => $l->area_extent_ha ? ($l->area_extent_ha . ' Ha') : null,
+                'status'         => $l->status ?: 'Active',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$l->paid_amount,
+                'sac'            => '998341',
+                'tax_title'      => "Preparation of Mining Lease Application, Revenue Scrutiny & Statutory MMS Filing",
+                'proforma_title' => "Mining Lease Application & Revenue Documentation",
+                'bullets'        => [
+                    "Collation and scrutiny of Patta, Chitta, Adangal, and FMB sketches",
+                    "Combined village survey sketch verification & district revenue clearance",
+                    "Affidavit preparation and statutory online portal (MMS) filing",
+                    "Follow-up with District Collectorate and Department of Geology & Mining",
+                ],
+            ]);
+        }
+
+        // 3. Environmental Clearance Projects
+        foreach ($customer->environmentProjects as $e) {
+            $dist = $e->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+            $loc = $e->location ?: ($dist . ' Dist.');
+            $val = (float)$e->product_value;
+            $amt = $val > 0 ? $val : 80000.00;
+
+            $catalog->push([
+                'key'            => 'env_' . $e->id,
+                'id'             => $e->id,
+                'module'         => 'environment',
+                'module_label'   => 'Environment Clearance (EC)',
+                'badge_class'    => 'bg-info text-white',
+                'badge_color'    => '#0284c7',
+                'app_no'         => $e->project_code ?: ('EC-' . str_pad($e->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $e->status ?: 'In Progress',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$e->paid_amount,
+                'sac'            => '998349',
+                'tax_title'      => "Environmental Clearance (EC) Project Formulation, Form-1, Form-2 & Baseline EMP",
+                'proforma_title' => "Preparation of Form-1, Form-2, PFR & EMP for Environmental Clearance",
+                'bullets'        => [
+                    "Preparation of statutory Form-1, Form-2, and Pre-Feasibility Report (PFR)",
+                    "Baseline Environmental Management Plan (EMP) & mitigation safeguards",
+                    "Online portal submission on PARIVESH (MoEFCC / SEIAA-TN)",
+                    "Preparation of technical dossiers for SEAC Committee appraisal",
+                ],
+            ]);
+        }
+
+        // 4. EC Certificates
+        foreach ($customer->ecCertificates as $ec) {
+            $dist = $customer->district?->name ?: 'Tamil Nadu';
+            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+            $loc = $customer->district?->name ? ($customer->district->name . ' Dist.') : 'Tamil Nadu';
+            $val = (float)$ec->product_value;
+            $amt = $val > 0 ? $val : 50000.00;
+
+            $catalog->push([
+                'key'            => 'cert_' . $ec->id,
+                'id'             => $ec->id,
+                'module'         => 'ec_certificate',
+                'module_label'   => 'EC Certificate',
+                'badge_class'    => 'bg-warning text-dark',
+                'badge_color'    => '#d97706',
+                'app_no'         => $ec->ec_ref_no ?: ('CERT-' . str_pad($ec->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $ec->status ?: 'Issued',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$ec->paid_amount,
+                'sac'            => '998349',
+                'tax_title'      => "SEIAA Environmental Clearance Certificate Order Verification, Compliance Docket & Archive",
+                'proforma_title' => "SEIAA EC Certificate Order Verification & Statutory Filing",
+                'bullets'        => [
+                    "SEIAA-TN Environmental Clearance order issuance scrutiny and terms verification",
+                    "Preparation of baseline compliance docket and statutory register maintenance",
+                    "Notification compliance to District Collectorate and DEAC authorities",
+                ],
+            ]);
+        }
+
+        // 5. PPT Presentations
+        foreach ($customer->pptApplications as $p) {
+            $dist = $p->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $p->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+            $loc = $dist . ' Dist.';
+            $val = (float)$p->product_value;
+            $amt = $val > 0 ? $val : 30000.00;
+
+            $catalog->push([
+                'key'            => 'ppt_' . $p->id,
+                'id'             => $p->id,
+                'module'         => 'ppt',
+                'module_label'   => 'PPT Presentation',
+                'badge_class'    => 'bg-secondary text-white',
+                'badge_color'    => '#475569',
+                'app_no'         => $p->application_no ?: ('PPT-' . str_pad($p->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $p->status ?: 'Completed',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$p->paid_amount,
+                'sac'            => '998311',
+                'tax_title'      => "PPT Statutory Presentation Formulation & SEAC/SEIAA Technical Appraisal Defense",
+                'proforma_title' => "PPT Department Presentation & SEIAA Appraisal Defense",
+                'bullets'        => [
+                    "Comprehensive technical appraisal slide deck formulation for SEAC committee",
+                    "CER undertaking documentation and environmental mitigation slides",
+                    "SEAC query reply preparation and technical committee defense assistance",
+                ],
+            ]);
+        }
+
+        // 6. DGPS Land Surveys
+        foreach ($customer->dgpsSurveys as $d) {
+            $dist = $customer->district?->name ?: 'Tamil Nadu';
+            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+            $loc = $d->location ?: ($dist . ' Dist.');
+            $val = (float)$d->product_value;
+            $amt = $val > 0 ? $val : 35000.00;
+
+            $catalog->push([
+                'key'            => 'dgps_' . $d->id,
+                'id'             => $d->id,
+                'module'         => 'dgps',
+                'module_label'   => 'DGPS Land Survey',
+                'badge_class'    => 'bg-dark text-white',
+                'badge_color'    => '#0f172a',
+                'app_no'         => $d->survey_no ?: ('DGPS-' . str_pad($d->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $d->status ?: 'Completed',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$d->paid_amount,
+                'sac'            => '998341',
+                'tax_title'      => "DGPS Boundary Survey, Baseline Control Fixation & Pillar Coordinates Demarcation Plan",
+                'proforma_title' => "DGPS Land Survey & Boundary Demarcation",
+                'bullets'        => [
+                    "Differential GPS baseline observation & high-precision pillar coordinate table",
+                    "Geo-referenced KML file preparation and overlay with Survey of India Topo-sheet",
+                    "Comprehensive boundary demarcation map with certified survey sketch",
+                ],
+            ]);
+        }
+
+        // 7. Drone Volumetric Surveys
+        foreach ($customer->droneSurveys as $dr) {
+            $dist = $customer->district?->name ?: 'Tamil Nadu';
+            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+            $loc = $dr->location ?: ($dist . ' Dist.');
+            $val = (float)$dr->product_value;
+            $amt = $val > 0 ? $val : 50000.00;
+
+            $catalog->push([
+                'key'            => 'drone_' . $dr->id,
+                'id'             => $dr->id,
+                'module'         => 'drone',
+                'module_label'   => 'Drone Volumetric Survey',
+                'badge_class'    => 'bg-primary text-white',
+                'badge_color'    => '#1d4ed8',
+                'app_no'         => $dr->survey_no ?: ('DRONE-' . str_pad($dr->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $dr->status ?: 'Completed',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$dr->paid_amount,
+                'sac'            => '998342',
+                'tax_title'      => "Drone Aerial Photogrammetry Survey, High-Resolution Orthomosaic & 3D Volumetric Computation Report",
+                'proforma_title' => "Drone Aerial Volumetric Survey & 3D Modeling",
+                'bullets'        => [
+                    "DGCA-compliant UAV aerial photogrammetry survey of quarry concession area",
+                    "High-resolution orthomosaic map, Digital Elevation Model (DEM / DTM) generation",
+                    "Precise cut and fill volumetric excavation analysis report for statutory compliance",
+                ],
+            ]);
+        }
+
+        // 8. EC Compliance Monitoring
+        foreach ($customer->ecCompliances as $comp) {
+            $dist = $comp->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $comp->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+            $loc = $comp->project_name ?: ($dist . ' Dist.');
+            $val = (float)$comp->product_value;
+            $amt = $val > 0 ? $val : 40000.00;
+
+            $catalog->push([
+                'key'            => 'comp_' . $comp->id,
+                'id'             => $comp->id,
+                'module'         => 'ec_compliance',
+                'module_label'   => 'EC Half-Yearly Compliance',
+                'badge_class'    => 'bg-teal text-white',
+                'badge_color'    => '#0d9488',
+                'app_no'         => $comp->compliance_no ?: ('COMP-' . str_pad($comp->id, 4, '0', STR_PAD_LEFT)),
+                'common_id'      => null,
+                'mineral'        => $mineral,
+                'district'       => $dist,
+                'location'       => $loc,
+                'extent'         => null,
+                'status'         => $comp->status ?: 'Active',
+                'amount'         => $amt,
+                'has_real_val'   => $val > 0,
+                'paid_amount'    => (float)$comp->paid_amount,
+                'sac'            => '998349',
+                'tax_title'      => "Environmental Clearance Half-Yearly Compliance Monitoring, NABL Lab Environmental Testing & MoEFCC Parivesh Portal Filing",
+                'proforma_title' => "EC Half-Yearly Compliance Monitoring & Testing",
+                'bullets'        => [
+                    "Conducting baseline AAQ, Water quality, Noise, and Vibration tests via NABL laboratory",
+                    "Compilation of six-monthly environmental clearance condition monitoring report",
+                    "Online submission on PARIVESH portal and physical submission to IRO MoEFCC / SEIAA-TN",
+                ],
+            ]);
+        }
+
+        return $catalog;
+    }
+
+    /**
+     * Assemble dynamic invoice data aggregated across all applications with multi-select support
+     */
+    protected function buildInvoiceData(Customer $customer, string $type, ?Request $request = null): array
+    {
+        $catalog = $this->getCustomerApplicationsCatalog($customer);
+
+        // Resolve selected application keys from request (comma-separated or array)
+        $selectedKeys = [];
+        if ($request) {
+            if ($request->has('apps')) {
+                $raw = $request->input('apps');
+                $selectedKeys = is_array($raw) ? $raw : explode(',', (string)$raw);
+            } elseif ($request->has('selected_apps')) {
+                $raw = $request->input('selected_apps');
+                $selectedKeys = is_array($raw) ? $raw : explode(',', (string)$raw);
+            }
+        }
+        $selectedKeys = array_values(array_filter(array_map('trim', $selectedKeys)));
+
+        // If no filter specified (initial visit):
+        // Default to all items that have real recorded value > 0;
+        // If none have recorded value > 0, default to all items so nothing is blank!
+        if (empty($selectedKeys)) {
+            $realValKeys = $catalog->where('has_real_val', true)->pluck('key')->all();
+            $selectedKeys = !empty($realValKeys) ? $realValKeys : $catalog->pluck('key')->all();
+        }
+
+        // Filter catalog by selected keys
+        $selectedCatalog = $catalog->filter(function ($item) use ($selectedKeys) {
+            return in_array($item['key'], $selectedKeys);
+        });
+
+        // Ensure we have at least 1 item if catalog is not empty
+        if ($selectedCatalog->isEmpty()) {
+            if ($catalog->isNotEmpty()) {
+                $selectedCatalog = collect([$catalog->first()]);
+                $selectedKeys = [$catalog->first()['key']];
+            } else {
+                // Standalone fallback if customer has no applications registered yet
+                $defaultDist = $customer->district?->name ?: 'Tamil Nadu';
+                $defaultMineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+                $defaultItem = [
+                    'key'            => 'default_mining',
+                    'id'             => 0,
+                    'module'         => 'mining',
+                    'module_label'   => 'Mining Plan',
+                    'badge_class'    => 'bg-primary text-white',
+                    'badge_color'    => '#2563eb',
+                    'app_no'         => 'MP-STD',
+                    'common_id'      => null,
+                    'mineral'        => $defaultMineral,
+                    'district'       => $defaultDist,
+                    'location'       => "in respect of {$defaultMineral} Quarry, {$defaultDist} District, Tamil Nadu",
+                    'extent'         => null,
+                    'status'         => 'Active',
+                    'amount'         => 150000.00,
+                    'has_real_val'   => false,
+                    'paid_amount'    => 0,
+                    'sac'            => '998343',
+                    'tax_title'      => "Preparation of Mining Plan and Progressive Mine Closure Plan (PMCP) under Rule 41 of Tamil Nadu Minor Mineral Concession Rules, 1959",
+                    'proforma_title' => "Preparation of Mining Plan",
+                    'bullets'        => [
+                        "DGPS Survey and demarcation of boundary pillars with precise georeferencing",
+                        "Mine Plan drafting, geological reserve estimation & year-wise production scheduling",
+                        "Progressive Mine Closure Plan (PMCP) & environmental safeguard designs",
+                        "Statutory submission to the Department of Geology and Mining for approval",
+                    ],
+                ];
+                $catalog = collect([$defaultItem]);
+                $selectedCatalog = $catalog;
+                $selectedKeys = ['default_mining'];
+            }
+        }
+
+        // Contextual profile header info
+        $firstApp = $selectedCatalog->first();
+        $mineralName = $firstApp['mineral'] ?? ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+        $districtName = $firstApp['district'] ?? ($customer->district?->name ?: 'Tamil Nadu');
+        $locationDetails = !empty($firstApp['location']) ? $firstApp['location'] : "{$districtName} District, Tamil Nadu";
+
+        // Assemble line items
+        $items = [];
+        $sl = 1;
+
+        foreach ($selectedCatalog as $app) {
+            $refText = "in respect of {$app['mineral']} quarry" . (!empty($app['location']) ? " {$app['location']}" : '') . (!empty($app['extent']) ? " (Extent: {$app['extent']})" : '');
+
+            if ($type === 'tax') {
+                $fullDesc = "{$app['tax_title']} {$refText}";
+                $items[] = [
+                    'sl'           => $sl++,
+                    'key'          => $app['key'],
+                    'app_no'       => $app['app_no'],
+                    'module'       => $app['module'],
+                    'module_label' => $app['module_label'],
+                    'service_name' => $app['tax_title'],
+                    'name'         => $fullDesc,
+                    'ref'          => $refText,
+                    'location'     => $app['location'],
+                    'sac'          => $app['sac'],
+                    'amount'       => (float)$app['amount'],
+                    'bullets'      => $app['bullets'],
+                ];
+            } else {
+                $items[] = [
+                    'sl'           => $sl++,
+                    'key'          => $app['key'],
+                    'app_no'       => $app['app_no'],
+                    'module'       => $app['module'],
+                    'module_label' => $app['module_label'],
+                    'service_name' => $app['proforma_title'],
+                    'title'        => $app['proforma_title'],
+                    'ref'          => $refText,
+                    'location'     => $app['location'],
+                    'sac'          => $app['sac'],
+                    'amount'       => (float)$app['amount'],
+                    'bullets'      => $app['bullets'],
+                ];
+            }
+        }
+
+        $subtotal = collect($items)->sum('amount');
         $cgst = round($subtotal * 0.09, 2);
         $sgst = round($subtotal * 0.09, 2);
         $grandTotal = $subtotal + $cgst + $sgst;
         $amountInWords = $this->numberToWords($grandTotal);
 
+        $isConsolidated = count($items) > 1;
+        $particulars = $isConsolidated
+            ? "Consolidated Statutory Mining Consultancy & Technical Services (" . count($items) . " Services Package)"
+            : ($items[0]['service_name'] ?? 'Statutory Mining Consultancy Services');
+
+        $miningApp = $customer->miningApplications->first();
+        $leaseApp = $customer->leaseApplications->first();
+        $envProj = $customer->environmentProjects->first();
+        $ecCert = $customer->ecCertificates->first();
+        $pptApp = $customer->pptApplications->first();
+        $dgps = $customer->dgpsSurveys->first();
+        $drone = $customer->droneSurveys->first();
+
         return [
-            'customer'        => $customer,
-            'miningApp'       => $miningApp,
-            'leaseApp'        => $leaseApp,
-            'envProj'         => $envProj,
-            'ecCert'          => $ecCert,
-            'pptApp'          => $pptApp,
-            'dgps'            => $dgps,
-            'drone'           => $drone,
-            'mineralName'     => $mineralName,
-            'districtName'    => $districtName,
-            'locationDetails' => $locationDetails,
-            'items'           => $items,
-            'subtotal'        => $subtotal,
-            'cgst'            => $cgst,
-            'sgst'            => $sgst,
-            'grandTotal'      => $grandTotal,
-            'amountInWords'   => $amountInWords,
-            'invoiceType'     => $type,
-            'invoiceNo'       => $type === 'tax'
+            'customer'         => $customer,
+            'miningApp'        => $miningApp,
+            'leaseApp'         => $leaseApp,
+            'envProj'          => $envProj,
+            'ecCert'           => $ecCert,
+            'pptApp'           => $pptApp,
+            'dgps'             => $dgps,
+            'drone'            => $drone,
+            'mineralName'      => $mineralName,
+            'districtName'     => $districtName,
+            'locationDetails'  => $locationDetails,
+            'particulars'      => $particulars,
+            'contactPerson'    => $customer->customer_name ?: 'Authorized Representative',
+            'contactNo'        => $customer->mobile_num ?: '+91 94439 37841',
+            'workOrderVia'     => 'Direct Engagement / Formal Work Order',
+            'items'            => $items,
+            'subtotal'         => $subtotal,
+            'cgst'             => $cgst,
+            'sgst'             => $sgst,
+            'grandTotal'       => $grandTotal,
+            'amountInWords'    => $amountInWords,
+            'invoiceType'      => $type,
+            'isConsolidated'   => $isConsolidated,
+            'invoiceNo'        => $type === 'tax'
                 ? 'GTMS/TI/' . date('Y') . '/' . str_pad($customer->id, 4, '0', STR_PAD_LEFT)
                 : 'GTMS/PI/' . date('Y') . '/' . str_pad($customer->id, 4, '0', STR_PAD_LEFT),
-            'invoiceDate'     => date('d-M-Y'),
-            'workOrderNo'     => 'WO-GTMS-' . ($miningApp?->common_id ?: date('Y') . '-' . str_pad($customer->id, 4, '0', STR_PAD_LEFT)),
-            'workOrderDate'   => date('d-M-Y', strtotime('-5 days')),
+            'tiInvoiceNo'      => 'GTMS/TI/' . date('Y') . '/' . str_pad($customer->id, 4, '0', STR_PAD_LEFT),
+            'piInvoiceNo'      => 'GTMS/PI/' . date('Y') . '/' . str_pad($customer->id, 4, '0', STR_PAD_LEFT),
+            'invoiceDate'      => date('d-M-Y'),
+            'workOrderNo'      => 'WO-GTMS-' . ($firstApp['common_id'] ?? ($miningApp?->common_id ?: date('Y') . '-' . str_pad($customer->id, 4, '0', STR_PAD_LEFT))),
+            'workOrderDate'    => date('d-M-Y', strtotime('-5 days')),
+            'allCustomerApps'  => $catalog,
+            'selectedAppKeys'  => $selectedKeys,
+            'sealImageUrl'     => \App\Http\Controllers\Accounts\InvoiceSealController::getCustomSealUrl(),
         ];
     }
 

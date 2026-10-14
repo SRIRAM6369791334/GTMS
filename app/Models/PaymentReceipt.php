@@ -119,6 +119,49 @@ class PaymentReceipt extends Model
     }
 
     /**
+     * Dynamic Accessor: Computes the 1-based sequential installment number for this application.
+     */
+    public function getInstallmentNumberAttribute(): int
+    {
+        if (!$this->application_type || !$this->application_id) {
+            return 1;
+        }
+
+        $type = strtolower(trim($this->application_type));
+        return static::where('customer_id', $this->customer_id)
+            ->where(function ($q) use ($type) {
+                $q->where('application_type', $type);
+                if ($type === 'ec' || $type === 'ec_certificate') {
+                    $q->orWhere('application_type', 'ec')->orWhere('application_type', 'ec_certificate');
+                }
+            })
+            ->where('application_id', $this->application_id)
+            ->where('id', '<=', $this->id)
+            ->count() ?: 1;
+    }
+
+    /**
+     * Dynamic Accessor: Total number of receipts recorded for this application.
+     */
+    public function getTotalInstallmentsAttribute(): int
+    {
+        if (!$this->application_type || !$this->application_id) {
+            return 1;
+        }
+
+        $type = strtolower(trim($this->application_type));
+        return static::where('customer_id', $this->customer_id)
+            ->where(function ($q) use ($type) {
+                $q->where('application_type', $type);
+                if ($type === 'ec' || $type === 'ec_certificate') {
+                    $q->orWhere('application_type', 'ec')->orWhere('application_type', 'ec_certificate');
+                }
+            })
+            ->where('application_id', $this->application_id)
+            ->count() ?: 1;
+    }
+
+    /**
      * Dynamic Accessor: Amount paid in Indian Currency Words.
      */
     public function getAmountInWordsAttribute(): string

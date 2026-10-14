@@ -8,7 +8,7 @@
                     <span class="nav-text">Home</span>
                 </a>
             </li>
-            @endcan
+            <!-- @endcan
             <li class="{{ request()->routeIs('notifications.*') ? 'mm-active' : '' }}">
                 <a href="{{ route('notifications.index') }}" aria-expanded="false" class="{{ request()->routeIs('notifications.*') ? 'mm-active' : '' }}">
                     <i class="fas fa-bell"></i>
@@ -20,7 +20,7 @@
                         <span class="badge badge-xs badge-danger ms-auto" style="font-size: 0.65rem; padding: 2px 7px; border-radius: 9999px; background-color: #ef4444;">{{ $sideUnread }}</span>
                     @endif
                 </a>
-            </li>
+            </li> -->
             @canany(['branch.view', 'roles.view', 'users.view'])
             <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
                     <i class="fas fa-user"></i>

@@ -297,6 +297,11 @@
                                      </td>
                                      <td>
                                          <span class="font-monospace fw-bold text-dark">{{ $tx->ref_no }}</span>
+                                         @if($tx->type === 'payment' && !empty($tx->installment_no))
+                                             <span class="badge bg-primary-subtle text-primary border ms-1" style="font-size: 0.7rem;">
+                                                 Inst. {{ $tx->installment_no }}/{{ $tx->total_installments }}
+                                             </span>
+                                         @endif
                                      </td>
                                      <td>
                                          <div class="fw-semibold text-dark">{{ $tx->description }}</div>
@@ -312,12 +317,25 @@
                                          &#8377; {{ number_format($tx->running_balance, 2) }}
                                      </td>
                                      <td class="text-center">
-                                         <a href="{{ $tx->print_url }}" target="_blank" class="btn btn-xs btn-outline-secondary" title="Print Document">
-                                             <i class="fas fa-print"></i>
-                                         </a>
-                                         <a href="{{ $tx->view_url }}" class="btn btn-xs btn-outline-primary ms-1" title="View Details">
-                                             <i class="fas fa-eye"></i>
-                                         </a>
+                                         <div class="d-inline-flex align-items-center gap-1">
+                                             <a href="{{ $tx->print_url }}" target="_blank" class="btn btn-xs btn-outline-secondary" title="Print Document">
+                                                 <i class="fas fa-print"></i>
+                                             </a>
+                                             <a href="{{ $tx->view_url }}" class="btn btn-xs btn-outline-primary" title="View Details">
+                                                 <i class="fas fa-eye"></i>
+                                             </a>
+                                             @if($tx->type === 'payment' && !empty($tx->application_type) && !empty($tx->application_id))
+                                                 <button type="button" 
+                                                         class="btn btn-xs btn-outline-info btn-view-app-history"
+                                                         data-type="{{ $tx->application_type }}"
+                                                         data-id="{{ $tx->application_id }}"
+                                                         data-ref="{{ $tx->application_ref }}"
+                                                         data-client="{{ $customer->company_name ?: ($customer->customer_name ?? 'Client') }}"
+                                                         title="View Installment History & Chain">
+                                                     <i class="fas fa-history"></i>
+                                                 </button>
+                                             @endif
+                                         </div>
                                      </td>
                                 </tr>
                             @empty
@@ -369,8 +387,9 @@
                                 <th class="text-end">Quoted Value</th>
                                 <th class="text-end">Paid Amount</th>
                                 <th class="text-end">Pending Amount</th>
+                                <th class="text-center">Installments</th>
                                 <th>Status</th>
-                                <th class="text-center" style="width: 140px;">Action</th>
+                                <th class="text-center" style="width: 180px;">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -383,6 +402,17 @@
                                     <td class="text-end fw-bold financial-number {{ $due->pending > 0 ? 'text-danger' : 'text-success' }}">
                                         &#8377; {{ number_format($due->pending, 2) }}
                                     </td>
+                                    <td class="text-center">
+                                        @if($due->receipts_count > 0)
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size:0.75rem;">
+                                                <i class="fas fa-receipt me-1"></i> {{ $due->receipts_count }} Paid
+                                            </span>
+                                        @else
+                                            <span class="badge bg-light text-muted border px-2 py-1" style="font-size:0.75rem;">
+                                                0 Paid
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($due->pending <= 0)
                                             <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1"><i class="fas fa-check-circle me-1"></i> Paid</span>
@@ -393,15 +423,28 @@
                                         @endif
                                     </td>
                                     <td class="text-center">
-                                        @if($due->pending > 0)
-                                            @can('account.create')
-                                            <a href="{{ route('accounts.payments.create', ['customer_id' => $customer->id, 'application_type' => $due->app_type, 'application_id' => $due->app_id]) }}" class="btn btn-xs btn-navy">
-                                                <i class="fas fa-cash-register me-1"></i> Collect
-                                            </a>
-                                            @endcan
-                                        @else
-                                            <span class="text-muted small"><i class="fas fa-check text-success me-1"></i> Settled</span>
-                                        @endif
+                                        <div class="d-inline-flex justify-content-center align-items-center gap-1">
+                                            @if($due->receipts_count > 0)
+                                                <button type="button" 
+                                                        class="btn btn-xs btn-outline-info btn-view-app-history"
+                                                        data-type="{{ $due->app_type }}"
+                                                        data-id="{{ $due->app_id }}"
+                                                        data-ref="{{ $due->ref }}"
+                                                        data-client="{{ $customer->company_name ?: ($customer->customer_name ?? 'Client') }}"
+                                                        title="View Installment History & Chain">
+                                                    <i class="fas fa-history me-1"></i> History
+                                                </button>
+                                            @endif
+                                            @if($due->pending > 0)
+                                                @can('account.create')
+                                                <a href="{{ route('accounts.payments.create', ['customer_id' => $customer->id, 'application_type' => $due->app_type, 'application_id' => $due->app_id]) }}" class="btn btn-xs btn-navy" title="Collect Installment #{{ $due->next_installment_no }}">
+                                                    <i class="fas fa-cash-register me-1"></i> Collect #{{ $due->next_installment_no }}
+                                                </a>
+                                                @endcan
+                                            @else
+                                                <span class="text-muted small"><i class="fas fa-check text-success me-1"></i> Settled</span>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -414,6 +457,79 @@
     </div>
 </div>
 
+{{-- Application Payment & Installment Chain Modal --}}
+<div class="modal fade" id="appPaymentHistoryModal" tabindex="-1" aria-labelledby="appPaymentHistoryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header text-white" style="background: linear-gradient(135deg, #0F1E4D 0%, #1A327E 100%);">
+                <div>
+                    <h5 class="modal-title fw-bold text-white mb-0" id="appPaymentHistoryModalLabel">
+                        <i class="fas fa-history text-warning me-2"></i>Application Payment &amp; Installment Chain
+                    </h5>
+                    <div class="text-white-50 small mt-1" id="modal_app_subtitle">Loading application records...</div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                {{-- Financial Snapshot Cards --}}
+                <div class="row g-2 mb-3 text-center p-3 rounded" style="background: #F8FAFC; border: 1px solid #E2E8F0;">
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Total Agreed Value</div>
+                        <div class="fw-bold fs-6 text-dark" id="modal_hist_val">&#8377; 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Total Received</div>
+                        <div class="fw-bold fs-6 text-success" id="modal_hist_paid">&#8377; 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Balance Due</div>
+                        <div class="fw-bold fs-6 text-danger" id="modal_hist_balance">&#8377; 0.00</div>
+                    </div>
+                    <div class="col-sm-3 col-6">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Settlement Status</div>
+                        <div id="modal_hist_status"><span class="badge bg-secondary">Loading</span></div>
+                    </div>
+                </div>
+
+                {{-- Loader --}}
+                <div id="modal_hist_loader" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="small ms-2 fw-semibold text-muted">Retrieving statutory installment records...</span>
+                </div>
+
+                {{-- Installments Table --}}
+                <div id="modal_hist_table_wrap" style="display: none; max-height: 280px; overflow-y: auto;">
+                    <table class="table table-sm align-middle mb-0" style="font-size: 0.82rem;">
+                        <thead style="background: #F1F5F9; color: #475569; font-size: 0.72rem; text-transform: uppercase;">
+                            <tr>
+                                <th class="ps-2 py-2">Installment #</th>
+                                <th>Date</th>
+                                <th>Receipt Voucher #</th>
+                                <th>Mode &amp; Ref</th>
+                                <th class="text-end">Amount Paid</th>
+                                <th class="text-end">Balance After</th>
+                                <th class="text-center pe-2">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal_hist_tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 px-4 pb-4 d-flex justify-content-between align-items-center">
+                <div class="small text-muted" id="modal_hist_footer_count">0 Installment(s) found</div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light btn-sm fw-semibold" data-bs-dismiss="modal">Close</button>
+                    @can('account.create')
+                    <a href="{{ route('accounts.payments.create') }}" class="btn btn-navy btn-sm" id="modal_hist_collect_btn">
+                        <i class="fas fa-plus me-1"></i> Collect Next Installment
+                    </a>
+                    @endcan
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('pages.accounts.partials.export_modal', [
     'id' => 'ledgerDossierExportModal',
     'title' => 'Customer Financial Dossier - ' . ($customer->company_name ?: $customer->customer_name),
@@ -421,3 +537,120 @@
     'filename' => 'GTMS_Ledger_' . ($customer->slug ?: 'customer') . '_' . date('Ymd')
 ])
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function formatInr(val) {
+            return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        const appModalEl = document.getElementById('appPaymentHistoryModal');
+        const appModal = appModalEl ? new bootstrap.Modal(appModalEl) : null;
+
+        document.querySelectorAll('.btn-view-app-history').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const appType   = this.getAttribute('data-type');
+                const appId     = this.getAttribute('data-id');
+                const appRef    = this.getAttribute('data-ref') || 'Application';
+                const clientName= this.getAttribute('data-client') || 'Client';
+
+                if (!appType || !appId || !appModal) return;
+
+                document.getElementById('modal_app_subtitle').textContent = clientName + ' • ' + appRef;
+                document.getElementById('modal_hist_loader').style.display = 'block';
+                document.getElementById('modal_hist_table_wrap').style.display = 'none';
+                document.getElementById('modal_hist_tbody').innerHTML = '';
+
+                appModal.show();
+
+                const endpoint = `{{ url('/accounts/receipts/application-history') }}/${encodeURIComponent(appType)}/${encodeURIComponent(appId)}`;
+
+                fetch(endpoint, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Network error ' + res.status);
+                    return res.json();
+                })
+                .then(data => {
+                    document.getElementById('modal_hist_loader').style.display = 'none';
+                    document.getElementById('modal_hist_table_wrap').style.display = 'block';
+
+                    document.getElementById('modal_hist_val').textContent     = '₹ ' + formatInr(data.product_value);
+                    document.getElementById('modal_hist_paid').textContent    = '₹ ' + formatInr(data.paid_amount);
+                    document.getElementById('modal_hist_balance').textContent = '₹ ' + formatInr(data.pending_amount);
+
+                    const statusWrap = document.getElementById('modal_hist_status');
+                    if (data.pending_amount <= 0) {
+                        statusWrap.innerHTML = '<span class="badge bg-success-subtle text-success border border-success"><i class="fas fa-check-circle me-1"></i> Fully Settled</span>';
+                    } else if (data.paid_amount > 0) {
+                        statusWrap.innerHTML = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning"><i class="fas fa-hourglass-half me-1"></i> Partial (${data.total_installments} Inst.)</span>`;
+                    } else {
+                        statusWrap.innerHTML = '<span class="badge bg-danger-subtle text-danger border border-danger"><i class="fas fa-clock me-1"></i> Pending</span>';
+                    }
+
+                    const collectBtn = document.getElementById('modal_hist_collect_btn');
+                    if (collectBtn) {
+                        if (data.pending_amount > 0) {
+                            collectBtn.href = `{{ route('accounts.payments.create') }}?customer_id={{ $customer->id }}&application_type=${encodeURIComponent(appType)}&application_id=${encodeURIComponent(appId)}`;
+                            collectBtn.style.display = 'inline-flex';
+                            collectBtn.innerHTML = `<i class="fas fa-cash-register me-1"></i> Collect Installment #${data.next_installment_no}`;
+                        } else {
+                            collectBtn.style.display = 'none';
+                        }
+                    }
+
+                    const tbody = document.getElementById('modal_hist_tbody');
+                    const receipts = data.installments || [];
+                    document.getElementById('modal_hist_footer_count').textContent = receipts.length + ' Installment(s) recorded';
+
+                    if (receipts.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-3">No payment vouchers generated yet for this application.</td></tr>`;
+                        return;
+                    }
+
+                    let rowsHtml = '';
+                    receipts.forEach(r => {
+                        rowsHtml += `
+                            <tr>
+                                <td class="ps-2 fw-bold text-primary font-monospace">
+                                    <span class="badge bg-primary-subtle text-primary border me-1">#${r.installment_no}</span>
+                                </td>
+                                <td class="text-muted">${r.transaction_date || '-'}</td>
+                                <td>
+                                    <a href="{{ url('/accounts/receipts') }}/${r.id}" class="fw-bold text-dark text-decoration-none font-monospace">
+                                        ${r.receipt_number}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border me-1">${r.payment_mode || 'Cash'}</span>
+                                    ${r.reference_number ? `<span class="text-muted small font-monospace">(${r.reference_number})</span>` : ''}
+                                </td>
+                                <td class="text-end fw-bold text-success font-monospace">₹ ${formatInr(r.amount_paid)}</td>
+                                <td class="text-end text-muted font-monospace">${r.balance_after !== null ? '₹ ' + formatInr(r.balance_after) : '—'}</td>
+                                <td class="text-center pe-2">
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url('/accounts/receipts') }}/${r.id}" class="btn btn-xs btn-outline-secondary" title="View Voucher">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url('/accounts/receipts') }}/${r.id}/print" target="_blank" class="btn btn-xs btn-outline-primary" title="Print Official Voucher">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    tbody.innerHTML = rowsHtml;
+                })
+                .catch(err => {
+                    document.getElementById('modal_hist_loader').style.display = 'none';
+                    alert('Unable to load installment schedule: ' + err.message);
+                });
+            });
+        });
+    });
+</script>
+@endpush

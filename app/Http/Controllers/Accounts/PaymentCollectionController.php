@@ -80,6 +80,43 @@ class PaymentCollectionController extends Controller implements HasMiddleware
         $totalPending = 0.0;
         $pendingCount = 0;
 
+        // Preload all historical payment receipts for this customer to map installments
+        $allCustomerReceipts = PaymentReceipt::where('customer_id', $customer->id)
+            ->with(['creator'])
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $getHistory = function(string $type, int $id) use ($allCustomerReceipts) {
+            $normTarget = ($type === 'ec') ? 'ec_certificate' : $type;
+            $filtered = $allCustomerReceipts->filter(function ($r) use ($normTarget, $id) {
+                $rType = strtolower(trim($r->application_type ?? ''));
+                if ($rType === 'ec') $rType = 'ec_certificate';
+                return $rType === $normTarget && (int)$r->application_id === (int)$id;
+            })->values();
+
+            $total = $filtered->count();
+            return $filtered->map(function ($r, $index) use ($total) {
+                return [
+                    'id'               => $r->id,
+                    'installment_no'   => $index + 1,
+                    'installment_label'=> 'Installment #' . ($index + 1) . ($total > 0 ? ' of ' . $total : ''),
+                    'receipt_number'   => $r->receipt_number,
+                    'amount_paid'      => (float) $r->amount_paid,
+                    'previous_paid'    => (float) ($r->previous_paid ?? 0),
+                    'balance_due'      => (float) ($r->balance_due ?? 0),
+                    'payment_mode'     => $r->payment_mode,
+                    'bank_name'        => $r->bank_name,
+                    'reference_number' => $r->reference_number,
+                    'transaction_date' => $r->transaction_date ? $r->transaction_date->format('Y-m-d') : ($r->created_at ? $r->created_at->format('Y-m-d') : ''),
+                    'formatted_date'   => $r->transaction_date ? $r->transaction_date->format('d M Y') : ($r->created_at ? $r->created_at->format('d M Y') : ''),
+                    'notes'            => $r->notes,
+                    'creator_name'     => $r->creator?->name ?? 'Accounts Officer',
+                    'view_url'         => route('accounts.receipts.show', $r->id),
+                    'print_url'        => route('accounts.receipts.print', $r->id),
+                ];
+            })->toArray();
+        };
+
         // 1. Lease Applications
         $leases = LeaseApplication::where('customer_id', $customer->id)
             ->with(['district', 'surveyNumbers'])
@@ -95,16 +132,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $loc = array_filter([$sfNos ? "S.F. {$sfNos}" : null, $lease->village, $lease->taluk, $lease->district?->name]);
             $concessionInfo = implode(', ', $loc) ?: ($lease->quarry_name ?: 'Lease Concession');
 
+            $history = $getHistory('lease', $lease->id);
+
             $dues[] = [
-                'application_type' => 'lease',
-                'application_id'   => $lease->id,
-                'reference_number' => $lease->application_no ?: ('Lease #' . $lease->id),
-                'service_label'    => 'Lease Application / Quarry Concession',
-                'concession_info'  => $concessionInfo,
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'lease',
+                'application_id'      => $lease->id,
+                'reference_number'    => $lease->application_no ?: ('Lease #' . $lease->id),
+                'service_label'       => 'Lease Application / Quarry Concession',
+                'concession_info'     => $concessionInfo,
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -129,16 +171,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $loc = array_filter([$mining->survey_numbers_text ? "S.F. {$mining->survey_numbers_text}" : null, $mining->village, $mining->taluk, $mining->district?->name]);
             $concessionInfo = implode(', ', $loc) ?: 'Mining Plan Area';
 
+            $history = $getHistory('mining', $mining->id);
+
             $dues[] = [
-                'application_type' => 'mining',
-                'application_id'   => $mining->id,
-                'reference_number' => $mining->application_no ?: ('Mining Plan #' . $mining->id),
-                'service_label'    => 'Mining Plan Preparation & Processing',
-                'concession_info'  => $concessionInfo,
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'mining',
+                'application_id'      => $mining->id,
+                'reference_number'    => $mining->application_no ?: ('Mining Plan #' . $mining->id),
+                'service_label'       => 'Mining Plan Preparation & Processing',
+                'concession_info'     => $concessionInfo,
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -163,16 +210,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $label = 'Environmental Clearance (' . ($env->category ?: 'EC') . ($env->sub_category ? ' - ' . $env->sub_category : '') . ')';
             $loc = array_filter([$env->location, $env->district?->name]);
 
+            $history = $getHistory('environment', $env->id);
+
             $dues[] = [
-                'application_type' => 'environment',
-                'application_id'   => $env->id,
-                'reference_number' => $env->project_code ?: ('Env #' . $env->id),
-                'service_label'    => $label,
-                'concession_info'  => implode(', ', $loc) ?: ($env->project_name ?: 'EC Project'),
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'environment',
+                'application_id'      => $env->id,
+                'reference_number'    => $env->project_code ?: ('Env #' . $env->id),
+                'service_label'       => $label,
+                'concession_info'     => implode(', ', $loc) ?: ($env->project_name ?: 'EC Project'),
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -197,16 +249,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $label = 'SEAC / SEIAA Presentation (' . ($ppt->presentation_stage ?: 'Stage') . ')';
             $loc = array_filter([$ppt->taluk_village, $ppt->district?->name]);
 
+            $history = $getHistory('ppt', $ppt->id);
+
             $dues[] = [
-                'application_type' => 'ppt',
-                'application_id'   => $ppt->id,
-                'reference_number' => $ppt->application_no ?: ('PPT #' . $ppt->id),
-                'service_label'    => $label,
-                'concession_info'  => implode(', ', $loc) ?: ($ppt->project_name ?: 'Presentation Dossier'),
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'ppt',
+                'application_id'      => $ppt->id,
+                'reference_number'    => $ppt->application_no ?: ('PPT #' . $ppt->id),
+                'service_label'       => $label,
+                'concession_info'     => implode(', ', $loc) ?: ($ppt->project_name ?: 'Presentation Dossier'),
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -226,16 +283,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $pending = ($dgps->pending_amount > 0) ? (float) $dgps->pending_amount : max(0.0, round($val - $paid, 2));
             $status  = $dgps->payment_status ?: (($pending <= 0 && $paid > 0) ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
 
+            $history = $getHistory('dgps', $dgps->id);
+
             $dues[] = [
-                'application_type' => 'dgps',
-                'application_id'   => $dgps->id,
-                'reference_number' => $dgps->survey_no ?: ('DGPS #' . $dgps->id),
-                'service_label'    => 'DGPS Demarcation & Boundary Survey',
-                'concession_info'  => $dgps->location ?: 'DGPS Survey Ground Area',
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'dgps',
+                'application_id'      => $dgps->id,
+                'reference_number'    => $dgps->survey_no ?: ('DGPS #' . $dgps->id),
+                'service_label'       => 'DGPS Demarcation & Boundary Survey',
+                'concession_info'     => $dgps->location ?: 'DGPS Survey Ground Area',
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -255,16 +317,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $pending = ($drone->pending_amount > 0) ? (float) $drone->pending_amount : max(0.0, round($val - $paid, 2));
             $status  = $drone->payment_status ?: (($pending <= 0 && $paid > 0) ? 'paid' : ($paid > 0 ? 'partial' : 'pending'));
 
+            $history = $getHistory('drone', $drone->id);
+
             $dues[] = [
-                'application_type' => 'drone',
-                'application_id'   => $drone->id,
-                'reference_number' => $drone->survey_no ?: ('Drone #' . $drone->id),
-                'service_label'    => 'Drone Photogrammetry & Topo Survey',
-                'concession_info'  => $drone->location ?: 'UAV Flight Area',
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'drone',
+                'application_id'      => $drone->id,
+                'reference_number'    => $drone->survey_no ?: ('Drone #' . $drone->id),
+                'service_label'       => 'Drone Photogrammetry & Topo Survey',
+                'concession_info'     => $drone->location ?: 'UAV Flight Area',
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -287,16 +354,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $ref = $ec->ec_ref_no ?: ($ec->parivesh_app_no ?: ('EC Cert #' . $ec->id));
             $info = $ec->parivesh_app_no ? "Parivesh App: {$ec->parivesh_app_no}" : 'Environmental Clearance Certificate';
 
+            $history = $getHistory('ec_certificate', $ec->id);
+
             $dues[] = [
-                'application_type' => 'ec_certificate',
-                'application_id'   => $ec->id,
-                'reference_number' => $ref,
-                'service_label'    => 'Environmental Clearance Certificate',
-                'concession_info'  => $info,
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'ec_certificate',
+                'application_id'      => $ec->id,
+                'reference_number'    => $ref,
+                'service_label'       => 'Environmental Clearance Certificate',
+                'concession_info'     => $info,
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
@@ -321,16 +393,21 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $period = trim(($ecc->compliance_period ?: '') . ' ' . ($ecc->compliance_year ?: ''));
             $loc = array_filter([$ecc->taluk_village, $ecc->district?->name]);
 
+            $history = $getHistory('ec_compliance', $ecc->id);
+
             $dues[] = [
-                'application_type' => 'ec_compliance',
-                'application_id'   => $ecc->id,
-                'reference_number' => $ecc->compliance_no ?: ('EC Compliance #' . $ecc->id),
-                'service_label'    => 'Half-Yearly EC Compliance (' . ($period ?: 'Monitoring') . ')',
-                'concession_info'  => implode(', ', $loc) ?: ($ecc->project_name ?: 'Compliance Site'),
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $status,
+                'application_type'    => 'ec_compliance',
+                'application_id'      => $ecc->id,
+                'reference_number'    => $ecc->compliance_no ?: ('EC Compliance #' . $ecc->id),
+                'service_label'       => 'Half-Yearly EC Compliance (' . ($period ?: 'Monitoring') . ')',
+                'concession_info'     => implode(', ', $loc) ?: ($ecc->project_name ?: 'Compliance Site'),
+                'product_value'       => $val,
+                'paid_amount'         => $paid,
+                'pending_amount'      => $pending,
+                'payment_status'      => $status,
+                'receipts_count'      => count($history),
+                'receipts_history'    => $history,
+                'next_installment_no' => count($history) + 1,
             ];
 
             $totalProductValue += $val;
