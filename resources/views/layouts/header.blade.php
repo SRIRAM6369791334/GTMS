@@ -19,12 +19,16 @@
         align-items: center !important;
         justify-content: flex-start !important;
         padding-left: 1.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
     }
 
     .nav-header .brand-logo img {
         height: 38px !important;
         width: auto !important;
         object-fit: contain !important;
+        flex-shrink: 0 !important;
+        transition: all 0.2s ease !important;
     }
 
     .nav-header .brand-text {
@@ -33,9 +37,43 @@
         color: #1b2653;
         letter-spacing: -0.02em;
         margin-left: 0.6rem;
+        white-space: nowrap;
+        transition: all 0.2s ease;
     }
     body[data-theme-version="dark"] .nav-header .brand-text {
         color: #f8fafc !important;
+    }
+
+    /* COLLAPSED MINI SIDEBAR STATE (when hamburger is touched) */
+    #main-wrapper.menu-toggle .nav-header {
+        width: 5rem !important;
+    }
+    #main-wrapper.menu-toggle .nav-header .brand-logo {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+    #main-wrapper.menu-toggle .nav-header .brand-logo img {
+        margin: 0 auto !important;
+        height: 36px !important;
+    }
+    /* When hamburger touched, hide GTMS text beside the logo completely */
+    #main-wrapper.menu-toggle .nav-header .brand-text,
+    #main-wrapper.menu-toggle .nav-header .brand-title,
+    #main-wrapper.menu-toggle .brand-text,
+    #main-wrapper.menu-toggle .brand-title {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    #main-wrapper.menu-toggle .nav-header .nav-control {
+        right: -3.8rem !important;
     }
 
     body:not([data-theme-version="dark"]) .header {
@@ -299,7 +337,7 @@
 <div class="nav-header">
     <a href="/" class="brand-logo">
         <img src="{{ asset('images/gtmslogo.png') }}" alt="GTMS Logo" />
-        <span class="brand-text d-none d-sm-inline-block">GTMS</span>
+        <span class="brand-title brand-text d-none d-sm-inline-block">GTMS</span>
     </a>
     <div class="nav-control">
         <div class="hamburger">

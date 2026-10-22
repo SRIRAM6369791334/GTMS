@@ -178,7 +178,8 @@ class PaymentReceipt extends Model
         $year = date('Y');
         $prefix = "GTMS/REC/{$year}/";
 
-        $lastReceipt = static::withTrashed()
+        $lastReceipt = static::withoutGlobalScopes()
+            ->withTrashed()
             ->where('receipt_number', 'like', "{$prefix}%")
             ->orderByDesc('id')
             ->first();
@@ -192,7 +193,7 @@ class PaymentReceipt extends Model
 
         $number = $prefix . str_pad((string) $nextSeq, 4, '0', STR_PAD_LEFT);
 
-        while (static::withTrashed()->where('receipt_number', $number)->exists()) {
+        while (static::withoutGlobalScopes()->withTrashed()->where('receipt_number', $number)->exists()) {
             $nextSeq++;
             $number = $prefix . str_pad((string) $nextSeq, 4, '0', STR_PAD_LEFT);
         }

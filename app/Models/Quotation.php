@@ -42,6 +42,8 @@ class Quotation extends Model
         'payment_terms',
         'milestones',
         'exclusions',
+        'authorized_signatory',
+        'bank_account_id',
         'notes',
         'status',
         'branch_id',
@@ -89,6 +91,14 @@ class Quotation extends Model
     public function items(): HasMany
     {
         return $this->hasMany(QuotationItem::class);
+    }
+
+    /**
+     * Relationship: Associated Bank Remittance Account
+     */
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class, 'bank_account_id');
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accounts;
 
 use App\Http\Controllers\Controller;
+use App\Models\BankAccount;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\LeaseApplication;
@@ -25,8 +26,8 @@ class QuotationController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:account.view', only: ['index', 'show', 'print', 'getCustomerConcessions']),
-            new Middleware('permission:account.create', only: ['create', 'store']),
+            new Middleware('permission:account.view', only: ['index', 'show', 'print', 'getCustomerConcessions', 'getBankAccounts']),
+            new Middleware('permission:account.create', only: ['create', 'store', 'storeBankAccount']),
             new Middleware('permission:account.edit', only: ['edit', 'update']),
             new Middleware('permission:account.delete', only: ['destroy']),
         ];
@@ -162,7 +163,12 @@ class QuotationController extends Controller implements HasMiddleware
         $defaultScopeSections = $this->getDefaultScopeSections();
         $defaultMilestones = $this->getDefaultMilestones();
 
-        return view('pages.accounts.quotations.create', compact('customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones'));
+        $bankAccounts = BankAccount::where('is_active', true)
+            ->orderByDesc('is_default')
+            ->latest()
+            ->get();
+
+        return view('pages.accounts.quotations.create', compact('customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones', 'bankAccounts'));
     }
 
     /**
@@ -193,6 +199,8 @@ class QuotationController extends Controller implements HasMiddleware
             'tax_rate'             => 'nullable|numeric|min:0|max:100',
             'payment_terms'        => 'nullable|string',
             'exclusions'           => 'nullable|string',
+            'authorized_signatory' => 'nullable|string|max:255',
+            'bank_account_id'      => 'nullable|exists:bank_accounts,id',
             'notes'                => 'nullable|string',
             'status'               => 'nullable|in:draft,sent,accepted,rejected,converted',
             'items'                => 'required|array|min:1',
@@ -271,7 +279,7 @@ class QuotationController extends Controller implements HasMiddleware
                         $surveyNumbers = $leaseApp->surveyNumbers->pluck('survey_no')->filter()->implode(', ');
                     }
                     if (is_null($areaExtentHa)) {
-                        $areaExtentHa = (float) $leaseApp->area_extent_ha;
+                        $areaExtentHa = $leaseApp->area_extent_numeric ?? (is_numeric($leaseApp->area_extent_ha) ? (float) $leaseApp->area_extent_ha : null);
                     }
                     if (empty($mineralName)) {
                         $mineralName = $leaseApp->minerals->pluck('name')->implode(', ') ?: ($leaseApp->other_mineral_name ?? '');
@@ -284,6 +292,11 @@ class QuotationController extends Controller implements HasMiddleware
             $subject = trim($request->input('subject') ?: 'Quotation for Environmental Clearance falls in "B2" Category Project');
             $scopeSections = $this->parseScopeSections($request->input('scope_sections'));
             $milestones = $this->parseMilestones($request->input('milestones'));
+
+            $bankAccountId = $request->input('bank_account_id');
+            if (empty($bankAccountId)) {
+                $bankAccountId = BankAccount::where('is_default', true)->value('id') ?? BankAccount::value('id');
+            }
 
             $quotation = Quotation::create([
                 'quotation_number'     => $quotationNumber,
@@ -312,6 +325,8 @@ class QuotationController extends Controller implements HasMiddleware
                 'payment_terms'        => $request->input('payment_terms') ?? "1. 50% Mobilization advance along with confirmed work order.\n2. 30% upon preparation & submission of draft statutory mining / environmental documentation.\n3. 20% upon final statutory clearance, presentation approval & dispatch of statutory order copies.",
                 'milestones'           => $milestones,
                 'exclusions'           => $request->input('exclusions') ?? "1. Government statutory scrutiny fees, SEIAA presentation fees, TNPCB consent application fees, and district DMF levies are to be paid directly by the client via government challans.\n2. In-person client representation before statutory committees if required.",
+                'authorized_signatory' => trim($request->input('authorized_signatory') ?: 'Dr. S. Karuppannan, M.Sc., Ph.D.'),
+                'bank_account_id'      => $bankAccountId,
                 'notes'                => $request->input('notes'),
                 'status'               => $request->input('status', 'draft'),
                 'branch_id'            => $user?->branch_id,
@@ -344,7 +359,7 @@ class QuotationController extends Controller implements HasMiddleware
      */
     public function show(Quotation $quotation): View
     {
-        $quotation->load(['customer', 'district', 'leaseApplication', 'items', 'creator', 'branch', 'receipts']);
+        $quotation->load(['customer', 'district', 'leaseApplication', 'items', 'creator', 'branch', 'receipts', 'bankAccount']);
 
         return view('pages.accounts.quotations.show', compact('quotation'));
     }
@@ -371,7 +386,12 @@ class QuotationController extends Controller implements HasMiddleware
         $defaultScopeSections = $this->getDefaultScopeSections();
         $defaultMilestones = $this->getDefaultMilestones();
 
-        return view('pages.accounts.quotations.edit', compact('quotation', 'customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones'));
+        $bankAccounts = BankAccount::where('is_active', true)
+            ->orderByDesc('is_default')
+            ->latest()
+            ->get();
+
+        return view('pages.accounts.quotations.edit', compact('quotation', 'customers', 'districts', 'services', 'defaultScopeSections', 'defaultMilestones', 'bankAccounts'));
     }
 
     /**
@@ -402,6 +422,8 @@ class QuotationController extends Controller implements HasMiddleware
             'tax_rate'             => 'nullable|numeric|min:0|max:100',
             'payment_terms'        => 'nullable|string',
             'exclusions'           => 'nullable|string',
+            'authorized_signatory' => 'nullable|string|max:255',
+            'bank_account_id'      => 'nullable|exists:bank_accounts,id',
             'notes'                => 'nullable|string',
             'status'               => 'nullable|in:draft,sent,accepted,rejected,converted',
             'items'                => 'required|array|min:1',
@@ -467,6 +489,8 @@ class QuotationController extends Controller implements HasMiddleware
                 'payment_terms'        => $request->input('payment_terms'),
                 'milestones'           => $this->parseMilestones($request->input('milestones')),
                 'exclusions'           => $request->input('exclusions'),
+                'authorized_signatory' => trim($request->input('authorized_signatory') ?: ($quotation->authorized_signatory ?? 'Dr. S. Karuppannan, M.Sc., Ph.D.')),
+                'bank_account_id'      => $request->input('bank_account_id') ?: $quotation->bank_account_id,
                 'notes'                => $request->input('notes'),
                 'status'               => $request->input('status', $quotation->status),
             ]);
@@ -519,7 +543,7 @@ class QuotationController extends Controller implements HasMiddleware
      */
     public function print(Quotation $quotation): View
     {
-        $quotation->load(['customer', 'district', 'leaseApplication', 'items', 'creator', 'branch']);
+        $quotation->load(['customer', 'district', 'leaseApplication', 'items', 'creator', 'branch', 'bankAccount']);
 
         return view('pages.accounts.quotations.print', compact('quotation'));
     }
@@ -560,7 +584,7 @@ class QuotationController extends Controller implements HasMiddleware
                 'taluk'          => $la->taluk ?? '',
                 'village'        => $la->village ?? '',
                 'survey_numbers' => $sfNos,
-                'area_extent_ha' => (float) $la->area_extent_ha,
+                'area_extent_ha' => $la->area_extent_numeric ?? (is_numeric($la->area_extent_ha) ? (float) $la->area_extent_ha : null),
                 'minerals'       => $mineralNames,
                 'mineral_name'   => $mineralNames,
             ];
@@ -596,7 +620,8 @@ class QuotationController extends Controller implements HasMiddleware
         $year   = date('Y');
         $prefix = "GTMS/QTN/{$year}/";
 
-        $quotations = Quotation::withTrashed()
+        $quotations = Quotation::withoutGlobalScopes()
+            ->withTrashed()
             ->where('quotation_number', 'like', "{$prefix}%")
             ->lockForUpdate()
             ->get(['quotation_number']);
@@ -614,7 +639,7 @@ class QuotationController extends Controller implements HasMiddleware
         $nextSeq   = $maxSeq + 1;
         $candidate = sprintf('%s%04d', $prefix, $nextSeq);
 
-        while (Quotation::withTrashed()->where('quotation_number', $candidate)->exists()) {
+        while (Quotation::withoutGlobalScopes()->withTrashed()->where('quotation_number', $candidate)->exists()) {
             $nextSeq++;
             $candidate = sprintf('%s%04d', $prefix, $nextSeq);
         }
@@ -690,11 +715,7 @@ class QuotationController extends Controller implements HasMiddleware
      */
     public function getDefaultMilestones(): array
     {
-        return [
-            ['s_no' => 1, 'description' => 'Preparation of Mining plan', 'amount_lakhs' => '0.70'],
-            ['s_no' => 2, 'description' => 'DGPS report will submit to DGM', 'amount_lakhs' => '0.72'],
-            ['s_no' => 3, 'description' => 'DRONE report will submit to DGM', 'amount_lakhs' => '0.40'],
-        ];
+        return [];
     }
 
     /**
@@ -741,7 +762,7 @@ class QuotationController extends Controller implements HasMiddleware
     protected function parseMilestones($input): array
     {
         if (empty($input)) {
-            return $this->getDefaultMilestones();
+            return [];
         }
 
         if (is_string($input)) {
@@ -752,7 +773,7 @@ class QuotationController extends Controller implements HasMiddleware
         }
 
         if (!is_array($input)) {
-            return $this->getDefaultMilestones();
+            return [];
         }
 
         $milestones = [];
@@ -769,6 +790,73 @@ class QuotationController extends Controller implements HasMiddleware
             }
         }
 
-        return !empty($milestones) ? $milestones : $this->getDefaultMilestones();
+        return $milestones;
+    }
+
+    /**
+     * AJAX endpoint: return active bank accounts list.
+     */
+    public function getBankAccounts(): JsonResponse
+    {
+        $accounts = BankAccount::where('is_active', true)
+            ->orderByDesc('is_default')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'success'  => true,
+            'accounts' => $accounts,
+        ]);
+    }
+
+    /**
+     * AJAX endpoint: add new bank account profile with duplicate account number protection.
+     */
+    public function storeBankAccount(Request $request): JsonResponse
+    {
+        $accountNumber = preg_replace('/\s+/', '', (string) $request->input('account_number'));
+
+        // Check for duplicate account number
+        $existing = BankAccount::where('account_number', $accountNumber)->first();
+        if ($existing) {
+            return response()->json([
+                'success' => false,
+                'message' => "Bank Account Number '{$accountNumber}' is already registered under '{$existing->account_name}' ({$existing->bank_name}). Duplicate accounts cannot be added.",
+                'bank_account' => $existing,
+            ], 422);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'account_name'   => 'required|string|max:255',
+            'account_number' => 'required|string|max:50',
+            'bank_name'      => 'required|string|max:255',
+            'branch_name'    => 'nullable|string|max:255',
+            'ifsc_code'      => 'required|string|max:20',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $bankAccount = BankAccount::create([
+            'account_name'   => trim($request->input('account_name')),
+            'account_number' => $accountNumber,
+            'bank_name'      => trim($request->input('bank_name')),
+            'branch_name'    => trim($request->input('branch_name') ?: ''),
+            'ifsc_code'      => strtoupper(trim($request->input('ifsc_code'))),
+            'is_default'     => false,
+            'is_active'      => true,
+            'created_by'     => auth()->id(),
+        ]);
+
+        return response()->json([
+            'success'      => true,
+            'message'      => 'New bank account profile added successfully.',
+            'bank_account' => $bankAccount,
+        ]);
     }
 }

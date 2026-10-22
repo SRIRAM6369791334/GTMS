@@ -82,7 +82,7 @@ class DroneSurveyController extends Controller
 
     public function wizard(int $step, Request $request)
     {
-        abort_unless($step >= 1 && $step <= 8, 404);
+        abort_unless($step >= 1 && $step <= 6, 404);
 
         $draft = session('drone_wizard', []);
 
@@ -126,16 +126,19 @@ class DroneSurveyController extends Controller
 
     public function saveStep(int $step, Request $request)
     {
-        abort_unless($step >= 1 && $step <= 8, 404);
+        abort_unless($step >= 1 && $step <= 6, 404);
 
         $draft = session('drone_wizard', []);
 
         if ($step === 1) {
+            $draft['survey_no']             = $request->input('survey_no');
             $draft['customer_id']           = $request->input('customer_id');
             $draft['lease_application_id']  = $request->input('lease_application_id');
             $draft['mining_application_id'] = $request->input('mining_application_id');
             $draft['location']              = $request->input('location');
             $draft['lease_area']            = $request->input('lease_area');
+            $draft['survey_type']           = $request->input('survey_type');
+            $draft['concession_type']       = $request->input('concession_type');
             $draft['primary_phone']         = $request->input('primary_phone');
             $draft['secondary_phone']       = $request->input('secondary_phone');
         }
@@ -156,11 +159,11 @@ class DroneSurveyController extends Controller
             $draft['deliverable_files_path'] = $request->input('deliverable_files_path');
         }
 
-        if ($step === 6) {
+        if ($step === 4) {
             $draft['handlers'] = $request->input('handlers', []);
         }
 
-        if ($step === 7) {
+        if ($step === 5) {
             $val  = (float) $request->input('product_value', 0);
             $paid = (float) $request->input('paid_amount', 0);
             $draft['product_value']  = $val;
@@ -172,15 +175,19 @@ class DroneSurveyController extends Controller
 
         session(['drone_wizard' => $draft]);
 
+        if ($request->input('save_draft_exit') == '1') {
+            return redirect()->route('drone-survey.index')->with('success', 'Drone survey progress saved to draft.');
+        }
+
         if ($request->wantsJson()) {
             return response()->json(['success' => true, 'next_step' => $step + 1]);
         }
 
-        if ($step < 8) {
+        if ($step < 6) {
             return redirect()->route('drone-survey.step', $step + 1);
         }
 
-        return redirect()->route('drone-survey.step', 8);
+        return redirect()->route('drone-survey.step', 6);
     }
 
     public function store(Request $request)
@@ -268,7 +275,7 @@ class DroneSurveyController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Drone Survey store failed: ' . $e->getMessage(), ['exception' => $e]);
-            return redirect()->route('drone-survey.step', 8)
+            return redirect()->route('drone-survey.step', 6)
                 ->with('error', 'Failed to save Drone Survey: ' . $e->getMessage());
         }
     }

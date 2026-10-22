@@ -378,7 +378,7 @@ The primary regulatory engine governing the 8-step Lease Application intake wiza
 - **HTTP Verb & URI:** `GET /application/{id}/report`
 - **Route Name:** `application.report`
 - **Middleware:** `web`, `auth`, `permission:application.view`
-- **Side-Effects:** Renders `pages.lease_application.report_pdf`, logs activity, returns HTML stream with attachment headers.
+- **Side-Effects:** Renders `pages.lease_application.report_pdf` (with 8 comprehensive statutory chapters, official TN crest, cadastral extent table, decrypted plain password, verified authority log, and auto-print support via `?autoprint=1` or hidden iframe trigger from `/viewapplication`), logs activity, returns HTML stream with attachment headers.
 
 #### Method 5.25: `logActivity(int $referenceId, string $action, string $description)` (Private)
 - Inserts `ActivityLog` row with IP, User Agent, User ID, and timestamp.
@@ -388,6 +388,8 @@ The primary regulatory engine governing the 8-step Lease Application intake wiza
 - **Route Name:** `application.moveToMining`
 - **Middleware:** `web`, `auth`, `permission:application.edit`
 - **Inputs:** `id` (Lease Application ID).
+- **Prerequisite Gate:**
+  - Enforces Step 6.3 (Approve Data) completion: checks `$lease->status === 'approved'`. If not approved, immediately blocks promotion with HTTP 422 JSON (`['status' => 0, 'message' => 'Action Blocked: Lease application must complete Step 6.3 (Approve Data) before moving to the Mining Plan domain.']`) or redirects back with session error.
 - **Side-Effects:**
   - Idempotency check: returns existing link if already promoted.
   - Carries `common_id` (`GTMS-YYYY-XXXX`).

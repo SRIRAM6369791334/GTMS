@@ -87,7 +87,7 @@
 - [C] மேலே உள்ள இரண்டும் இணைந்த விரிவான அட்டவணை.
 
 #### Q014. சுரங்க திட்ட வகைகள் (Plan Types) என்னென்ன?
-- [A] Mining Plan, Revised Mining Plan, Modified Mining Plan, Scheme of Mining.
+- [A] Mining Plan, Revised Mining Plan, Plan Drawing , Scheme of Mining.
 - [B] Mining Plan, Progressive Mine Closure Plan, Final Mine Closure Plan.
 - [C] புதிய திட்டம் (Fresh Plan), புதுப்பித்தல் திட்டம் (Renewal Plan).
 

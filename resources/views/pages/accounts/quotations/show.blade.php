@@ -570,10 +570,9 @@
                         <thead>
                             <tr>
                                 <th style="width: 5%; text-align: center;">#</th>
-                                <th style="width: 35%;">Service Description & Statutory Scope</th>
-                                <th style="width: 12%; text-align: center;">SAC Code</th>
+                                <th style="width: 45%;">Service Description &amp; Statutory Scope</th>
                                 <th style="width: 12%; text-align: center;">Qty / Extent</th>
-                                <th style="width: 8%; text-align: center;">Unit</th>
+                                <th style="width: 10%; text-align: center;">Unit</th>
                                 <th style="width: 13%; text-align: right;">Unit Rate (₹)</th>
                                 <th style="width: 15%; text-align: right;">Subtotal (₹)</th>
                             </tr>
@@ -592,14 +591,11 @@
                                         </div>
                                     @endif
                                 </td>
-                                <td class="text-center">
-                                    <span class="sac-code-pill">{{ $item->sac_code ?: '998341' }}</span>
-                                </td>
                                 <td class="text-center fw-bold text-dark financial-number">
                                     {{ number_format($item->quantity, 2) }}
                                 </td>
                                 <td class="text-center text-muted fw-semibold" style="color: #475569 !important;">
-                                    {{ $item->unit ?: 'Nos' }}
+                                    {{ $item->unit ?: 'Job' }}
                                 </td>
                                 <td style="text-align: right;" class="text-dark fw-semibold financial-number">
                                     ₹ {{ number_format($item->unit_rate, 2) }}
@@ -610,7 +606,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
+                                <td colspan="6" class="text-center py-4 text-muted">
                                     <i class="fas fa-box-open fa-2x mb-2 d-block opacity-50"></i>
                                     No line items specified for this quotation.
                                 </td>
@@ -671,110 +667,18 @@
             </div>
         </div>
 
-        <!-- Row 2B: Sub: Complete Scope (All Department) & Payment Details Schedule -->
+        <!-- Row 2B: Remittance Details, Terms & Exclusions Bento Grid -->
         @php
-            $showScopeSections = is_array($quotation->scope_sections) && count($quotation->scope_sections) > 0
-                ? $quotation->scope_sections
-                : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultScopeSections();
-
-            $showMilestones = is_array($quotation->milestones) && count($quotation->milestones) > 0
-                ? $quotation->milestones
-                : app(\App\Http\Controllers\Accounts\QuotationController::class)->getDefaultMilestones();
+            $bank = $quotation->bankAccount ?? \App\Models\BankAccount::where('is_default', true)->first() ?? \App\Models\BankAccount::first();
         @endphp
 
         <div class="row g-4 mb-4">
-            <!-- Left Column: Sub: Complete Scope (All Department) -->
-            <div class="col-lg-7">
-                <div class="bento-card card-accent-emerald h-100">
+            <!-- Official Remittance Bank Details -->
+            <div class="col-lg-4">
+                <div class="bento-card card-accent-sky h-100">
                     <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
                         <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                            <i class="fas fa-sitemap text-success me-2"></i>Sub: Complete Scope (All Department)
-                        </h6>
-                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
-                            {{ count($showScopeSections) }} Departments
-                        </span>
-                    </div>
-                    <div class="p-4 bg-white rounded-bottom">
-                        <div class="row g-3">
-                            @foreach($showScopeSections as $secIdx => $sec)
-                                <div class="col-md-6">
-                                    <div class="p-3 rounded-3 border bg-white h-100 shadow-sm" style="border-color: #E2E8F0 !important; transition: all 0.2s ease;">
-                                        <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size: 0.70rem;">
-                                                Phase {{ $secIdx + 1 }}
-                                            </span>
-                                            <span class="text-muted fw-bold" style="font-size: 0.72rem;">{{ count((array)($sec['items'] ?? [])) }} Items</span>
-                                        </div>
-                                        <div class="fw-bold text-dark mb-2 d-flex align-items-center gap-2" style="font-size: 0.86rem; color: #0F1E4D !important;">
-                                            <i class="fas fa-check-circle text-success small"></i>
-                                            <span>{{ $sec['title'] ?? 'Scope Category' }}</span>
-                                        </div>
-                                        <ul class="mb-0 ps-3 small text-secondary" style="line-height: 1.55; color: #334155 !important;">
-                                            @foreach((array)($sec['items'] ?? []) as $it)
-                                                @if(trim($it) !== '')
-                                                    <li>{{ trim($it) }}</li>
-                                                @endif
-                                            @endforeach
-                                        </ul>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Payment Details Schedule + Remittance Bank Details -->
-            <div class="col-lg-5 d-flex flex-column gap-4">
-                <!-- Payment Details Schedule -->
-                <div class="bento-card card-accent-blue mb-0">
-                    <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
-                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                            <i class="fas fa-list-ol text-primary me-2"></i>Payment Details Schedule
-                        </h6>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold">
-                            {{ count($showMilestones) }} Milestones
-                        </span>
-                    </div>
-                    <div class="p-0 bg-white">
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover mb-0 align-middle">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 12%; text-align: center;">#</th>
-                                        <th>Milestone Description</th>
-                                        <th style="width: 38%; text-align: right;">Amount (Lakhs)</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $totalLakhs = 0; @endphp
-                                    @foreach($showMilestones as $mIdx => $m)
-                                    @php $amt = floatval($m['amount_lakhs'] ?? 0); $totalLakhs += $amt; @endphp
-                                    <tr>
-                                        <td class="text-center fw-bold text-muted">{{ $mIdx + 1 }}</td>
-                                        <td class="small fw-semibold text-dark">{{ $m['description'] ?? '' }}</td>
-                                        <td style="text-align: right;" class="fw-bold text-primary small financial-number">
-                                            ₹ {{ number_format($amt, 2) }} Lakhs
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                    <tr class="table-light border-top">
-                                        <td colspan="2" class="text-end fw-bold small text-muted">Total Schedule:</td>
-                                        <td style="text-align: right;" class="fw-bold text-dark small financial-number">
-                                            ₹ {{ number_format($totalLakhs, 2) }} Lakhs
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Official GTMS Remittance Bank Account Card -->
-                <div class="bento-card card-accent-sky mb-0">
-                    <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
-                        <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                            <i class="fas fa-university text-primary me-2"></i>Official Remittance Bank Details
+                            <i class="fas fa-university text-primary me-2"></i>Remittance Bank Details
                         </h6>
                         <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold small">
                             <i class="fas fa-shield-alt me-1"></i>Verified
@@ -784,54 +688,62 @@
                         <div class="p-3 rounded border" style="background-color: #F8FAFC; border-color: #CBD5E1 !important;">
                             <div class="mb-2">
                                 <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-building text-primary"></i> Beneficiary Name</div>
-                                <div class="fw-bold text-dark" style="font-size: 0.88rem; color: #0F1E4D !important;">GEO TECHNICAL MINING SOLUTIONS</div>
+                                <div class="fw-bold text-dark" style="font-size: 0.88rem; color: #0F1E4D !important;">{{ $bank->account_name ?? 'GEO TECHNICAL MINING SOLUTIONS' }}</div>
                             </div>
                             <div class="row g-2 pt-2 border-top">
-                                <div class="col-6">
+                                <div class="col-12 mb-2">
                                     <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-hashtag text-primary"></i> Current Account No.</div>
                                     <div class="d-flex align-items-center gap-1 mt-1">
-                                        <span class="font-monospace fw-bold text-dark" style="font-size: 0.86rem;">107302000001265</span>
-                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('107302000001265', this)" title="Copy Account Number">
+                                        <span class="font-monospace fw-bold text-dark" style="font-size: 0.88rem;">{{ $bank->account_number ?? '107302000001265' }}</span>
+                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('{{ $bank->account_number ?? '107302000001265' }}', this)" title="Copy Account Number">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-12 mb-2 pt-2 border-top">
                                     <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-key text-primary"></i> IFSC Code</div>
                                     <div class="d-flex align-items-center gap-1 mt-1">
-                                        <span class="badge bg-light text-dark border px-2 py-1 fw-bold font-monospace" style="font-size: 0.82rem;">IOBA0001073</span>
-                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('IOBA0001073', this)" title="Copy IFSC">
+                                        <span class="badge bg-light text-dark border px-2 py-1 fw-bold font-monospace" style="font-size: 0.82rem;">{{ $bank->ifsc_code ?? 'IOBA0001073' }}</span>
+                                        <button type="button" class="copy-bank-btn" onclick="copyQuotationNum('{{ $bank->ifsc_code ?? 'IOBA0001073' }}', this)" title="Copy IFSC">
                                             <i class="fas fa-copy"></i>
                                         </button>
                                     </div>
                                 </div>
-                                <div class="col-12 mt-2 pt-2 border-top">
+                                <div class="col-12 pt-2 border-top">
                                     <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-code-branch text-primary"></i> Bank &amp; Branch</div>
-                                    <div class="small text-muted" style="font-size: 0.78rem;">Indian Overseas Bank / Oddapatti, Dharmapuri</div>
+                                    <div class="small text-muted fw-semibold" style="font-size: 0.78rem;">
+                                        {{ $bank->bank_name ?? 'Indian Overseas Bank' }}
+                                        @if(!empty($bank->branch_name))
+                                            / {{ $bank->branch_name }}
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="col-12 pt-2 border-top">
+                                    <div class="meta-label mb-0" style="font-size: 0.68rem;"><i class="fas fa-signature text-primary"></i> Authorized Signatory / Branch</div>
+                                    <div class="small fw-bold text-dark" style="font-size: 0.82rem;">
+                                        {{ $quotation->authorized_signatory ?: 'Dr. S. Karuppannan, M.Sc., Ph.D.' }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Row 3: Statutory Milestones, Validity & Exclusions Cards -->
-        <div class="row g-4 mb-4">
-            <!-- Payment Milestones & Validity -->
-            <div class="col-lg-6">
+            <!-- Milestone Payment Terms & Validity -->
+            <div class="col-lg-4">
                 <div class="bento-card card-accent-sky h-100">
                     <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
                         <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                            <i class="fas fa-tasks text-info me-2"></i>Milestone Payment Terms & Offer Validity
+                            <i class="fas fa-tasks text-info me-2"></i>Payment Terms &amp; Validity
                         </h6>
                         <span class="badge bg-light text-dark border px-2 py-1 fw-bold" style="font-size: 0.8rem;">
-                            <i class="far fa-clock me-1 text-primary"></i>Valid: {{ $quotation->validity_days }} Days
+                            <i class="far fa-clock me-1 text-primary"></i>{{ $quotation->validity_days }} Days
                         </span>
                     </div>
                     <div class="p-4 bg-white rounded-bottom">
                         <div class="meta-label mb-2">
-                            <i class="fas fa-stream text-primary"></i> Milestone Payment Schedule
+                            <i class="fas fa-stream text-primary"></i> Payment Schedule
                         </div>
 
                         @php
@@ -857,11 +769,11 @@
             </div>
 
             <!-- Statutory Exclusions & Compliance Remarks -->
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <div class="bento-card card-accent-amber h-100">
                     <div class="py-3 px-4 border-bottom bg-white d-flex justify-content-between align-items-center rounded-top">
                         <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-                            <i class="fas fa-shield-alt text-warning me-2"></i>Statutory Exclusions & Remarks
+                            <i class="fas fa-shield-alt text-warning me-2"></i>Statutory Exclusions
                         </h6>
                     </div>
                     <div class="p-4 bg-white rounded-bottom">

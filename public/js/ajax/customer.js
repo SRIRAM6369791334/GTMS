@@ -11,34 +11,92 @@ $(document).ready(function() {
         $.fn.dataTable.ext.errMode = 'none';
     }
 
-    // Initialize DataTable if not already initialized
+    // Initialize DataTable with clean dom (toolbar handles search, filters & length)
     var dataTable;
     if (!$.fn.DataTable.isDataTable('#customersTable')) {
         dataTable = $('#customersTable').DataTable({
             responsive: true,
+            autoWidth: false,
             pageLength: 10,
+            searching: true,
+            dom: '<"cust-dt-table-wrap"t><"cust-dt-footer d-flex flex-wrap align-items-center justify-content-between gap-3"ip>',
             language: {
-                emptyTable: '<div class="text-center py-4 text-muted"><i class="fa fa-folder-open fa-2x mb-2 d-block"></i>No customers found. Click "Add Customer" to create the first record.</div>',
+                emptyTable: '<div class="text-center py-5 text-muted"><i class="fa fa-folder-open fa-3x mb-3 d-block opacity-50"></i><p class="mb-0 fw-semibold">No customers found.</p><span class="fs-12 text-muted">Click "Add Customer" to create the first record.</span></div>',
+                info: 'Showing <span class="fw-bold">_START_</span> to <span class="fw-bold">_END_</span> of <span class="fw-bold">_TOTAL_</span> entries',
+                infoEmpty: 'Showing 0 to 0 of 0 entries',
                 paginate: {
                     next: '<i class="fa fa-angle-right"></i>',
                     previous: '<i class="fa fa-angle-left"></i>'
                 }
-            }
+            },
+            order: [[0, 'asc']],
+            columnDefs: [
+                { targets: 0, width: '44px', className: 'text-center' },
+                { targets: 1, width: '33%' },
+                { targets: 2, width: '11%' },
+                { targets: 3, width: '15%' },
+                { targets: 4, width: '16%' },
+                { targets: 5, width: '11%', className: 'text-center' },
+                { targets: 6, width: '11%', orderable: false, className: 'text-end pe-3' }
+            ]
         });
     } else {
         dataTable = $('#customersTable').DataTable();
     }
 
+    // Connect Custom Live Search
+    $('#cust_table_search').on('keyup input', function () {
+        var query = $(this).val();
+        if (query.length > 0) {
+            $('#cust_search_clear').show();
+        } else {
+            $('#cust_search_clear').hide();
+        }
+        dataTable.search(query).draw();
+    });
+
+    // Clear Search Input
+    $('#cust_search_clear').on('click', function () {
+        $('#cust_table_search').val('');
+        $(this).hide();
+        dataTable.search('').draw();
+    });
+
+    // Connect Custom Page Length
+    $('#cust_page_length').on('change', function () {
+        var len = parseInt($(this).val(), 10);
+        dataTable.page.len(len).draw();
+    });
+
     // Quick Filter by District (Column index 2)
     $('#filter_district').on('change', function () {
         var val = $(this).val();
-        dataTable.column(2).search(val ? '^' + $.fn.dataTable.util.escapeRegex(val) + '$' : '', true, false).draw();
+        dataTable.column(2).search(val ? val : '').draw();
     });
 
     // Quick Filter by Status (Column index 5)
     $('#filter_status').on('change', function () {
         var val = $(this).val();
-        dataTable.column(5).search(val).draw();
+        dataTable.column(5).search(val ? val : '').draw();
+    });
+
+    // Quick Status Filter Tabs (Segmented Tabs in Panel Header)
+    $(document).on('click', '.cust-tab-pill', function () {
+        $('.cust-tab-pill').removeClass('active');
+        $(this).addClass('active');
+        var status = $(this).data('status') || '';
+        $('#filter_status').val(status).trigger('change');
+    });
+
+    // Reset All Filters
+    $('#cust_reset_filters').on('click', function () {
+        $('#cust_table_search').val('');
+        $('#cust_search_clear').hide();
+        $('#filter_district').val('');
+        $('#filter_status').val('');
+        $('.cust-tab-pill').removeClass('active');
+        $('.cust-tab-pill[data-status=""]').addClass('active');
+        dataTable.search('').columns().search('').draw();
     });
 
     // =========================================================================
@@ -113,58 +171,130 @@ $(document).ready(function() {
     // =========================================================================
     // 2. POPULATE EDIT CUSTOMER MODAL
     // =========================================================================
+    function populateEditCustomerFields(c) {
+        if (!c) return;
+        $('#edit_id').val(c.id || '');
+        $('#edit_mimas_no').val(c.mimas_no || '');
+        $('#edit_mimas_number').val(c.mimas_number || '');
+        $('#edit_mimas_status').val(c.mimas_status || '');
+        $('#edit_customer_name').val(c.customer_name || '');
+        $('#edit_secondary_contact_person').val(c.secondary_contact_person || '');
+        $('#edit_company_name').val(c.company_name || '');
+        $('#edit_mobile_num').val(c.mobile_num || '');
+        $('#edit_secondary_mobile_num').val(c.secondary_mobile_num || '');
+        $('#edit_email').val(c.email || '');
+        $('#edit_district_id').val(c.district_id || '');
+        if ($('#edit_mineral_id').length) {
+            $('#edit_mineral_id').val(c.mineral_id || '');
+        }
+        if ($('#edit_area').length) {
+            $('#edit_area').val(c.area || '');
+        }
+        $('#edit_pan').val(c.pan || '');
+        $('#edit_aadhaar_no').val(c.aadhaar_no || '');
+        $('#edit_gstin').val(c.gstin || '');
+        $('#edit_status').val(c.status !== undefined ? c.status : 1);
+        $('#edit_address').val(c.address || '');
+
+        $('#customeredit').find('.error-text').text('');
+        $('#editCustomerModal').modal('show');
+    }
+
+    function openCustomerEditById(id) {
+        if (!id) return;
+
+        // 1. Check if button is in current DOM page
+        var btn = $('.editCustomerBtn[data-id="' + id + '"]').first();
+        if (btn.length > 0) {
+            btn.trigger('click');
+            return;
+        }
+
+        // 2. Fallback: If record is on another DataTables page or navigated directly via #edit-{id}
+        $.ajax({
+            url: '/customers/' + id,
+            type: 'GET',
+            dataType: 'json',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (response.status == 1 && response.data) {
+                    populateEditCustomerFields(response.data);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Customer record not found.');
+                    }
+                }
+            },
+            error: function() {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Failed to load customer details for editing.');
+                }
+            }
+        });
+    }
+
     $(document).on('click', '.editCustomerBtn', function () {
         var btn = $(this);
         var data = btn.data('customer');
 
         if (data) {
-            $('#edit_id').val(data.id);
-            $('#edit_mimas_no').val(data.mimas_no || '');
-            $('#edit_mimas_number').val(data.mimas_number || '');
-            $('#edit_mimas_status').val(data.mimas_status || '');
-            $('#edit_customer_name').val(data.customer_name || '');
-            $('#edit_secondary_contact_person').val(data.secondary_contact_person || '');
-            $('#edit_company_name').val(data.company_name || '');
-            $('#edit_mobile_num').val(data.mobile_num || '');
-            $('#edit_secondary_mobile_num').val(data.secondary_mobile_num || '');
-            $('#edit_email').val(data.email || '');
-            $('#edit_district_id').val(data.district_id || '');
-            $('#edit_mineral_id').val(data.mineral_id || '');
-            $('#edit_area').val(data.area || '');
-            $('#edit_pan').val(data.pan || '');
-            $('#edit_aadhaar_no').val(data.aadhaar_no || '');
-            $('#edit_gstin').val(data.gstin || '');
-            $('#edit_status').val(data.status);
-            $('#edit_address').val(data.address || '');
+            populateEditCustomerFields(data);
         } else {
             // Fallback to individual data attributes
-            $('#edit_id').val(btn.data('id'));
-            $('#edit_mimas_no').val(btn.data('mimas'));
-            $('#edit_mimas_number').val(btn.data('mimas-number') || '');
-            $('#edit_mimas_status').val(btn.data('mimas-status') || '');
-            $('#edit_customer_name').val(btn.data('name'));
-            $('#edit_secondary_contact_person').val(btn.data('secondary-contact') || '');
-            $('#edit_company_name').val(btn.data('company'));
-            $('#edit_mobile_num').val(btn.data('mobile'));
-            $('#edit_secondary_mobile_num').val(btn.data('secondary-mobile') || '');
-            $('#edit_email').val(btn.data('email'));
-            $('#edit_district_id').val(btn.data('district-id'));
-            $('#edit_mineral_id').val(btn.data('mineral-id') || '');
-            $('#edit_area').val(btn.data('area') || '');
-            $('#edit_pan').val(btn.data('pan'));
-            $('#edit_aadhaar_no').val(btn.data('aadhaar'));
-            $('#edit_gstin').val(btn.data('gstin'));
-            $('#edit_status').val(btn.data('status'));
-            $('#edit_address').val(btn.data('address'));
+            var c = {
+                id: btn.data('id'),
+                mimas_no: btn.data('mimas'),
+                mimas_number: btn.data('mimas-number'),
+                mimas_status: btn.data('mimas-status'),
+                customer_name: btn.data('name'),
+                secondary_contact_person: btn.data('secondary-contact'),
+                company_name: btn.data('company'),
+                mobile_num: btn.data('mobile'),
+                secondary_mobile_num: btn.data('secondary-mobile'),
+                email: btn.data('email'),
+                district_id: btn.data('district-id'),
+                mineral_id: btn.data('mineral-id'),
+                area: btn.data('area'),
+                pan: btn.data('pan'),
+                aadhaar_no: btn.data('aadhaar'),
+                gstin: btn.data('gstin'),
+                status: btn.data('status'),
+                address: btn.data('address')
+            };
+            populateEditCustomerFields(c);
         }
-
-        $('#customeredit').find('.error-text').text('');
-        $('#editCustomerModal').modal('show');
     });
 
-    // Clear validation errors on modal dismissal
+    // Clear validation errors on modal dismissal and clean hash fragment
     $('#customerModal, #editCustomerModal').on('hidden.bs.modal', function () {
         $(this).find('.error-text').text('');
+        if (this.id === 'editCustomerModal' && window.location.hash && window.location.hash.indexOf('#edit-') === 0) {
+            if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, document.title, window.location.pathname + window.location.search);
+            }
+        }
+    });
+
+    // =========================================================================
+    // 2B. AUTO-OPEN EDIT MODAL VIA URL HASH (#edit-123 or #edit-slug)
+    // =========================================================================
+    function checkUrlHashForEdit() {
+        var hash = window.location.hash;
+        if (!hash) return;
+        var match = hash.match(/^#edit-([a-zA-Z0-9_\-]+)$/);
+        if (match && match[1]) {
+            openCustomerEditById(match[1]);
+        }
+    }
+
+    // Trigger on initial page load
+    setTimeout(checkUrlHashForEdit, 250);
+
+    // Also trigger on subsequent hash changes
+    $(window).on('hashchange', function() {
+        checkUrlHashForEdit();
     });
 
     // =========================================================================
@@ -233,9 +363,9 @@ $(document).ready(function() {
                     $('#view_rep_subtitle').text((c.customer_name || '') + ' (CUST-' + String(c.id).padStart(3, '0') + ')');
                     
                     if (c.status == 1) {
-                        $('#view_status_badge').html('<span class="badge bg-success-subtle text-success border border-success"><i class="fa fa-check-circle me-1"></i> Active</span>');
+                        $('#view_status_badge').html('<span class="cust-status-pill cust-status-active"><i class="fa fa-check-circle me-1"></i> Active</span>');
                     } else {
-                        $('#view_status_badge').html('<span class="badge bg-warning-subtle text-warning border border-warning"><i class="fa fa-clock me-1"></i> Under Validation / Inactive</span>');
+                        $('#view_status_badge').html('<span class="cust-status-pill cust-status-pending"><i class="fa fa-clock me-1"></i> Under Validation / Inactive</span>');
                     }
 
                     $('#view_mimas_no').text(c.mimas_no || 'N/A');
@@ -247,8 +377,6 @@ $(document).ready(function() {
                     $('#view_secondary_mobile').text(c.secondary_mobile_num || 'Not specified');
                     $('#view_email').text(c.email || 'N/A');
                     $('#view_district').text(c.district ? c.district.name : 'N/A');
-                    $('#view_mineral').text(c.mineral ? (c.mineral.name + (c.mineral.type ? ' (' + c.mineral.type + ')' : '')) : 'Not specified');
-                    $('#view_area').text(c.area ? (c.area + ' Ha') : 'Not specified');
                     $('#view_pan').text(c.pan || 'N/A');
                     $('#view_aadhaar_no').text(c.aadhaar_no || 'N/A');
                     $('#view_gstin').text(c.gstin || 'N/A');

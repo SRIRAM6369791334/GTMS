@@ -313,27 +313,61 @@ class PptDepartmentController extends Controller
 
         if ($ppt->environment_project_id) {
             $project = EnvironmentProject::find($ppt->environment_project_id);
-            if ($project && $project->category === 'B1') {
-                if ($ppt->presentation_stage === 'tor_presentation') {
-                    // Advance to ETA
-                    $project->update([
-                        'sub_category' => 'ETA',
-                        'b1_stage'     => 'sc2_prep',
-                        'status'       => 'draft',
-                    ]);
+            if ($project) {
+                if ($project->category === 'B1') {
+                    if ($ppt->presentation_stage === 'tor_presentation') {
+                        // Advance to ETA
+                        $project->update([
+                            'sub_category' => 'ETA',
+                            'b1_stage'     => 'sc2_prep',
+                            'status'       => 'draft',
+                        ]);
 
-                    // Generate ETA document slots
-                    EnverionsoneController::generateSlots($project);
+                        // Generate ETA document slots
+                        EnverionsoneController::generateSlots($project);
 
-                    return redirect()->back()->with('success', "Stage 1 ToR Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} has advanced to ETA (EIA Study & TNPCB Submission).");
-                } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
-                    // Complete B1 Environmental Clearance
+                        ActivityLog::create([
+                            'loggable_type' => EnvironmentProject::class,
+                            'loggable_id'   => $project->id,
+                            'action'        => 'tor_approved_by_ppt',
+                            'description'   => "Stage 1 ToR Presentation ({$ppt->application_no}) approved by SEAC. Advanced to ETA.",
+                            'user_id'       => Auth::id() ?? 1,
+                        ]);
+
+                        return redirect()->back()->with('success', "Stage 1 ToR Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} has advanced to ETA (EIA Study & TNPCB Submission).");
+                    } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
+                        // Complete B1 Environmental Clearance
+                        $project->update([
+                            'b1_stage' => 'completed',
+                            'status'   => 'approved',
+                        ]);
+
+                        ActivityLog::create([
+                            'loggable_type' => EnvironmentProject::class,
+                            'loggable_id'   => $project->id,
+                            'action'        => 'final_ec_approved_by_ppt',
+                            'description'   => "Stage 2 Final EC Presentation ({$ppt->application_no}) approved by SEAC/SEIAA. Project completed and approved for EC Certificate.",
+                            'user_id'       => Auth::id() ?? 1,
+                        ]);
+
+                        return redirect()->back()->with('success', "Stage 2 Final EC Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} is now fully Approved and ready for EC Certificate Issuance.");
+                    }
+                } elseif ($project->category === 'B2' || $ppt->presentation_stage === 'b2_presentation') {
+                    // Complete B2 Environmental Clearance
                     $project->update([
                         'b1_stage' => 'completed',
                         'status'   => 'approved',
                     ]);
 
-                    return redirect()->back()->with('success', "Stage 2 Final EC Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} is now fully Approved and ready for EC Certificate Issuance.");
+                    ActivityLog::create([
+                        'loggable_type' => EnvironmentProject::class,
+                        'loggable_id'   => $project->id,
+                        'action'        => 'b2_approved_by_ppt',
+                        'description'   => "Category B2 SEAC EC Presentation ({$ppt->application_no}) approved. Project completed and approved for EC Certificate.",
+                        'user_id'       => Auth::id() ?? 1,
+                    ]);
+
+                    return redirect()->back()->with('success', "Category B2 SEAC EC Presentation ({$ppt->application_no}) Approved! Environment Project {$project->project_code} is now fully Approved and ready for EC Certificate Issuance.");
                 }
             }
         }
@@ -363,15 +397,22 @@ class PptDepartmentController extends Controller
         // If approved via standard workflow and linked to environment project, execute approval hook
         if (strtolower($cleanStatus) === 'approved' && $ppt->environment_project_id) {
             $project = EnvironmentProject::find($ppt->environment_project_id);
-            if ($project && $project->category === 'B1') {
-                if ($ppt->presentation_stage === 'tor_presentation') {
-                    $project->update([
-                        'sub_category' => 'ETA',
-                        'b1_stage'     => 'sc2_prep',
-                        'status'       => 'draft',
-                    ]);
-                    EnverionsoneController::generateSlots($project);
-                } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
+            if ($project) {
+                if ($project->category === 'B1') {
+                    if ($ppt->presentation_stage === 'tor_presentation') {
+                        $project->update([
+                            'sub_category' => 'ETA',
+                            'b1_stage'     => 'sc2_prep',
+                            'status'       => 'draft',
+                        ]);
+                        EnverionsoneController::generateSlots($project);
+                    } elseif ($ppt->presentation_stage === 'final_ec_presentation') {
+                        $project->update([
+                            'b1_stage' => 'completed',
+                            'status'   => 'approved',
+                        ]);
+                    }
+                } elseif ($project->category === 'B2' || $ppt->presentation_stage === 'b2_presentation') {
                     $project->update([
                         'b1_stage' => 'completed',
                         'status'   => 'approved',

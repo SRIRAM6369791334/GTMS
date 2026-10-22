@@ -1,6 +1,371 @@
- <div class="dlabnav">
-     <div class="dlabnav-scroll">
-         <ul class="metismenu" id="menu">
+<!-- GTMS Enterprise SaaS Sidebar Component (ui-ux-pro-max standard) -->
+<style>
+    /* =========================================================
+       GTMS ENTERPRISE SAAS SIDEBAR (UI-UX-PRO-MAX STANDARD)
+       ========================================================= */
+    :root {
+        --sb-bg: #ffffff;
+        --sb-border: #eef2f6;
+        --sb-text: #475569;
+        --sb-text-hover: #0F1E4D;
+        --sb-hover-bg: #f8fafc;
+        --sb-icon-bg: #f1f5f9;
+        --sb-icon-border: #e2e8f0;
+        --sb-icon-color: #64748b;
+        --sb-icon-hover-color: #0F1E4D;
+        --sb-active-bg: #eff6ff;
+        --sb-active-text: #0F1E4D;
+        --sb-active-icon-bg: #dbeafe;
+        --sb-active-shadow: none;
+        --sb-active-border: #2563eb;
+        --sb-sub-line: #e2e8f0;
+        --sb-sub-text: #64748b;
+        --sb-sub-hover-bg: #f8fafc;
+        --sb-sub-hover-text: #0F1E4D;
+        --sb-sub-active-bg: #eff6ff;
+        --sb-sub-active-text: #0F1E4D;
+    }
+
+    body[data-theme-version="dark"] {
+        --sb-bg: #161717;
+        --sb-border: #2d3139;
+        --sb-text: #94a3b8;
+        --sb-text-hover: #f8fafc;
+        --sb-hover-bg: rgba(255, 255, 255, 0.05);
+        --sb-icon-bg: rgba(255, 255, 255, 0.04);
+        --sb-icon-border: rgba(255, 255, 255, 0.08);
+        --sb-icon-color: #94a3b8;
+        --sb-icon-hover-color: #38bdf8;
+        --sb-active-bg: rgba(37, 99, 235, 0.12);
+        --sb-active-text: #93c5fd;
+        --sb-active-icon-bg: rgba(59, 130, 246, 0.2);
+        --sb-active-shadow: none;
+        --sb-active-border: #3b82f6;
+        --sb-sub-line: #2d3139;
+        --sb-sub-text: #94a3b8;
+        --sb-sub-hover-bg: rgba(255, 255, 255, 0.05);
+        --sb-sub-hover-text: #f8fafc;
+        --sb-sub-active-bg: rgba(59, 130, 246, 0.15);
+        --sb-sub-active-text: #60a5fa;
+    }
+
+    /* Core Sidebar Container */
+    .dlabnav {
+        background-color: var(--sb-bg) !important;
+        border-right: 1px solid var(--sb-border) !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03) !important;
+        transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease !important;
+    }
+
+    /* Sleek Webkit Scrollbar */
+    .dlabnav-scroll::-webkit-scrollbar {
+        width: 4px !important;
+    }
+    .dlabnav-scroll::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.25) !important;
+        border-radius: 4px !important;
+    }
+    .dlabnav-scroll::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+
+    /* Metismenu Root List */
+    .dlabnav .metismenu {
+        padding: 0.85rem 0.5rem 4rem 0.5rem !important;
+    }
+    .dlabnav .metismenu > li {
+        margin-bottom: 4px !important;
+        position: relative !important;
+    }
+
+    /* Top Level Menu Links */
+    .dlabnav .metismenu > li > a {
+        display: flex !important;
+        align-items: center !important;
+        padding: 0.58rem 0.65rem !important;
+        border-radius: 10px !important;
+        font-size: 0.835rem !important;
+        font-weight: 500 !important;
+        color: var(--sb-text) !important;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        position: relative !important;
+    }
+
+    .dlabnav .metismenu > li > a:hover {
+        background-color: var(--sb-hover-bg) !important;
+        color: var(--sb-text-hover) !important;
+        transform: translateX(2px);
+    }
+
+    /* Squircle Icon Wrapper */
+    .dlabnav .metismenu > li > a i {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 0.92rem !important;
+        margin-right: 0.55rem !important;
+        flex-shrink: 0 !important;
+        color: var(--sb-icon-color) !important;
+        background: var(--sb-icon-bg) !important;
+        border: 1px solid var(--sb-icon-border) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .dlabnav .metismenu > li > a:hover i {
+        color: var(--sb-icon-hover-color) !important;
+        transform: scale(1.06);
+    }
+
+    /* Single-line No-wrap Text Fix for Environment Clearance */
+    .dlabnav .metismenu > li > a .nav-text {
+        font-size: 0.835rem !important;
+        font-weight: inherit !important;
+        white-space: nowrap !important;
+        line-height: 1.25 !important;
+        flex: 1 1 auto !important;
+    }
+
+    /* Active State (Top-Level) */
+    .dlabnav .metismenu > li.mm-active > a {
+        background: var(--sb-active-bg) !important;
+        color: var(--sb-active-text) !important;
+        box-shadow: var(--sb-active-shadow) !important;
+        font-weight: 600 !important;
+        border-left: 3px solid var(--sb-active-border) !important;
+        border-radius: 0 10px 10px 0 !important;
+    }
+    .dlabnav .metismenu > li.mm-active > a i {
+        background: var(--sb-active-icon-bg) !important;
+        color: var(--sb-active-text) !important;
+        border-color: transparent !important;
+    }
+    .dlabnav .metismenu > li.mm-active > a .nav-text {
+        color: var(--sb-active-text) !important;
+    }
+
+    /* Chevron Indicator (.has-arrow:after) */
+    .dlabnav .metismenu li > a.has-arrow:after {
+        width: 0.42rem !important;
+        height: 0.42rem !important;
+        border-width: 1.8px 1.8px 0 0 !important;
+        border-style: solid !important;
+        border-color: var(--sb-icon-color) !important;
+        right: 0.75rem !important;
+        top: 50% !important;
+        margin-top: -0.21rem !important;
+        transform: rotate(45deg) !important;
+        transition: transform 0.2s ease, border-color 0.2s ease !important;
+    }
+    .dlabnav .metismenu li.mm-active > a.has-arrow:after {
+        border-color: var(--sb-active-text) !important;
+        transform: rotate(135deg) !important;
+    }
+    .dlabnav .metismenu li > a.has-arrow[aria-expanded="true"]:after {
+        transform: rotate(135deg) !important;
+        border-color: var(--sb-text-hover) !important;
+    }
+
+    /* Submenus (Tree view dropdowns) */
+    .dlabnav .metismenu ul {
+        background: transparent !important;
+        border-left: 2px solid var(--sb-sub-line) !important;
+        margin: 0.25rem 0 0.45rem 2rem !important;
+        padding: 0.2rem 0 0.2rem 0.5rem !important;
+        list-style: none !important;
+    }
+    .dlabnav .metismenu ul li {
+        margin: 2px 0 !important;
+    }
+    .dlabnav .metismenu ul li a {
+        padding: 0.42rem 0.75rem !important;
+        font-size: 0.815rem !important;
+        font-weight: 500 !important;
+        color: var(--sb-sub-text) !important;
+        border-radius: 7px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+    }
+    .dlabnav .metismenu ul li a::before {
+        content: none !important;
+        display: none !important;
+    }
+    /* Vendor theme override: kill dots from style.css [data-sidebar-style] rules */
+    [data-sidebar-style="full"][data-layout="vertical"] .dlabnav .metismenu ul a:before,
+    [data-sidebar-style="mini"] .dlabnav .metismenu ul a:before {
+        content: none !important;
+        display: none !important;
+    }
+    .dlabnav .metismenu ul li a:hover {
+        background: var(--sb-sub-hover-bg) !important;
+        color: var(--sb-sub-hover-text) !important;
+        transform: translateX(3px) !important;
+    }
+    .dlabnav .metismenu ul li a:hover::before {
+        content: none !important;
+        display: none !important;
+    }
+    .dlabnav .metismenu ul li.mm-active > a {
+        background: var(--sb-sub-active-bg) !important;
+        color: var(--sb-sub-active-text) !important;
+        font-weight: 600 !important;
+    }
+    .dlabnav .metismenu ul li.mm-active > a::before {
+        content: none !important;
+        display: none !important;
+    }
+
+    /* COLLAPSED / MINI SIDEBAR (when hamburger is touched) */
+    #main-wrapper.menu-toggle .dlabnav {
+        width: 5rem !important;
+        overflow: visible !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .dlabnav-scroll {
+        overflow: visible !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu {
+        padding: 0.85rem 0.5rem 3rem 0.5rem !important;
+        overflow: visible !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li {
+        margin: 6px 0 !important;
+        display: flex !important;
+        justify-content: center !important;
+        position: relative !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > a {
+        width: 44px !important;
+        height: 44px !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 12px !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        transform: none !important;
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 1052 !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > a i {
+        margin-right: 0 !important;
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.05rem !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: var(--sb-icon-bg) !important;
+        border: 1px solid var(--sb-icon-border) !important;
+        color: var(--sb-icon-color) !important;
+        transition: all 0.2s ease !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > a:hover i,
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li.flyout-open > a i {
+        background: var(--sb-hover-bg) !important;
+        color: var(--sb-text-hover) !important;
+        transform: scale(1.08) !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li.mm-active > a {
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li.mm-active > a i {
+        background: var(--sb-active-bg) !important;
+        color: var(--sb-active-text) !important;
+        border-color: var(--sb-active-border) !important;
+        border-width: 1.5px !important;
+        box-shadow: none !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > a.has-arrow:after {
+        display: none !important;
+    }
+
+    /* Floating Popover Submenu in Collapsed Mode */
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul {
+        position: absolute !important;
+        left: 4.8rem !important;
+        top: 0 !important;
+        width: 220px !important;
+        min-width: 200px !important;
+        background: var(--sb-bg) !important;
+        border: 1px solid var(--sb-border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 12px 32px -4px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(0,0,0,0.06) !important;
+        padding: 0.5rem !important;
+        z-index: 1050 !important;
+        list-style: none !important;
+        margin: 0 !important;
+        display: none !important;
+        pointer-events: auto !important;
+    }
+    /* Invisible hit-test bridge spanning the gap between sidebar icon and floating submenu */
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -10px !important;
+        bottom: -10px !important;
+        left: -20px !important;
+        width: 25px !important;
+        background: transparent !important;
+        pointer-events: auto !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li:hover > ul,
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li.flyout-open > ul {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul li {
+        margin: 2px 0 !important;
+        width: 100% !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul li a {
+        padding: 0.52rem 0.85rem !important;
+        font-size: 0.825rem !important;
+        font-weight: 500 !important;
+        color: var(--sb-text) !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        text-decoration: none !important;
+        transition: all 0.15s ease !important;
+        background: transparent !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        z-index: 1053 !important;
+        cursor: pointer !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul li a:hover {
+        background: var(--sb-sub-hover-bg) !important;
+        color: var(--sb-sub-hover-text) !important;
+        transform: translateX(3px) !important;
+    }
+    #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul li.mm-active > a {
+        background: var(--sb-sub-active-bg) !important;
+        color: var(--sb-sub-active-text) !important;
+        font-weight: 600 !important;
+    }
+    body[data-theme-version="dark"] #main-wrapper.menu-toggle .dlabnav .metismenu > li > ul {
+        background: #1e1e24 !important;
+        border-color: #2d3139 !important;
+        box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.6) !important;
+    }
+</style>
+
+<div class="dlabnav">
+    <div class="dlabnav-scroll">
+        <ul class="metismenu" id="menu">
 
             @can('dashboard.view')
             <li class="{{ request()->is('dashboard*') ? 'mm-active' : '' }}"><a href="/dashboard" aria-expanded="false" class="{{ request()->is('dashboard*') ? 'mm-active' : '' }}">
@@ -113,14 +478,14 @@
             @endcan
             @can('dgps.view')
             <li><a href="{{ route('dgps-survey.index') }}" aria-expanded="false">
-                    <i class="fa fa-map-marker-alt fa-2x"></i>
+                    <i class="fa fa-map-marker-alt"></i>
                     <span class="nav-text">DGPS Survey</span>
                 </a>
             </li>
             @endcan
             @can('drone.view')
             <li><a href="{{ route('drone-survey.index') }}" aria-expanded="false">
-                    <i class="fa fa-paper-plane fa-2x"></i>
+                    <i class="fa fa-paper-plane"></i>
                     <span class="nav-text">Drone Survey</span>
                 </a>
             </li>
@@ -305,3 +670,44 @@
 
      </div>
  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Collapsed sidebar submenu touch and click toggle
+    const menuEl = document.getElementById('menu');
+    if (!menuEl) return;
+
+    menuEl.querySelectorAll(':scope > li').forEach(function(li) {
+        const trigger = li.querySelector(':scope > a.has-arrow');
+        const submenu = li.querySelector(':scope > ul');
+        if (!trigger || !submenu) return;
+
+        trigger.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('main-wrapper');
+            if (wrapper && wrapper.classList.contains('menu-toggle')) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                // Close other open flyouts
+                menuEl.querySelectorAll(':scope > li.flyout-open').forEach(function(otherLi) {
+                    if (otherLi !== li) {
+                        otherLi.classList.remove('flyout-open');
+                    }
+                });
+
+                // Toggle this flyout
+                li.classList.toggle('flyout-open');
+            }
+        });
+    });
+
+    // Close open flyout when clicking anywhere outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dlabnav')) {
+            menuEl.querySelectorAll(':scope > li.flyout-open').forEach(function(li) {
+                li.classList.remove('flyout-open');
+            });
+        }
+    });
+});
+</script>

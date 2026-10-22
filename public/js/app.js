@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---- Wizard step navigation (new-application.html) ----
   var wizardPanes = document.querySelectorAll('.wizard-pane');
-  if (wizardPanes.length) {
+  if (wizardPanes.length && !document.getElementById('gtms-mining-page')) {
     var steps = document.querySelectorAll('.flow-step');
     var connectors = document.querySelectorAll('.flow-connector');
     var current = 0;
@@ -74,3 +74,120 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 });
+
+/* ==========================================================================
+   GTMS Universal Single-Tooltip & Focus-Sticky Prevention Manager
+   Ensures:
+   1. Bootstrap tooltips trigger ONLY on 'hover' (never stick on click/focus).
+   2. Mutual exclusivity: When one tooltip opens, ALL others close immediately.
+   3. Instant dismissal on click & blur: Clicking any button/icon immediately
+      hides its tooltip and removes focus.
+   4. Instant dismissal on mouseleave, touch, modal open, or dropdown open.
+   5. Zero tooltip collisions across all GTMS pages.
+   ========================================================================== */
+(function() {
+  // Set Bootstrap Tooltip default trigger to 'hover' globally
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip && bootstrap.Tooltip.Default) {
+    bootstrap.Tooltip.Default.trigger = 'hover';
+    bootstrap.Tooltip.Default.delay = { show: 120, hide: 40 };
+  }
+
+  // Helper to safely hide a tooltip
+  function safeHideTooltip(el) {
+    if (!el || typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+    try {
+      var inst = bootstrap.Tooltip.getInstance(el);
+      if (inst) {
+        inst.hide();
+      }
+    } catch (e) {}
+  }
+
+  // Helper to purge all active tooltips across DOM
+  function purgeAllTooltips(exceptEl) {
+    var activeTooltips = document.querySelectorAll('.tooltip.show');
+    activeTooltips.forEach(function(tt) {
+      var triggerEl = document.querySelector('[aria-describedby="' + tt.id + '"]');
+      if (triggerEl && triggerEl !== exceptEl) {
+        safeHideTooltip(triggerEl);
+      } else if (!triggerEl) {
+        tt.remove();
+      }
+    });
+  }
+
+  // 1. Mutual Exclusivity: Whenever ANY tooltip starts to show, close all others immediately
+  document.addEventListener('show.bs.tooltip', function (event) {
+    purgeAllTooltips(event.target);
+  }, true);
+
+  // 2. Click Dismissal & Blur: When user clicks any tool/button/icon, hide tooltip & drop focus
+  document.addEventListener('click', function (event) {
+    var btn = event.target.closest('[data-bs-toggle="tooltip"], .btn-dossier-tool, .btn-action-icon, .btn-dock-icon, .btn-copy-val, .btn-copy-chip, button, a');
+    if (btn) {
+      safeHideTooltip(btn);
+      var tag = btn.tagName.toLowerCase();
+      if (tag !== 'input' && tag !== 'textarea' && tag !== 'select' && typeof btn.blur === 'function') {
+        btn.blur();
+      }
+    }
+
+    // Sweep any lingering visible tooltips from screen
+    setTimeout(function() {
+      purgeAllTooltips();
+    }, 50);
+  }, true);
+
+  // 3. Mouseleave Dismissal: When cursor exits a tooltip target, force immediate hide
+  document.addEventListener('mouseleave', function (event) {
+    var target = event.target;
+    if (target && target.nodeType === 1) {
+      var trigger = target.hasAttribute && target.hasAttribute('data-bs-toggle') ? target : (target.closest ? target.closest('[data-bs-toggle="tooltip"]') : null);
+      if (trigger) {
+        safeHideTooltip(trigger);
+      }
+    }
+  }, true);
+
+  // 4. Modal / Offcanvas / Dropdown Dismissal: Hide tooltips when dialogs open
+  document.addEventListener('show.bs.modal', function () { purgeAllTooltips(); }, true);
+  document.addEventListener('show.bs.dropdown', function () { purgeAllTooltips(); }, true);
+  document.addEventListener('show.bs.offcanvas', function () { purgeAllTooltips(); }, true);
+
+  // 5. Scroll & Escape Dismissal
+  window.addEventListener('scroll', function () {
+    if (document.querySelector('.tooltip.show')) {
+      purgeAllTooltips();
+    }
+  }, { passive: true });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      purgeAllTooltips();
+    }
+  });
+
+  // 6. Global automatic initializer for dynamically rendered tooltips
+  function initGlobalTooltips(root) {
+    if (typeof bootstrap === 'undefined' || !bootstrap.Tooltip) return;
+    var container = root || document;
+    var list = [].slice.call(container.querySelectorAll('[data-bs-toggle="tooltip"]:not([data-tooltip-ready="true"])'));
+    list.forEach(function (el) {
+      el.setAttribute('data-tooltip-ready', 'true');
+      bootstrap.Tooltip.getOrCreateInstance(el, {
+        trigger: 'hover',
+        delay: { show: 120, hide: 40 },
+        boundary: document.body,
+        fallbackPlacements: ['right', 'bottom', 'top', 'left']
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { initGlobalTooltips(); });
+  } else {
+    initGlobalTooltips();
+  }
+  window.initGlobalTooltips = initGlobalTooltips;
+})();
+

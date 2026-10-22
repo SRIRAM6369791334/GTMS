@@ -485,9 +485,9 @@ class EnverionsoneController extends Controller
     /**
      * Submit Sub Category 1 (SC1) to PPT Department for Stage 1 ToR Presentation.
      */
-    public function submitSc1ToPpt(int $id)
+    public function submitSc1ToPpt(Request $request, int $id)
     {
-        $project = EnvironmentProject::findOrFail($id);
+        $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
         abort_unless($project->category === 'B1', 400, 'Only Category B1 applications require PPT appraisal.');
 
         $ppt = $project->pptStage1;
@@ -503,7 +503,7 @@ class EnverionsoneController extends Controller
                 'project_name'           => $project->project_name . ' (Stage 1: ToR Presentation)',
                 'district_id'            => $project->district_id,
                 'taluk_village'          => $project->location ?? 'Quarry Site',
-                'mineral_id'             => 1,
+                'mineral_id'             => $project->mineral_id ?? 1,
                 'status'                 => 'agenda_scheduled',
                 'product_value'          => 25000.00,
                 'paid_amount'            => 25000.00,
@@ -513,14 +513,27 @@ class EnverionsoneController extends Controller
                 'created_by'             => Auth::id(),
             ]);
 
-            ApplicationHandler::create([
-                'application_type' => 'ppt',
-                'application_id'   => $ppt->id,
-                'name'             => 'Dr. K. Ravichandran',
-                'role'             => 'Lead Technical Consultant',
-                'notes'            => 'SEAC ToR presentation defense',
-                'sort_order'       => 1,
-            ]);
+            if ($project->handlers && $project->handlers->count() > 0) {
+                foreach ($project->handlers as $h) {
+                    ApplicationHandler::create([
+                        'application_type' => 'ppt',
+                        'application_id'   => $ppt->id,
+                        'name'             => $h->name,
+                        'role'             => $h->role,
+                        'notes'            => $h->notes ?? 'SEAC ToR presentation defense team',
+                        'sort_order'       => $h->sort_order ?? 1,
+                    ]);
+                }
+            } else {
+                ApplicationHandler::create([
+                    'application_type' => 'ppt',
+                    'application_id'   => $ppt->id,
+                    'name'             => 'Dr. K. Ravichandran',
+                    'role'             => 'Lead Technical Consultant',
+                    'notes'            => 'SEAC ToR presentation defense',
+                    'sort_order'       => 1,
+                ]);
+            }
         }
 
         $project->update([
@@ -537,16 +550,31 @@ class EnverionsoneController extends Controller
             'user_id'       => Auth::id(),
         ]);
 
+        $successMsg = "Stage 1 (TOR) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'        => 1,
+                'message'       => $successMsg,
+                'ppt_app_no'    => $ppt->application_no,
+                'ppt_id'        => $ppt->id,
+                'stage_label'   => 'Stage 1: ToR Presentation Gate',
+                'ppt_url'       => route('ppt-department.show', $ppt->id),
+                'ppt_step_url'  => route('ppt-department.step', 1) . '?resume=' . $ppt->id,
+                'redirect'      => route('eviron.show', $project->id),
+            ]);
+        }
+
         return redirect()->route('eviron.show', $project->id)
-            ->with('success', "Stage 1 (TOR) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.");
+            ->with('success', $successMsg);
     }
 
     /**
      * Submit ETA to PPT Department for Stage 2 Final EC Presentation.
      */
-    public function submitSc2ToPpt(int $id)
+    public function submitSc2ToPpt(Request $request, int $id)
     {
-        $project = EnvironmentProject::findOrFail($id);
+        $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
         abort_unless($project->category === 'B1' && in_array($project->sub_category, ['ETA', 'SC2']), 400, 'Project must be in ETA stage.');
 
         $ppt = $project->pptStage2;
@@ -562,7 +590,7 @@ class EnverionsoneController extends Controller
                 'project_name'           => $project->project_name . ' (Stage 2: Final EC Presentation)',
                 'district_id'            => $project->district_id,
                 'taluk_village'          => $project->location ?? 'Quarry Site',
-                'mineral_id'             => 1,
+                'mineral_id'             => $project->mineral_id ?? 1,
                 'status'                 => 'agenda_scheduled',
                 'product_value'          => 25000.00,
                 'paid_amount'            => 25000.00,
@@ -572,14 +600,27 @@ class EnverionsoneController extends Controller
                 'created_by'             => Auth::id(),
             ]);
 
-            ApplicationHandler::create([
-                'application_type' => 'ppt',
-                'application_id'   => $ppt->id,
-                'name'             => 'Dr. K. Ravichandran',
-                'role'             => 'Lead Technical Consultant',
-                'notes'            => 'Final SEAC / SEIAA EC presentation defense',
-                'sort_order'       => 1,
-            ]);
+            if ($project->handlers && $project->handlers->count() > 0) {
+                foreach ($project->handlers as $h) {
+                    ApplicationHandler::create([
+                        'application_type' => 'ppt',
+                        'application_id'   => $ppt->id,
+                        'name'             => $h->name,
+                        'role'             => $h->role,
+                        'notes'            => $h->notes ?? 'Final SEAC / SEIAA EC presentation defense team',
+                        'sort_order'       => $h->sort_order ?? 1,
+                    ]);
+                }
+            } else {
+                ApplicationHandler::create([
+                    'application_type' => 'ppt',
+                    'application_id'   => $ppt->id,
+                    'name'             => 'Dr. K. Ravichandran',
+                    'role'             => 'Lead Technical Consultant',
+                    'notes'            => 'Final SEAC / SEIAA EC presentation defense',
+                    'sort_order'       => 1,
+                ]);
+            }
         }
 
         $project->update([
@@ -596,8 +637,109 @@ class EnverionsoneController extends Controller
             'user_id'       => Auth::id(),
         ]);
 
+        $successMsg = "Stage 2 (ETA) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'        => 1,
+                'message'       => $successMsg,
+                'ppt_app_no'    => $ppt->application_no,
+                'ppt_id'        => $ppt->id,
+                'stage_label'   => 'Stage 2: Final EC Presentation Gate',
+                'ppt_url'       => route('ppt-department.show', $ppt->id),
+                'ppt_step_url'  => route('ppt-department.step', 1) . '?resume=' . $ppt->id,
+                'redirect'      => route('eviron.show', $project->id),
+            ]);
+        }
+
         return redirect()->route('eviron.show', $project->id)
-            ->with('success', "Stage 2 (ETA) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.");
+            ->with('success', $successMsg);
+    }
+
+    /**
+     * Submit Category B2 to PPT Department for SEAC EC Presentation.
+     */
+    public function submitB2ToPpt(Request $request, int $id)
+    {
+        $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
+        abort_unless($project->category === 'B2', 400, 'Only Category B2 applications can be submitted via B2 PPT gate.');
+
+        $ppt = $project->pptStage1;
+        if (!$ppt) {
+            $count = PptApplication::count() + 1;
+            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+
+            $ppt = PptApplication::create([
+                'application_no'         => $appNo,
+                'customer_id'            => $project->customer_id,
+                'environment_project_id' => $project->id,
+                'presentation_stage'     => 'b2_presentation',
+                'project_name'           => $project->project_name . ' (Category B2: SEAC EC Presentation)',
+                'district_id'            => $project->district_id,
+                'taluk_village'          => $project->location ?? 'Quarry Site',
+                'mineral_id'             => $project->mineral_id ?? 1,
+                'status'                 => 'agenda_scheduled',
+                'product_value'          => 25000.00,
+                'paid_amount'            => 25000.00,
+                'pending_amount'         => 0.00,
+                'payment_status'         => 'paid',
+                'branch_id'              => $project->branch_id ?? 1,
+                'created_by'             => Auth::id(),
+            ]);
+
+            if ($project->handlers && $project->handlers->count() > 0) {
+                foreach ($project->handlers as $h) {
+                    ApplicationHandler::create([
+                        'application_type' => 'ppt',
+                        'application_id'   => $ppt->id,
+                        'name'             => $h->name,
+                        'role'             => $h->role,
+                        'notes'            => $h->notes ?? 'SEAC Category B2 EC presentation defense team',
+                        'sort_order'       => $h->sort_order ?? 1,
+                    ]);
+                }
+            } else {
+                ApplicationHandler::create([
+                    'application_type' => 'ppt',
+                    'application_id'   => $ppt->id,
+                    'name'             => 'Dr. K. Ravichandran',
+                    'role'             => 'Lead Technical Consultant',
+                    'notes'            => 'SEAC Category B2 EC presentation defense',
+                    'sort_order'       => 1,
+                ]);
+            }
+        }
+
+        $project->update([
+            'ppt_stage_1_id' => $ppt->id,
+            'status'         => 'validation',
+        ]);
+
+        ActivityLog::create([
+            'loggable_type' => EnvironmentProject::class,
+            'loggable_id'   => $project->id,
+            'action'        => 'b2_submitted_to_ppt',
+            'description'   => "Category B2 project submitted to PPT Department for SEAC Presentation ({$ppt->application_no}).",
+            'user_id'       => Auth::id(),
+        ]);
+
+        $successMsg = "Category B2 submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC Presentation Approval.";
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'        => 1,
+                'message'       => $successMsg,
+                'ppt_app_no'    => $ppt->application_no,
+                'ppt_id'        => $ppt->id,
+                'stage_label'   => 'Category B2: SEAC Presentation Gate',
+                'ppt_url'       => route('ppt-department.show', $ppt->id),
+                'ppt_step_url'  => route('ppt-department.step', 1) . '?resume=' . $ppt->id,
+                'redirect'      => route('eviron.show', $project->id),
+            ]);
+        }
+
+        return redirect()->route('eviron.show', $project->id)
+            ->with('success', $successMsg);
     }
 
     // ─── DOCUMENT SLOTS GENERATOR ────────────────────────────────────────

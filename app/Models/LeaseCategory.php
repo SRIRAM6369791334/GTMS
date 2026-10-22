@@ -15,6 +15,12 @@ class LeaseCategory extends Model
         'name',
         'land_type',
         'status',
+        'is_custom',
+    ];
+
+    protected $casts = [
+        'is_custom' => 'boolean',
+        'status'    => 'integer',
     ];
 
     public function leaseApplications(): HasMany

@@ -66,7 +66,7 @@ Tamil Nadu districts for dropdowns. Seed: all 38 TN districts (e.g., Ariyalur, C
 | ---------- |
 | Mining Plan |
 | Revised Mining Plan |
-| Modified Mining Plan |
+| Plan Drawing  |
 | Scheme of Mining |
 
 ### `applicant_types` 🟢 (pending confirm)

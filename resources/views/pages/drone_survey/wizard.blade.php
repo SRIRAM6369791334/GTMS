@@ -1,25 +1,35 @@
 @extends('layouts.app')
-@section('title', 'Drone Survey Workflow')
+@section('title', 'Drone Survey Workflow | DGCA Photogrammetric Dossier')
 @section('main_content')
-<link href="{{ asset('css/style1.css') }}" rel="stylesheet">
+
 @php
-$labels = ['Survey Request','Data Acquisition','Data Processing','Deliverables','GTMS Upload','Handling Team','Payment','Preview'];
-$steps = [
-  ['Drone Survey Request',['Request Letter','Lease Area Details','Approved Mining Plan','EC Copy'],'fa-file-alt'],
-  ['Drone Data Acquisition',['Drone Flying','Aerial Photography','Image Capture','Video Recording'],'fa-paper-plane'],
-  ['Data Processing',['Image Stitching','Orthomosaic Map','Contour Generation','3D Model (if required)'],'fa-cogs'],
-  ['Drone Survey Deliverables',['Orthomosaic Map','Contour Map (DSM / DTM)','3D Model / Point Cloud','Survey Report'],'fa-map'],
-  ['Report Upload in GTMS Portal',['Upload final drone survey report and deliverables'],'fa-cloud-upload-alt'],
-  ['Project Handling Team',['DGCA Certified Drone Pilot','GIS Specialist','Photogrammetry Analyst'],'fa-users'],
-  ['Payment Details & Ledger',['Drone Flight Fee','3D Volumetric Processing','Settlement Status'],'fa-file-invoice-dollar'],
-  ['Preview & Confirmation',['Review submitted data','Confirm completion'],'fa-eye']
+$labels = [
+  'Survey Request',
+  'Data Acquisition',
+  'Processing & Upload',
+  'Handling Team',
+  'Payment',
+  'Review & Submit'
+];
+$stepTitles = [
+  1 => ['Survey Request & Concession Details', 'Enter applicant identity, quarry coordinates, and statutory requisition info.'],
+  2 => ['Drone Flight & Aerial Acquisition', 'Configure DGCA flight operation date, drone hardware specs, and pilot credentials.'],
+  3 => ['Data Processing & Deliverables', 'Upload applicant statutory deeds, flight logs, 3D point cloud, and volumetric report.'],
+  4 => ['Project Handling Team', 'Assign DGCA certified drone pilots, GIS analysts, and photogrammetry team members.'],
+  5 => ['Payment Details & Billing Ledger', 'Record quoted volumetric survey value, advance deposits, and settlement status.'],
+  6 => ['Application Scrutiny & Final Review', 'Verify all mission flight data, deliverables registry, crew, and financial ledger.']
 ];
 @endphp
 
 <div class="content-body default-height">
-  <div class="container-fluid">
-    <div class="wizard-wrap" style="max-width:960px;">
-      {{-- Stepper Progress Bar --}}
+  <div class="container-fluid py-3">
+
+    <!-- UNIQUE SCOPED CONTAINER FOR DRONE SURVEY WIZARD (Strict Lease Application Parity) -->
+    <div id="gtms-drone-wizard" class="wizard-wrap">
+
+      <!-- ========================================================= -->
+      <!-- 6-STEP PROGRESS BAR (HARMONIZED WITH LEASE APPLICATION)   -->
+      <!-- ========================================================= -->
       <div class="step-progress">
         @foreach($labels as $number => $label)
           <div class="sp-step {{ $number + 1 < $step ? 'done' : ($number + 1 === $step ? 'active' : '') }}">
@@ -35,36 +45,57 @@ $steps = [
         @endforeach
       </div>
 
-      <div class="wizard-card">
-        <div class="wc-eyebrow">Drone Department &mdash; Survey &middot; Sub Process {{ $step }} of 8</div>
-        <h4>{{ $steps[$step - 1][0] }}</h4>
-        <div class="wc-sub">Complete the drone survey activities in this stage before moving to the next step.</div>
+      <!-- ========================================================= -->
+      <!-- MAIN WIZARD CARD                                          -->
+      <!-- ========================================================= -->
+      <div class="card s-main-card wizard-card">
 
-        <form method="POST" action="{{ $step === 8 ? route('drone-survey.store') : route('drone-survey.saveStep', $step) }}" id="droneWizardForm">
+        <!-- HEADER BANNER -->
+        <div class="s-header-block mb-3">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1">
+            <div class="wc-eyebrow s-eyebrow">
+              <i class="bi bi-shield-check me-1"></i> Step {{ $step }} of 6 &bull; {{ $stepTitles[$step][0] }}
+            </div>
+            <span class="s-time-tag">
+              <i class="bi bi-clock-history me-1"></i> Est. ~1.5 mins
+            </span>
+          </div>
+          <h4 class="s-title">{{ $stepTitles[$step][0] }}</h4>
+          <div class="wc-sub s-subtitle">{{ $stepTitles[$step][1] }}</div>
+        </div>
+
+        <form method="POST" action="{{ $step === 6 ? route('drone-survey.store') : route('drone-survey.saveStep', $step) }}" id="droneWizardForm" enctype="multipart/form-data">
           @csrf
           <input type="hidden" name="customer_id" id="drone_customer_id" value="{{ $draft['customer_id'] ?? ($customers->first()?->id ?? 1) }}">
+          <input type="hidden" name="save_draft_exit" id="save_draft_exit" value="0">
 
-        {{-- STEP 1: SURVEY REQUEST --}}
+        <!-- ========================================================= -->
+        <!-- STEP 1: SURVEY REQUEST & APPLICANT IDENTITY               -->
+        <!-- ========================================================= -->
         @if($step === 1)
-          {{-- CUSTOMER UNIQUE ID LOOKUP CARD --}}
-          <div class="card p-3 mb-3" style="background:#f0f7ff; border:2px dashed #93c5fd; border-radius:14px;">
-            <div class="d-flex align-items-center justify-content-between mb-2">
-              <label class="form-label fw-bold mb-0 text-primary" style="font-size:0.92rem;">
-                <i class="fa fa-fingerprint me-1"></i> Customer Unique ID Lookup
+          <!-- CUSTOMER UNIQUE ID / MIMAS LOOKUP CARD -->
+          <div class="s-lookup-card mb-3.5 p-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
+              <label class="s-lookup-label fw-bold mb-0" for="mimas_search_input">
+                <i class="bi bi-fingerprint me-1.5"></i> Customer Unique ID Lookup
               </label>
-              <span class="badge bg-primary text-white"><i class="fa fa-bolt me-1"></i> Instant Autofill</span>
+              <span class="badge s-lookup-badge">
+                <i class="bi bi-lightning-charge-fill me-1"></i> Instant Autofill
+              </span>
             </div>
-            <p class="text-muted small mb-2">Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.</p>
-            
-            <div class="input-group">
-              <span class="input-group-text bg-white border-primary"><i class="fa fa-search text-primary"></i></span>
-              <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold border-primary" 
+            <p class="s-lookup-desc mt-2 mb-2.5">
+              Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.
+            </p>
+
+            <div class="input-group s-input-group s-lookup-input-group">
+              <span class="input-group-text s-addon s-lookup-addon"><i class="bi bi-search"></i></span>
+              <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold s-input s-lookup-field" 
                      placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off">
-              <button class="btn btn-primary px-3 fw-bold" type="button" id="btn_lookup_mimas">
-                <i class="fa fa-sync-alt me-1"></i> Fetch Details
+              <button class="btn s-btn-fetch px-3 fw-bold" type="button" id="btn_lookup_mimas">
+                <i class="bi bi-arrow-repeat me-1.5"></i> Fetch Details
               </button>
             </div>
-            
+
             <datalist id="mimas_datalist">
               @if(isset($customers))
                 @foreach($customers as $c)
@@ -73,364 +104,1016 @@ $steps = [
               @endif
             </datalist>
 
-            <div id="mimas_feedback_box" class="mt-2" style="display:none;"></div>
+            <div id="mimas_feedback_box" class="mt-2.5" style="display:none;"></div>
           </div>
 
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Drone Survey Request No. *</label>
-              <input class="form-control font-monospace fw-bold bg-light" name="survey_no" readonly value="DRN-{{ date('Y') }}-0026">
+          <!-- SECTION 1: APPLICANT IDENTITY -->
+          <div class="s-section-card mb-3">
+            <div class="s-section-header">
+              <i class="bi bi-person-badge text-primary me-2"></i>
+              <span class="s-section-title">Applicant &amp; Request Identification</span>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Client / Applicant *</label>
-              <input class="form-control auto-filled-field" id="field_drone_applicant" name="applicant_name" placeholder="Applicant name" value="Kaveri Granites Pvt Ltd">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Primary Phone Number <span class="text-danger">*</span></label>
-              <input type="text" class="form-control auto-filled-field" id="field_drone_primary_phone" name="primary_phone" placeholder="10-digit primary phone number" value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '') }}" required maxlength="15">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
-              <input type="text" class="form-control auto-filled-field" id="field_drone_secondary_phone" name="secondary_phone" placeholder="10-digit secondary phone number" value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" maxlength="15">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Lease Area (Ha)</label>
-              <input class="form-control auto-filled-field" id="field_drone_area" name="lease_area" placeholder="Area in hectares" value="3.85 Hectares">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold text-navy">Location / Quarry Site</label>
-              <input class="form-control auto-filled-field" id="field_drone_location" name="location" placeholder="District / village" value="Salem / Semmandapatti">
-            </div>
-            <input type="hidden" name="lease_application_id" value="1">
-            <input type="hidden" name="mining_application_id" value="1">
-          </div>
 
-        {{-- STEP 2: DATA ACQUISITION --}}
-        @elseif($step === 2)
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Flight Date</label>
-              <input class="form-control" type="date" name="flight_date" value="{{ date('Y-m-d') }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Drone Model &amp; Pilot</label>
-              <input class="form-control" name="drone_model" value="DJI Matrice 300 RTK">
-              <input type="hidden" name="drone_pilot_name" value="S. Karthik">
-              <input type="hidden" name="pilot_rpc_no" value="RPC #DRN-TN-8821">
-              <input type="hidden" name="drone_uin_no" value="UIN-TN-DRN-2026-9901">
-              <input type="hidden" name="altitude_meters" value="120">
-              <input type="hidden" name="gsd_cm_px" value="2.5">
-            </div>
-          </div>
-          <div class="card-panel mt-4 mb-0" style="background:var(--navy-soft);border:none">
-            <i class="bi bi-camera-video"></i> <span style="font-size:.78rem">Capture aerial photographs, high-resolution imagery and video recordings during the survey flight.</span>
-          </div>
+            <div class="row gx-3 gy-3 s-form-row">
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Drone Survey Request No. <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-hash"></i></span>
+                  <input class="form-control s-input font-monospace fw-bold bg-light" name="survey_no" readonly value="{{ $draft['survey_no'] ?? ('DRN-' . date('Y') . '-0026') }}">
+                </div>
+                <div class="form-text-hint s-hint">Auto-generated sequential tracking reference.</div>
+              </div>
 
-        {{-- STEP 3: DATA PROCESSING & DOCUMENTS UPLOAD --}}
-        @elseif($step === 3)
-          <input type="hidden" name="extracted_volume_cbm" value="18450">
-          <input type="hidden" name="survey_status" value="completed">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
-              <h4 class="mb-1">Process Drone Data &amp; Upload Deliverables</h4>
-              <div class="wc-sub mb-0">Create stitched imagery, orthomosaic map, point clouds, contours, and volumetric calculation report.</div>
-            </div>
-            <div class="text-end">
-              <span class="text-muted small fw-semibold">OVERALL DOCUMENT COMPLETION:</span>
-              <span class="fw-bold text-navy ms-1" id="drone_doc_counter">0 / 6 uploaded</span>
-              <div class="progress mt-1" style="height: 6px; width: 160px;">
-                <div class="progress-bar bg-success" id="drone_progress_bar" role="progressbar" style="width: 0%;"></div>
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Client / Applicant Entity <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-building"></i></span>
+                  <input class="form-control s-input auto-filled-field fw-semibold" id="field_drone_applicant" name="applicant_name" placeholder="Applicant / Company Name" value="{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Official concession holder name as per revenue records.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Primary Phone Number <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-telephone"></i></span>
+                  <input type="text" class="form-control s-input auto-filled-field" id="field_drone_primary_phone" name="primary_phone" placeholder="10-digit primary phone number" value="{{ $draft['primary_phone'] ?? ($customers->first()?->mobile_num ?? '9840123456') }}" required maxlength="15">
+                </div>
+                <div class="form-text-hint s-hint">Primary contact for DGCA site clearance updates.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Secondary Phone Number <span class="s-opt-tag ms-1">(Optional)</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-telephone-plus"></i></span>
+                  <input type="text" class="form-control s-input auto-filled-field" id="field_drone_secondary_phone" name="secondary_phone" placeholder="10-digit secondary phone number" value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" maxlength="15">
+                </div>
+                <div class="form-text-hint s-hint">Quarry site manager or liaison representative phone.</div>
               </div>
             </div>
           </div>
 
-          <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
-            <div style="font-size:.75rem; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:.05em;">
-              <i class="fa fa-folder-open me-1 text-primary"></i> 1. Drone Flight Logs &amp; Volumetric Deliverables
+          <!-- SECTION 2: QUARRY CONCESSION SITE & BOUNDARY EXTENT -->
+          <div class="s-section-card mb-3">
+            <div class="s-section-header">
+              <i class="bi bi-geo-alt-fill text-info me-2"></i>
+              <span class="s-section-title">Quarry Concession Site &amp; Boundary Extent</span>
             </div>
-            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" id="btn_add_drone_doc" style="font-size:0.75rem;">
-              <i class="bi bi-plus-circle me-1"></i>Add Document
-            </button>
+
+            <div class="row gx-3 gy-3 s-form-row">
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Lease Area (Hectares) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-bounding-box-circles"></i></span>
+                  <input class="form-control s-input auto-filled-field" id="field_drone_area" name="lease_area" placeholder="e.g. 3.85 or 14.20.20" value="{{ $draft['lease_area'] ?? '3.85 Hectares' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Supports standard decimal (e.g. 3.85) or Patta revenue format.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Location / Quarry Site <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-geo"></i></span>
+                  <input class="form-control s-input auto-filled-field" id="field_drone_location" name="location" placeholder="District / Taluk / Village" value="{{ $draft['location'] ?? 'Salem / Semmandapatti' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Site coordinates and cadastral boundary region.</div>
+              </div>
+            </div>
+
+            <input type="hidden" name="lease_application_id" value="{{ $draft['lease_application_id'] ?? 1 }}">
+            <input type="hidden" name="mining_application_id" value="{{ $draft['mining_application_id'] ?? 1 }}">
+          </div>
+
+          <!-- SYSTEM NOTICE BANNER -->
+          <div class="s-notice-card mt-3 mb-0 p-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <i class="bi bi-info-circle-fill s-notice-icon"></i>
+              <div class="s-notice-text">
+                An official <strong>photogrammetric survey mission</strong> will be registered under this dossier. Unmanned aerial flight logs, RTK base station benchmarks, and 3D terrain reconstruction synchronize directly with the central mineral ledger.
+              </div>
+            </div>
+          </div>
+        @endif
+
+        <!-- ========================================================= -->
+        <!-- STEP 2: DATA ACQUISITION & DGCA FLIGHT OPERATIONS         -->
+        <!-- ========================================================= -->
+        @if($step === 2)
+          <!-- SUMMARY BANNER -->
+          <div class="s-banner-card mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="s-banner-icon-badge">
+                  <i class="bi bi-airplane-engines-fill"></i>
+                </div>
+                <div>
+                  <div class="s-banner-title fw-bold">DGCA Flight Mission Parameters &amp; Aerial Platform</div>
+                  <div class="s-banner-desc">Configure unmanned aircraft specs, pilot certification, and photogrammetric resolution geometry.</div>
+                </div>
+              </div>
+              <span class="badge s-team-pill">
+                <i class="bi bi-shield-check me-1.5"></i>DGCA Compliant
+              </span>
+            </div>
+          </div>
+
+          <!-- SECTION 1: HARDWARE & FLIGHT MISSION -->
+          <div class="s-section-card mb-3">
+            <div class="s-section-header">
+              <i class="bi bi-send text-primary me-2"></i>
+              <span class="s-section-title">Aerial Hardware &amp; Mission Schedule</span>
+            </div>
+
+            <div class="row gx-3 gy-3 s-form-row">
+              <div class="col-md-4">
+                <label class="form-label s-label">
+                  Flight Operation Date <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-calendar3"></i></span>
+                  <input class="form-control s-input" type="date" name="flight_date" value="{{ $draft['flight_date'] ?? date('Y-m-d') }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Scheduled or actual field flight execution date.</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label s-label">
+                  Drone Platform &amp; Model <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-airplane-engines"></i></span>
+                  <input class="form-control s-input fw-semibold" name="drone_model" placeholder="e.g. DJI Matrice 300 RTK" value="{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">RTK-enabled multirotor or fixed-wing platform.</div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label s-label">
+                  Drone Unique ID (UIN No.) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-upc-scan"></i></span>
+                  <input class="form-control s-input font-monospace" name="drone_uin_no" placeholder="e.g. UIN-TN-DRN-2026-9901" value="{{ $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">DGCA DigitalSky registered UIN identification.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: PILOT CREDENTIALS & MISSION GEOMETRY -->
+          <div class="s-section-card mb-3">
+            <div class="s-section-header">
+              <i class="bi bi-person-badge-fill text-info me-2"></i>
+              <span class="s-section-title">DGCA Pilot Certification &amp; Photogrammetric Geometry</span>
+            </div>
+
+            <div class="row gx-3 gy-3 s-form-row">
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  DGCA Certified Pilot Name <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-person-check"></i></span>
+                  <input class="form-control s-input" name="drone_pilot_name" placeholder="e.g. S. Karthik" value="{{ $draft['drone_pilot_name'] ?? 'S. Karthik' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Designated Remote Pilot in Command (RPIC).</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Pilot RPC License No. <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-award"></i></span>
+                  <input class="form-control s-input font-monospace" name="pilot_rpc_no" placeholder="e.g. RPC #DRN-TN-8821" value="{{ $draft['pilot_rpc_no'] ?? 'RPC #DRN-TN-8821' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Remote Pilot Certificate verified under DGCA Rules.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Flight Altitude (Meters AGL) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-arrow-up-right-square"></i></span>
+                  <input type="number" step="1" min="10" max="120" class="form-control s-input fw-bold" name="altitude_meters" placeholder="120" value="{{ $draft['altitude_meters'] ?? '120' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Above Ground Level (DGCA Green Zone maximum: 120 meters).</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Ground Sampling Distance (GSD) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-aspect-ratio"></i></span>
+                  <input type="number" step="0.1" min="0.5" class="form-control s-input fw-bold" name="gsd_cm_px" placeholder="2.5" value="{{ $draft['gsd_cm_px'] ?? '2.5' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Pixel resolution in cm/px for sub-centimeter volumetric precision.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NOTICE BOX -->
+          <div class="s-notice-card mt-3 mb-0 p-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <i class="bi bi-camera-video-fill s-notice-icon"></i>
+              <div class="s-notice-text">
+                <strong>Mission Flight Overlap Standard:</strong> Autonomous grid execution maintains 75% forward and 70% lateral photographic overlap with RTK base station corrections for high-precision 3D point cloud generation.
+              </div>
+            </div>
+          </div>
+        @endif
+
+        <!-- ========================================================= -->
+        <!-- STEP 3: DATA PROCESSING & DOCUMENTS UPLOAD                -->
+        <!-- ========================================================= -->
+        @if($step === 3)
+          <input type="hidden" name="survey_status" value="completed">
+
+          <!-- COMPLETION BANNER -->
+          <div class="s-banner-card mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="s-banner-icon-badge" style="background:#dcfce7; color:#10b981;">
+                  <i class="bi bi-folder-check"></i>
+                </div>
+                <div>
+                  <div class="s-banner-title fw-bold">Process Drone Data &amp; Upload Deliverables</div>
+                  <div class="s-banner-desc">Upload applicant requisition deeds, flight mission logs, orthomosaic map, point clouds, contours, and volumetric report.</div>
+                </div>
+              </div>
+              <div class="text-end">
+                <span class="text-muted small fw-semibold text-uppercase">Completion:</span>
+                <span class="fw-bold text-navy ms-1" id="drone_doc_counter" style="font-size:0.85rem;">0 / 10 uploaded</span>
+                <div class="progress mt-1.5" style="height: 7px; width: 160px; border-radius: 999px;">
+                  <div class="progress-bar bg-success" id="drone_progress_bar" role="progressbar" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VOLUMETRIC EXCAVATION PANEL -->
+          <div class="s-section-card mb-3">
+            <div class="s-section-header d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-box-seam text-primary me-2"></i>
+                <span class="s-section-title">Volumetric Earthwork &amp; Stockpile Extraction</span>
+              </div>
+              <span class="badge s-multi-badge">
+                <i class="bi bi-check-circle me-1"></i> Photogrammetry Computed
+              </span>
+            </div>
+
+            <div class="row gx-3 gy-3 s-form-row">
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Extracted Volume (CBM) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-calculator"></i></span>
+                  <input type="number" step="0.01" min="0" class="form-control s-input fw-bold" name="extracted_volume_cbm" id="field_extracted_volume" placeholder="e.g. 18450.00" value="{{ $draft['extracted_volume_cbm'] ?? '18450.00' }}" required>
+                </div>
+                <div class="form-text-hint s-hint">Total cut / fill excavation volume calculated from DSM elevation surfaces.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label s-label">
+                  Photogrammetry Processing Engine <span class="s-opt-tag ms-1">(Optional)</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-cpu"></i></span>
+                  <input type="text" class="form-control s-input" name="deliverable_files_path" placeholder="e.g. Pix4Dmapper / DJI Terra Engine" value="{{ $draft['deliverable_files_path'] ?? 'Pix4Dmapper & Cloud Photogrammetry Suite' }}">
+                </div>
+                <div class="form-text-hint s-hint">Photogrammetric bundle block adjustment software utilized.</div>
+              </div>
+            </div>
           </div>
 
           @php
-            $droneDocs = [
-              ['name' => '1. Drone Mission Flight Log & DGCA RPC Certificate', 'meta' => 'DGCA Pilot license, flight path log, and mission approval', 'mandatory' => true],
-              ['name' => '2. Ground Control Points (GCP) Coordinates Sheet', 'meta' => 'Surveyed ground benchmark and RTK correction points CSV', 'mandatory' => true],
-              ['name' => '3. High-Resolution Orthomosaic Map (GeoTIFF / JPG)', 'meta' => 'Georeferenced orthophoto mosaic of quarry lease boundary', 'mandatory' => true],
-              ['name' => '4. Digital Surface Model (DSM) / Digital Terrain Model (DTM)', 'meta' => '3D elevation terrain model and height contour map', 'mandatory' => true],
-              ['name' => '5. 3D Dense Point Cloud & Surface Mesh File', 'meta' => 'Dense point cloud classification (LAS / PLY / OBJ)', 'mandatory' => true],
-              ['name' => '6. Volumetric Excavation & Stockpile Calculation Report', 'meta' => 'Cut / fill earthwork volume and mineral reserve extraction report', 'mandatory' => true],
+            $statutoryDocs = [
+              ['name' => '1. Request Letter', 'meta' => 'Drone survey requisition letter from applicant / quarry owner', 'mandatory' => true, 'tag' => 'Requisition'],
+              ['name' => '2. Lease Area Details & Combined FMB Sketch', 'meta' => 'FMB sketch, village cadastral map, and boundary coordinates', 'mandatory' => true, 'tag' => 'Requisition'],
+              ['name' => '3. Approved Mining Plan (MP Copy)', 'meta' => 'Approved mining plan copy, progressive mine closure plan & grant order', 'mandatory' => true, 'tag' => 'Statutory'],
+              ['name' => '4. Environmental Clearance (EC) Copy', 'meta' => 'State / MoEFCC Environmental Clearance certificate', 'mandatory' => true, 'tag' => 'Statutory'],
+            ];
+
+            $deliverableDocs = [
+              ['name' => '5. Drone Mission Flight Log & DGCA RPC Certificate', 'meta' => 'DGCA Pilot license, flight path log, and mission approval', 'mandatory' => true, 'tag' => 'Flight Log'],
+              ['name' => '6. Ground Control Points (GCP) Coordinates Sheet', 'meta' => 'Surveyed ground benchmark and RTK correction points CSV', 'mandatory' => true, 'tag' => 'GCP RTK'],
+              ['name' => '7. High-Resolution Orthomosaic Map (GeoTIFF / JPG)', 'meta' => 'Georeferenced orthophoto mosaic of quarry lease boundary', 'mandatory' => true, 'tag' => 'Orthomosaic'],
+              ['name' => '8. Digital Surface Model (DSM) / Digital Terrain Model (DTM)', 'meta' => '3D elevation terrain model and height contour map', 'mandatory' => true, 'tag' => 'Terrain DSM'],
+              ['name' => '9. 3D Dense Point Cloud & Surface Mesh File', 'meta' => 'Dense point cloud classification (LAS / PLY / OBJ)', 'mandatory' => true, 'tag' => 'Point Cloud'],
+              ['name' => '10. Volumetric Excavation & Stockpile Calculation Report', 'meta' => 'Cut / fill earthwork volume and mineral reserve extraction report', 'mandatory' => true, 'tag' => 'Volumetric'],
             ];
           @endphp
 
           <div class="folder-checklist-box" id="drone_checklist_container">
-            @foreach($droneDocs as $dIdx => $dItem)
-              <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
-                <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
-                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
-                    <i class="bi bi-file-earmark"></i>
+            <!-- FOLDER 01: STATUTORY REQUISITION DOCUMENTS -->
+            <div class="s-section-header d-flex align-items-center justify-content-between mt-3 mb-2 px-3 py-2 rounded-3" style="background:#f0f7ff; border:1px solid #bfdbfe;">
+              <div class="fw-bold text-navy small">
+                <i class="fa fa-folder-open me-2 text-primary"></i>FOLDER 01 &middot; STATUTORY REQUISITION DOCUMENTS (FROM APPLICANT)
+              </div>
+              <span class="badge bg-primary text-white" style="font-size:10px;">4 Documents</span>
+            </div>
+
+            @foreach($statutoryDocs as $dIdx => $dItem)
+              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+                <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
+                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#eff6ff; color:#2563eb;">
+                    <i class="bi bi-file-earmark-text"></i>
                   </div>
                   <div class="text-truncate">
-                    <div class="ci-name fw-semibold small text-dark text-truncate">{{ $dItem['name'] }}</div>
+                    <div class="ci-name fw-semibold small text-dark text-truncate">
+                      <span class="badge bg-light text-primary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
+                      {{ $dItem['name'] }}
+                    </div>
                     <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
                   </div>
                 </div>
                 <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-                  <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                  <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
                           name="drone_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
                     <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
                     <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
                   </select>
                   <input type="file" class="d-none drone-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
-                  <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-drone-item" style="font-size:.72rem;">
+                  <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
+                    <i class="bi bi-upload me-1"></i>Upload
+                  </button>
+                </div>
+              </div>
+            @endforeach
+
+            <!-- FOLDER 02: FLIGHT LOGS & VOLUMETRIC DELIVERABLES -->
+            <div class="s-section-header d-flex align-items-center justify-content-between mt-4 mb-2 px-3 py-2 rounded-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+              <div class="fw-bold text-navy small">
+                <i class="fa fa-layer-group me-2 text-info"></i>FOLDER 02 &middot; DRONE FLIGHT LOGS &amp; PHOTOGRAMMETRY DELIVERABLES
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-info-subtle text-info border border-info-subtle" style="font-size:10px;">6 Deliverables</span>
+                <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-semibold" id="btn_add_drone_doc" style="font-size:0.75rem;">
+                  <i class="bi bi-plus-circle me-1"></i>+ Add Document
+                </button>
+              </div>
+            </div>
+
+            @foreach($deliverableDocs as $dIdxOffset => $dItem)
+              @php $dIdx = $dIdxOffset + 4; @endphp
+              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+                <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
+                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#f1f5f9; color:#64748b;">
+                    <i class="bi bi-file-earmark-binary"></i>
+                  </div>
+                  <div class="text-truncate">
+                    <div class="ci-name fw-semibold small text-dark text-truncate">
+                      <span class="badge bg-light text-secondary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
+                      {{ $dItem['name'] }}
+                    </div>
+                    <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
+                  <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                          name="drone_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                    <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
+                    <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
+                  </select>
+                  <input type="file" class="d-none drone-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
+                  <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
                     <i class="bi bi-upload me-1"></i>Upload
                   </button>
                 </div>
               </div>
             @endforeach
           </div>
+        @endif
 
-        {{-- STEP 4: DELIVERABLES --}}
-        @elseif($step === 4)
-          <div class="card-panel" style="min-height:190px;background:#f8fafc">
-            <div class="text-center pt-3">
-              <i class="fa fa-map-marked-alt" style="font-size:3.5rem;color:var(--navy)"></i>
-              <h5 class="mt-3">Drone Survey Deliverables</h5>
-              <p class="text-muted small">Orthomosaic, contour map (DSM / DTM), 3D model / point cloud and volumetric calculation report.</p>
-              <div class="d-flex justify-content-center gap-2">
-                <a href="javascript:void(0)" onclick="alert('Drone Deliverables & Volumetric Report opened in new window'); window.open('about:blank', '_blank');" class="btn btn-outline-navy btn-sm">
-                  <i class="bi bi-eye me-1"></i> View Deliverables
-                </a>
+        <!-- ========================================================= -->
+        <!-- STEP 4: PROJECT HANDLING TEAM (EXACT LEASE STEP 6 PARITY) -->
+        <!-- ========================================================= -->
+        @if($step === 4)
+          <!-- SUMMARY / TEAM READINESS BANNER -->
+          <div class="s-banner-card mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="s-banner-icon-badge">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                  <div class="s-banner-title fw-bold">Statutory Flight Crew &amp; Photogrammetry Personnel Assignment</div>
+                  <div class="s-banner-desc">Designate DGCA certified pilots, safety observers, and photogrammetry analysts responsible for this survey.</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="badge s-team-pill"><i class="bi bi-people-fill me-1"></i> Multi-User Allocation</span>
+                <span class="badge s-count-pill" id="drone_handler_count_banner">2 Members Allocated</span>
               </div>
             </div>
           </div>
 
-        {{-- STEP 5: GTMS UPLOAD --}}
-        @elseif($step === 5)
-          <div class="card-panel" style="background:var(--green-soft);border:none">
-            <i class="bi bi-check-circle"></i> <span style="font-size:.78rem">Output: Drone Survey Completed and deliverables uploaded in GTMS portal.</span>
-          </div>
-
-        {{-- STEP 6: PROJECT HANDLING TEAM (NEW STEP) --}}
-        @elseif($step === 6)
-          <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-            <div>
-              <h5 class="fw-bold mb-1" style="color:#0F1E4D;">Drone Survey Flight Crew &amp; In-Charge Team</h5>
-              <div class="text-muted small">Designate DGCA certified pilots, safety observers, and photogrammetry analysts.</div>
+          <!-- TABLE CONTAINER CARD -->
+          <div class="s-table-card mb-3">
+            <div class="s-table-header-bar d-flex align-items-center justify-content-between px-3 py-2.5">
+              <div class="d-flex align-items-center gap-2">
+                <span class="s-table-title fw-bold">
+                  <i class="bi bi-person-lines-fill me-1.5 text-primary"></i>Assigned Flight Personnel
+                </span>
+                <span class="badge s-badge-counter rounded-pill" id="drone_handler_count_badge">2 members</span>
+              </div>
+              <button type="button" class="btn s-btn-add-person" id="btn_add_drone_handler">
+                <i class="bi bi-person-plus-fill me-1.5"></i>+ Add Person
+              </button>
             </div>
-            <button type="button" class="btn btn-sm btn-navy px-3" id="btn_add_drone_handler" style="background:#0F1E4D; color:#fff;">
-              <i class="bi bi-person-plus-fill me-1 text-warning"></i> + Add Person
-            </button>
+
+            <div class="table-responsive">
+              <table class="table s-table align-middle mb-0" id="drone_handlers_table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;" class="text-center">#</th>
+                    <th style="width: 28%;"><i class="bi bi-person me-1"></i>Person Name <span class="text-danger">*</span></th>
+                    <th style="width: 28%;"><i class="bi bi-briefcase me-1"></i>Role / Designation <span class="text-danger">*</span></th>
+                    <th><i class="bi bi-card-text me-1"></i>Notes &amp; Responsibilities</th>
+                    <th style="width: 70px;" class="text-center"><i class="bi bi-gear me-1"></i>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="drone_handlers_tbody">
+                  <tr>
+                    <td class="text-center fw-bold row-num">1</td>
+                    <td>
+                      <div class="input-group s-input-group">
+                        <span class="input-group-text s-addon"><i class="bi bi-person"></i></span>
+                        <input type="text" name="handlers[0][person_name]" class="form-control s-input fw-semibold" value="{{ $draft['handlers'][0]['person_name'] ?? 'S. Karthik' }}" placeholder="e.g. S. Karthik" required>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="input-group s-input-group">
+                        <span class="input-group-text s-addon"><i class="bi bi-award"></i></span>
+                        <input type="text" name="handlers[0][role]" class="form-control s-input" list="role_suggestions" value="{{ $draft['handlers'][0]['role'] ?? 'DGCA Certified Drone Pilot' }}" placeholder="e.g. Drone Pilot" required>
+                      </div>
+                    </td>
+                    <td>
+                      <input type="text" name="handlers[0][notes]" class="form-control s-input" style="border-radius:8px !important;" value="{{ $draft['handlers'][0]['notes'] ?? 'Autonomous grid flight execution & safety compliance' }}" placeholder="Responsibilities">
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler disabled" title="Primary pilot cannot be removed">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-center fw-bold row-num">2</td>
+                    <td>
+                      <div class="input-group s-input-group">
+                        <span class="input-group-text s-addon"><i class="bi bi-person"></i></span>
+                        <input type="text" name="handlers[1][person_name]" class="form-control s-input fw-semibold" value="{{ $draft['handlers'][1]['person_name'] ?? 'M. Vignesh' }}" placeholder="e.g. M. Vignesh">
+                      </div>
+                    </td>
+                    <td>
+                      <div class="input-group s-input-group">
+                        <span class="input-group-text s-addon"><i class="bi bi-layers"></i></span>
+                        <input type="text" name="handlers[1][role]" class="form-control s-input" list="role_suggestions" value="{{ $draft['handlers'][1]['role'] ?? 'Photogrammetry & 3D Analyst' }}" placeholder="e.g. GIS Analyst">
+                      </div>
+                    </td>
+                    <td>
+                      <input type="text" name="handlers[1][notes]" class="form-control s-input" style="border-radius:8px !important;" value="{{ $draft['handlers'][1]['notes'] ?? 'Image stitching, GCP georeferencing & cut/fill volume calculation' }}" placeholder="Responsibilities">
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler" title="Remove person">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Role Suggestions Datalist -->
+            <datalist id="role_suggestions">
+              <option value="DGCA Certified Drone Pilot"></option>
+              <option value="Photogrammetry & 3D Analyst"></option>
+              <option value="GIS & Mapping Specialist"></option>
+              <option value="Ground Control Station (GCS) Operator"></option>
+              <option value="Flight Safety & Airspace Observer"></option>
+              <option value="Volumetric Calculation Specialist"></option>
+              <option value="Field Demarcation Officer"></option>
+            </datalist>
           </div>
 
-          <div class="table-responsive mb-3">
-            <table class="table table-bordered align-middle" id="drone_handlers_table">
-              <thead class="bg-light text-navy" style="font-size:0.85rem;">
-                <tr>
-                  <th style="width: 50px;" class="text-center">#</th>
-                  <th style="width: 30%;">Person Name <span class="text-danger">*</span></th>
-                  <th style="width: 30%;">Role / Designation <span class="text-danger">*</span></th>
-                  <th>Notes &amp; Responsibilities</th>
-                  <th style="width: 70px;" class="text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody id="drone_handlers_tbody">
-                <tr>
-                  <td class="text-center fw-bold row-num">1</td>
-                  <td><input type="text" name="handlers[0][person_name]" class="form-control form-control-sm" value="S. Karthik" placeholder="e.g. S. Karthik" required></td>
-                  <td><input type="text" name="handlers[0][role]" class="form-control form-control-sm" value="DGCA Certified Drone Pilot" placeholder="e.g. Drone Pilot" required></td>
-                  <td><input type="text" name="handlers[0][notes]" class="form-control form-control-sm" value="Autonomous grid flight execution & safety compliance" placeholder="Responsibilities"></td>
-                  <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler disabled">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-                <tr>
-                  <td class="text-center fw-bold row-num">2</td>
-                  <td><input type="text" name="handlers[1][person_name]" class="form-control form-control-sm" value="M. Vignesh" placeholder="e.g. M. Vignesh"></td>
-                  <td><input type="text" name="handlers[1][role]" class="form-control form-control-sm" value="Photogrammetry & 3D Analyst" placeholder="e.g. GIS Analyst"></td>
-                  <td><input type="text" name="handlers[1][notes]" class="form-control form-control-sm" value="Image stitching, GCP georeferencing & cut/fill volume calculation" placeholder="Responsibilities"></td>
-                  <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- PRO TIP BANNER -->
+          <div class="s-notice-card mt-3 mb-0 p-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <i class="bi bi-lightbulb-fill s-notice-icon text-warning"></i>
+              <div class="s-notice-text">
+                <strong>Pro Tip:</strong> You can allocate multiple specialists across different project functions. All designated personnel will be indexed on the official statutory certificate and final review dossier.
+              </div>
+            </div>
           </div>
-          <div class="alert alert-info py-2 px-3 small rounded-2 mb-0" style="background:#f0f9ff; border:1px solid #bae6fd; color:#0369a1;">
-            <i class="bi bi-info-circle me-1"></i> Custom roles can be manually typed (e.g. <em>DGCA Pilot, Safety Officer, Volumetric Analyst, Ground Control Observer</em>).
+        @endif
+
+        <!-- ========================================================= -->
+        <!-- STEP 5: PAYMENT DETAILS & BILLING LEDGER (EXACT LEASE 7)  -->
+        <!-- ========================================================= -->
+        @if($step === 5)
+          @php
+            $pv = (float)($draft['product_value'] ?? 50000);
+            $pa = (float)($draft['paid_amount'] ?? 30000);
+            $pe = max(0, $pv - $pa);
+            $st = $draft['payment_status'] ?? ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
+          @endphp
+
+          <!-- SUMMARY / LEDGER READINESS BANNER -->
+          <div class="s-banner-card mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="s-banner-icon-badge">
+                  <i class="bi bi-credit-card-2-front-fill"></i>
+                </div>
+                <div>
+                  <div class="s-banner-title fw-bold">Statutory Drone Ledger &amp; Fee Settlement</div>
+                  <div class="s-banner-desc">Real-time fee computation, flight advance tracking, and transaction status recording.</div>
+                </div>
+              </div>
+              <div class="d-flex align-items-center">
+                <span class="badge s-banner-status-pill" id="banner_status_pill">
+                  @if($st === 'paid')
+                    <i class="bi bi-check-circle-fill me-1.5"></i> Fully Settled
+                  @elseif($st === 'partial')
+                    <i class="bi bi-clock-history me-1.5"></i> Partial Advance
+                  @else
+                    <i class="bi bi-exclamation-circle-fill me-1.5"></i> Pending Payment
+                  @endif
+                </span>
+              </div>
+            </div>
           </div>
 
-        {{-- STEP 7: PAYMENT DETAILS & BILLING LEDGER (NEW STEP) --}}
-        @elseif($step === 7)
-          <h5 class="fw-bold mb-1" style="color:#0F1E4D;">Drone Survey &amp; Volumetric Fee Ledger</h5>
-          <div class="wc-sub">Track drone flight service charge, 3D photogrammetry processing fee, and client settlements.</div>
-
-          <!-- Real-Time Metric Cards -->
+          <!-- REAL-TIME FINANCIAL 3-BENTO KPI METRIC CARDS -->
           <div class="row g-3 mb-4">
             <div class="col-md-4">
-              <div class="p-3 rounded-3 border" style="background:#f8fafc; border-left: 4px solid #0F1E4D !important;">
-                <div class="text-muted small fw-semibold text-uppercase">Volumetric Survey Value</div>
-                <div class="h4 fw-bold mb-0 text-navy mt-1" id="disp_drone_val">₹ 50,000.00</div>
-                <small class="text-muted" style="font-size:11px;">Flight &amp; 3D analysis quotation</small>
+              <div class="s-kpi-card s-kpi-card-contract">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label">Volumetric Survey Value</span>
+                  <div class="s-kpi-icon-badge s-kpi-icon-contract"><i class="bi bi-receipt-cutoff"></i></div>
+                </div>
+                <div class="s-kpi-value text-navy" id="disp_drone_val">₹ {{ number_format($pv, 2) }}</div>
+                <div class="s-kpi-subtext">Flight &amp; 3D photogrammetry quotation</div>
               </div>
             </div>
+
             <div class="col-md-4">
-              <div class="p-3 rounded-3 border" style="background:#f0fdf4; border-left: 4px solid #10b981 !important;">
-                <div class="text-success small fw-semibold text-uppercase">Paid Amount</div>
-                <div class="h4 fw-bold mb-0 text-success mt-1" id="disp_drone_paid">₹ 30,000.00</div>
-                <small class="text-muted" style="font-size:11px;">Flight deposit received</small>
+              <div class="s-kpi-card s-kpi-card-paid">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label text-success">Advance / Paid Amount</span>
+                  <div class="s-kpi-icon-badge s-kpi-icon-paid"><i class="bi bi-check-circle-fill"></i></div>
+                </div>
+                <div class="s-kpi-value text-success" id="disp_drone_paid">₹ {{ number_format($pa, 2) }}</div>
+                <div class="s-kpi-subtext">Deposit received from client</div>
               </div>
             </div>
+
             <div class="col-md-4">
-              <div class="p-3 rounded-3 border" style="background:#fff7ed; border-left: 4px solid #f97316 !important;">
-                <div class="text-warning-emphasis small fw-semibold text-uppercase">Pending Balance Due</div>
-                <div class="h4 fw-bold mb-0 text-danger mt-1" id="disp_drone_pending">₹ 20,000.00</div>
-                <small class="text-muted" style="font-size:11px;">Auto-calculated outstanding</small>
+              <div class="s-kpi-card s-kpi-card-pending">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label text-warning-emphasis">Pending Balance Due</span>
+                  <div class="s-kpi-icon-badge s-kpi-icon-pending"><i class="bi bi-hourglass-split"></i></div>
+                </div>
+                <div class="s-kpi-value text-danger" id="disp_drone_pending">₹ {{ number_format($pe, 2) }}</div>
+                <div class="s-kpi-subtext">Auto-calculated outstanding balance</div>
               </div>
             </div>
           </div>
 
-          <div class="card p-3 bg-light border-0 rounded-3 mb-4">
-            <div class="row g-3">
+          <!-- INPUT FORM CARD -->
+          <div class="s-section-card mb-3">
+            <div class="row gx-3 gy-3 s-form-row">
               <div class="col-md-4">
-                <label class="form-label fw-bold text-navy small mb-1">Product / Fee Value (₹) *</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-white fw-bold">₹</span>
-                  <input type="number" step="0.01" min="0" name="product_value" id="field_drone_val" class="form-control fw-bold" placeholder="0.00" value="50000">
+                <label class="form-label s-label">
+                  Product / Service Fee (₹) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon fw-bold">₹</span>
+                  <input type="number" step="0.01" min="0" name="product_value" id="field_drone_val" class="form-control s-input fw-bold" placeholder="0.00" value="{{ $pv }}" required>
                 </div>
+                <div class="form-text-hint s-hint">Total quoted fee for aerial mission and photogrammetry.</div>
               </div>
+
               <div class="col-md-4">
-                <label class="form-label fw-bold text-navy small mb-1">Paid Amount (₹) *</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-white fw-bold text-success">₹</span>
-                  <input type="number" step="0.01" min="0" name="paid_amount" id="field_drone_paid" class="form-control fw-bold text-success" placeholder="0.00" value="30000">
+                <label class="form-label s-label">
+                  Advance / Paid Amount (₹) <span class="text-danger ms-1">*</span>
+                </label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon fw-bold text-success">₹</span>
+                  <input type="number" step="0.01" min="0" name="paid_amount" id="field_drone_paid" class="form-control s-input fw-bold text-success" placeholder="0.00" value="{{ $pa }}" required>
                 </div>
+                <div class="form-text-hint s-hint">Amount deposited via bank transfer or cheque.</div>
               </div>
+
               <div class="col-md-4">
-                <label class="form-label fw-bold text-navy small mb-1">Pending Balance (₹)</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-light text-muted">₹</span>
-                  <input type="number" step="0.01" name="pending_amount" id="field_drone_pending" class="form-control bg-light fw-bold text-danger" placeholder="0.00" readonly value="20000.00">
+                <label class="form-label s-label">Pending Balance Due (₹)</label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon text-muted">₹</span>
+                  <input type="number" step="0.01" name="pending_amount" id="field_drone_pending" class="form-control s-input bg-light fw-bold text-danger" placeholder="0.00" readonly value="{{ number_format($pe, 2, '.', '') }}">
                 </div>
+                <div class="form-text-hint s-hint">Calculated automatically (Value &minus; Paid).</div>
               </div>
+
               <div class="col-md-6">
-                <label class="form-label fw-bold text-navy small mb-1">Settlement Status *</label>
-                <select class="form-select" name="payment_status" id="field_drone_status">
-                  <option value="pending">Pending (Full Balance Due)</option>
-                  <option value="partial" selected>Partial Payment Received</option>
-                  <option value="paid">Paid (Fully Settled)</option>
+                <label class="form-label s-label">
+                  Settlement Status <span class="text-danger ms-1">*</span>
+                </label>
+                <select class="form-select s-input" style="border-radius:8px !important;" name="payment_status" id="field_drone_status">
+                  <option value="pending" {{ $st === 'pending' ? 'selected' : '' }}>Pending (Full Balance Due)</option>
+                  <option value="partial" {{ $st === 'partial' ? 'selected' : '' }}>Partial Advance Received</option>
+                  <option value="paid" {{ $st === 'paid' ? 'selected' : '' }}>Paid (Fully Settled)</option>
                 </select>
               </div>
+
               <div class="col-md-6">
-                <label class="form-label fw-bold text-navy small mb-1">Transaction Reference / Receipt Notes</label>
-                <input type="text" class="form-control" name="payment_notes" placeholder="e.g. Bank transfer ref / Cheque" value="Cheque #881902 cleared - 60% advance paid for flight and volumetric modeling">
-              </div>
-            </div>
-          </div>
-
-        {{-- STEP 8: PREVIEW & FINAL CONFIRMATION --}}
-        @elseif($step === 8)
-          <h4>Drone Volumetric Survey Verification &amp; Final Summary</h4>
-          <div class="wc-sub">Review survey deliverables, aerial flight crew, and financial ledger status.</div>
-
-          <div class="card-panel mt-3 mb-3" style="background:var(--navy-soft); border:none;">
-            <h6 style="color:#0F1E4D; font-weight:600; margin-bottom: 12px;"><i class="bi bi-card-checklist me-2"></i>Drone Survey Summary</h6>
-            <div class="row g-2" style="font-size: 0.85rem;">
-              <div class="col-md-6"><span class="text-muted">Client / Applicant:</span> <br><b>Kaveri Granites Pvt Ltd</b></div>
-              <div class="col-md-6"><span class="text-muted">Survey Request No:</span> <br><b>DRN-2026-0026</b></div>
-              <div class="col-md-6 mt-2"><span class="text-muted">Lease Area:</span> <br><b>3.85 Hectares</b></div>
-              <div class="col-md-6 mt-2"><span class="text-muted">Status:</span> <br><span class="badge bg-success">Aerial Photogrammetry &amp; 3D Model Verified</span></div>
-            </div>
-          </div>
-
-          <div class="row g-3 mb-3">
-            {{-- Team Preview --}}
-            <div class="col-md-6">
-              <div class="p-3 border rounded bg-white h-100">
-                <h6 class="fw-bold text-navy mb-2"><i class="bi bi-people-fill text-primary me-1"></i> Drone Flight &amp; GIS Crew</h6>
-                <div class="d-flex justify-content-between py-1 border-bottom small">
-                  <span><strong>S. Karthik</strong></span>
-                  <span class="badge bg-light text-dark border">DGCA Pilot (RPC #8821)</span>
-                </div>
-                <div class="d-flex justify-content-between py-1 small">
-                  <span><strong>M. Vignesh</strong></span>
-                  <span class="badge bg-light text-dark border">Photogrammetry Analyst</span>
+                <label class="form-label s-label">Transaction Reference / Receipt Notes</label>
+                <div class="input-group s-input-group">
+                  <span class="input-group-text s-addon"><i class="bi bi-receipt"></i></span>
+                  <input type="text" class="form-control s-input" name="payment_notes" placeholder="e.g. Bank transfer ref / Cheque details" value="{{ $draft['payment_notes'] ?? 'Cheque #881902 cleared - advance paid for flight and volumetric modeling' }}">
                 </div>
               </div>
             </div>
-
-            {{-- Financial Preview --}}
-            <div class="col-md-6">
-              <div class="p-3 border rounded bg-white h-100">
-                <h6 class="fw-bold text-navy mb-2"><i class="bi bi-receipt text-success me-1"></i> Financial Summary</h6>
-                <div class="d-flex justify-content-between py-1 border-bottom small">
-                  <span class="text-muted">Volumetric Survey Fee:</span>
-                  <strong>₹ 50,000.00</strong>
-                </div>
-                <div class="d-flex justify-content-between py-1 border-bottom small">
-                  <span class="text-muted">Paid Advance:</span>
-                  <strong class="text-success">₹ 30,000.00</strong>
-                </div>
-                <div class="d-flex justify-content-between py-1 border-bottom small">
-                  <span class="text-muted">Pending Balance:</span>
-                  <strong class="text-danger">₹ 20,000.00</strong>
-                </div>
-                <div class="d-flex justify-content-between pt-2 small">
-                  <span class="text-muted">Settlement Status:</span>
-                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Partial</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card-panel mb-0" style="background:var(--green-soft);border:none">
-            <i class="bi bi-check-circle"></i> <span style="font-size:.78rem">Please confirm to finalize the Drone Survey process and synchronize with customer dossier.</span>
           </div>
         @endif
 
-        {{-- Checklist Items for Current Step --}}
-        @if(isset($steps[$step - 1][1]))
-          <div class="mt-4">
-            @foreach($steps[$step - 1][1] as $item)
-              <div class="checklist-row">
-                <div class="ci-icon"><i class="bi bi-check-lg"></i></div>
-                <div class="flex-grow-1">
-                  <div class="ci-name">{{ $loop->iteration }}. {{ $item }}</div>
-                  <div class="ci-meta">{{ $step < 8 ? 'To be completed' : 'Completed' }}</div>
+        <!-- ========================================================= -->
+        <!-- STEP 6: PREVIEW & FINAL SCRUTINY (EXACT LEASE STEP 8)     -->
+        <!-- ========================================================= -->
+        @if($step === 6)
+          @php
+            $pv = (float)($draft['product_value'] ?? 50000);
+            $pa = (float)($draft['paid_amount'] ?? 30000);
+            $pe = max(0, $pv - $pa);
+            $st = $draft['payment_status'] ?? ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
+            $handlers = $draft['handlers'] ?? [
+              ['person_name' => 'S. Karthik', 'role' => 'DGCA Certified Drone Pilot', 'notes' => 'Autonomous grid flight execution & safety compliance'],
+              ['person_name' => 'M. Vignesh', 'role' => 'Photogrammetry & 3D Analyst', 'notes' => 'Image stitching, GCP georeferencing & cut/fill volume calculation']
+            ];
+          @endphp
+
+          <!-- EXECUTIVE AUDIT & READINESS BANNER -->
+          <div class="s-banner-card mb-4">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="s-banner-icon-badge" style="background:#dcfce7; color:#10b981;">
+                  <i class="bi bi-patch-check-fill"></i>
                 </div>
-                <span class="badge-status {{ $step < 8 ? 'pending' : 'verified' }}">{{ $step < 8 ? 'Pending' : 'Completed' }}</span>
+                <div>
+                  <div class="s-banner-title fw-bold">Statutory Drone Dossier Audit &amp; Compliance Verification</div>
+                  <div class="s-banner-desc">Complete multi-step drone survey dossier assembled. Inspect each section below for accuracy before submitting to customer dossier.</div>
+                </div>
               </div>
-            @endforeach
+              <span class="badge s-banner-status-pill" style="background:#10b981;">
+                <i class="bi bi-shield-lock-fill me-1.5"></i>Ready for Final Submission
+              </span>
+            </div>
+          </div>
+
+          <!-- 4-BENTO EXECUTIVE METRIC OVERVIEW -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="s-kpi-card" style="border-top:3px solid #3b82f6 !important;">
+                <span class="s-kpi-label">Applicant Entity</span>
+                <div class="s-kpi-value text-navy text-truncate" style="font-size:18px;" title="{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}">{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}</div>
+                <div class="s-kpi-subtext text-truncate">{{ $draft['location'] ?? 'Salem / Semmandapatti' }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="s-kpi-card" style="border-top:3px solid #10b981 !important;">
+                <span class="s-kpi-label">Extracted Volume</span>
+                <div class="s-kpi-value text-success" style="font-size:18px;">{{ number_format((float)($draft['extracted_volume_cbm'] ?? 18450), 2) }} CBM</div>
+                <div class="s-kpi-subtext">Lease Area: {{ $draft['lease_area'] ?? '3.85 Ha' }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="s-kpi-card" style="border-top:3px solid #f97316 !important;">
+                <span class="s-kpi-label">Pending Balance</span>
+                <div class="s-kpi-value text-danger" style="font-size:18px;">₹ {{ number_format($pe, 2) }}</div>
+                <div class="s-kpi-subtext">Total: ₹ {{ number_format($pv, 2) }}</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="s-kpi-card" style="border-top:3px solid #8b5cf6 !important;">
+                <span class="s-kpi-label">Flight Hardware</span>
+                <div class="s-kpi-value text-navy text-truncate" style="font-size:18px;">{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}</div>
+                <div class="s-kpi-subtext">Altitude: {{ $draft['altitude_meters'] ?? 120 }}m AGL</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SCRUTINY PANELS WITH QUICK-JUMP [EDIT STEP X] BUTTONS -->
+          <div class="d-flex flex-column gap-3 mb-4">
+
+            <!-- PANEL 1: APPLICANT IDENTITY & CONCESSION -->
+            <div class="s-section-panel">
+              <div class="s-panel-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#eff6ff; color:#2563eb;"><i class="bi bi-person-badge"></i></div>
+                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">1. Applicant Identity &amp; Quarry Extent</h6>
+                </div>
+                <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-sm s-btn-edit">
+                  <i class="bi bi-pencil-square me-1"></i>Edit Step 1
+                </a>
+              </div>
+              <div class="p-3">
+                <div class="row g-2.5">
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Request No</span>
+                      <span class="s-tile-value font-monospace">{{ $draft['survey_no'] ?? 'DRN-2026-0026' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Applicant Entity</span>
+                      <span class="s-tile-value text-truncate">{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Primary Phone</span>
+                      <span class="s-tile-value">{{ $draft['primary_phone'] ?? '9840123456' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Lease Area Extent</span>
+                      <span class="s-tile-value">{{ $draft['lease_area'] ?? '3.85 Hectares' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mt-1.5">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Quarry Site Location</span>
+                      <span class="s-tile-value">{{ $draft['location'] ?? 'Salem / Semmandapatti' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6 mt-1.5">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Secondary Phone</span>
+                      <span class="s-tile-value">{{ $draft['secondary_phone'] ?? 'N/A' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 2: FLIGHT MISSION & HARDWARE SPECS -->
+            <div class="s-section-panel">
+              <div class="s-panel-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#eff6ff; color:#0284c7;"><i class="bi bi-airplane-engines"></i></div>
+                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">2. Flight Operations &amp; DGCA Aerial Specs</h6>
+                </div>
+                <a href="{{ route('drone-survey.step', 2) }}" class="btn btn-sm s-btn-edit">
+                  <i class="bi bi-pencil-square me-1"></i>Edit Step 2
+                </a>
+              </div>
+              <div class="p-3">
+                <div class="row g-2.5">
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Flight Date</span>
+                      <span class="s-tile-value">{{ $draft['flight_date'] ?? date('Y-m-d') }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Drone Model</span>
+                      <span class="s-tile-value text-truncate">{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Drone UIN No</span>
+                      <span class="s-tile-value font-monospace text-truncate">{{ $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Certified Pilot</span>
+                      <span class="s-tile-value text-truncate">{{ $draft['drone_pilot_name'] ?? 'S. Karthik' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mt-1.5">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Pilot RPC License</span>
+                      <span class="s-tile-value font-monospace">{{ $draft['pilot_rpc_no'] ?? 'RPC #DRN-TN-8821' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mt-1.5">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Flight Altitude</span>
+                      <span class="s-tile-value">{{ $draft['altitude_meters'] ?? 120 }}m AGL</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4 mt-1.5">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">GSD Resolution</span>
+                      <span class="s-tile-value">{{ $draft['gsd_cm_px'] ?? 2.5 }} cm/px</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 3: DELIVERABLES & STATUTORY DEEDS REGISTRY -->
+            <div class="s-section-panel">
+              <div class="s-panel-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#dcfce7; color:#10b981;"><i class="bi bi-folder-check"></i></div>
+                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">3. Volumetric Deliverables &amp; Statutory Registry</h6>
+                  <span class="badge s-multi-badge">Extracted: {{ number_format((float)($draft['extracted_volume_cbm'] ?? 18450), 2) }} CBM</span>
+                </div>
+                <a href="{{ route('drone-survey.step', 3) }}" class="btn btn-sm s-btn-edit">
+                  <i class="bi bi-pencil-square me-1"></i>Edit Step 3
+                </a>
+              </div>
+              <div class="p-3">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="p-2.5 rounded-3 bg-light border">
+                      <span class="fw-bold text-navy small"><i class="fa fa-folder-open text-primary me-1.5"></i> Folder 01: Requisition Deeds</span>
+                      <ul class="mb-0 ps-3 mt-1.5 text-muted" style="font-size:11.5px; line-height:1.6;">
+                        <li>1. Request Letter &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
+                        <li>2. Lease Area Details &amp; Combined FMB Sketch &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
+                        <li>3. Approved Mining Plan (MP Copy) &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
+                        <li>4. Environmental Clearance (EC) Copy &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="p-2.5 rounded-3 bg-light border">
+                      <span class="fw-bold text-navy small"><i class="fa fa-layer-group text-info me-1.5"></i> Folder 02: Photogrammetry Deliverables</span>
+                      <ul class="mb-0 ps-3 mt-1.5 text-muted" style="font-size:11.5px; line-height:1.6;">
+                        <li>5. Drone Mission Flight Log &amp; RPC Certificate</li>
+                        <li>6. Ground Control Points (GCP) Coordinates Sheet</li>
+                        <li>7. High-Resolution Orthomosaic Map (GeoTIFF)</li>
+                        <li>8. DSM / DTM Elevation Contours</li>
+                        <li>9. 3D Dense Point Cloud File (LAS)</li>
+                        <li>10. Volumetric Excavation &amp; Stockpile Report</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 4: ASSIGNED CREW -->
+            <div class="s-section-panel">
+              <div class="s-panel-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#fef3c7; color:#d97706;"><i class="bi bi-people-fill"></i></div>
+                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">4. Assigned Flight Crew &amp; Photogrammetry Personnel</h6>
+                </div>
+                <a href="{{ route('drone-survey.step', 4) }}" class="btn btn-sm s-btn-edit">
+                  <i class="bi bi-pencil-square me-1"></i>Edit Step 4
+                </a>
+              </div>
+              <div class="p-3">
+                <div class="row g-2.5">
+                  @foreach($handlers as $hIdx => $h)
+                    <div class="col-md-6">
+                      <div class="s-data-tile d-flex justify-content-between align-items-center flex-row">
+                        <div>
+                          <div class="fw-bold text-navy" style="font-size:13.5px;">{{ $h['person_name'] ?? $h['name'] ?? 'Personnel' }}</div>
+                          <div class="text-muted" style="font-size:11px;">{{ $h['notes'] ?? 'Flight and regulatory coordination' }}</div>
+                        </div>
+                        <span class="badge s-team-pill" style="font-size:11px;">{{ $h['role'] ?? 'Specialist' }}</span>
+                      </div>
+                    </div>
+                  @endforeach
+                </div>
+              </div>
+            </div>
+
+            <!-- PANEL 5: FINANCIAL LEDGER -->
+            <div class="s-section-panel">
+              <div class="s-panel-header">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#dcfce7; color:#10b981;"><i class="bi bi-cash-stack"></i></div>
+                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">5. Financial Settlement &amp; Billing Ledger</h6>
+                </div>
+                <a href="{{ route('drone-survey.step', 5) }}" class="btn btn-sm s-btn-edit">
+                  <i class="bi bi-pencil-square me-1"></i>Edit Step 5
+                </a>
+              </div>
+              <div class="p-3">
+                <div class="row g-2.5">
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Quoted Fee</span>
+                      <span class="s-tile-value text-navy">₹ {{ number_format($pv, 2) }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Paid Advance</span>
+                      <span class="s-tile-value text-success">₹ {{ number_format($pa, 2) }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Pending Due</span>
+                      <span class="s-tile-value text-danger">₹ {{ number_format($pe, 2) }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Settlement</span>
+                      <span class="s-tile-value text-uppercase" style="font-size:12px;">{{ $st }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- PRE-SUBMISSION STATUTORY DECLARATION CHECKBOX -->
+          <div class="s-notice-card mb-4 p-3" style="background:#f8fafc; border:1.5px solid #cbd5e1;">
+            <div class="form-check d-flex align-items-start gap-2">
+              <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="statutory_declaration_drone" required>
+              <label class="form-check-label s-notice-text fw-semibold text-navy mb-0" for="statutory_declaration_drone">
+                I hereby declare that all unmanned aerial flight mission data, DGCA pilot credentials, RTK ground control benchmark coordinates, and volumetric earthwork calculations have been audited and conform to the Aircraft Rules, DGCA guidelines, and the Tamil Nadu Minor Mineral Concession Rules 1959.
+              </label>
+            </div>
           </div>
         @endif
 
-        {{-- WIZARD NAVIGATION ACTIONS --}}
-        <div class="wizard-actions">
-          <a href="{{ $step === 1 ? route('drone-survey.index') : route('drone-survey.step', $step - 1) }}" class="btn btn-outline-navy btn-sm">
-            <i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}
+        <!-- ========================================================= -->
+        <!-- WIZARD ACTIONS DOCK (EXACT LEASE STEP 1 PARITY)           -->
+        <!-- ========================================================= -->
+        <div class="wizard-actions s-actions d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 pt-3">
+          <a href="{{ $step === 1 ? route('drone-survey.index') : route('drone-survey.step', $step - 1) }}" class="btn btn-outline-secondary s-btn-cancel">
+            <i class="bi bi-arrow-left me-1"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}
           </a>
-          @can('drone.create')
-            <button type="submit" class="btn {{ $step === 8 ? 'btn-green' : 'btn-navy' }} px-4 btn-drone-continue">
-              {{ $step === 8 ? 'Finish & Save Survey' : 'Save & Continue' }} <i class="bi {{ $step === 8 ? 'bi-check2-circle' : 'bi-arrow-right' }}"></i>
-            </button>
-          @endcan
+
+          <div class="d-flex align-items-center gap-2">
+            @if($step < 6)
+              <button type="button" class="btn s-btn-draft px-3" id="btn_drone_save_draft">
+                <i class="bi bi-save me-1"></i> Save Draft &amp; Exit
+              </button>
+            @endif
+
+            @can('drone.create')
+              <button type="submit" class="btn {{ $step === 6 ? 's-btn-finish' : 's-btn-submit' }} px-4 btn-drone-continue" id="btn_drone_main_submit">
+                <span>{{ $step === 6 ? 'Finish & Save Survey' : 'Save & Continue' }}</span>
+                <i class="bi {{ $step === 6 ? 'bi-check2-circle' : 'bi-arrow-right' }} ms-1"></i>
+              </button>
+            @endcan
+          </div>
         </div>
+
         </form>
       </div>
     </div>
   </div>
 </div>
 
-{{-- JAVASCRIPT FOR DYNAMIC HANDLERS & REAL-TIME PAYMENT MATH --}}
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Drone Step 3: Upload & View handlers
+  // Save Draft & Exit handler
+  const btnSaveDraft = document.getElementById('btn_drone_save_draft');
+  if (btnSaveDraft) {
+    btnSaveDraft.addEventListener('click', function() {
+      const exitInput = document.getElementById('save_draft_exit');
+      if (exitInput) exitInput.value = '1';
+      document.querySelectorAll('#droneWizardForm [required]').forEach(el => el.removeAttribute('required'));
+      document.getElementById('droneWizardForm').submit();
+    });
+  }
+
+  // Pre-submission confirmation check on Step 6
+  const chkDeclaration = document.getElementById('statutory_declaration_drone');
+  const btnSubmit = document.getElementById('btn_drone_main_submit');
+  if (chkDeclaration && btnSubmit && @json($step === 6)) {
+    btnSubmit.addEventListener('click', function(e) {
+      if (!chkDeclaration.checked) {
+        e.preventDefault();
+        alert('Please confirm the statutory declaration before submitting the survey.');
+        chkDeclaration.focus();
+      }
+    });
+  }
+
+  // Step 3: Document Upload & View Handlers
   document.addEventListener('click', function(e) {
     const uploadBtn = e.target.closest('.btn-upload-drone-item');
     if (uploadBtn) {
@@ -464,20 +1147,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const slot = row.querySelector('.action-slot');
         if (slot) {
-          const statusBadge = slot.querySelector('.badge-status');
-          if (statusBadge) {
-            statusBadge.className = 'badge-status uploaded';
-            statusBadge.textContent = 'Uploaded';
-          }
-
           let viewBtn = slot.querySelector('.btn-view-drone-item');
           if (!viewBtn) {
             viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2 btn-view-drone-item me-1';
-            viewBtn.style.fontSize = '.72rem';
+            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2.5 btn-view-drone-item me-1';
+            viewBtn.style.fontSize = '.75rem';
             viewBtn.target = '_blank';
             viewBtn.rel = 'noopener noreferrer';
-            viewBtn.title = 'View document in separate page';
+            viewBtn.title = 'View document';
             viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
             const btnUpload = slot.querySelector('.btn-upload-drone-item');
             slot.insertBefore(viewBtn, btnUpload);
@@ -486,12 +1163,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
           const btnUpload = slot.querySelector('.btn-upload-drone-item');
           if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-drone-item';
+            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2.5 btn-upload-drone-item';
             btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
           }
         }
 
         updateDroneDocProgress();
+
+        // Background server upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('document_name', row.querySelector('.ci-name')?.textContent.trim() || file.name);
+        formData.append('_token', '{{ csrf_token() }}');
+        fetch('{{ route('drone-survey.upload') }}', {
+          method: 'POST',
+          body: formData
+        }).then(r => r.json()).then(res => {
+          if (res.success && res.file_url) {
+            const liveView = row.querySelector('.btn-view-drone-item');
+            if (liveView) liveView.href = res.file_url;
+          }
+        }).catch(err => {
+          console.warn('Drone file server background upload warning:', err);
+        });
       }
     }
   });
@@ -505,7 +1199,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
   }
 
-  // Drone Step 3: Add Document button
+  // Step 3: Add Custom Document button
   const btnAddDroneDoc = document.getElementById('btn_add_drone_doc');
   if (btnAddDroneDoc) {
     btnAddDroneDoc.addEventListener('click', function() {
@@ -514,11 +1208,11 @@ document.addEventListener('DOMContentLoaded', function() {
       const container = document.getElementById('drone_checklist_container');
       const count = container.querySelectorAll('.checklist-row').length + 1;
       const row = document.createElement('div');
-      row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
+      row.className = 'checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1';
       row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
-        <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
-          <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
+        <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
+          <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#f1f5f9; color:#64748b;">
             <i class="bi bi-file-earmark-plus"></i>
           </div>
           <div class="text-truncate">
@@ -526,17 +1220,17 @@ document.addEventListener('DOMContentLoaded', function() {
               <span class="badge bg-light text-primary border me-1" style="font-size:10px;">Custom</span>
               ${count}. ${docName.trim()}
             </div>
-            <div class="ci-meta text-muted" style="font-size:11px;">Custom volumetric deliverable &middot; Not uploaded</div>
+            <div class="ci-meta text-muted" style="font-size:11px;">Custom deliverable &middot; Not uploaded</div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
-          <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
+          <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
                   name="drone_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
             <option value="mandatory">Mandatory</option>
             <option value="optional" selected>Optional</option>
           </select>
           <input type="file" class="d-none drone-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
-          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-drone-item" style="font-size:.72rem;">
+          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
             <i class="bi bi-upload me-1"></i>Upload
           </button>
         </div>
@@ -556,42 +1250,22 @@ document.addEventListener('DOMContentLoaded', function() {
           row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
         }
         if (isMandatory) {
-          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+          this.className = 'form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
         } else {
-          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+          this.className = 'form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
         }
       };
     });
   }
   bindDroneDocReqListeners();
 
-  // Drone Step 3: Relaxed vs Mandatory validation on navigation
-  const btnDroneContinue = document.querySelector('.btn-drone-continue') || document.querySelector('.wizard-actions a.btn-navy');
-  if (btnDroneContinue && @json($step === 3)) {
-    btnDroneContinue.addEventListener('click', function(e) {
-      let missingMandatory = [];
-      document.querySelectorAll('#drone_checklist_container .checklist-row').forEach(function(row) {
-        const isMandatory = row.getAttribute('data-mandatory') === '1';
-        const isUploaded = row.classList.contains('up');
-        if (isMandatory && !isUploaded) {
-          const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Mandatory Document';
-          missingMandatory.push(docName);
-        }
-      });
-      if (missingMandatory.length > 0) {
-        e.preventDefault();
-        alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
-      }
-    });
-  }
-
-  // Handlers dynamic add/remove
-  const btnAdd = document.getElementById('btn_add_drone_handler');
-  const tbody = document.getElementById('drone_handlers_tbody');
+  // Step 4: Handlers Dynamic Add & Remove
+  const btnAddHandler = document.getElementById('btn_add_drone_handler');
+  const tbodyHandlers = document.getElementById('drone_handlers_tbody');
 
   function reindexDroneRows() {
-    if (!tbody) return;
-    const rows = tbody.querySelectorAll('tr');
+    if (!tbodyHandlers) return;
+    const rows = tbodyHandlers.querySelectorAll('tr');
     rows.forEach((row, idx) => {
       const numCol = row.querySelector('.row-num');
       if (numCol) numCol.textContent = idx + 1;
@@ -610,28 +1284,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
+    const badge = document.getElementById('drone_handler_count_badge');
+    const banner = document.getElementById('drone_handler_count_banner');
+    if (badge) badge.textContent = `${rows.length} member${rows.length > 1 ? 's' : ''}`;
+    if (banner) banner.textContent = `${rows.length} Member${rows.length > 1 ? 's' : ''} Allocated`;
   }
 
-  if (btnAdd && tbody) {
-    btnAdd.addEventListener('click', function() {
-      const count = tbody.querySelectorAll('tr').length;
+  if (btnAddHandler && tbodyHandlers) {
+    btnAddHandler.addEventListener('click', function() {
+      const count = tbodyHandlers.querySelectorAll('tr').length;
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="text-center fw-bold row-num">${count + 1}</td>
-        <td><input type="text" name="handlers[${count}][person_name]" class="form-control form-control-sm" placeholder="e.g. S. Kumaran" required></td>
-        <td><input type="text" name="handlers[${count}][role]" class="form-control form-control-sm" placeholder="e.g. Flight Observer" required></td>
-        <td><input type="text" name="handlers[${count}][notes]" class="form-control form-control-sm" placeholder="e.g. Battery management & safety"></td>
+        <td>
+          <div class="input-group s-input-group">
+            <span class="input-group-text s-addon"><i class="bi bi-person"></i></span>
+            <input type="text" name="handlers[${count}][person_name]" class="form-control s-input fw-semibold" placeholder="e.g. S. Kumaran" required>
+          </div>
+        </td>
+        <td>
+          <div class="input-group s-input-group">
+            <span class="input-group-text s-addon"><i class="bi bi-briefcase"></i></span>
+            <input type="text" name="handlers[${count}][role]" class="form-control s-input" list="role_suggestions" placeholder="e.g. Flight Observer" required>
+          </div>
+        </td>
+        <td>
+          <input type="text" name="handlers[${count}][notes]" class="form-control s-input" style="border-radius:8px !important;" placeholder="e.g. Battery management & safety coordination">
+        </td>
         <td class="text-center">
-          <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-remove-drone-handler" title="Remove person">
             <i class="bi bi-trash"></i>
           </button>
         </td>
       `;
-      tbody.appendChild(tr);
+      tbodyHandlers.appendChild(tr);
       reindexDroneRows();
     });
 
-    tbody.addEventListener('click', function(e) {
+    tbodyHandlers.addEventListener('click', function(e) {
       const btn = e.target.closest('.btn-remove-drone-handler');
       if (btn && !btn.classList.contains('disabled')) {
         const tr = btn.closest('tr');
@@ -643,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Payment live calculation
+  // Step 5: Payment math calculation
   const fVal = document.getElementById('field_drone_val');
   const fPaid = document.getElementById('field_drone_paid');
   const fPending = document.getElementById('field_drone_pending');
@@ -651,6 +1341,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const dVal = document.getElementById('disp_drone_val');
   const dPaid = document.getElementById('disp_drone_paid');
   const dPending = document.getElementById('disp_drone_pending');
+  const bannerPill = document.getElementById('banner_status_pill');
 
   function fmtINR(val) {
     return '₹ ' + (Number(val) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -696,6 +1387,25 @@ document.addEventListener('DOMContentLoaded', function() {
         fStatus.value = 'pending';
       }
     }
+
+    if (bannerPill && fStatus) {
+      if (fStatus.value === 'paid') {
+        bannerPill.style.background = '#dcfce7';
+        bannerPill.style.color = '#166534';
+        bannerPill.style.borderColor = '#86efac';
+        bannerPill.innerHTML = '<i class="bi bi-check-circle-fill me-1.5"></i> Fully Settled';
+      } else if (fStatus.value === 'partial') {
+        bannerPill.style.background = '#fff7ed';
+        bannerPill.style.color = '#c2410c';
+        bannerPill.style.borderColor = '#fdba74';
+        bannerPill.innerHTML = '<i class="bi bi-clock-history me-1.5"></i> Partial Advance';
+      } else {
+        bannerPill.style.background = '#fee2e2';
+        bannerPill.style.color = '#991b1b';
+        bannerPill.style.borderColor = '#fca5a5';
+        bannerPill.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1.5"></i> Pending Payment';
+      }
+    }
   }
 
   if (fVal && fPaid) {
@@ -703,7 +1413,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fPaid.addEventListener('input', recalcDronePayment);
   }
 
-  // Step 1: Customer Unique ID Lookup & Instant Autofill
+  // Step 1: Customer Unique ID Lookup
   const mimasSearchInput = document.getElementById('mimas_search_input');
   const btnLookupMimas = document.getElementById('btn_lookup_mimas');
   const feedbackBox = document.getElementById('mimas_feedback_box');
@@ -728,14 +1438,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const fPrimaryPhone = document.getElementById('field_drone_primary_phone');
     const fSecondaryPhone = document.getElementById('field_drone_secondary_phone');
-    if (fPrimaryPhone) {
-      fPrimaryPhone.value = c.mobile_num || '';
-    }
-    if (fSecondaryPhone) {
-      fSecondaryPhone.value = c.secondary_mobile_num || '';
-    }
+    if (fPrimaryPhone) fPrimaryPhone.value = c.mobile_num || '';
+    if (fSecondaryPhone) fSecondaryPhone.value = c.secondary_mobile_num || '';
 
-    // Visual cue on all autofilled fields
     document.querySelectorAll('.auto-filled-field').forEach(el => {
       el.classList.add('field-autofilled');
       setTimeout(() => el.classList.remove('field-autofilled'), 3000);
@@ -746,12 +1451,12 @@ document.addEventListener('DOMContentLoaded', function() {
       feedbackBox.innerHTML = `
         <div class="alert alert-success py-2 px-3 mb-0 small d-flex align-items-center justify-content-between">
           <div>
-            <i class="fa fa-check-circle me-1 text-success"></i>
+            <i class="bi bi-check-circle-fill me-1.5 text-success"></i>
             <strong>Customer Profile Loaded:</strong> ${c.company_name || c.customer_name}
             &middot; <span class="text-muted">${c.district_name || 'District'}</span>
             &middot; <span class="badge bg-success-subtle text-success border border-success ms-1">Customer ID: ${c.mimas_no || c.id}</span>
           </div>
-          <span class="badge bg-success text-white">All details populated</span>
+          <span class="badge bg-success text-white">Autofilled</span>
         </div>
       `;
     }
@@ -762,14 +1467,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!val) {
       if (feedbackBox) {
         feedbackBox.style.display = 'block';
-        feedbackBox.innerHTML = '<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-exclamation-triangle me-1"></i> Please enter or select a Customer Unique ID first.</div>';
+        feedbackBox.innerHTML = '<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Please enter or select a Customer Unique ID first.</div>';
       }
       return;
     }
 
     if (btnLookupMimas) {
       btnLookupMimas.disabled = true;
-      btnLookupMimas.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Searching...';
+      btnLookupMimas.innerHTML = '<i class="bi bi-arrow-repeat fa-spin me-1"></i> Searching...';
     }
     if (feedbackBox) feedbackBox.style.display = 'none';
 
@@ -778,25 +1483,25 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(res => {
         if (btnLookupMimas) {
           btnLookupMimas.disabled = false;
-          btnLookupMimas.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
+          btnLookupMimas.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Fetch Details';
         }
         if (res.status === 1 && res.data) {
           applyDroneCustomerAutofill(res.data);
         } else {
           if (feedbackBox) {
             feedbackBox.style.display = 'block';
-            feedbackBox.innerHTML = `<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="fa fa-info-circle me-1"></i> ${res.message || 'No customer found.'}</div>`;
+            feedbackBox.innerHTML = `<div class="alert alert-warning py-2 px-3 mb-0 small"><i class="bi bi-info-circle me-1"></i> ${res.message || 'No customer found.'}</div>`;
           }
         }
       })
       .catch(err => {
         if (btnLookupMimas) {
           btnLookupMimas.disabled = false;
-          btnLookupMimas.innerHTML = '<i class="fa fa-sync-alt me-1"></i> Fetch Details';
+          btnLookupMimas.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Fetch Details';
         }
         if (feedbackBox) {
           feedbackBox.style.display = 'block';
-          feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="fa fa-times-circle me-1"></i> Customer not found. You can enter details manually below.</div>';
+          feedbackBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 small"><i class="bi bi-x-circle-fill me-1"></i> Customer not found. You can enter details manually below.</div>';
         }
       });
   }
@@ -817,12 +1522,827 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
+
+<!-- EXACT SCOPED CSS MATCHING LEASE APPLICATION -->
 <style>
-.field-autofilled {
-  background-color: #ecfdf5 !important;
-  border-color: #10b981 !important;
-  transition: background-color 0.4s ease, border-color 0.4s ease;
-}
+  /* ==========================================================================
+     LIGHT MODE STYLES (Strictly Scoped to #gtms-drone-wizard)
+     ========================================================================== */
+  #gtms-drone-wizard {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 12px 10px 48px;
+  }
+
+  /* STEPPER PROGRESS TUNING */
+  #gtms-drone-wizard .step-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    margin-bottom: 22px;
+  }
+
+  #gtms-drone-wizard .step-progress::before {
+    content: "";
+    position: absolute;
+    top: 16px;
+    left: 24px;
+    right: 24px;
+    height: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+  }
+
+  #gtms-drone-wizard .sp-step {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: transparent;
+  }
+
+  #gtms-drone-wizard .sp-step .sp-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-top: 6px;
+    line-height: 1.2;
+    color: #64748b;
+  }
+
+  #gtms-drone-wizard .sp-step.active .sp-label {
+    color: #0F1E4D;
+  }
+
+  #gtms-drone-wizard .sp-step .circ {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.80rem;
+    font-weight: 700;
+    background: #ffffff;
+    border: 2px solid #cbd5e1;
+    color: #64748b;
+    line-height: 1;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .sp-step.done .circ {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff;
+  }
+
+  #gtms-drone-wizard .sp-step.active .circ {
+    background: #0F1E4D;
+    border-color: #0F1E4D;
+    color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(15, 30, 77, 0.15);
+  }
+
+  /* MAIN CARD */
+  #gtms-drone-wizard .s-main-card {
+    border-radius: 14px;
+    padding: 26px 30px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+  }
+
+  @media (max-width: 768px) {
+    #gtms-drone-wizard .s-main-card {
+      padding: 20px 16px;
+    }
+  }
+
+  #gtms-drone-wizard .s-header-block {
+    margin-bottom: 20px;
+  }
+
+  #gtms-drone-wizard .s-eyebrow {
+    color: var(--orange, #ea580c);
+    font-weight: 700;
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    line-height: 1;
+    margin-bottom: 0;
+  }
+
+  #gtms-drone-wizard .s-time-tag {
+    font-size: 0.73rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 3px 8px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    line-height: 1.2;
+  }
+
+  #gtms-drone-wizard .s-title {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #0f172a;
+    line-height: 1.3;
+    margin-top: 6px;
+    margin-bottom: 5px;
+  }
+
+  #gtms-drone-wizard .s-subtitle {
+    font-size: 0.83rem;
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 0;
+  }
+
+  /* LOOKUP CARD - LIGHT */
+  #gtms-drone-wizard .s-lookup-card {
+    background: #f0f7ff;
+    border: 1.5px solid #bfdbfe;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-lookup-label {
+    font-size: 0.88rem;
+    color: #1e40af;
+    line-height: 1.2;
+  }
+
+  #gtms-drone-wizard .s-lookup-badge {
+    background-color: #2563eb;
+    color: #ffffff;
+    font-size: 0.70rem;
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+
+  #gtms-drone-wizard .s-lookup-desc {
+    color: #475569;
+    font-size: 0.80rem;
+    line-height: 1.45;
+  }
+
+  #gtms-drone-wizard .s-lookup-input-group .s-lookup-addon {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-right: none !important;
+    border-radius: 8px 0 0 8px;
+    color: #2563eb;
+  }
+
+  #gtms-drone-wizard .s-lookup-input-group .s-lookup-field {
+    height: 42px;
+    border: 1.5px solid #cbd5e1;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0;
+    font-size: 0.88rem;
+    padding: 8px 12px;
+    color: #0f172a;
+  }
+
+  #gtms-drone-wizard .s-btn-fetch {
+    background-color: #0F1E4D;
+    border-color: #0F1E4D;
+    color: #ffffff;
+    font-size: 0.84rem;
+    font-weight: 700;
+    height: 42px;
+    border-radius: 0 8px 8px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-fetch:hover {
+    background-color: #081233;
+    border-color: #081233;
+    color: #ffffff;
+  }
+
+  /* SECTION PANELS - LIGHT */
+  #gtms-drone-wizard .s-section-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    transition: border-color 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-section-card:hover {
+    border-color: #cbd5e1;
+  }
+
+  #gtms-drone-wizard .s-section-header {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    line-height: 1.2;
+  }
+
+  #gtms-drone-wizard .s-label {
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 6px;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+  }
+
+  #gtms-drone-wizard .s-form-row {
+    --bs-gutter-x: 1rem;
+    --bs-gutter-y: 1.25rem;
+  }
+
+  #gtms-drone-wizard .s-opt-tag {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: normal;
+  }
+
+  #gtms-drone-wizard .s-hint {
+    font-size: 0.72rem;
+    color: #64748b;
+    line-height: 1.4;
+    margin-top: 6px;
+    margin-bottom: 2px;
+  }
+
+  /* INPUT GROUPS - LIGHT */
+  #gtms-drone-wizard .s-input-group {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-input-group:focus-within {
+    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.10);
+    border-radius: 8px;
+  }
+
+  #gtms-drone-wizard .s-input-group .s-addon {
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-right: none !important;
+    border-radius: 8px 0 0 8px;
+    color: #64748b;
+    font-size: 0.88rem;
+    width: 38px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  #gtms-drone-wizard .s-input-group .s-input {
+    background-color: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-left: none !important;
+    border-radius: 0 8px 8px 0 !important;
+    font-size: 0.86rem;
+    height: 40px;
+    padding: 8px 12px;
+    color: #0f172a;
+    transition: all 0.2s ease;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  #gtms-drone-wizard .s-input-group:focus-within .s-addon,
+  #gtms-drone-wizard .s-input-group:focus-within .s-input {
+    border-color: #0F1E4D !important;
+  }
+
+  #gtms-drone-wizard .s-input-group:focus-within .s-addon {
+    color: #0F1E4D !important;
+  }
+
+  /* NOTICE CARD - LIGHT */
+  #gtms-drone-wizard .s-notice-card {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 18px;
+  }
+
+  #gtms-drone-wizard .s-notice-icon {
+    color: #1d4ed8;
+    font-size: 1.15rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  #gtms-drone-wizard .s-notice-text {
+    font-size: 0.79rem;
+    color: #1e3a8a;
+    line-height: 1.45;
+  }
+
+  /* BANNER CARD (STEPS 2, 4, 5, 6) */
+  #gtms-drone-wizard .s-banner-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 18px;
+  }
+
+  #gtms-drone-wizard .s-banner-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #e0e7ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+  }
+
+  #gtms-drone-wizard .s-banner-title {
+    font-size: 0.88rem;
+    color: #0F1E4D;
+    margin-bottom: 2px;
+  }
+
+  #gtms-drone-wizard .s-banner-desc {
+    font-size: 0.76rem;
+    color: #64748b;
+    line-height: 1.35;
+  }
+
+  #gtms-drone-wizard .s-team-pill {
+    background: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+    font-weight: 600;
+    font-size: 0.76rem;
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+
+  #gtms-drone-wizard .s-count-pill {
+    background: #0F1E4D;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.76rem;
+    padding: 6px 12px;
+    border-radius: 8px;
+  }
+
+  #gtms-drone-wizard .s-banner-status-pill {
+    background: #0F1E4D;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 9999px;
+  }
+
+  /* TABLE CARD (STEP 4) */
+  #gtms-drone-wizard .s-table-card {
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  #gtms-drone-wizard .s-table-header-bar {
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+
+  #gtms-drone-wizard .s-table-title {
+    font-size: 0.88rem;
+    color: #1e293b;
+  }
+
+  #gtms-drone-wizard .s-badge-counter {
+    background: #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.74rem;
+    padding: 4px 10px;
+  }
+
+  #gtms-drone-wizard .s-btn-add-person {
+    background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%);
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+    font-size: 0.80rem;
+    padding: 6px 14px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.18);
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-add-person:hover {
+    background: linear-gradient(135deg, #0a1435 0%, #172e6e 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  #gtms-drone-wizard .s-table thead th {
+    background: #f8fafc;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    padding: 10px 14px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+
+  #gtms-drone-wizard .s-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+  }
+
+  /* 3-BENTO KPI CARDS (STEP 5 & 6) */
+  #gtms-drone-wizard .s-kpi-card {
+    border-radius: 12px;
+    padding: 16px 18px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  #gtms-drone-wizard .s-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+  }
+
+  #gtms-drone-wizard .s-kpi-card-contract {
+    background: #f8fafc;
+    border-left: 4px solid #0F1E4D !important;
+  }
+
+  #gtms-drone-wizard .s-kpi-card-paid {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981 !important;
+  }
+
+  #gtms-drone-wizard .s-kpi-card-pending {
+    background: #fff7ed;
+    border-left: 4px solid #f97316 !important;
+  }
+
+  #gtms-drone-wizard .s-kpi-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+  }
+
+  #gtms-drone-wizard .s-kpi-icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  #gtms-drone-wizard .s-kpi-icon-contract {
+    background: #e2e8f0;
+    color: #0F1E4D;
+  }
+
+  #gtms-drone-wizard .s-kpi-icon-paid {
+    background: #dcfce7;
+    color: #10b981;
+  }
+
+  #gtms-drone-wizard .s-kpi-icon-pending {
+    background: #ffedd5;
+    color: #f97316;
+  }
+
+  #gtms-drone-wizard .s-kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 6px 0 4px;
+  }
+
+  #gtms-drone-wizard .s-kpi-subtext {
+    font-size: 11.5px;
+    color: #64748b;
+  }
+
+  /* REVIEW TILES (STEP 6) */
+  #gtms-drone-wizard .s-section-panel {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  #gtms-drone-wizard .s-panel-header {
+    background: #f8fafc;
+    padding: 12px 16px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+
+  #gtms-drone-wizard .s-data-tile {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  #gtms-drone-wizard .s-tile-label {
+    font-size: 0.70rem;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  #gtms-drone-wizard .s-tile-value {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #0F1E4D;
+  }
+
+  #gtms-drone-wizard .s-btn-edit {
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 4px 10px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0F1E4D;
+    transition: all 0.18s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-edit:hover {
+    background: #0F1E4D;
+    color: #ffffff;
+    border-color: #0F1E4D;
+  }
+
+  #gtms-drone-wizard .s-multi-badge {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 0.69rem;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  /* ACTIONS - EXACT LEASE APPLICATION MATCH */
+  #gtms-drone-wizard .s-actions {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  #gtms-drone-wizard .s-btn-cancel {
+    font-size: 0.83rem;
+    font-weight: 600;
+    border-radius: 8px;
+    height: 40px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #cbd5e1;
+    color: #64748b;
+    background: #ffffff;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-cancel:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: #fef2f2;
+  }
+
+  #gtms-drone-wizard .s-btn-draft {
+    border: 1.5px solid #0F1E4D;
+    color: #0F1E4D;
+    background: transparent;
+    font-size: 0.83rem;
+    font-weight: 600;
+    border-radius: 8px;
+    height: 40px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-draft:hover {
+    background: #0F1E4D;
+    color: #ffffff;
+  }
+
+  #gtms-drone-wizard .s-btn-submit {
+    background: #0F1E4D;
+    border: 1.5px solid #0F1E4D;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 8px;
+    height: 40px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.25);
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-submit:hover {
+    background: #081233;
+    border-color: #081233;
+    color: #ffffff;
+  }
+
+  #gtms-drone-wizard .s-btn-finish {
+    background: #16a34a;
+    border: 1.5px solid #16a34a;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border-radius: 8px;
+    height: 40px;
+    padding: 0 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-btn-finish:hover {
+    background: #15803d;
+    border-color: #15803d;
+    color: #ffffff;
+  }
+
+  #gtms-drone-wizard .field-autofilled {
+    background-color: #f0fdf4 !important;
+    border-color: #86efac !important;
+    transition: all 0.4s ease;
+  }
+
+  /* ==========================================================================
+     DARK MODE STYLES (Strictly Scoped to body[data-theme-version="dark"])
+     ========================================================================== */
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-main-card {
+    background-color: #202020 !important;
+    border-color: #2d3139 !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-title {
+    color: #f8fafc !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-subtitle {
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-time-tag {
+    background: #161717 !important;
+    border-color: #374151 !important;
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-lookup-card {
+    background: #181c26 !important;
+    border-color: #2a3d66 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-lookup-label {
+    color: #93c5fd !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-lookup-desc {
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-lookup-input-group .s-lookup-addon {
+    background-color: #161717 !important;
+    border-color: #374151 !important;
+    color: #93c5fd !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-lookup-input-group .s-lookup-field {
+    background-color: #161717 !important;
+    border-color: #374151 !important;
+    color: #f8fafc !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-section-card,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-table-card,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-section-panel {
+    background: #1a1b20 !important;
+    border-color: #2d3139 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-section-header,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-table-header-bar,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-panel-header {
+    background: #161717 !important;
+    color: #f8fafc !important;
+    border-bottom-color: #262930 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-label {
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-input-group .s-addon {
+    background-color: #161717 !important;
+    border-color: #3b4252 !important;
+    border-right: none !important;
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-input-group .s-input {
+    background-color: #161717 !important;
+    border-color: #3b4252 !important;
+    border-left: none !important;
+    color: #f8fafc !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-input-group:focus-within .s-addon,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-input-group:focus-within .s-input {
+    border-color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-banner-card {
+    background: #181c26 !important;
+    border-color: #2a3d66 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-data-tile {
+    background: #161717 !important;
+    border-color: #2d3139 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-tile-value {
+    color: #93c5fd !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-btn-cancel {
+    background: #161717 !important;
+    border-color: #374151 !important;
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-btn-draft {
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+    background: transparent !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-btn-draft:hover {
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+  }
 </style>
 @endpush
 @endsection

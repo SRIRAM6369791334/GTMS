@@ -20,6 +20,7 @@ class MiningApplication extends Model
         'customer_id',
         'lease_application_id',
         'nature_of_work_id',
+        'other_nature_of_work_name',
         'parent_plan_id',
         'applicant_type_id',
         'district_id',
@@ -34,6 +35,7 @@ class MiningApplication extends Model
         'end_date',
         'validity_years',
         'stage',
+        'current_step',
         'status',
         'rqp_name',
         'rqp_reg_no',
@@ -52,7 +54,7 @@ class MiningApplication extends Model
     ];
 
     protected $casts = [
-        'area_extent_ha' => 'decimal:2',
+        'area_extent_ha' => 'string',
         'product_value' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'pending_amount' => 'decimal:2',
@@ -62,6 +64,17 @@ class MiningApplication extends Model
         'approval_date' => 'date',
         'validity_years' => 'integer',
     ];
+
+    public function getAreaExtentNumericAttribute(): ?float
+    {
+        if (empty($this->area_extent_ha)) return null;
+        $val = trim($this->area_extent_ha);
+        $parts = explode('.', $val);
+        if (count($parts) === 3) {
+            return round((float)$parts[0] + ((float)$parts[1] / 100) + ((float)$parts[2] / 10000), 4);
+        }
+        return is_numeric($val) ? (float)$val : null;
+    }
 
     public function handlers(): HasMany
     {

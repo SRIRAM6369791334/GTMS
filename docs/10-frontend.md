@@ -454,6 +454,20 @@ Wizards render a standardized progress stepper header:
 - **Upcoming Steps:** Muted grey (`#94a3b8`) locked against forward jumping until current step validation succeeds.
 - **Draft & Exit Button (`btn_save_draft_exit`):** Persists partial inputs to session and returns user to `/application`.
 
+### 7.3 Post-Submission Scrutiny Dossier View (`viewapplication.blade.php`)
+Once submitted, the concession moves into official scrutiny at `/viewapplication?id={id}`:
+- **Statutory Book/Dossier Chapter Paradigm:** Divided into Chapters I through VIII with state crest branding, 1-click clipboard copy buttons, and WCAG AAA dual-theme contrast.
+- **Statutory Scrutiny & Verification Lifecycle Stepper:** Visual tracking across Stages 6.1 through 6.5 (Upload & Store, Validate Data, Approve Data, Generate Reports, Archive & Backup).
+- **Chunked Resumable In-Place Uploader:** Large multimedia files and documents are uploaded via 5MB client-sliced chunks with real-time percentage indicators. Refreshing mid-upload renders a persistent `Resume` icon button and `Discard (Trash)` action. Successful upload dynamically updates the row in-place without page reloads.
+- **Step 6.3 Approval Prerequisite Gate:** Transition to the Mining Plan domain is strictly locked until Step 6.3 (Approve Data) is approved. Attempting to promote prematurely triggers an ultra-compact (390px width) custom SweetAlert (`.gtms-gate-swal-compact`).
+- **Direct Official Report Printing:** Clicking the printer icon (`#btn_print_official_report`) or pressing `Ctrl+P` loads `/application/{id}/report` inside a seamless background iframe and automatically triggers the system print dialog without navigating away from the dossier.
+
+### 7.4 Official Scrutiny Dossier Report (`report_pdf.blade.php`)
+Accessed via `/application/{id}/report`:
+- **8 Comprehensive Statutory Sections:** Executive Masthead with Government of Tamil Nadu crest, Applicant & Corporate Profile, Cadastral Demarcation Table, MIMAS Portal Security Credentials (decrypted), Financial Ledger, Statutory Document Verification Matrix, Official Authority Log, and Compliance Declaration with security hash (`DocHash`).
+- **Print Optimization (`@media print`):** Dedicated clean print stylesheets ensuring page breaks between sections, background color preservation, and suppression of screen-only controls.
+- **Automated Printing (`?autoprint=1`):** Listens on `DOMContentLoaded` for `autoprint=1` or `print=1` to immediately invoke `window.print()`.
+
 ---
 
 ## 8. Frontend Engineering Guidelines for Developers

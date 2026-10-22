@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -94,7 +95,7 @@ class CustomerController extends Controller
             'mimas_no'                 => 'required|string|max:50',
             'client_name'              => 'required|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
-            'company_name'             => 'required|string|max:255',
+            'company_name'             => 'nullable|string|max:255',
             'district_id'              => 'required|integer|exists:districts,id',
             'mineral_ids'              => 'nullable|array',
             'mineral_ids.*'            => 'integer|exists:minerals,id',
@@ -106,7 +107,7 @@ class CustomerController extends Controller
             'pan'                      => 'required|string|max:10',
             'aadhaar_no'               => 'required|string|max:14',
             'gstin'                    => 'nullable|string|max:15',
-            'area'                     => 'nullable|string|max:20',
+            'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'address'                  => 'nullable|string|max:500',
         ]);
 
@@ -144,6 +145,9 @@ class CustomerController extends Controller
             if (!empty($validated['secondary_mobile_num']) && empty($customer->secondary_mobile_num)) {
                 $customerUpdates['secondary_mobile_num'] = $validated['secondary_mobile_num'];
             }
+            if (!empty($validated['area']) && empty($customer->area)) {
+                $customerUpdates['area'] = trim($validated['area']);
+            }
             if (!empty($customerUpdates)) {
                 $customer->update($customerUpdates);
             }
@@ -151,7 +155,7 @@ class CustomerController extends Controller
             $customer = Customer::create([
                 'customer_name'            => $validated['client_name'],
                 'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
-                'company_name'             => $validated['company_name'],
+                'company_name'             => $validated['company_name'] ?? null,
                 'mimas_no'                 => $validated['mimas_no'],
                 'mobile_num'               => $validated['mobile_num'],
                 'secondary_mobile_num'     => $validated['secondary_mobile_num'] ?? null,
@@ -161,7 +165,7 @@ class CustomerController extends Controller
                 'pan'                      => $validated['pan'],
                 'aadhaar_no'               => $validated['aadhaar_no'],
                 'gstin'                    => $validated['gstin'] ?? null,
-                'area'                     => !empty($validated['area']) ? (float)$validated['area'] : null,
+                'area'                     => !empty($validated['area']) ? trim($validated['area']) : null,
                 'address'                  => $validated['address'] ?? null,
                 'status'                   => 1,
             ]);
@@ -186,7 +190,7 @@ class CustomerController extends Controller
                 'mineral_id'               => $primaryMineralId,
                 'other_mineral_name'       => $otherMineralName,
                 'taluk'                    => $validated['address'] ?? null,
-                'area_extent_ha'           => !empty($validated['area']) ? (float)$validated['area'] : null,
+                'area_extent_ha'           => !empty($validated['area']) ? trim($validated['area']) : null,
                 'contact_person'           => $validated['client_name'],
                 'secondary_contact_person' => $validated['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null),
                 'contact_mobile'           => $validated['mobile_num'],
@@ -206,7 +210,7 @@ class CustomerController extends Controller
                 'mineral_id'               => $primaryMineralId,
                 'other_mineral_name'       => $otherMineralName,
                 'taluk'                    => $validated['address'] ?? $leaseApp->taluk,
-                'area_extent_ha'           => !empty($validated['area']) ? (float)$validated['area'] : $leaseApp->area_extent_ha,
+                'area_extent_ha'           => !empty($validated['area']) ? trim($validated['area']) : $leaseApp->area_extent_ha,
                 'secondary_contact_person' => $validated['secondary_contact_person'] ?? $leaseApp->secondary_contact_person,
                 'secondary_contact_mobile' => $validated['secondary_mobile_num'] ?? $leaseApp->secondary_contact_mobile,
                 'current_step'             => max((int)$leaseApp->current_step, 1),
@@ -324,25 +328,69 @@ class CustomerController extends Controller
 
     public function step3()
     {
-        $categories = LeaseCategory::where('status', 1)->orderBy('code')->get();
+        $categories = LeaseCategory::where('status', 1)
+            ->where(function ($q) {
+                $q->where('is_custom', false)->orWhereNull('is_custom');
+            })
+            ->orderBy('id')
+            ->get();
         $draft = session('lease_draft', []);
         return view('pages.lease_application.createstep3', compact('categories', 'draft'));
     }
 
     public function saveStep3(Request $request)
     {
-        $validated = $request->validate([
-            'category_id' => 'required|integer|exists:lease_categories,id',
-        ]);
+        $categoryIdInput = $request->input('category_id');
+
+        if ($categoryIdInput === 'other') {
+            $request->validate([
+                'category_id'         => 'required',
+                'other_category_rule' => 'required|string|max:100',
+            ]);
+
+            $ruleName = trim($request->input('other_category_rule'));
+            $ruleCode = Str::limit($ruleName, 50, '');
+
+            // Find existing category by code or name, or create a new one
+            $cat = LeaseCategory::where('code', $ruleCode)
+                ->orWhere('name', $ruleName)
+                ->first();
+
+            if (!$cat) {
+                $cat = LeaseCategory::create([
+                    'code'      => $ruleCode,
+                    'name'      => $ruleName,
+                    'land_type' => 'Both',
+                    'status'    => 1,
+                    'is_custom' => true,
+                ]);
+            }
+
+            $finalCategoryId = $cat->id;
+            $isOther = true;
+            $otherRule = $ruleName;
+        } else {
+            $validated = $request->validate([
+                'category_id' => 'required|integer|exists:lease_categories,id',
+            ]);
+            $finalCategoryId = (int)$validated['category_id'];
+            $isOther = false;
+            $otherRule = null;
+        }
 
         $draft = session('lease_draft', []);
-        $draft['step3'] = $validated;
+        $draft['step3'] = [
+            'category_id'         => $finalCategoryId,
+            'is_other'            => $isOther,
+            'other_category_rule' => $otherRule,
+        ];
         session(['lease_draft' => $draft]);
 
         if (!empty($draft['application_id'])) {
             LeaseApplication::where('id', $draft['application_id'])->update([
-                'category_id'  => $validated['category_id'],
-                'current_step' => 3,
+                'category_id'         => $finalCategoryId,
+                'other_category_rule' => $otherRule,
+                'current_step'        => 3,
             ]);
         }
 
@@ -385,14 +433,76 @@ class CustomerController extends Controller
     public function step5(Request $request)
     {
         $draft = session('lease_draft', []);
-        $draftAppId = $draft['application_id'] ?? $request->query('id');
+        $queryId = $request->query('id');
+        if ($queryId) {
+            $draftAppId = (int)$queryId;
+            $draft['application_id'] = $draftAppId;
+            $appRecord = LeaseApplication::find($draftAppId);
+            if ($appRecord) {
+                $draft['application_no'] = $appRecord->application_no;
+            }
+            session(['lease_draft' => $draft]);
+        } else {
+            $draftAppId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
+        }
+
+        if ($draftAppId && empty($draft['application_id'])) {
+            $draft['application_id'] = $draftAppId;
+        }
+
+        $leaseApp = $draftAppId ? LeaseApplication::find($draftAppId) : null;
+        $isSubmittedDossier = $leaseApp && $leaseApp->status !== 'draft';
+
         $uploadedDocs = $draft['uploaded_docs'] ?? [];
+        $appId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
+        if ($appId) {
+            $dbDocs = LeaseDocument::where('lease_application_id', $appId)->get();
+            foreach ($dbDocs as $doc) {
+                $docItem = $doc->document_field_id ?: ('custom_' . $doc->id);
+                if (!isset($uploadedDocs[$docItem])) {
+                    $uploadedDocs[$docItem] = [
+                        'doc_name'     => $doc->document_name,
+                        'is_custom'    => empty($doc->document_field_id),
+                        'file_name'    => $doc->file_name,
+                        'file_size'    => $doc->file_size,
+                        'file_type'    => $doc->file_type,
+                        'folder_id'    => $doc->folder_id,
+                        'draft_path'   => $doc->file_path,
+                        'file_path'    => $doc->file_path,
+                        'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
+                    ];
+                } else {
+                    if (empty($uploadedDocs[$docItem]['doc_name']) && !empty($doc->document_name)) {
+                        $uploadedDocs[$docItem]['doc_name'] = $doc->document_name;
+                    }
+                    if (empty($uploadedDocs[$docItem]['folder_id']) && !empty($doc->folder_id)) {
+                        $uploadedDocs[$docItem]['folder_id'] = $doc->folder_id;
+                    }
+                    if (empty($uploadedDocs[$docItem]['file_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['file_path'] = $doc->file_path;
+                    }
+                    if (empty($uploadedDocs[$docItem]['draft_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['draft_path'] = $doc->file_path;
+                    }
+                }
+            }
+        }
+        foreach ($uploadedDocs as $k => $doc) {
+            if (empty($doc['file_path']) && !empty($doc['draft_path'])) {
+                $uploadedDocs[$k]['file_path'] = $doc['draft_path'];
+            }
+            if (empty($doc['draft_path']) && !empty($doc['file_path'])) {
+                $uploadedDocs[$k]['draft_path'] = $doc['file_path'];
+            }
+        }
 
         // Milestone Document Loading from DB
         if ($draftAppId) {
-            $existingStep = (int)(LeaseApplication::where('id', $draftAppId)->value('current_step') ?? 1);
-            if ($existingStep < 5) {
-                LeaseApplication::where('id', $draftAppId)->update(['current_step' => 5]);
+            if (!$isSubmittedDossier) {
+                $existingStep = (int)($leaseApp?->current_step ?? 1);
+                if ($existingStep < 5) {
+                    $leaseApp?->update(['current_step' => 5]);
+                }
             }
             $dbDocs = LeaseDocument::where('lease_application_id', $draftAppId)->get();
             foreach ($dbDocs as $doc) {
@@ -428,7 +538,7 @@ class CustomerController extends Controller
             session(['lease_draft' => $draft]);
         }
 
-        return view('pages.lease_application.createstep5', compact('draft', 'uploadedDocs'));
+        return view('pages.lease_application.createstep5', compact('draft', 'uploadedDocs', 'isSubmittedDossier', 'leaseApp'));
     }
 
     /**
@@ -437,8 +547,29 @@ class CustomerController extends Controller
      */
     public function uploadDocument(Request $request)
     {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov'
+        ];
+
         $request->validate([
-            'file'         => 'required_without:upload_token|nullable|file|max:52428800|mimes:pdf,png,jpg,jpeg,kml,xml,txt,doc,docx,dwg',
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
             'upload_token' => 'required_without:file|nullable|string',
             'doc_item'     => 'nullable',
             'folder_id'    => 'required|integer',
@@ -453,8 +584,12 @@ class CustomerController extends Controller
         $isMandatory = $request->input('is_mandatory') == '1' || $request->input('is_mandatory') === true;
 
         $draft = session('lease_draft', []);
-        $draftAppId = $draft['application_id'] ?? null;
+        $draftAppId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
         $leaseApp = $draftAppId ? LeaseApplication::find($draftAppId) : null;
+        if ($leaseApp && empty($draft['application_id'])) {
+            $draft['application_id'] = $leaseApp->id;
+            session(['lease_draft' => $draft]);
+        }
 
         $appNo = $leaseApp ? $leaseApp->application_no : ($draft['application_no'] ?? ('DRAFT-' . date('Ymd') . '-' . strtoupper(substr(md5(uniqid()), 0, 6))));
 
@@ -482,6 +617,23 @@ class CustomerController extends Controller
 
         $resolvedDocName = $isCustom ? ($request->input('doc_name') ?: 'Custom Document') : ($docNames[$docItem] ?? ('Item ' . $docItem));
 
+        // Resolve existing file path to safely delete old file on replacement/re-upload
+        $oldFilePath = null;
+        if ($leaseApp) {
+            if ($isCustom && is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_')) {
+                $customId = (int)str_replace('custom_', '', $rawDocItem);
+                $oldCustomDoc = LeaseDocument::where('lease_application_id', $leaseApp->id)->where('id', $customId)->first();
+                $oldFilePath = $oldCustomDoc?->file_path;
+            } elseif (!$isCustom && is_numeric($docItem)) {
+                $oldStdDoc = LeaseDocument::where('lease_application_id', $leaseApp->id)->where('document_field_id', (int)$docItem)->first();
+                $oldFilePath = $oldStdDoc?->file_path;
+            }
+        }
+        $existingSessionDocs = session('lease_draft.uploaded_docs', []);
+        if (!$oldFilePath && isset($existingSessionDocs[$docItem]['draft_path'])) {
+            $oldFilePath = $existingSessionDocs[$docItem]['draft_path'];
+        }
+
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
             $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
@@ -493,27 +645,48 @@ class CustomerController extends Controller
                 $filePath = $upload->file_path;
             }
 
-            $fileName = $upload->original_name ?? $upload->file_name;
+            // Delete old file from server disk if re-uploading with a new/different file
+            if ($oldFilePath && $oldFilePath !== $filePath && file_exists(public_path($oldFilePath))) {
+                @unlink(public_path($oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
             $fullUploadPath = public_path($filePath);
             $fileSize = file_exists($fullUploadPath) ? filesize($fullUploadPath) : $upload->total_size;
-            $fileType = file_exists($fullUploadPath) ? (mime_content_type($fullUploadPath) ?: ($upload->mime_type ?? 'application/octet-stream')) : ($upload->mime_type ?? 'application/octet-stream');
+            $fileType = substr((string)(file_exists($fullUploadPath) ? (mime_content_type($fullUploadPath) ?: ($upload->mime_type ?? 'application/octet-stream')) : ($upload->mime_type ?? 'application/octet-stream')), 0, 255);
 
             // Milestone Persistence in MySQL
             if ($leaseApp) {
                 if ($isCustom) {
-                    $dbDoc = LeaseDocument::create([
-                        'lease_application_id' => $leaseApp->id,
-                        'folder_id'            => $folderId,
-                        'document_field_id'    => null,
-                        'document_name'        => $resolvedDocName,
-                        'file_name'            => $fileName,
-                        'file_path'            => $filePath,
-                        'file_type'            => $fileType,
-                        'file_size'            => $fileSize,
-                        'status'               => 'uploaded',
-                        'uploaded_by'          => Auth::id() ?? 1,
-                        'uploaded_at'          => now(),
-                    ]);
+                    $customId = (is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_')) ? (int)str_replace('custom_', '', $rawDocItem) : null;
+                    $dbDoc = $customId ? LeaseDocument::where('lease_application_id', $leaseApp->id)->where('id', $customId)->first() : null;
+                    if ($dbDoc) {
+                        $dbDoc->update([
+                            'folder_id'     => $folderId,
+                            'document_name' => $resolvedDocName,
+                            'file_name'     => $fileName,
+                            'file_path'     => $filePath,
+                            'file_type'     => $fileType,
+                            'file_size'     => $fileSize,
+                            'status'        => 'uploaded',
+                            'uploaded_by'   => Auth::id() ?? 1,
+                            'uploaded_at'   => now(),
+                        ]);
+                    } else {
+                        $dbDoc = LeaseDocument::create([
+                            'lease_application_id' => $leaseApp->id,
+                            'folder_id'            => $folderId,
+                            'document_field_id'    => null,
+                            'document_name'        => $resolvedDocName,
+                            'file_name'            => $fileName,
+                            'file_path'            => $filePath,
+                            'file_type'            => $fileType,
+                            'file_size'            => $fileSize,
+                            'status'               => 'uploaded',
+                            'uploaded_by'          => Auth::id() ?? 1,
+                            'uploaded_at'          => now(),
+                        ]);
+                    }
                     $docItem = 'custom_' . $dbDoc->id;
                 } else {
                     LeaseDocument::updateOrCreate(
@@ -591,27 +764,52 @@ class CustomerController extends Controller
             mkdir($fullUploadPath, 0777, true);
         }
 
-        $fileName = $file->getClientOriginalName();
+        $fileName = substr((string)$file->getClientOriginalName(), 0, 255);
+        $targetRelPath = $uploadSubdir . '/' . $fileName;
+
+        // Delete old file from server disk if replacing with a different file
+        if ($oldFilePath && $oldFilePath !== $targetRelPath && file_exists(public_path($oldFilePath))) {
+            @unlink(public_path($oldFilePath));
+        }
+
         $file->move($fullUploadPath, $fileName);
         $fileSize = filesize($fullUploadPath . '/' . $fileName);
-        $fileType = mime_content_type($fullUploadPath . '/' . $fileName);
+        $detectedMime = mime_content_type($fullUploadPath . '/' . $fileName);
+        $clientMime = $file->getClientMimeType();
+        $fileType = substr((string)(!in_array($detectedMime, ['application/x-empty', 'application/octet-stream', false], true) ? $detectedMime : ($clientMime ?: 'application/octet-stream')), 0, 255);
 
         // Milestone Persistence in MySQL:
         if ($leaseApp) {
             if ($isCustom) {
-                $dbDoc = LeaseDocument::create([
-                    'lease_application_id' => $leaseApp->id,
-                    'folder_id'            => $folderId,
-                    'document_field_id'    => null,
-                    'document_name'        => $resolvedDocName,
-                    'file_name'            => $fileName,
-                    'file_path'            => $uploadSubdir . '/' . $fileName,
-                    'file_type'            => $fileType,
-                    'file_size'            => $fileSize,
-                    'status'               => 'uploaded',
-                    'uploaded_by'          => Auth::id() ?? 1,
-                    'uploaded_at'          => now(),
-                ]);
+                $customId = (is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_')) ? (int)str_replace('custom_', '', $rawDocItem) : null;
+                $dbDoc = $customId ? LeaseDocument::where('lease_application_id', $leaseApp->id)->where('id', $customId)->first() : null;
+                if ($dbDoc) {
+                    $dbDoc->update([
+                        'folder_id'     => $folderId,
+                        'document_name' => $resolvedDocName,
+                        'file_name'     => $fileName,
+                        'file_path'     => $targetRelPath,
+                        'file_type'     => $fileType,
+                        'file_size'     => $fileSize,
+                        'status'        => 'uploaded',
+                        'uploaded_by'   => Auth::id() ?? 1,
+                        'uploaded_at'   => now(),
+                    ]);
+                } else {
+                    $dbDoc = LeaseDocument::create([
+                        'lease_application_id' => $leaseApp->id,
+                        'folder_id'            => $folderId,
+                        'document_field_id'    => null,
+                        'document_name'        => $resolvedDocName,
+                        'file_name'            => $fileName,
+                        'file_path'            => $targetRelPath,
+                        'file_type'            => $fileType,
+                        'file_size'            => $fileSize,
+                        'status'               => 'uploaded',
+                        'uploaded_by'          => Auth::id() ?? 1,
+                        'uploaded_at'          => now(),
+                    ]);
+                }
                 $docItem = 'custom_' . $dbDoc->id;
             } else {
                 LeaseDocument::updateOrCreate(
@@ -623,7 +821,7 @@ class CustomerController extends Controller
                         'folder_id'      => $folderId,
                         'document_name'  => $resolvedDocName,
                         'file_name'      => $fileName,
-                        'file_path'      => $uploadSubdir . '/' . $fileName,
+                        'file_path'      => $targetRelPath,
                         'file_type'      => $fileType,
                         'file_size'      => $fileSize,
                         'status'         => 'uploaded',
@@ -694,6 +892,115 @@ class CustomerController extends Controller
             'success'     => true,
             'doc_item'    => $request->input('doc_item'),
             'requirement' => $request->input('requirement'),
+        ]);
+    }
+
+    /**
+     * Remove an uploaded document from draft session and database.
+     */
+    public function removeDocument(Request $request)
+    {
+        $request->validate([
+            'doc_item'  => 'required',
+            'folder_id' => 'nullable|integer',
+        ]);
+
+        $rawDocItem = $request->input('doc_item');
+        $isCustom = is_string($rawDocItem) && str_starts_with($rawDocItem, 'custom_');
+        $docItem = $isCustom ? $rawDocItem : (int)$rawDocItem;
+
+        $draft = session('lease_draft', []);
+        $uploadedDocs = $draft['uploaded_docs'] ?? [];
+        $appId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
+        if ($appId) {
+            $dbDocs = LeaseDocument::where('lease_application_id', $appId)->get();
+            foreach ($dbDocs as $doc) {
+                $docItem = $doc->document_field_id ?: ('custom_' . $doc->id);
+                if (!isset($uploadedDocs[$docItem])) {
+                    $uploadedDocs[$docItem] = [
+                        'doc_name'     => $doc->document_name,
+                        'is_custom'    => empty($doc->document_field_id),
+                        'file_name'    => $doc->file_name,
+                        'file_size'    => $doc->file_size,
+                        'file_type'    => $doc->file_type,
+                        'folder_id'    => $doc->folder_id,
+                        'draft_path'   => $doc->file_path,
+                        'file_path'    => $doc->file_path,
+                        'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
+                    ];
+                } else {
+                    if (empty($uploadedDocs[$docItem]['doc_name']) && !empty($doc->document_name)) {
+                        $uploadedDocs[$docItem]['doc_name'] = $doc->document_name;
+                    }
+                    if (empty($uploadedDocs[$docItem]['folder_id']) && !empty($doc->folder_id)) {
+                        $uploadedDocs[$docItem]['folder_id'] = $doc->folder_id;
+                    }
+                    if (empty($uploadedDocs[$docItem]['file_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['file_path'] = $doc->file_path;
+                    }
+                    if (empty($uploadedDocs[$docItem]['draft_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['draft_path'] = $doc->file_path;
+                    }
+                }
+            }
+        }
+        foreach ($uploadedDocs as $k => $doc) {
+            if (empty($doc['file_path']) && !empty($doc['draft_path'])) {
+                $uploadedDocs[$k]['file_path'] = $doc['draft_path'];
+            }
+            if (empty($doc['draft_path']) && !empty($doc['file_path'])) {
+                $uploadedDocs[$k]['draft_path'] = $doc['file_path'];
+            }
+        }
+
+        // Remove from session
+        if (isset($uploadedDocs[$docItem])) {
+            if (!empty($uploadedDocs[$docItem]['draft_path']) && file_exists(public_path($uploadedDocs[$docItem]['draft_path']))) {
+                @unlink(public_path($uploadedDocs[$docItem]['draft_path']));
+            }
+            unset($uploadedDocs[$docItem]);
+        }
+        $draft['uploaded_docs'] = $uploadedDocs;
+        session(['lease_draft' => $draft]);
+
+        // Remove from database if draft application exists
+        $draftAppId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
+        $leaseApp = $draftAppId ? LeaseApplication::find($draftAppId) : null;
+
+        if ($leaseApp) {
+            if ($isCustom) {
+                $customDocId = (int)str_replace('custom_', '', $docItem);
+                $dbDoc = LeaseDocument::where('lease_application_id', $leaseApp->id)->where('id', $customDocId)->first();
+                if ($dbDoc) {
+                    if ($dbDoc->file_path && file_exists(public_path($dbDoc->file_path))) {
+                        @unlink(public_path($dbDoc->file_path));
+                    }
+                    $dbDoc->delete();
+                }
+            } else {
+                $dbDoc = LeaseDocument::where('lease_application_id', $leaseApp->id)->where('document_field_id', $docItem)->first();
+                if ($dbDoc) {
+                    if ($dbDoc->file_path && file_exists(public_path($dbDoc->file_path))) {
+                        @unlink(public_path($dbDoc->file_path));
+                    }
+                    $dbDoc->delete();
+                }
+            }
+        }
+
+        $customCount = count(array_filter($uploadedDocs, fn($d) => !empty($d['is_custom'])));
+        $totalItems = 19 + $customCount;
+        $uploadedCount = count($uploadedDocs);
+        $percent = min(100, round(($uploadedCount / $totalItems) * 100));
+
+        return response()->json([
+            'status'    => 1,
+            'message'   => 'Document removed successfully.',
+            'doc_item'  => $docItem,
+            'uploaded'  => $uploadedCount,
+            'total'     => $totalItems,
+            'percent'   => $percent,
+            'is_custom' => $isCustom,
         ]);
     }
 
@@ -963,7 +1270,9 @@ class CustomerController extends Controller
                 'mimas_contact' => $app->mimasCredentials->first()->contact_number ?? ($app->customer->mobile_num ?? ''),
             ],
             'step3' => [
-                'category_id' => $app->category_id,
+                'category_id'         => $app->category_id,
+                'is_other'            => (bool)($app->category?->is_custom || !empty($app->other_category_rule)),
+                'other_category_rule' => $app->other_category_rule ?? ($app->category?->is_custom ? $app->category->name : null),
             ],
             'step6' => [
                 'mimas_user_id' => $app->mimasCredentials->first()->user_id ?? ($app->customer->mimas_no ?? ''),
@@ -986,17 +1295,18 @@ class CustomerController extends Controller
         ];
 
         foreach ($app->documents as $doc) {
-            $docItem = $doc->document_field_id;
-            if ($docItem) {
-                $draft['uploaded_docs'][$docItem] = [
-                    'file_name'   => $doc->file_name,
-                    'file_size'   => $doc->file_size,
-                    'file_type'   => $doc->file_type,
-                    'folder_id'   => $doc->folder_id,
-                    'draft_path'  => $doc->file_path,
-                    'uploaded_at' => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
-                ];
-            }
+            $docItem = $doc->document_field_id ?: ('custom_' . $doc->id);
+            $draft['uploaded_docs'][$docItem] = [
+                'doc_name'     => $doc->document_name,
+                'is_custom'    => empty($doc->document_field_id),
+                'file_name'    => $doc->file_name,
+                'file_size'    => $doc->file_size,
+                'file_type'    => $doc->file_type,
+                'folder_id'    => $doc->folder_id,
+                'draft_path'   => $doc->file_path,
+                'file_path'    => $doc->file_path,
+                'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
+            ];
         }
 
         session(['lease_draft' => $draft]);
@@ -1015,6 +1325,47 @@ class CustomerController extends Controller
         $step3 = $draft['step3'] ?? [];
         $step6 = $draft['step6'] ?? [];
         $uploadedDocs = $draft['uploaded_docs'] ?? [];
+        $appId = $draft['application_id'] ?? (!empty($draft['application_no']) ? LeaseApplication::where('application_no', $draft['application_no'])->value('id') : null);
+        if ($appId) {
+            $dbDocs = LeaseDocument::where('lease_application_id', $appId)->get();
+            foreach ($dbDocs as $doc) {
+                $docItem = $doc->document_field_id ?: ('custom_' . $doc->id);
+                if (!isset($uploadedDocs[$docItem])) {
+                    $uploadedDocs[$docItem] = [
+                        'doc_name'     => $doc->document_name,
+                        'is_custom'    => empty($doc->document_field_id),
+                        'file_name'    => $doc->file_name,
+                        'file_size'    => $doc->file_size,
+                        'file_type'    => $doc->file_type,
+                        'folder_id'    => $doc->folder_id,
+                        'draft_path'   => $doc->file_path,
+                        'file_path'    => $doc->file_path,
+                        'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
+                    ];
+                } else {
+                    if (empty($uploadedDocs[$docItem]['doc_name']) && !empty($doc->document_name)) {
+                        $uploadedDocs[$docItem]['doc_name'] = $doc->document_name;
+                    }
+                    if (empty($uploadedDocs[$docItem]['folder_id']) && !empty($doc->folder_id)) {
+                        $uploadedDocs[$docItem]['folder_id'] = $doc->folder_id;
+                    }
+                    if (empty($uploadedDocs[$docItem]['file_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['file_path'] = $doc->file_path;
+                    }
+                    if (empty($uploadedDocs[$docItem]['draft_path']) && !empty($doc->file_path)) {
+                        $uploadedDocs[$docItem]['draft_path'] = $doc->file_path;
+                    }
+                }
+            }
+        }
+        foreach ($uploadedDocs as $k => $doc) {
+            if (empty($doc['file_path']) && !empty($doc['draft_path'])) {
+                $uploadedDocs[$k]['file_path'] = $doc['draft_path'];
+            }
+            if (empty($doc['draft_path']) && !empty($doc['file_path'])) {
+                $uploadedDocs[$k]['draft_path'] = $doc['file_path'];
+            }
+        }
 
         $preview = [
             'client_name'    => $step1['client_name'] ?? 'N/A',
@@ -1040,6 +1391,15 @@ class CustomerController extends Controller
             'uploaded_count'           => count($uploadedDocs),
             'uploaded_docs'            => $uploadedDocs,
         ];
+
+        $mimasPasswordPreview = $step6['mimas_password'] ?? ($step2['mimas_password'] ?? null);
+        if ((empty($mimasPasswordPreview) || $mimasPasswordPreview === '__UNCHANGED__') && !empty($draft['application_id'])) {
+            $cred = MimasCredential::where('lease_application_id', $draft['application_id'])->first();
+            if ($cred) {
+                $mimasPasswordPreview = $cred->password;
+            }
+        }
+        $preview['mimas_password'] = $mimasPasswordPreview;
 
         // Resolve District Name
         if (!empty($step1['district_id'])) {
@@ -1181,7 +1541,7 @@ class CustomerController extends Controller
                 'pan'           => $step1['pan'] ?? 'PANNA0000P',
                 'aadhaar_no'    => $step1['aadhaar_no'] ?? null,
                 'gstin'         => $step1['gstin'] ?? null,
-                'area'          => !empty($step1['area']) ? (float)$step1['area'] : null,
+                'area'          => !empty($step1['area']) ? trim($step1['area']) : null,
                 'address'       => $step1['address'] ?? null,
                 'status'        => 1,
             ]);
@@ -1211,7 +1571,7 @@ class CustomerController extends Controller
         $appNo = null;
         $submittedAppId = null;
 
-        DB::transaction(function() use (&$appNo, &$submittedAppId, $customer, $district, $category, $mineral, $mineralIds, $otherMineralName, $branch, $user, $request, $draft, $step1, $step2, $step6) {
+        DB::transaction(function() use (&$appNo, &$submittedAppId, $customer, $district, $category, $mineral, $mineralIds, $otherMineralName, $branch, $user, $request, $draft, $step1, $step2, $step3, $step6) {
             $currentYear = (int)date('Y');
             $appNo = $this->generateOfficialAppNumber();
 
@@ -1220,6 +1580,10 @@ class CustomerController extends Controller
             $leaseApp = $existingAppId ? LeaseApplication::find($existingAppId) : null;
             $oldAppNo = $leaseApp ? $leaseApp->application_no : null;
 
+            $areaExtentRaw = !empty($step1['area']) ? trim($step1['area']) : ($customer->area ?? null);
+            $numExtent = $this->parseAreaExtentToFloat($areaExtentRaw);
+            $acresStr = $numExtent ? number_format($numExtent * 2.47105, 2) . ' Acres' : null;
+
             if ($leaseApp) {
                 $leaseApp->update([
                     'common_id'          => 'GTMS-' . substr($appNo, 3),
@@ -1227,10 +1591,12 @@ class CustomerController extends Controller
                     'customer_id'        => $customer->id,
                     'district_id'        => $district->id,
                     'category_id'        => $category->id,
+                    'other_category_rule' => $step3['other_category_rule'] ?? ($category->is_custom ? $category->name : ($leaseApp->other_category_rule ?? null)),
                     'mineral_id'         => $mineral->id,
                     'other_mineral_name' => $otherMineralName,
                     'taluk'              => $step1['address'] ?? null,
-                    'area_extent_ha'     => !empty($step1['area']) ? (float)$step1['area'] : ($customer->area ?? null),
+                    'area_extent_ha'     => $areaExtentRaw,
+                    'area_extent_acres'  => $acresStr,
                     'start_date'         => "{$currentYear}-10-01",
                     'end_date'           => ($currentYear + 5) . "-09-30",
                     'lease_period_years' => 5,
@@ -1249,12 +1615,13 @@ class CustomerController extends Controller
                     'customer_id'              => $customer->id,
                     'district_id'              => $district->id,
                     'category_id'              => $category->id,
+                    'other_category_rule'       => $step3['other_category_rule'] ?? ($category->is_custom ? $category->name : null),
                     'mineral_id'               => $mineral->id,
                     'other_mineral_name'       => $otherMineralName,
                     'taluk'                    => $step1['address'] ?? null,
                     'village'                  => null,
-                    'area_extent_ha'           => !empty($step1['area']) ? (float)$step1['area'] : ($customer->area ?? null),
-                    'area_extent_acres'        => null,
+                    'area_extent_ha'           => $areaExtentRaw,
+                    'area_extent_acres'        => $acresStr,
                     'start_date'               => "{$currentYear}-10-01",
                     'end_date'                 => ($currentYear + 5) . "-09-30",
                     'lease_period_years'       => 5,
@@ -1282,7 +1649,7 @@ class CustomerController extends Controller
                     ['lease_application_id' => $leaseApp->id],
                     [
                         'survey_no'      => 'SF.No 1',
-                        'extent_ha'      => (float)$step1['area'],
+                        'extent_ha'      => $this->parseAreaExtentToFloat($step1['area']),
                         'classification' => 'Patta Dry',
                         'pattadar_name'  => $step1['client_name'] ?? $customer->customer_name,
                     ]
@@ -1561,7 +1928,7 @@ class CustomerController extends Controller
     {
         $id = $request->query('id');
         $withRelations = [
-            'customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'mimasCredentials', 'miningApplications',
+            'customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'mimasCredentials', 'miningApplications', 'handlers',
             'documents' => function($q) {
                 $q->with('folder')->orderBy('folder_id')->orderBy('id');
             }
@@ -1669,6 +2036,157 @@ class CustomerController extends Controller
         return back()->with('success', "Document status updated to " . ucfirst(str_replace('_', ' ', $newStatus)));
     }
 
+    /**
+     * In-place direct document upload from application dossier view (Direct File or Chunked Upload Token).
+     */
+    public function uploadDossierDocument(Request $request, $id)
+    {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov'
+        ];
+
+        $request->validate([
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
+            'upload_token' => 'required_without:file|nullable|string',
+        ]);
+
+        $doc = LeaseDocument::findOrFail($id);
+        $leaseApp = $doc->leaseApplication ?? LeaseApplication::find($doc->lease_application_id);
+        $appNo = $leaseApp ? $leaseApp->application_no : ('LA-' . date('Y') . '-' . str_pad($doc->lease_application_id, 4, '0', STR_PAD_LEFT));
+
+        $uploadSubdir = 'uploads/lease_applications/' . $appNo;
+        $fullUploadPath = public_path($uploadSubdir);
+        if (!file_exists($fullUploadPath)) {
+            mkdir($fullUploadPath, 0777, true);
+        }
+
+        // Delete old physical file if replacing
+        $oldFilePath = $doc->file_path;
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'lease_applications/' . $appNo, $doc->lease_application_id);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            // Delete old file from server disk if re-uploading with a new/different file
+            if ($oldFilePath && $oldFilePath !== $filePath && file_exists(public_path($oldFilePath))) {
+                @unlink(public_path($oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fullPhysical = public_path($filePath);
+            $fileSize = file_exists($fullPhysical) ? filesize($fullPhysical) : $upload->total_size;
+            $detectedMime = file_exists($fullPhysical) ? mime_content_type($fullPhysical) : null;
+            $fileType = substr((string)(!in_array($detectedMime, ['application/x-empty', 'application/octet-stream', false], true) ? $detectedMime : ($upload->mime_type ?? 'application/octet-stream')), 0, 255);
+
+            $doc->update([
+                'file_name'   => $fileName,
+                'file_path'   => $filePath,
+                'file_type'   => $fileType,
+                'file_size'   => $fileSize,
+                'status'      => 'uploaded',
+                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_at' => now(),
+            ]);
+
+            $this->logActivity(
+                $doc->lease_application_id,
+                'document_uploaded',
+                "Document '{$doc->document_name}' ({$fileName}) uploaded via chunked engine directly to dossier."
+            );
+
+            $totalUploaded = LeaseDocument::where('lease_application_id', $doc->lease_application_id)->whereNotNull('file_path')->count();
+            $totalDocs = LeaseDocument::where('lease_application_id', $doc->lease_application_id)->count();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'         => 1,
+                    'message'        => "{$doc->document_name} uploaded successfully!",
+                    'doc_id'         => $doc->id,
+                    'file_name'      => $fileName,
+                    'file_path'      => asset($filePath),
+                    'file_size'      => $this->formatFileSize($fileSize),
+                    'total_uploaded' => $totalUploaded,
+                    'total_docs'     => $totalDocs,
+                ]);
+            }
+
+            return back()->with('success', "Document '{$doc->document_name}' uploaded successfully!");
+        }
+
+        // Direct file upload fallback (files <= 20MB)
+        if ($oldFilePath && file_exists(public_path($oldFilePath))) {
+            @unlink(public_path($oldFilePath));
+        }
+
+        $file = $request->file('file');
+        $fileName = substr((string)$file->getClientOriginalName(), 0, 255);
+        $targetRelPath = $uploadSubdir . '/' . $fileName;
+
+        $file->move($fullUploadPath, $fileName);
+        $fileSize = filesize($fullUploadPath . '/' . $fileName);
+        $detectedMime = mime_content_type($fullUploadPath . '/' . $fileName);
+        $clientMime = $file->getClientMimeType();
+        $fileType = substr((string)(!in_array($detectedMime, ['application/x-empty', 'application/octet-stream', false], true) ? $detectedMime : ($clientMime ?: 'application/octet-stream')), 0, 255);
+
+        $doc->update([
+            'file_name'   => $fileName,
+            'file_path'   => $targetRelPath,
+            'file_type'   => $fileType,
+            'file_size'   => $fileSize,
+            'status'      => 'uploaded',
+            'uploaded_by' => Auth::id() ?? 1,
+            'uploaded_at' => now(),
+        ]);
+
+        $this->logActivity(
+            $doc->lease_application_id,
+            'document_uploaded',
+            "Document '{$doc->document_name}' ({$fileName}) uploaded directly to dossier."
+        );
+
+        $totalUploaded = LeaseDocument::where('lease_application_id', $doc->lease_application_id)->whereNotNull('file_path')->count();
+        $totalDocs = LeaseDocument::where('lease_application_id', $doc->lease_application_id)->count();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status'         => 1,
+                'message'        => "{$doc->document_name} uploaded successfully!",
+                'doc_id'         => $doc->id,
+                'file_name'      => $fileName,
+                'file_path'      => asset($targetRelPath),
+                'file_size'      => $this->formatFileSize($fileSize),
+                'total_uploaded' => $totalUploaded,
+                'total_docs'     => $totalDocs,
+            ]);
+        }
+
+        return back()->with('success', "Document '{$doc->document_name}' uploaded successfully!");
+    }
+
     // ───────────────────────────────────────
     // Process Flow 6.3: Approve Application
     // ───────────────────────────────────────
@@ -1725,13 +2243,34 @@ class CustomerController extends Controller
 
     public function generateReport($id)
     {
-        $application = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'mimasCredentials', 'documents.folder'])
-            ->findOrFail($id);
+        $application = LeaseApplication::with([
+            'customer',
+            'district',
+            'category',
+            'mineral',
+            'minerals',
+            'surveyNumbers',
+            'mimasCredentials',
+            'handlers',
+            'documents.folder'
+        ])->findOrFail($id);
+
+        $linkedMining = \App\Models\MiningApplication::where('lease_application_id', $application->id)->first();
+        $activityLogs = \App\Models\ActivityLog::with('user')
+            ->where('loggable_id', $id)
+            ->where('loggable_type', 'like', '%lease%')
+            ->latest()
+            ->take(10)
+            ->get();
+        $quotation = \App\Models\Quotation::where('lease_application_id', $application->id)
+            ->orWhere('customer_id', $application->customer_id)
+            ->latest()
+            ->first();
 
         $this->logActivity($id, 'report_generated', 'Summary report generated.');
 
-        // Generate a simple HTML-based PDF summary (no external library needed)
-        $html = view('pages.lease_application.report_pdf', compact('application'))->render();
+        // Generate a comprehensive HTML-based PDF summary
+        $html = view('pages.lease_application.report_pdf', compact('application', 'linkedMining', 'activityLogs', 'quotation'))->render();
 
         return response($html)
             ->header('Content-Type', 'text/html')
@@ -1768,18 +2307,34 @@ class CustomerController extends Controller
     {
         $lease = LeaseApplication::with(['customer', 'district', 'category', 'mineral', 'minerals', 'surveyNumbers', 'documents', 'miningApplications'])->findOrFail($id);
 
+        // Verification Gate: Step 6.3 (Approve Data) must be completed before promoting to Mining Plan
+        if ($lease->status !== 'approved') {
+            $msg = 'Action Blocked: Lease application must complete Step 6.3 (Approve Data) before moving to the Mining Plan domain.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => $msg,
+                ], 422);
+            }
+            return back()->with('error', $msg);
+        }
+
         // Idempotency: Check if already moved
         $existingMining = $lease->miningApplications()->first();
         if ($existingMining) {
             $msg = "This lease application is already linked to Mining Plan: {$existingMining->common_id} ({$existingMining->application_no}).";
+            $redirectUrl = route('viewapplication', ['id' => $lease->id]);
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
-                    'status'   => 1,
-                    'message'  => $msg,
-                    'redirect' => '/process?id=' . $existingMining->id,
+                    'status'        => 1,
+                    'already_moved' => true,
+                    'message'       => $msg,
+                    'common_id'     => $existingMining->common_id,
+                    'mining_app_no' => $existingMining->application_no,
+                    'redirect'      => $redirectUrl,
                 ]);
             }
-            return redirect('/process?id=' . $existingMining->id)->with('info', $msg);
+            return redirect($redirectUrl)->with('info', $msg);
         }
 
         // 1. Resolve Universal Common ID (GTMS-YYYY-XXXX)
@@ -1850,7 +2405,11 @@ class CustomerController extends Controller
             mkdir($miningUploadPath, 0777, true);
         }
 
-        // Folders in Mining Module: 2 = Documents, 5 = Plan
+        // Resolve Mining Module Folders dynamically
+        $miningModuleId = DB::table('modules')->where('code', 'mining')->value('id') ?? 3;
+        $docsFolderId = DB::table('folders')->where('module_id', $miningModuleId)->where('name', 'Documents')->value('id') ?? 8;
+        $planFolderId = DB::table('folders')->where('module_id', $miningModuleId)->where('name', 'Plan')->value('id') ?? 11;
+
         $clonedCount = 0;
         foreach ($lease->documents as $lDoc) {
             if (!empty($lDoc->file_path) && file_exists(public_path($lDoc->file_path))) {
@@ -1859,11 +2418,11 @@ class CustomerController extends Controller
                 $destPath = $miningUploadPath . '/' . $destFileName;
                 @copy($sourcePath, $destPath);
 
-                // Map target folder: KML/Plan -> Folder 5 (Plan), others -> Folder 2 (Documents)
-                $targetFolderId = 2;
+                // Map target folder: KML/Plan -> Plan folder, others -> Documents folder
+                $targetFolderId = $docsFolderId;
                 $docLower = strtolower($lDoc->document_name . ' ' . $destFileName);
-                if (str_contains($docLower, 'kml') || str_contains($docLower, 'plan') || str_contains($docLower, 'drawing') || $lDoc->folder_id == 9) {
-                    $targetFolderId = 5;
+                if (str_contains($docLower, 'kml') || str_contains($docLower, 'plan') || str_contains($docLower, 'drawing') || $lDoc->folder_id == 9 || $lDoc->folder_id == 15) {
+                    $targetFolderId = $planFolderId;
                 }
 
                 MiningDocument::create([
@@ -1885,7 +2444,8 @@ class CustomerController extends Controller
 
         // 6. Initialize default required fields for Mining Folders (marked as pending if not uploaded)
         $natureOfWork = $natureOfWorkId;
-        $standardFields = DocumentField::whereIn('folder_id', [1, 2, 3, 4, 5, 6])
+        $miningFolderIds = DB::table('folders')->where('module_id', $miningModuleId)->pluck('id');
+        $standardFields = DocumentField::whereIn('folder_id', $miningFolderIds)
             ->where(function($q) use ($natureOfWork) {
                 $q->where('nature_of_work_id', $natureOfWork)
                   ->orWhereNull('nature_of_work_id');
@@ -1932,17 +2492,27 @@ class CustomerController extends Controller
             \Log::warning('Activity log failed: ' . $e->getMessage());
         }
 
-        $successMsg = "🎉 Successfully transitioned to Mining Plan domain under Common ID: {$commonId}! {$clonedCount} statutory documents auto-carried.";
+        $successMsg = "Successfully transitioned to Mining Plan domain under Common ID: {$commonId}! {$clonedCount} verified statutory documents auto-carried.";
+        $redirectUrl = route('viewapplication', ['id' => $lease->id]);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
-                'status'   => 1,
-                'message'  => $successMsg,
-                'redirect' => '/process?id=' . $miningApp->id,
+                'status'        => 1,
+                'message'       => $successMsg,
+                'common_id'     => $commonId,
+                'mining_app_no' => $miningAppNo,
+                'cloned_count'  => $clonedCount,
+                'redirect'      => $redirectUrl,
             ]);
         }
 
-        return redirect('/process?id=' . $miningApp->id)->with('success', $successMsg);
+        return redirect($redirectUrl)
+            ->with('mining_transition_success', [
+                'common_id'     => $commonId,
+                'mining_app_no' => $miningAppNo,
+                'cloned_count'  => $clonedCount,
+            ])
+            ->with('success', $successMsg);
     }
 
     // ───────────────────────────────────────
@@ -1987,6 +2557,23 @@ class CustomerController extends Controller
         }
 
         return $prefix . str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
+    }
+
+    // ───────────────────────────────────────
+    // Helper: Parse area extent to float (supports standard decimal and H.A.SqM like 1.90.57)
+    // ───────────────────────────────────────
+
+    public function parseAreaExtentToFloat(?string $extent): ?float
+    {
+        if (empty($extent)) {
+            return null;
+        }
+        $val = trim($extent);
+        $parts = explode('.', $val);
+        if (count($parts) === 3) {
+            return round((float)$parts[0] + ((float)$parts[1] / 100) + ((float)$parts[2] / 10000), 4);
+        }
+        return is_numeric($val) ? (float)$val : null;
     }
 
     // ───────────────────────────────────────

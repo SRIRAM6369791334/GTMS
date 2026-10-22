@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApplicationHandler;
 use App\Models\Customer;
 use App\Models\District;
 use App\Models\EcCertificate;
 use App\Models\EnvironmentProject;
+use App\Models\PptApplication;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
@@ -17,6 +19,7 @@ class EnvironmentClearanceTest extends TestCase
     use DatabaseTransactions;
 
     protected User $user;
+    protected ?Customer $testCustomer = null;
 
     protected function setUp(): void
     {
@@ -35,6 +38,12 @@ class EnvironmentClearanceTest extends TestCase
             $this->user->assignRole($adminRole);
         }
         $this->actingAs($this->user);
+
+        $this->testCustomer = Customer::first() ?? Customer::create([
+            'customer_name' => 'Default Test Customer',
+            'mobile_num'    => '9876543210',
+            'status'        => 1,
+        ]);
     }
 
     /**
@@ -134,13 +143,25 @@ class EnvironmentClearanceTest extends TestCase
         $cert = EcCertificate::whereHas('environmentProject')->first();
         if (!$cert) {
             $project = EnvironmentProject::first();
-            $customer = $project?->customer ?? Customer::first();
+            if (!$project) {
+                $project = EnvironmentProject::create([
+                    'project_code'  => 'ENV-B2-2026-AUTHCERT',
+                    'customer_id'   => $this->testCustomer->id,
+                    'category'      => 'B2',
+                    'project_name'  => 'Auth Cert Project',
+                    'district_id'   => 1,
+                    'contact_phone' => '9876543210',
+                    'status'        => 'approved',
+                ]);
+            }
+            $customer = $project?->customer ?? $this->testCustomer;
             $cert = EcCertificate::create([
                 'ec_ref_no'              => 'SEIAA-TN/EC/2026/TEST99',
-                'environment_project_id' => $project?->id,
+                'environment_project_id' => $project->id,
                 'customer_id'            => $customer?->id ?? 1,
                 'applicant_name'         => 'Authentic Granite Ltd',
                 'issue_date'             => date('Y-m-d'),
+                'expiry_date'            => date('Y-m-d', strtotime('+5 years')),
                 'validity_years'         => 5,
                 'communication_type'     => 'Grant',
                 'status'                 => 'active',
@@ -273,6 +294,7 @@ class EnvironmentClearanceTest extends TestCase
     {
         $proj1 = EnvironmentProject::first() ?? EnvironmentProject::create([
             'project_code'  => 'ENV-B2-2026-0001',
+            'customer_id'   => $this->testCustomer->id,
             'category'      => 'B2',
             'project_name'  => 'Project 1',
             'district_id'   => 1,
@@ -284,6 +306,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$proj2) {
             $proj2 = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-0002',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'Project 2',
                 'district_id'   => 1,
@@ -330,6 +353,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$project) {
             $project = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-7777',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'Show View Test Project',
                 'district_id'   => 1,
@@ -371,6 +395,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$project) {
             $project = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-8888',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'All Steps Test Project',
                 'district_id'   => 1,
@@ -453,6 +478,7 @@ class EnvironmentClearanceTest extends TestCase
     {
         $proj1 = EnvironmentProject::first() ?? EnvironmentProject::create([
             'project_code'  => 'ENV-B2-2026-0001',
+            'customer_id'   => $this->testCustomer->id,
             'category'      => 'B2',
             'project_name'  => 'Project 1',
             'district_id'   => 1,
@@ -464,6 +490,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$proj2) {
             $proj2 = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-0002',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'Project 2',
                 'district_id'   => 1,
@@ -533,6 +560,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$project) {
             $project = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-5555',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'Direct Store Project',
                 'district_id'   => 1,
@@ -568,11 +596,24 @@ class EnvironmentClearanceTest extends TestCase
         $cert = EcCertificate::first();
         if (!$cert) {
             $project = EnvironmentProject::first();
+            if (!$project) {
+                $project = EnvironmentProject::create([
+                    'project_code'  => 'ENV-B2-2026-FLASH',
+                    'customer_id'   => $this->testCustomer->id,
+                    'category'      => 'B2',
+                    'project_name'  => 'Flash Test Project',
+                    'district_id'   => 1,
+                    'contact_phone' => '9876543210',
+                    'status'        => 'approved',
+                ]);
+            }
             $cert = EcCertificate::create([
                 'ec_ref_no'              => 'SEIAA-TN/EC/2026/SHOW01',
-                'environment_project_id' => $project?->id,
+                'environment_project_id' => $project->id,
+                'customer_id'            => $this->testCustomer->id,
                 'applicant_name'         => 'Flash Test Enterprise',
                 'issue_date'             => date('Y-m-d'),
+                'expiry_date'            => date('Y-m-d', strtotime('+5 years')),
                 'validity_years'         => 5,
                 'communication_type'     => 'Grant',
                 'status'                 => 'active',
@@ -595,6 +636,7 @@ class EnvironmentClearanceTest extends TestCase
         if (!$project) {
             $project = EnvironmentProject::create([
                 'project_code'  => 'ENV-B2-2026-UPLOAD1',
+                'customer_id'   => $this->testCustomer->id,
                 'category'      => 'B2',
                 'project_name'  => 'Upload Test Project',
                 'district_id'   => 1,
@@ -818,6 +860,216 @@ class EnvironmentClearanceTest extends TestCase
         $pptStage1->forceDelete();
         $pptStage2->forceDelete();
         $project->forceDelete();
+    }
+
+    /**
+     * Test Category B2 full sequential statutory lifecycle with PPT Department and EC Certificate handoff:
+     * Intake (B2: 6 Folders) -> Submit B2 to PPT -> PPT Approves B2 Presentation -> Project Completed & Approved -> Direct Link to EC Certificate Issuance.
+     */
+    public function test_category_b2_full_sequential_statutory_lifecycle(): void
+    {
+        $uniq = uniqid();
+
+        $customer = Customer::create([
+            'customer_name' => 'B2 Test Quarry Owner ' . $uniq,
+            'company_name'  => 'B2 Minerals ' . $uniq . ' Private Limited',
+            'mobile_num'    => '9777766661',
+        ]);
+
+        $district = District::first() ?? District::create([
+            'name'       => 'Dharmapuri',
+            'state_name' => 'Tamil Nadu',
+        ]);
+
+        // 1. Intake: Create B2 project
+        $createData = [
+            'category'      => 'B2',
+            'customer_id'   => $customer->id,
+            'client_name'   => 'B2 Test Quarry Owner ' . $uniq,
+            'company_name'  => 'B2 Minerals ' . $uniq . ' Private Limited',
+            'project_name'  => 'B2 Direct EC Quarry Flow ' . $uniq,
+            'district_id'   => $district->id,
+            'location'      => 'Survey No 202/B',
+            'contact_phone' => '9777766661',
+        ];
+
+        $resCreate = $this->post(route('eviron.store'), $createData);
+        $resCreate->assertSessionHasNoErrors();
+
+        $project = EnvironmentProject::where('project_name', 'B2 Direct EC Quarry Flow ' . $uniq)->first();
+        $this->assertNotNull($project);
+        $this->assertEquals('B2', $project->category);
+        $this->assertNull($project->sub_category);
+        $this->assertEquals('draft', $project->status);
+        $this->assertCount(6, $project->folder_names);
+
+        // Verify eviron.show renders B2 stepper and submit button
+        $showRes1 = $this->get(route('eviron.show', $project->id));
+        $showRes1->assertStatus(200);
+        $showRes1->assertSee('Category B2 Statutory Lifecycle');
+        $showRes1->assertSee('Submit B2 to PPT Department (Presentation Gate)');
+
+        // 2. Submit B2 to PPT Department
+        $resSubmit = $this->post(route('eviron.submitB2ToPpt', $project->id));
+        $resSubmit->assertRedirect(route('eviron.show', $project->id));
+        $resSubmit->assertSessionHas('success');
+
+        $project->refresh();
+        $this->assertEquals('validation', $project->status);
+        $this->assertNotNull($project->ppt_stage_1_id);
+
+        $ppt = $project->pptStage1;
+        $this->assertNotNull($ppt);
+        $this->assertEquals('b2_presentation', $ppt->presentation_stage);
+        $this->assertEquals('agenda_scheduled', $ppt->status);
+
+        // Verify eviron.show renders review state
+        $showRes2 = $this->get(route('eviron.show', $project->id));
+        $showRes2->assertStatus(200);
+        $showRes2->assertSee('Awaiting SEAC B2 Approval');
+        $showRes2->assertSee('View PPT Dossier');
+
+        // Verify ppt show renders B2 gate badge and approval button
+        $pptShowRes = $this->get(route('ppt-department.show', $ppt->id));
+        $pptShowRes->assertStatus(200);
+        $pptShowRes->assertSee('Category B2: SEAC EC Presentation Gate');
+        $pptShowRes->assertSee('Approve B2 Presentation &amp; Clear for EC Certificate', false);
+
+        // 3. PPT Department Approves B2 Presentation
+        $resApprove = $this->post(route('ppt-department.approveStage', $ppt->id));
+        $resApprove->assertRedirect();
+        $resApprove->assertSessionHas('success');
+
+        $ppt->refresh();
+        $this->assertEquals('approved', $ppt->status);
+
+        $project->refresh();
+        $this->assertEquals('approved', $project->status);
+        $this->assertEquals('completed', $project->b1_stage);
+
+        // Verify eviron.show renders completion alert and EC certificate issuance link
+        $showRes3 = $this->get(route('eviron.show', $project->id));
+        $showRes3->assertStatus(200);
+        $showRes3->assertSee('Category B2 Appraisal Complete!');
+        $showRes3->assertSee('Issue EC Certificate');
+
+        // Verify ppt show also renders direct Issue EC Certificate link
+        $pptShowRes2 = $this->get(route('ppt-department.show', $ppt->id));
+        $pptShowRes2->assertStatus(200);
+        $pptShowRes2->assertSee('Presentation Approved');
+        $pptShowRes2->assertSee('Issue EC Certificate');
+
+        // 4. Verify EC Certificate Step 1 pre-fills with project
+        $ecStep1Res = $this->get(route('ec-certificate.step', ['step' => 1, 'project_id' => $project->id]));
+        $ecStep1Res->assertStatus(200);
+        $ecStep1Res->assertSee($project->project_code);
+        $ecStep1Res->assertSee('B2 Minerals ' . $uniq . ' Private Limited');
+
+        // Clean up
+        $ppt->forceDelete();
+        $project->forceDelete();
+        $customer->forceDelete();
+    }
+
+    /**
+     * Test AJAX promotion from EC to PPT Department:
+     * - Returns structured JSON payload for SweetAlert modal
+     * - Creates authentic PptApplication in register
+     * - Clones handlers from EC to PPT
+     */
+    public function test_ajax_promotion_from_ec_to_ppt_creates_application_and_clones_handlers(): void
+    {
+        $uniq = uniqid();
+        $customer = Customer::create([
+            'customer_name' => 'AJAX Transition Quarry ' . $uniq,
+            'company_name'  => 'AJAX Quarry Corp ' . $uniq,
+            'mobile_num'    => '9876543210',
+            'email'         => 'ajax_' . $uniq . '@quarry.test',
+            'mimas_no'      => 'TN/MIMAS/' . rand(1000, 9999),
+            'status'        => 1,
+            'branch_id'     => 1,
+        ]);
+
+        $project = EnvironmentProject::create([
+            'project_code'  => 'ENV-B1-AJAX-' . $uniq,
+            'customer_id'   => $customer->id,
+            'category'      => 'B1',
+            'sub_category'  => 'TOR',
+            'b1_stage'      => 'sc1_prep',
+            'project_name'  => 'AJAX Granite Quarry B1',
+            'district_id'   => 1,
+            'location'      => 'Survey No 123, AJAX Village',
+            'contact_phone' => '9876543210',
+            'status'        => 'draft',
+            'branch_id'     => 1,
+        ]);
+
+        // Add handler to EC project
+        ApplicationHandler::create([
+            'application_type' => 'environment',
+            'application_id'   => $project->id,
+            'name'             => 'Dr. S. Sundaram',
+            'role'             => 'Accredited EIA Coordinator',
+            'notes'            => 'EIA Expert for Presentation',
+            'sort_order'       => 1,
+        ]);
+
+        // 1. Submit B1 ToR to PPT via AJAX
+        $response = $this->postJson(route('eviron.submitSc1ToPpt', $project->id));
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status'      => 1,
+            'stage_label' => 'Stage 1: ToR Presentation Gate',
+        ]);
+        $json = $response->json();
+        $this->assertNotEmpty($json['ppt_app_no']);
+        $this->assertNotEmpty($json['ppt_url']);
+
+        // Verify PPT record created in DB
+        $pptApp = PptApplication::where('environment_project_id', $project->id)->first();
+        $this->assertNotNull($pptApp);
+        $this->assertEquals('tor_presentation', $pptApp->presentation_stage);
+        $this->assertEquals($customer->id, $pptApp->customer_id);
+
+        // Verify handler cloned
+        $pptHandler = ApplicationHandler::where('application_type', 'ppt')
+            ->where('application_id', $pptApp->id)
+            ->first();
+        $this->assertNotNull($pptHandler);
+        $this->assertEquals('Dr. S. Sundaram', $pptHandler->name);
+        $this->assertEquals('Accredited EIA Coordinator', $pptHandler->role);
+
+        // 2. Submit B2 to PPT via AJAX
+        $b2Project = EnvironmentProject::create([
+            'project_code'  => 'ENV-B2-AJAX-' . $uniq,
+            'customer_id'   => $customer->id,
+            'category'      => 'B2',
+            'project_name'  => 'AJAX Blue Metal B2',
+            'district_id'   => 1,
+            'contact_phone' => '9876543210',
+            'status'        => 'draft',
+            'branch_id'     => 1,
+        ]);
+
+        $b2Response = $this->postJson(route('eviron.submitB2ToPpt', $b2Project->id));
+        $b2Response->assertStatus(200);
+        $b2Response->assertJson([
+            'status'      => 1,
+            'stage_label' => 'Category B2: SEAC Presentation Gate',
+        ]);
+        $b2Json = $b2Response->json();
+        $this->assertNotEmpty($b2Json['ppt_app_no']);
+
+        $b2PptApp = PptApplication::where('environment_project_id', $b2Project->id)->first();
+        $this->assertNotNull($b2PptApp);
+        $this->assertEquals('b2_presentation', $b2PptApp->presentation_stage);
+
+        // Clean up
+        $pptApp->forceDelete();
+        $b2PptApp->forceDelete();
+        $project->forceDelete();
+        $b2Project->forceDelete();
+        $customer->forceDelete();
     }
 
     /**

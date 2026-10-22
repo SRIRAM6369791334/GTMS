@@ -12,8 +12,23 @@ class BranchController extends Controller
 {
     public function index()
     {
-        $branches = Branch::orderBy('id', 'asc')->get();
-        return view('pages.authentication.branch.index', compact('branches'));
+        $branches = Branch::withCount('users')->orderBy('id', 'asc')->get();
+        $totalBranches = $branches->count();
+        $activeBranches = $branches->where('status', 1)->count();
+        $inactiveBranches = $branches->where('status', 0)->count();
+        $assignedUsersCount = User::whereNotNull('branch_id')->count();
+        $distinctCities = $branches->pluck('city')->filter()->unique()->sort()->values();
+        $citiesCount = $distinctCities->count() ?: ($totalBranches > 0 ? 1 : 0);
+
+        return view('pages.authentication.branch.index', compact(
+            'branches',
+            'totalBranches',
+            'activeBranches',
+            'inactiveBranches',
+            'assignedUsersCount',
+            'distinctCities',
+            'citiesCount'
+        ));
     }
 
     public function store(Request $request)

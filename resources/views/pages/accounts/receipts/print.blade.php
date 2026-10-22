@@ -168,6 +168,60 @@
       height: auto;
       display: block;
     }
+    .gtms-letterhead {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #BA1B1F;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+    .gtms-letterhead-logo {
+      flex: 0 0 100px;
+      max-width: 100px;
+      text-align: center;
+    }
+    .gtms-letterhead-logo img {
+      width: 100%;
+      height: auto;
+      max-height: 80px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    .gtms-letterhead-content {
+      flex: 1;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+    }
+    .gtms-letterhead-title {
+      font-size: 21px;
+      font-weight: bold;
+      color: #BA1B1F;
+      letter-spacing: 0.5px;
+      margin: 0 0 2px 0;
+      line-height: 1.15;
+    }
+    .gtms-letterhead-accreditation {
+      font-size: 13px;
+      font-weight: bold;
+      color: #000000;
+      margin-bottom: 2px;
+      line-height: 1.25;
+    }
+    .gtms-letterhead-address {
+      font-size: 12px;
+      color: #000000;
+      line-height: 1.35;
+      margin-bottom: 2px;
+    }
+    .gtms-letterhead-contact {
+      font-size: 11.5px;
+      color: #000000;
+      line-height: 1.35;
+    }
     .pi-doc-title {
       text-align: center;
       font-size: 20px;
@@ -596,8 +650,22 @@
       <!-- SINGLE PAGE PROFORMA INVOICE (Auto-Fit for 1 to 4 items) -->
       <div class="pi-page">
         <div>
-          <header class="pi-header-banner">
-            <img src="{{ asset('images/invoices/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+          <header class="gtms-letterhead">
+            <div class="gtms-letterhead-logo">
+              <img src="{{ asset('assets/images/gtms_logo.png') }}" alt="GTMS Logo">
+            </div>
+            <div class="gtms-letterhead-content">
+              <div class="gtms-letterhead-title">GEO TECHNICAL MINING SOLUTIONS</div>
+              <div class="gtms-letterhead-accreditation">(A NABET Accredited &amp; ISO Certified)</div>
+              <div class="gtms-letterhead-address">
+                No: 2/548/D, Thadangam, Thokkampatti (post),<br>
+                Dharmapuri-636705. Tamil Nadu.
+              </div>
+              <div class="gtms-letterhead-contact">
+                <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+                <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
+              </div>
+            </div>
           </header>
 
           <h1 class="pi-doc-title">Proforma Invoice</h1>
@@ -757,8 +825,22 @@
       <!-- PAGE 1 OF 2 -->
       <div class="pi-page">
         <div>
-          <header class="pi-header-banner">
-            <img src="{{ asset('images/invoices/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+          <header class="gtms-letterhead">
+            <div class="gtms-letterhead-logo">
+              <img src="{{ asset('assets/images/gtms_logo.png') }}" alt="GTMS Logo">
+            </div>
+            <div class="gtms-letterhead-content">
+              <div class="gtms-letterhead-title">GEO TECHNICAL MINING SOLUTIONS</div>
+              <div class="gtms-letterhead-accreditation">(A NABET Accredited &amp; ISO Certified)</div>
+              <div class="gtms-letterhead-address">
+                No: 2/548/D, Thadangam, Thokkampatti (post),<br>
+                Dharmapuri-636705. Tamil Nadu.
+              </div>
+              <div class="gtms-letterhead-contact">
+                <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+                <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
+              </div>
+            </div>
           </header>
 
           <h1 class="pi-doc-title">Proforma Invoice</h1>
@@ -859,8 +941,22 @@
       <!-- PAGE 2 OF 2 -->
       <div class="pi-page">
         <div>
-          <header class="pi-header-banner">
-            <img src="{{ asset('images/invoices/gtms_header.png') }}" alt="Geo Technical Mining Solutions Letterhead">
+          <header class="gtms-letterhead">
+            <div class="gtms-letterhead-logo">
+              <img src="{{ asset('assets/images/gtms_logo.png') }}" alt="GTMS Logo">
+            </div>
+            <div class="gtms-letterhead-content">
+              <div class="gtms-letterhead-title">GEO TECHNICAL MINING SOLUTIONS</div>
+              <div class="gtms-letterhead-accreditation">(A NABET Accredited &amp; ISO Certified)</div>
+              <div class="gtms-letterhead-address">
+                No: 2/548/D, Thadangam, Thokkampatti (post),<br>
+                Dharmapuri-636705. Tamil Nadu.
+              </div>
+              <div class="gtms-letterhead-contact">
+                <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+                <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
+              </div>
+            </div>
           </header>
 
           <table class="pi-data-table">
@@ -986,14 +1082,11 @@
           <tr>
             <td class="ti-company-info-cell">
               <div class="ti-company-name">GEO TECHNICAL MINING SOLUTIONS</div>
-              <div class="ti-company-iso">(ISO 9001: 2015 Certified Company)</div>
-              <div>No: 2/548/D, Thadangam,</div>
-              <div>Thokkampatti Post,</div>
-              <div>Dharmapuri-636705.</div>
-              <div style="margin-top: 4px;">Ph: +91 9443937841, 70100 76633.</div>
-              <div>Ofc Ph.: 04342-232777</div>
-              <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;04342-292377</div>
-              <div style="margin-top: 2px;">E-mail: info.gtmsdpi@gmail.com.</div>
+              <div class="ti-company-iso">(A NABET Accredited &amp; ISO Certified)</div>
+              <div>No: 2/548/D, Thadangam, Thokkampatti (post),</div>
+              <div>Dharmapuri-636705. Tamil Nadu.</div>
+              <div style="margin-top: 4px;"><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+              <div style="margin-top: 2px;"><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
             </td>
             <td style="padding: 0; vertical-align: top;">
               <table class="ti-meta-sub-table">

@@ -166,6 +166,14 @@
             margin-top: auto;
             width: 100%;
         }
+
+        /* Universal GTMS Tooltip Cleanliness & Single-Tooltip Guard */
+        .tooltip {
+            pointer-events: none !important;
+        }
+        .tooltip.show {
+            z-index: 1090 !important;
+        }
     </style>
     @yield('styles')
     @stack('styles')
@@ -319,7 +327,7 @@
     <script src="/vendor/owl-carousel/owl.carousel.js"></script>
 
     <script src="/js/custom.min.js"></script>
-    <script src="/js/app.js?v=2"></script>
+    <script src="/js/app.js?v=3"></script>
     <script src="/js/admin.js"></script>
     <script src="/js/dlabnav-init.js"></script>
     <script>

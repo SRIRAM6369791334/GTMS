@@ -121,7 +121,7 @@ class GtmsMasterDataSeeder extends Seeder
         $planTypes = [
             'Mining Plan',
             'Revised Mining Plan',
-            'Modified Mining Plan',
+            'Plan Drawing ',
             'Scheme of Mining',
         ];
 

@@ -81,6 +81,15 @@ class ChunkedUploadService
             File::makeDirectory($chunkDir, 0775, true, true);
         }
 
+        // Automatic garbage collection lottery (5% chance) for abandoned sessions older than 24h
+        if (rand(1, 20) === 1) {
+            try {
+                $this->purgeExpiredUploads(24);
+            } catch (\Throwable) {
+                // Silently ignore background cleanup exceptions
+            }
+        }
+
         return ChunkedUpload::create([
             'upload_token' => $token,
             'user_id' => $userId,
@@ -136,10 +145,11 @@ class ChunkedUploadService
         }
 
         $chunkSize = filesize($targetPath);
-        $computedHash = hash_file('sha256', $targetPath);
+        $computedHash = null;
 
         // Client SHA-256 verification if provided
         if ($clientChunkHash !== null && !empty($clientChunkHash)) {
+            $computedHash = hash_file('sha256', $targetPath);
             if (strcasecmp($clientChunkHash, $computedHash) !== 0) {
                 @unlink($targetPath);
                 throw new RuntimeException("Chunk {$chunkIndex} SHA-256 checksum mismatch. Expected: {$clientChunkHash}, got: {$computedHash}");
@@ -221,6 +231,9 @@ class ChunkedUploadService
      */
     public function assembleFile(string $token, ?string $targetModule = null, ?int $referenceId = null): array
     {
+        @set_time_limit(0);
+        @ini_set('memory_limit', '1024M');
+
         $upload = ChunkedUpload::where('upload_token', $token)->firstOrFail();
 
         // Idempotency: If already assembled or completed, return current state
@@ -385,6 +398,34 @@ class ChunkedUploadService
         ]);
 
         return true;
+    }
+
+    /**
+     * Purge all abandoned/expired upload sessions older than given hours (default 24 hours).
+     * Frees all physical chunk files from disk and marks database records as cancelled.
+     */
+    public function purgeExpiredUploads(int $hours = 24): int
+    {
+        $cutoff = now()->subHours($hours);
+        $staleUploads = ChunkedUpload::where('created_at', '<', $cutoff)
+            ->whereIn('status', ['pending', 'uploading', 'failed', 'cancelled'])
+            ->get();
+
+        $purgedCount = 0;
+        foreach ($staleUploads as $upload) {
+            $chunkDir = $this->getChunkDirectory($upload->upload_token);
+            if (File::isDirectory($chunkDir)) {
+                @File::deleteDirectory($chunkDir);
+            }
+            $upload->parts()->delete();
+            $upload->update([
+                'status' => 'cancelled',
+                'error_message' => 'Automatically purged due to inactivity (> ' . $hours . 'h).'
+            ]);
+            $purgedCount++;
+        }
+
+        return $purgedCount;
     }
 
     /**

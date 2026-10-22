@@ -5,6 +5,14 @@
 <style>
 /* ─── UI-UX PRO MAX ENTERPRISE DESIGN TOKENS ─────────────────────────────── */
 :root {
+    --ct-surface: #ffffff;
+    --ct-surface-subtle: #f8fafc;
+    --ct-surface-elevated: #ffffff;
+    --ct-border: #e2e8f0;
+    --ct-border-subtle: #edf2f7;
+    --ct-text-primary: #0f172a;
+    --ct-text-secondary: #334155;
+    --ct-text-muted: #64748b;
     --ct-primary: #0F1E4D;
     --ct-primary-hover: #1E3A8A;
     --ct-accent-blue: #2563EB;
@@ -12,23 +20,98 @@
     --ct-accent-emerald: #10B981;
     --ct-accent-amber: #F59E0B;
     --ct-accent-purple: #7C3AED;
-    --ct-dark: #0F172A;
-    --ct-slate: #334155;
-    --ct-muted: #64748B;
-    --ct-light: #F8FAFC;
-    --ct-border: #E2E8F0;
-    --ct-border-light: rgba(226, 232, 240, 0.8);
-    --ct-card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
-    --ct-card-hover-shadow: 0 16px 32px -4px rgba(15, 23, 42, 0.09), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    --ct-card-shadow: 0 4px 18px -2px rgba(15, 30, 77, 0.05), 0 2px 6px -1px rgba(15, 30, 77, 0.03);
+    --ct-card-hover-shadow: 0 14px 28px -4px rgba(15, 30, 77, 0.09), 0 4px 10px -2px rgba(15, 30, 77, 0.04);
+    --ct-input-bg: #ffffff;
+    --ct-input-border: #cbd5e1;
+    --ct-chip-bg: #f1f5f9;
+    --ct-chip-border: #e2e8f0;
+
+    /* Module Tints (Light) */
+    --ct-tint-lease: #EFF6FF;
+    --ct-tint-lease-text: #1E40AF;
+    --ct-tint-lease-border: #BFDBFE;
+
+    --ct-tint-mining: #FEF3C7;
+    --ct-tint-mining-text: #92400E;
+    --ct-tint-mining-border: #FDE68A;
+
+    --ct-tint-env: #ECFDF5;
+    --ct-tint-env-text: #065F46;
+    --ct-tint-env-border: #A7F3D0;
+
+    --ct-tint-ec: #F5F3FF;
+    --ct-tint-ec-text: #6D28D9;
+    --ct-tint-ec-border: #DDD6FE;
+
+    --ct-tint-ppt: #FDF2F8;
+    --ct-tint-ppt-text: #9D174D;
+    --ct-tint-ppt-border: #FBCFE8;
+
+    --ct-tint-survey: #F0FDF4;
+    --ct-tint-survey-text: #15803D;
+    --ct-tint-survey-border: #BBF7D0;
+
+    --ct-tint-compliance: #F0FDFA;
+    --ct-tint-compliance-text: #0F766E;
+    --ct-tint-compliance-border: #99F6E4;
+}
+
+body[data-theme-version="dark"] {
+    --ct-surface: #181818;
+    --ct-surface-subtle: #202020;
+    --ct-surface-elevated: #242424;
+    --ct-border: #282828;
+    --ct-border-subtle: #222222;
+    --ct-text-primary: #f8fafc;
+    --ct-text-secondary: #cbd5e1;
+    --ct-text-muted: #64748b;
+    --ct-primary: #3b82f6;
+    --ct-primary-hover: #60a5fa;
+    --ct-card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+    --ct-card-hover-shadow: 0 14px 30px -4px rgba(0, 0, 0, 0.65);
+    --ct-input-bg: #1e1e1e;
+    --ct-input-border: #333333;
+    --ct-chip-bg: rgba(255, 255, 255, 0.05);
+    --ct-chip-border: rgba(255, 255, 255, 0.08);
+
+    /* Module Tints (Dark) */
+    --ct-tint-lease: rgba(59, 130, 246, 0.15);
+    --ct-tint-lease-text: #60a5fa;
+    --ct-tint-lease-border: rgba(59, 130, 246, 0.3);
+
+    --ct-tint-mining: rgba(245, 158, 11, 0.15);
+    --ct-tint-mining-text: #fbbf24;
+    --ct-tint-mining-border: rgba(245, 158, 11, 0.3);
+
+    --ct-tint-env: rgba(16, 185, 129, 0.15);
+    --ct-tint-env-text: #34d399;
+    --ct-tint-env-border: rgba(16, 185, 129, 0.3);
+
+    --ct-tint-ec: rgba(139, 92, 246, 0.15);
+    --ct-tint-ec-text: #a78bfa;
+    --ct-tint-ec-border: rgba(139, 92, 246, 0.3);
+
+    --ct-tint-ppt: rgba(244, 63, 94, 0.15);
+    --ct-tint-ppt-text: #fb7185;
+    --ct-tint-ppt-border: rgba(244, 63, 94, 0.3);
+
+    --ct-tint-survey: rgba(34, 197, 94, 0.15);
+    --ct-tint-survey-text: #4ade80;
+    --ct-tint-survey-border: rgba(34, 197, 94, 0.3);
+
+    --ct-tint-compliance: rgba(20, 184, 166, 0.15);
+    --ct-tint-compliance-text: #2dd4bf;
+    --ct-tint-compliance-border: rgba(20, 184, 166, 0.3);
 }
 
 /* Page Layout & Container Polish */
 .ct-page-header {
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-radius: 16px;
     padding: 18px 24px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+    box-shadow: var(--ct-card-shadow);
 }
 
 .ct-brand-icon {
@@ -43,6 +126,11 @@
     font-size: 20px;
     box-shadow: 0 4px 12px rgba(15, 30, 77, 0.25);
     flex-shrink: 0;
+}
+
+body[data-theme-version="dark"] .ct-brand-icon {
+    background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
 }
 
 /* Breadcrumbs Override */
@@ -80,7 +168,7 @@
 }
 
 .ct-kpi-card {
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-top: 3px solid transparent;
     border-radius: 14px;
@@ -89,12 +177,12 @@
     align-items: center;
     gap: 14px;
     box-shadow: var(--ct-card-shadow);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     overflow: hidden;
 }
 .ct-kpi-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     box-shadow: var(--ct-card-hover-shadow);
 }
 .ct-kpi-card.kpi-customers { border-top-color: #4F46E5; }
@@ -117,18 +205,18 @@
 .ct-kpi-card:hover .kpi-icon {
     transform: scale(1.06);
 }
-.kpi-blue { background: #EEF2FF; color: #4F46E5; }
-.kpi-sky { background: #F0F9FF; color: #0284C7; }
-.kpi-amber { background: #FEF3C7; color: #D97706; }
-.kpi-emerald { background: #ECFDF5; color: #059669; }
-.kpi-purple { background: #F5F3FF; color: #7C3AED; }
+.kpi-blue { background: rgba(79, 70, 229, 0.12); color: #4F46E5; }
+.kpi-sky { background: rgba(2, 132, 199, 0.12); color: #0284C7; }
+.kpi-amber { background: rgba(217, 119, 6, 0.12); color: #D97706; }
+.kpi-emerald { background: rgba(16, 185, 129, 0.12); color: #059669; }
+.kpi-purple { background: rgba(124, 58, 237, 0.12); color: #7C3AED; }
 
 .kpi-info { min-width: 0; flex-grow: 1; }
 .kpi-label {
     display: block;
     font-size: 11px;
     font-weight: 700;
-    color: var(--ct-muted);
+    color: var(--ct-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     margin-bottom: 2px;
@@ -139,7 +227,7 @@
 .kpi-value {
     font-size: 26px;
     font-weight: 800;
-    color: var(--ct-dark);
+    color: var(--ct-text-primary);
     margin: 0;
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -147,7 +235,7 @@
 }
 .kpi-subtext {
     font-size: 11px;
-    color: #94A3B8;
+    color: var(--ct-text-muted);
     margin-top: 3px;
     font-weight: 500;
 }
@@ -385,10 +473,10 @@
     top: 64px;
     left: 0;
     right: 0;
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border-radius: 16px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-    border: 1px solid #CBD5E1;
+    border: 1px solid var(--ct-border);
     z-index: 1050;
     max-height: 420px;
     overflow-y: auto;
@@ -396,32 +484,33 @@
 }
 .ct-dropdown-item {
     padding: 14px 18px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid var(--ct-border);
     cursor: pointer;
     transition: background 0.15s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    color: var(--ct-text-primary);
 }
 .ct-dropdown-item:last-child {
     border-bottom: none;
 }
 .ct-dropdown-item:hover, .ct-dropdown-item.active {
-    background: #F8FAFC;
+    background: var(--ct-surface-subtle);
 }
 
 /* Active Filter Summary Bar */
 .ct-active-filters-card {
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-radius: 14px;
     padding: 12px 18px;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+    box-shadow: var(--ct-card-shadow);
 }
 .ct-active-filter-chip {
-    background: #EFF6FF;
-    border: 1px solid #BFDBFE;
-    color: #1E40AF;
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    color: #38BDF8;
     font-size: 12.5px;
     padding: 4px 12px;
     border-radius: 20px;
@@ -432,7 +521,7 @@
 
 /* Customer Grid Cards */
 .ct-customer-card {
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-radius: 16px;
     padding: 20px;
@@ -442,11 +531,12 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    color: var(--ct-text-primary);
 }
 .ct-customer-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--ct-card-hover-shadow);
-    border-color: #CBD5E1;
+    border-color: #38BDF8;
 }
 
 .ct-avatar-gradient {
@@ -527,19 +617,20 @@
 
 /* Empty State Styling */
 .ct-empty-state-card {
-    background: #FFFFFF;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-radius: 18px;
     padding: 50px 24px;
     text-align: center;
     box-shadow: var(--ct-card-shadow);
+    color: var(--ct-text-primary);
 }
 .ct-empty-icon-circle {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: #EFF6FF;
-    color: #2563EB;
+    background: rgba(37, 99, 235, 0.12);
+    color: #38BDF8;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -554,20 +645,20 @@
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    background: #F8FAFC;
+    background: var(--ct-surface-subtle);
     border: 1px solid var(--ct-border);
     border-radius: 8px;
     font-size: 13px;
-    color: var(--ct-slate);
+    color: var(--ct-text-secondary);
     transition: border-color 0.15s ease, background 0.15s ease;
 }
 .ct-meta-pill strong {
-    color: var(--ct-dark);
+    color: var(--ct-text-primary);
     font-weight: 600;
 }
 .ct-meta-pill:hover {
-    background: #FFFFFF;
-    border-color: #CBD5E1;
+    background: var(--ct-surface);
+    border-color: #38BDF8;
 }
 
 /* Modern Segmented 8-Stage Stepper */
@@ -596,7 +687,7 @@
 .ct-step-bar-connector {
     flex-grow: 1;
     height: 4px;
-    background: #E2E8F0;
+    background: var(--ct-border);
     margin: 22px 4px 0;
     position: relative;
     z-index: 1;
@@ -607,11 +698,22 @@
     background: #10B981;
 }
 .ct-step-bar-connector.in_progress {
-    background: linear-gradient(90deg, #10B981 0%, #1E40AF 100%);
+    background: linear-gradient(90deg, #10B981 0%, #2563EB 100%);
+}
+@keyframes ct-step-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    }
 }
 .ct-step-circle {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     margin-bottom: 10px;
     display: flex;
@@ -619,44 +721,69 @@
     justify-content: center;
     font-size: 15px;
     font-weight: 700;
-    background: #FFFFFF;
-    border: 2px solid #CBD5E1;
-    color: var(--ct-muted);
-    transition: all 0.25s ease;
+    background: var(--ct-surface);
+    border: 2px solid var(--ct-border);
+    color: var(--ct-text-muted);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ct-step-node:hover .ct-step-circle {
+    transform: translateY(-2px) scale(1.05);
 }
 .ct-step-node.completed .ct-step-circle {
-    background: #10B981;
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
     border-color: #10B981;
     color: #FFFFFF;
-    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.2);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 .ct-step-node.in_progress .ct-step-circle {
-    background: #1E40AF;
-    border-color: #1E40AF;
+    background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+    border-color: #38BDF8;
     color: #FFFFFF;
-    box-shadow: 0 0 0 6px rgba(30, 64, 175, 0.25);
+    animation: ct-step-pulse 2s infinite;
 }
 .ct-step-node.ready .ct-step-circle {
-    background: #F59E0B;
+    background: linear-gradient(135deg, #D97706 0%, #F59E0B 100%);
     border-color: #F59E0B;
     color: #FFFFFF;
-    box-shadow: 0 0 0 5px rgba(245, 158, 11, 0.2);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 .ct-step-node.bypassed .ct-step-circle {
-    background: #e0f2fe;
-    border-color: #38bdf8;
-    color: #0284c7;
+    background: rgba(56, 189, 248, 0.15);
+    border-color: #38BDF8;
+    color: #38BDF8;
     box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+}
+.ct-concession-select {
+    background-color: #FFFFFF;
+    color: #0F1E4D;
+    border-radius: 10px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+body[data-theme-version="dark"] .ct-concession-select {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] .ct-concession-select optgroup {
+    background-color: #0F172A !important;
+    color: #38BDF8 !important;
+}
+body[data-theme-version="dark"] .ct-concession-select option {
+    background-color: #1E293B !important;
+    color: #F8FAFC !important;
 }
 .ct-step-title {
     font-size: 12.5px;
     font-weight: 700;
-    color: var(--ct-dark);
+    color: var(--ct-text-primary);
     margin-bottom: 2px;
 }
 .ct-step-code {
     font-size: 11px;
-    color: var(--ct-muted);
+    color: var(--ct-text-muted);
     font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     margin-bottom: 4px;
     white-space: nowrap;
@@ -679,7 +806,7 @@
 .ct-pillar-card {
     border-radius: 16px;
     border: 1px solid var(--ct-border);
-    background: #FFFFFF;
+    background: var(--ct-surface);
     box-shadow: var(--ct-card-shadow);
     height: 100%;
     display: flex;
@@ -692,7 +819,7 @@
 }
 .ct-pillar-header {
     padding: 18px 22px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid var(--ct-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -703,8 +830,8 @@
 }
 .ct-pillar-footer {
     padding: 16px 22px;
-    border-top: 1px solid #F1F5F9;
-    background: #FAFAFC;
+    border-top: 1px solid var(--ct-border);
+    background: var(--ct-surface-subtle);
     border-radius: 0 0 16px 16px;
 }
 .ct-field-row {
@@ -712,18 +839,18 @@
     align-items: center;
     justify-content: space-between;
     padding: 9px 0;
-    border-bottom: 1px dashed #F1F5F9;
+    border-bottom: 1px dashed var(--ct-border);
     font-size: 13.5px;
 }
 .ct-field-row:last-child {
     border-bottom: none;
 }
 .ct-field-label {
-    color: var(--ct-muted);
+    color: var(--ct-text-muted);
     font-weight: 500;
 }
 .ct-field-val {
-    color: var(--ct-dark);
+    color: var(--ct-text-primary);
     font-weight: 600;
     text-align: right;
 }
@@ -735,9 +862,9 @@
     border-spacing: 0;
 }
 .ct-doc-table thead th {
-    background: #F8FAFC;
-    color: #475569;
-    font-weight: 600;
+    background: var(--ct-surface-subtle);
+    color: var(--ct-text-muted);
+    font-weight: 700;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.6px;
@@ -748,12 +875,13 @@
     transition: background-color 0.15s ease;
 }
 .ct-doc-table tbody tr:hover {
-    background-color: #F8FAFC !important;
+    background-color: var(--ct-surface-subtle) !important;
 }
 .ct-doc-table tbody td {
     padding: 14px 20px;
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid var(--ct-border);
     vertical-align: middle;
+    color: var(--ct-text-primary);
 }
 
 /* Document Filter Chips */
@@ -872,20 +1000,21 @@
     border-color: #0F1E4D !important;
 }
 .ct-service-card {
-    background: #ffffff;
+    background: var(--ct-surface);
     border: 1px solid var(--ct-border);
     border-radius: 16px;
     padding: 22px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    color: var(--ct-text-primary);
 }
 .ct-service-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    border-color: #cbd5e1;
+    box-shadow: var(--ct-card-hover-shadow);
+    border-color: #38BDF8;
 }
 .ct-service-icon-box {
     width: 46px;
@@ -918,9 +1047,9 @@
     width: 100% !important;
 }
 .custom-enterprise-pills .nav-link {
-    background: #f8fafc;
-    border: 1.5px solid #e2e8f0;
-    color: #1e293b;
+    background: var(--ct-surface-subtle);
+    border: 1.5px solid var(--ct-border);
+    color: var(--ct-text-primary);
     font-size: 13.5px;
     font-weight: 600;
     padding: 12px 14px;
@@ -935,14 +1064,14 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .custom-enterprise-pills .nav-link:hover {
-    background: #f1f5f9;
-    color: #0F1E4D;
-    border-color: #cbd5e1;
+    background: var(--ct-surface);
+    color: #38BDF8;
+    border-color: #38BDF8;
 }
 .custom-enterprise-pills .nav-link.active {
-    background: #0F1E4D !important;
+    background: linear-gradient(135deg, #0F1E4D 0%, #1E40AF 100%) !important;
     color: #ffffff !important;
-    border-color: #0F1E4D !important;
+    border-color: #1E40AF !important;
     box-shadow: 0 4px 14px rgba(15, 30, 77, 0.25);
 }
 
@@ -1066,17 +1195,17 @@
     flex-wrap: wrap;
     gap: 12px;
     padding: 14px 20px;
-    background: #ffffff;
-    border-top: 1px solid #e2e8f0;
+    background: var(--ct-surface);
+    border-top: 1px solid var(--ct-border);
     border-radius: 0 0 16px 16px;
 }
 .ct-pagination-info {
     font-size: 13px;
     font-weight: 500;
-    color: #475569;
+    color: var(--ct-text-muted);
 }
 .ct-pagination-info strong {
-    color: #0f172a;
+    color: var(--ct-text-primary);
 }
 .ct-pagination-btns {
     display: flex;
@@ -1088,9 +1217,9 @@
     height: 34px;
     padding: 0 8px;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #1e293b;
+    border: 1px solid var(--ct-border);
+    background: var(--ct-surface);
+    color: var(--ct-text-primary);
     font-size: 13px;
     font-weight: 600;
     display: inline-flex;
@@ -1100,30 +1229,166 @@
     transition: all 0.15s ease;
 }
 .ct-page-btn:hover:not(:disabled) {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0F1E4D;
+    background: var(--ct-surface-subtle);
+    border-color: #38BDF8;
+    color: #38BDF8;
 }
 .ct-page-btn.active {
-    background: #0F1E4D !important;
+    background: linear-gradient(135deg, #0F1E4D 0%, #1E40AF 100%) !important;
     color: #ffffff !important;
-    border-color: #0F1E4D !important;
+    border-color: #1E40AF !important;
     box-shadow: 0 2px 6px rgba(15, 30, 77, 0.2);
 }
 .ct-page-btn:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    background: #f8fafc;
+    background: var(--ct-surface-subtle);
 }
 .ct-page-size-select {
     padding: 4px 10px;
     font-size: 12.5px;
     border-radius: 8px;
-    border: 1px solid #cbd5e1;
-    background-color: #ffffff;
-    color: #0f172a;
+    border: 1px solid var(--ct-border);
+    background-color: var(--ct-surface);
+    color: var(--ct-text-primary);
     font-weight: 600;
 }
+
+/* Universal Theme Engine & Dark Mode Enterprise Adaptations */
+body[data-theme-version="dark"] .content-body .card,
+body[data-theme-version="dark"] .content-body .card-header,
+body[data-theme-version="dark"] .content-body .card-footer {
+    background-color: var(--ct-surface) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-primary) !important;
+}
+
+body[data-theme-version="dark"] .content-body .bg-white,
+body[data-theme-version="dark"] .content-body .bg-light,
+body[data-theme-version="dark"] .modal-content,
+body[data-theme-version="dark"] .modal-header,
+body[data-theme-version="dark"] .modal-footer {
+    background-color: var(--ct-surface) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-primary) !important;
+}
+
+body[data-theme-version="dark"] .content-body .text-dark,
+body[data-theme-version="dark"] .modal .text-dark {
+    color: #F8FAFC !important;
+}
+
+body[data-theme-version="dark"] .content-body .text-secondary,
+body[data-theme-version="dark"] .modal .text-secondary {
+    color: #94A3B8 !important;
+}
+
+body[data-theme-version="dark"] .content-body .text-muted,
+body[data-theme-version="dark"] .modal .text-muted {
+    color: #64748B !important;
+}
+
+body[data-theme-version="dark"] .table,
+body[data-theme-version="dark"] .table tbody td,
+body[data-theme-version="dark"] .table thead th {
+    background-color: var(--ct-surface) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-primary) !important;
+}
+
+body[data-theme-version="dark"] #portfolioTable thead th,
+body[data-theme-version="dark"] #concessionsModalTable thead th,
+body[data-theme-version="dark"] #docVaultTable thead th {
+    background-color: var(--ct-surface-subtle) !important;
+    border-color: var(--ct-border) !important;
+    color: #94A3B8 !important;
+}
+
+body[data-theme-version="dark"] .table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+body[data-theme-version="dark"] .table tbody tr:hover td {
+    background-color: rgba(56, 189, 248, 0.05) !important;
+}
+
+body[data-theme-version="dark"] .ct-category-switch-wrapper {
+    background: #1E293B !important;
+}
+
+body[data-theme-version="dark"] .ct-filter-chip {
+    background: var(--ct-surface-subtle) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-secondary) !important;
+}
+
+body[data-theme-version="dark"] .ct-filter-chip:hover {
+    background: var(--ct-surface) !important;
+    color: #38BDF8 !important;
+    border-color: #38BDF8 !important;
+}
+
+body[data-theme-version="dark"] .ct-filter-chip.active {
+    background: #0284C7 !important;
+    border-color: #38BDF8 !important;
+    color: #FFFFFF !important;
+}
+
+body[data-theme-version="dark"] .district-filter-btn {
+    background-color: var(--ct-surface-subtle) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-primary) !important;
+}
+
+body[data-theme-version="dark"] .district-filter-btn:hover {
+    background-color: var(--ct-surface) !important;
+    border-color: #38BDF8 !important;
+    color: #38BDF8 !important;
+}
+
+body[data-theme-version="dark"] .district-filter-btn.active {
+    background-color: #1E40AF !important;
+    border-color: #38BDF8 !important;
+    color: #FFFFFF !important;
+}
+
+body[data-theme-version="dark"] .sf-pill-badge {
+    background: #1E293B !important;
+    border-color: #334155 !important;
+    color: #38BDF8 !important;
+}
+
+body[data-theme-version="dark"] .mineral-pill-badge {
+    background: #1E293B !important;
+    border-color: #334155 !important;
+    color: #CBD5E1 !important;
+}
+
+body[data-theme-version="dark"] .ct-back-btn {
+    background: var(--ct-surface-subtle) !important;
+    border-color: var(--ct-border) !important;
+    color: #F8FAFC !important;
+}
+
+body[data-theme-version="dark"] .ct-back-btn:hover {
+    background: var(--ct-surface) !important;
+    border-color: #38BDF8 !important;
+    color: #38BDF8 !important;
+}
+
+body[data-theme-version="dark"] .form-control,
+body[data-theme-version="dark"] .form-select {
+    background-color: var(--ct-surface-subtle) !important;
+    border-color: var(--ct-border) !important;
+    color: var(--ct-text-primary) !important;
+}
+
+body[data-theme-version="dark"] .form-control:focus,
+body[data-theme-version="dark"] .form-select:focus {
+    border-color: #38BDF8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+}
+
 /* Print CSS */
 @media print {
     body * { visibility: hidden; }
@@ -1689,6 +1954,57 @@
                     </div>
                 </div>
 
+                @if(!empty($dossierData['is_company_unified']))
+                <!-- Unified Corporate Portfolio Banner -->
+                <div class="card border-0 mb-4 shadow-sm" style="border-radius: 16px; background: linear-gradient(135deg, #0F1E4D 0%, #1E3A8A 100%); color: #fff;">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 48px; height: 48px; background: rgba(255,255,255,0.15); color: #fff;">
+                                    <i class="bi bi-buildings fs-4"></i>
+                                </div>
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <h5 class="fw-bold mb-0 text-white">{{ $dossierData['company_name'] }}</h5>
+                                        <span class="badge bg-warning text-dark fw-bold rounded-pill px-3 py-1 fs-12">
+                                            <i class="bi bi-people-fill me-1"></i> {{ count($dossierData['company_partners']) }} Partners / Contacts Linked
+                                        </span>
+                                    </div>
+                                    <small class="text-white-50 fs-13">Unified Corporate Account &bull; Consolidated Quarry Portfolio</small>
+                                </div>
+                            </div>
+                            <div class="text-end text-sm-start">
+                                <span class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill shadow-sm fs-12">
+                                    <i class="bi bi-layers-fill me-1"></i> {{ count($dossierData['fullCycleChains']) }} Concessions Across Company
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white bg-opacity-10 p-3 rounded-3 border border-white border-opacity-10">
+                            <div class="small fw-semibold text-white-50 mb-2 text-uppercase" style="letter-spacing: 0.05em; font-size: 0.72rem;">
+                                Associated Company Partners (Click to switch active contact view):
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach($dossierData['company_partners'] as $partner)
+                                <a href="{{ route('customer-tracking.show', $partner->slug ?? $partner->id) }}" class="text-decoration-none">
+                                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill shadow-sm transition-all {{ $partner->id === $customer->id ? 'bg-white text-dark fw-bold' : 'bg-dark bg-opacity-25 text-white border border-white border-opacity-25' }}" style="font-size: 0.84rem;">
+                                        <i class="bi bi-person-fill {{ $partner->id === $customer->id ? 'text-primary' : 'text-white-50' }}"></i>
+                                        <span>{{ $partner->customer_name }}</span>
+                                        <span class="badge {{ $partner->id === $customer->id ? 'bg-primary text-white' : 'bg-white bg-opacity-25 text-white' }} rounded-pill px-2 py-0" style="font-size: 0.7rem;">
+                                            {{ $partner->mimas_no }}
+                                        </span>
+                                        @if($partner->id === $customer->id)
+                                            <span class="badge bg-success text-white rounded-pill px-1 py-0" style="font-size: 0.65rem;">Active</span>
+                                        @endif
+                                    </div>
+                                </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 @if(count($dossierData['fullCycleChains'] ?? []) === 0 && count($dossierData['standaloneServices'] ?? []) === 0)
                     <!-- ============================================== -->
                     <!-- ACTIONABLE ONBOARDING LAUNCHPAD (Zero Data)    -->
@@ -2044,6 +2360,13 @@
                                                         @if($cRow['lease']?->common_id)
                                                             <small class="text-primary font-monospace fw-semibold">{{ $cRow['lease']->common_id }}</small>
                                                         @endif
+                                                        @if(!empty($dossierData['is_company_unified']) && !empty($cRow['applicant_name']))
+                                                            <div class="mt-1">
+                                                                <span class="badge bg-light text-secondary border py-0 px-2" style="font-size: 0.68rem;" title="Partner / Applicant in Company">
+                                                                    <i class="bi bi-person me-1"></i>{{ $cRow['applicant_name'] }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         <div class="fs-13 fw-semibold text-dark">{{ $cRow['village'] }}</div>
@@ -2132,7 +2455,7 @@
                                             </div>
                                         </div>
                                         <div class="col-lg-6 text-lg-end">
-                                            <div class="d-inline-flex flex-column align-items-lg-end w-100" style="max-width: 440px;">
+                                            <div class="d-inline-flex flex-column align-items-lg-end w-100" style="max-width: 480px;">
                                                 <div class="d-flex align-items-center justify-content-between w-100 mb-1">
                                                     <label class="form-label text-white-50 small fw-bold mb-0">
                                                         <i class="bi bi-arrow-left-right me-1 text-warning"></i> Switch Quarry Concession:
@@ -2141,8 +2464,7 @@
                                                         <i class="bi bi-grid-3x3-gap me-1"></i> View All ({{ count($dossierData['fullCycleChains']) }})
                                                     </button>
                                                 </div>
-                                                <select id="quarryChainSelect" class="form-select form-select-sm shadow-sm border-0 fw-semibold" 
-                                                        style="background-color: #f8fafc; color: #0F1E4D; border-radius: 10px; padding: 8px 12px;"
+                                                <select id="quarryChainSelect" class="form-select form-select-sm shadow-sm ct-concession-select w-100" 
                                                         onchange="window.location.href = '?tab=lifecycle&chain=' + encodeURIComponent(this.value);">
                                                     @foreach($dossierData['districtGroups'] as $distName => $distInfo)
                                                         <optgroup label="📍 {{ $distName }} ({{ $distInfo['count'] }} Quarries)">
@@ -2154,6 +2476,26 @@
                                                         </optgroup>
                                                     @endforeach
                                                 </select>
+                                                @if(count($dossierData['fullCycleChains']) > 1)
+                                                    <div class="d-flex flex-wrap gap-1 mt-2 justify-content-lg-end">
+                                                        @foreach(array_slice($dossierData['fullCycleChains'], 0, 3) as $qIdx => $qCh)
+                                                            <a href="?tab=lifecycle&chain={{ urlencode($qCh['id']) }}" 
+                                                               class="btn btn-xs rounded-pill px-2 py-1 {{ ($dossierData['selectedChainId'] ?? '') === $qCh['id'] ? 'btn-light text-dark fw-bold shadow-sm' : 'btn-outline-light text-white' }}"
+                                                               style="font-size: 11px; text-decoration: none;">
+                                                                <i class="bi bi-geo-alt-fill me-1 {{ ($dossierData['selectedChainId'] ?? '') === $qCh['id'] ? 'text-danger' : 'text-warning' }}"></i>
+                                                                {{ Str::limit($qCh['lease']?->application_no ?: ('Q-' . ($qIdx + 1)), 13) }}
+                                                                <span class="badge {{ ($dossierData['selectedChainId'] ?? '') === $qCh['id'] ? 'bg-primary text-white' : 'bg-white bg-opacity-25 text-white' }} ms-1 py-0 px-1" style="font-size: 9px;">
+                                                                    {{ $qCh['current_stage_label'] }}
+                                                                </span>
+                                                            </a>
+                                                        @endforeach
+                                                        @if(count($dossierData['fullCycleChains']) > 3)
+                                                            <button type="button" class="btn btn-xs btn-outline-light rounded-pill px-2 py-1 text-white" style="font-size: 11px;" onclick="document.getElementById('quarryChainSelect')?.focus();">
+                                                                +{{ count($dossierData['fullCycleChains']) - 3 }} More
+                                                            </button>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -2164,9 +2506,24 @@
                 <div class="card border mb-4 shadow-sm" style="border-radius: 18px;">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
-                            <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                                <i class="bi bi-diagram-3-fill text-primary"></i> Universal 8-Stage Lifecycle Tracking
-                            </h5>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h5 class="card-title fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+                                    <i class="bi bi-diagram-3-fill text-primary"></i> Universal 8-Stage Lifecycle Tracking
+                                </h5>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1 fs-11">
+                                    <i class="bi bi-flag-fill me-1"></i> Stage {{ $dossierData['selectedChain']['current_stage_num'] ?? 1 }} of 8
+                                </span>
+                                @if(count($dossierData['fullCycleChains']) > 1)
+                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill px-2 py-1 fs-11">
+                                        <i class="bi bi-layers-fill me-1"></i> Concession {{ (collect($dossierData['fullCycleChains'])->search(fn($c) => $c['id'] === ($dossierData['selectedChainId'] ?? '')) ?: 0) + 1 }} of {{ count($dossierData['fullCycleChains']) }}
+                                    </span>
+                                @endif
+                                @if(!empty($dossierData['selectedChain']['area_extent_ha']))
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 fs-11">
+                                        <i class="bi bi-bounding-box me-1"></i> {{ number_format($dossierData['selectedChain']['area_extent_ha'], 2) }} Ha
+                                    </span>
+                                @endif
+                            </div>
                             <small class="text-muted">End-to-End Progression: 1. Lease &rarr; 2. Mining Plan &rarr; 3. EC &rarr; 4. PPT / SEAC Loop &rarr; 5. EC Order &rarr; 6. Compliance &rarr; 7. DGPS &rarr; 8. Drone 3D</small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
@@ -3290,6 +3647,7 @@
                                                     <div class="fs-12 text-muted">
                                                         <i class="bi bi-geo-alt text-danger"></i> {{ $app['location'] ?: 'Quarry concession area' }}
                                                         @if(!empty($app['extent'])) &bull; <strong>Extent:</strong> {{ $app['extent'] }} @endif
+                                                        @if(!empty($app['applicant_name'])) &bull; <span class="badge bg-secondary-subtle text-secondary py-0 px-1 border"><i class="fa fa-user me-1"></i>{{ $app['applicant_name'] }}</span> @endif
                                                     </div>
                                                 </div>
                                                 <div class="text-end">
@@ -3501,7 +3859,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <div>
                                         <div class="fw-bold text-dark fs-14">${c.name}</div>
                                         <div class="text-muted fs-12 d-flex flex-wrap align-items-center gap-1 mt-1">
-                                            <span>${c.company || 'Individual'}</span>
+                                            <span class="fw-semibold text-primary"><i class="bi bi-building me-1"></i>${c.company || 'Individual'}</span>
+                                            ${c.company_contacts_count > 1 ? `<span class="badge bg-primary-subtle text-primary border border-primary-subtle py-0 px-1 rounded-pill" style="font-size:0.68rem;" title="${c.company_contacts_count} Contacts linked"><i class="bi bi-people-fill me-1"></i>${c.company_contacts_count} Contacts</span>` : ''}
                                             <span>&bull;</span>
                                             <span><i class="bi bi-geo-alt-fill text-danger me-1"></i>${c.district}</span>
                                             ${c.aadhaar ? `<span>&bull;</span><span class="badge bg-light text-dark border"><i class="bi bi-person-vcard me-1"></i>${c.aadhaar}</span>` : ''}

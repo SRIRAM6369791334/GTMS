@@ -29,6 +29,18 @@ class CustomerDirectoryController extends Controller
         $pendingCustomers = Customer::where('status', 0)->count();
         $totalLeases = \App\Models\LeaseApplication::count();
 
+        $existingCompanies = Customer::whereNotNull('company_name')
+            ->where('company_name', '!=', '')
+            ->distinct()
+            ->orderBy('company_name')
+            ->pluck('company_name');
+
+        $companyContactCounts = Customer::whereNotNull('company_name')
+            ->where('company_name', '!=', '')
+            ->groupBy('company_name')
+            ->selectRaw('company_name, count(*) as count')
+            ->pluck('count', 'company_name');
+
         return view('pages.customers', compact(
             'customers',
             'districts',
@@ -36,7 +48,9 @@ class CustomerDirectoryController extends Controller
             'totalCustomers',
             'activeCustomers',
             'pendingCustomers',
-            'totalLeases'
+            'totalLeases',
+            'existingCompanies',
+            'companyContactCounts'
         ));
     }
 
@@ -67,7 +81,7 @@ class CustomerDirectoryController extends Controller
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
-            'area'                     => 'nullable|numeric|min:0',
+            'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'pan'                      => 'nullable|string|max:10',
             'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
             'gstin'                    => 'nullable|string|max:15',
@@ -189,6 +203,12 @@ class CustomerDirectoryController extends Controller
         $totalCompliances = $customer->ecCompliances ? $customer->ecCompliances->count() : 0;
         $currentStockpileCbm = $customer->stockpiles ? $customer->stockpiles->sum('current_stock_cbm') : 0;
 
+        $companyPartners = !empty($customer->company_name)
+            ? Customer::where('company_name', $customer->company_name)
+                ->where('id', '!=', $customer->id)
+                ->get()
+            : collect();
+
         return view('pages.customer_show', compact(
             'customer',
             'totalLeases',
@@ -196,7 +216,8 @@ class CustomerDirectoryController extends Controller
             'approvedMiningPlans',
             'activeEcCount',
             'totalCompliances',
-            'currentStockpileCbm'
+            'currentStockpileCbm',
+            'companyPartners'
         ));
     }
 
@@ -235,7 +256,7 @@ class CustomerDirectoryController extends Controller
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
-            'area'                     => 'nullable|numeric|min:0',
+            'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'pan'                      => 'nullable|string|max:10',
             'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
             'gstin'                    => 'nullable|string|max:15',

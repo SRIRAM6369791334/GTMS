@@ -485,18 +485,24 @@ class CustomerTrackingController extends Controller
                 }
             }
 
+            $companyContactsCount = 1;
+            if (!empty($c->company_name)) {
+                $companyContactsCount = Customer::where('company_name', $c->company_name)->count();
+            }
+
             return [
-                'id'               => $c->id,
-                'name'             => $c->customer_name,
-                'company'          => $c->company_name ?: 'Individual Applicant',
-                'unique_id'        => $c->mimas_no ?: ('CUST-' . str_pad($c->id, 4, '0', STR_PAD_LEFT)),
-                'mimas_no'         => $c->mimas_no,
-                'mobile'           => $c->mobile_num,
-                'secondary_mobile' => $c->secondary_mobile_num,
-                'aadhaar'          => $maskedAadhaar,
-                'district'         => $c->district?->name ?: 'N/A',
-                'active_stage'     => $stage,
-                'url'              => route('customer-tracking.show', $c->slug ?? $c->id),
+                'id'                     => $c->id,
+                'name'                   => $c->customer_name,
+                'company'                => $c->company_name ?: 'Individual Applicant',
+                'company_contacts_count' => $companyContactsCount,
+                'unique_id'              => $c->mimas_no ?: ('CUST-' . str_pad($c->id, 4, '0', STR_PAD_LEFT)),
+                'mimas_no'               => $c->mimas_no,
+                'mobile'                 => $c->mobile_num,
+                'secondary_mobile'       => $c->secondary_mobile_num,
+                'aadhaar'                => $maskedAadhaar,
+                'district'               => $c->district?->name ?: 'N/A',
+                'active_stage'           => $stage,
+                'url'                    => route('customer-tracking.show', $c->slug ?? $c->id),
             ];
         });
 
@@ -639,6 +645,57 @@ class CustomerTrackingController extends Controller
             'ecCompliances.documents',
         ]);
 
+        $companyPartners = !empty($customer->company_name)
+            ? Customer::where('company_name', $customer->company_name)->get()
+            : collect([$customer]);
+
+        $isCompanyUnified = !empty($customer->company_name) && $companyPartners->count() > 1;
+
+        if ($isCompanyUnified) {
+            $partnerIds = $companyPartners->pluck('id')->all();
+
+            $allCustomerLeases = \App\Models\LeaseApplication::with([
+                'customer', 'district', 'mineral', 'documents.folder', 'surveyNumbers'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerMining = \App\Models\MiningApplication::with([
+                'customer', 'district', 'mineral', 'documents.folder', 'natureOfWork', 'planType'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerEnv = \App\Models\EnvironmentProject::with([
+                'customer', 'district', 'documents.folder', 'pptApplications', 'ecCertificates'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerPpt = \App\Models\PptApplication::with([
+                'customer', 'district', 'mineral', 'documents'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerCert = \App\Models\EcCertificate::with([
+                'customer', 'environmentProject'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerComp = \App\Models\EcCompliance::with([
+                'customer', 'district', 'mineral', 'documents'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerDgps = \App\Models\DgpsSurvey::with([
+                'customer', 'documents'
+            ])->whereIn('customer_id', $partnerIds)->get();
+
+            $allCustomerDrone = \App\Models\DroneSurvey::with([
+                'customer', 'documents'
+            ])->whereIn('customer_id', $partnerIds)->get();
+        } else {
+            $allCustomerLeases = $customer->leaseApplications;
+            $allCustomerMining = $customer->miningApplications;
+            $allCustomerEnv = $customer->environmentProjects;
+            $allCustomerPpt = $customer->pptApplications;
+            $allCustomerCert = $customer->ecCertificates;
+            $allCustomerComp = $customer->ecCompliances;
+            $allCustomerDgps = $customer->dgpsSurveys;
+            $allCustomerDrone = $customer->droneSurveys;
+        }
+
         // Build Multi-Application Chains (supports 10+ applications, multiple quarries, or direct single entries)
         $allChains = [];
         $consumedMiningIds = [];
@@ -650,22 +707,22 @@ class CustomerTrackingController extends Controller
         $consumedDroneIds = [];
 
         // 1. Process all Leases as Primary Full-Cycle Application Chains (1. Lease -> 8. Drone)
-        foreach ($customer->leaseApplications as $l) {
-            $mining = $customer->miningApplications->where('lease_application_id', $l->id)->first()
-                      ?? ($l->common_id ? $customer->miningApplications->where('common_id', $l->common_id)->first() : null);
+        foreach ($allCustomerLeases as $l) {
+            $mining = $allCustomerMining->where('lease_application_id', $l->id)->first()
+                      ?? ($l->common_id ? $allCustomerMining->where('common_id', $l->common_id)->first() : null);
 
-            $env = $customer->environmentProjects->where('lease_application_id', $l->id)->first()
-                   ?? ($mining ? $customer->environmentProjects->where('mining_application_id', $mining->id)->first() : null);
+            $env = $allCustomerEnv->where('lease_application_id', $l->id)->first()
+                   ?? ($mining ? $allCustomerEnv->where('mining_application_id', $mining->id)->first() : null);
 
-            $ppt = $env ? $customer->pptApplications->where('environment_project_id', $env->id)->first() : null;
-            $cert = $customer->ecCertificates->where('lease_application_id', $l->id)->first()
-                    ?? ($env ? $customer->ecCertificates->where('environment_project_id', $env->id)->first() : null);
-            $comp = $env ? $customer->ecCompliances->where('environment_project_id', $env->id)->first()
-                    : ($cert ? $customer->ecCompliances->where('ec_certificate_id', $cert->id)->first() : null);
-            $dgps = $customer->dgpsSurveys->where('lease_application_id', $l->id)->first()
-                    ?? ($mining ? $customer->dgpsSurveys->where('mining_application_id', $mining->id)->first() : null);
-            $drone = $customer->droneSurveys->where('lease_application_id', $l->id)->first()
-                    ?? ($mining ? $customer->droneSurveys->where('mining_application_id', $mining->id)->first() : null);
+            $ppt = $env ? $allCustomerPpt->where('environment_project_id', $env->id)->first() : null;
+            $cert = $allCustomerCert->where('lease_application_id', $l->id)->first()
+                    ?? ($env ? $allCustomerCert->where('environment_project_id', $env->id)->first() : null);
+            $comp = $env ? $allCustomerComp->where('environment_project_id', $env->id)->first()
+                    : ($cert ? $allCustomerComp->where('ec_certificate_id', $cert->id)->first() : null);
+            $dgps = $allCustomerDgps->where('lease_application_id', $l->id)->first()
+                    ?? ($mining ? $allCustomerDgps->where('mining_application_id', $mining->id)->first() : null);
+            $drone = $allCustomerDrone->where('lease_application_id', $l->id)->first()
+                    ?? ($mining ? $allCustomerDrone->where('mining_application_id', $mining->id)->first() : null);
 
             if ($mining) $consumedMiningIds[] = $mining->id;
             if ($env) $consumedEnvIds[] = $env->id;
@@ -722,6 +779,9 @@ class CustomerTrackingController extends Controller
                 'is_direct'           => false,
                 'entry_stage'         => 1,
                 'action_url'          => route('viewapplication') . '?id=' . $l->id,
+                'applicant_name'      => $l->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'     => $l->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $l->customer_id,
                 'lease'               => $l,
                 'mining'              => $mining,
                 'env'                 => $env,
@@ -734,14 +794,14 @@ class CustomerTrackingController extends Controller
         }
 
         // 2. Standalone Mining Plans
-        foreach ($customer->miningApplications as $m) {
+        foreach ($allCustomerMining as $m) {
             if (in_array($m->id, $consumedMiningIds)) continue;
-            $env = $customer->environmentProjects->where('mining_application_id', $m->id)->first();
-            $ppt = $env ? $customer->pptApplications->where('environment_project_id', $env->id)->first() : null;
-            $cert = $env ? $customer->ecCertificates->where('environment_project_id', $env->id)->first() : null;
-            $comp = $env ? $customer->ecCompliances->where('environment_project_id', $env->id)->first() : null;
-            $dgps = $customer->dgpsSurveys->where('mining_application_id', $m->id)->first();
-            $drone = $customer->droneSurveys->where('mining_application_id', $m->id)->first();
+            $env = $allCustomerEnv->where('mining_application_id', $m->id)->first();
+            $ppt = $env ? $allCustomerPpt->where('environment_project_id', $env->id)->first() : null;
+            $cert = $env ? $allCustomerCert->where('environment_project_id', $env->id)->first() : null;
+            $comp = $env ? $allCustomerComp->where('environment_project_id', $env->id)->first() : null;
+            $dgps = $allCustomerDgps->where('mining_application_id', $m->id)->first();
+            $drone = $allCustomerDrone->where('mining_application_id', $m->id)->first();
 
             if ($env) $consumedEnvIds[] = $env->id;
             if ($ppt) $consumedPptIds[] = $ppt->id;
@@ -770,6 +830,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => url('/process?id=' . $m->id),
                 'is_direct'      => true,
                 'entry_stage'    => 2,
+                'applicant_name' => $m->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $m->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $m->customer_id,
                 'lease'          => null,
                 'mining'         => $m,
                 'env'            => $env,
@@ -782,11 +845,11 @@ class CustomerTrackingController extends Controller
         }
 
         // 3. Standalone Environment Projects
-        foreach ($customer->environmentProjects as $e) {
+        foreach ($allCustomerEnv as $e) {
             if (in_array($e->id, $consumedEnvIds)) continue;
-            $ppt = $customer->pptApplications->where('environment_project_id', $e->id)->first();
-            $cert = $customer->ecCertificates->where('environment_project_id', $e->id)->first();
-            $comp = $customer->ecCompliances->where('environment_project_id', $e->id)->first();
+            $ppt = $allCustomerPpt->where('environment_project_id', $e->id)->first();
+            $cert = $allCustomerCert->where('environment_project_id', $e->id)->first();
+            $comp = $allCustomerComp->where('environment_project_id', $e->id)->first();
 
             if ($ppt) $consumedPptIds[] = $ppt->id;
             if ($cert) $consumedCertIds[] = $cert->id;
@@ -812,6 +875,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('eviron.show', $e->id),
                 'is_direct'      => true,
                 'entry_stage'    => 3,
+                'applicant_name' => $e->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $e->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $e->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => $e,
@@ -824,7 +890,7 @@ class CustomerTrackingController extends Controller
         }
 
         // 4. Standalone PPT Applications
-        foreach ($customer->pptApplications as $p) {
+        foreach ($allCustomerPpt as $p) {
             if (in_array($p->id, $consumedPptIds)) continue;
             $allChains[] = [
                 'id'             => 'ppt-' . $p->id,
@@ -846,6 +912,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('ppt-department.show', $p->id),
                 'is_direct'      => true,
                 'entry_stage'    => 4,
+                'applicant_name' => $p->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $p->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $p->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => null,
@@ -858,9 +927,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 5. Standalone EC Certificates
-        foreach ($customer->ecCertificates as $c) {
+        foreach ($allCustomerCert as $c) {
             if (in_array($c->id, $consumedCertIds)) continue;
-            $comp = $customer->ecCompliances->where('ec_certificate_id', $c->id)->first();
+            $comp = $allCustomerComp->where('ec_certificate_id', $c->id)->first();
             if ($comp) $consumedCompIds[] = $comp->id;
 
             $allChains[] = [
@@ -883,6 +952,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('ec-certificate.show', $c->id),
                 'is_direct'      => true,
                 'entry_stage'    => 5,
+                'applicant_name' => $c->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $c->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $c->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => null,
@@ -895,7 +967,7 @@ class CustomerTrackingController extends Controller
         }
 
         // 6. Standalone EC Compliances
-        foreach ($customer->ecCompliances as $comp) {
+        foreach ($allCustomerComp as $comp) {
             if (in_array($comp->id, $consumedCompIds)) continue;
             $allChains[] = [
                 'id'             => 'compliance-' . $comp->id,
@@ -917,6 +989,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('ec-compliance.show', $comp->id),
                 'is_direct'      => true,
                 'entry_stage'    => 6,
+                'applicant_name' => $comp->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $comp->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $comp->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => null,
@@ -929,7 +1004,7 @@ class CustomerTrackingController extends Controller
         }
 
         // 7. Standalone DGPS Surveys
-        foreach ($customer->dgpsSurveys as $dgps) {
+        foreach ($allCustomerDgps as $dgps) {
             if (in_array($dgps->id, $consumedDgpsIds)) continue;
             $allChains[] = [
                 'id'             => 'dgps-' . $dgps->id,
@@ -951,6 +1026,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('dgps-survey.show', $dgps->id),
                 'is_direct'      => true,
                 'entry_stage'    => 7,
+                'applicant_name' => $dgps->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $dgps->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $dgps->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => null,
@@ -963,7 +1041,7 @@ class CustomerTrackingController extends Controller
         }
 
         // 8. Standalone Drone Surveys
-        foreach ($customer->droneSurveys as $drone) {
+        foreach ($allCustomerDrone as $drone) {
             if (in_array($drone->id, $consumedDroneIds)) continue;
             $allChains[] = [
                 'id'             => 'drone-' . $drone->id,
@@ -985,6 +1063,9 @@ class CustomerTrackingController extends Controller
                 'action_url'     => route('drone-survey.show', $drone->id),
                 'is_direct'      => true,
                 'entry_stage'    => 8,
+                'applicant_name' => $drone->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas' => $drone->customer?->mimas_no ?: $customer->mimas_no,
+                'applicant_customer_id' => $drone->customer_id,
                 'lease'          => null,
                 'mining'         => null,
                 'env'            => null,
@@ -1369,6 +1450,9 @@ class CustomerTrackingController extends Controller
             'selectedChain'      => $selectedChain,
             'isDirectEntry'      => $isDirectEntry,
             'entryStage'         => $entryStage,
+            'is_company_unified' => $isCompanyUnified,
+            'company_partners'   => $companyPartners,
+            'company_name'       => $customer->company_name,
         ];
     }
 
@@ -1419,29 +1503,55 @@ class CustomerTrackingController extends Controller
      */
     public function getCustomerApplicationsCatalog(Customer $customer): \Illuminate\Support\Collection
     {
-        $customer->loadMissing([
-            'district',
-            'mineral',
-            'leaseApplications.district',
-            'leaseApplications.mineral',
-            'miningApplications.district',
-            'miningApplications.mineral',
-            'environmentProjects.district',
-            'ecCertificates',
-            'ecCompliances.district',
-            'ecCompliances.mineral',
-            'pptApplications.district',
-            'pptApplications.mineral',
-            'dgpsSurveys',
-            'droneSurveys',
-        ]);
+        $companyPartners = !empty($customer->company_name)
+            ? Customer::where('company_name', $customer->company_name)->get()
+            : collect([$customer]);
+
+        $isCompanyUnified = !empty($customer->company_name) && $companyPartners->count() > 1;
+
+        if ($isCompanyUnified) {
+            $partnerIds = $companyPartners->pluck('id')->all();
+            $miningApps = \App\Models\MiningApplication::with(['customer', 'district', 'mineral'])->whereIn('customer_id', $partnerIds)->get();
+            $leaseApps = \App\Models\LeaseApplication::with(['customer', 'district', 'mineral'])->whereIn('customer_id', $partnerIds)->get();
+            $envProjects = \App\Models\EnvironmentProject::with(['customer', 'district'])->whereIn('customer_id', $partnerIds)->get();
+            $ecCerts = \App\Models\EcCertificate::with(['customer'])->whereIn('customer_id', $partnerIds)->get();
+            $pptApps = \App\Models\PptApplication::with(['customer', 'district', 'mineral'])->whereIn('customer_id', $partnerIds)->get();
+            $dgpsSurveys = \App\Models\DgpsSurvey::with(['customer'])->whereIn('customer_id', $partnerIds)->get();
+            $droneSurveys = \App\Models\DroneSurvey::with(['customer'])->whereIn('customer_id', $partnerIds)->get();
+            $ecCompliances = \App\Models\EcCompliance::with(['customer', 'district', 'mineral'])->whereIn('customer_id', $partnerIds)->get();
+        } else {
+            $customer->loadMissing([
+                'district',
+                'mineral',
+                'leaseApplications.district',
+                'leaseApplications.mineral',
+                'miningApplications.district',
+                'miningApplications.mineral',
+                'environmentProjects.district',
+                'ecCertificates',
+                'ecCompliances.district',
+                'ecCompliances.mineral',
+                'pptApplications.district',
+                'pptApplications.mineral',
+                'dgpsSurveys',
+                'droneSurveys',
+            ]);
+            $miningApps = $customer->miningApplications;
+            $leaseApps = $customer->leaseApplications;
+            $envProjects = $customer->environmentProjects;
+            $ecCerts = $customer->ecCertificates;
+            $pptApps = $customer->pptApplications;
+            $dgpsSurveys = $customer->dgpsSurveys;
+            $droneSurveys = $customer->droneSurveys;
+            $ecCompliances = $customer->ecCompliances;
+        }
 
         $catalog = collect();
 
         // 1. Mining Plan Applications
-        foreach ($customer->miningApplications as $m) {
-            $dist = $m->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
-            $mineral = $m->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+        foreach ($miningApps as $m) {
+            $dist = $m->district?->name ?: ($m->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu'));
+            $mineral = $m->mineral?->name ?: ($m->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel'));
             $loc = trim(($m->survey_numbers_text ? 'S.F.Nos. ' . $m->survey_numbers_text . ', ' : '') .
                         ($m->village ? $m->village . ' Village, ' : '') .
                         ($m->taluk ? $m->taluk . ' Taluk, ' : '') .
@@ -1469,6 +1579,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998343',
                 'tax_title'      => "Preparation of Mining Plan and Progressive Mine Closure Plan (PMCP) under Rule 41 of Tamil Nadu Minor Mineral Concession Rules, 1959",
                 'proforma_title' => "Preparation of Mining Plan",
+                'applicant_name' => $m->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $m->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "DGPS Survey and demarcation of boundary pillars with precise georeferencing",
                     "Mine Plan drafting, geological reserve estimation & year-wise production scheduling",
@@ -1479,9 +1591,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 2. Mining Lease Applications
-        foreach ($customer->leaseApplications as $l) {
-            $dist = $l->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
-            $mineral = $l->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+        foreach ($leaseApps as $l) {
+            $dist = $l->district?->name ?: ($l->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu'));
+            $mineral = $l->mineral?->name ?: ($l->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel'));
             $loc = trim(($l->village ? $l->village . ' Village, ' : '') .
                         ($l->taluk ? $l->taluk . ' Taluk, ' : '') .
                         "{$dist} Dist.");
@@ -1508,6 +1620,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998341',
                 'tax_title'      => "Preparation of Mining Lease Application, Revenue Scrutiny & Statutory MMS Filing",
                 'proforma_title' => "Mining Lease Application & Revenue Documentation",
+                'applicant_name' => $l->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $l->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "Collation and scrutiny of Patta, Chitta, Adangal, and FMB sketches",
                     "Combined village survey sketch verification & district revenue clearance",
@@ -1518,9 +1632,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 3. Environmental Clearance Projects
-        foreach ($customer->environmentProjects as $e) {
-            $dist = $e->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
-            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+        foreach ($envProjects as $e) {
+            $dist = $e->district?->name ?: ($e->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu'));
+            $mineral = $e->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
             $loc = $e->location ?: ($dist . ' Dist.');
             $val = (float)$e->product_value;
             $amt = $val > 0 ? $val : 80000.00;
@@ -1545,6 +1659,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998349',
                 'tax_title'      => "Environmental Clearance (EC) Project Formulation, Form-1, Form-2 & Baseline EMP",
                 'proforma_title' => "Preparation of Form-1, Form-2, PFR & EMP for Environmental Clearance",
+                'applicant_name' => $e->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $e->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "Preparation of statutory Form-1, Form-2, and Pre-Feasibility Report (PFR)",
                     "Baseline Environmental Management Plan (EMP) & mitigation safeguards",
@@ -1555,10 +1671,10 @@ class CustomerTrackingController extends Controller
         }
 
         // 4. EC Certificates
-        foreach ($customer->ecCertificates as $ec) {
-            $dist = $customer->district?->name ?: 'Tamil Nadu';
-            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
-            $loc = $customer->district?->name ? ($customer->district->name . ' Dist.') : 'Tamil Nadu';
+        foreach ($ecCerts as $ec) {
+            $dist = $ec->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $ec->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+            $loc = $dist ? ($dist . ' Dist.') : 'Tamil Nadu';
             $val = (float)$ec->product_value;
             $amt = $val > 0 ? $val : 50000.00;
 
@@ -1582,6 +1698,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998349',
                 'tax_title'      => "SEIAA Environmental Clearance Certificate Order Verification, Compliance Docket & Archive",
                 'proforma_title' => "SEIAA EC Certificate Order Verification & Statutory Filing",
+                'applicant_name' => $ec->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $ec->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "SEIAA-TN Environmental Clearance order issuance scrutiny and terms verification",
                     "Preparation of baseline compliance docket and statutory register maintenance",
@@ -1591,9 +1709,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 5. PPT Presentations
-        foreach ($customer->pptApplications as $p) {
-            $dist = $p->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
-            $mineral = $p->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+        foreach ($pptApps as $p) {
+            $dist = $p->district?->name ?: ($p->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu'));
+            $mineral = $p->mineral?->name ?: ($p->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel'));
             $loc = $dist . ' Dist.';
             $val = (float)$p->product_value;
             $amt = $val > 0 ? $val : 30000.00;
@@ -1618,6 +1736,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998311',
                 'tax_title'      => "PPT Statutory Presentation Formulation & SEAC/SEIAA Technical Appraisal Defense",
                 'proforma_title' => "PPT Department Presentation & SEIAA Appraisal Defense",
+                'applicant_name' => $p->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $p->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "Comprehensive technical appraisal slide deck formulation for SEAC committee",
                     "CER undertaking documentation and environmental mitigation slides",
@@ -1627,9 +1747,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 6. DGPS Land Surveys
-        foreach ($customer->dgpsSurveys as $d) {
-            $dist = $customer->district?->name ?: 'Tamil Nadu';
-            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+        foreach ($dgpsSurveys as $d) {
+            $dist = $d->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $d->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
             $loc = $d->location ?: ($dist . ' Dist.');
             $val = (float)$d->product_value;
             $amt = $val > 0 ? $val : 35000.00;
@@ -1654,6 +1774,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998341',
                 'tax_title'      => "DGPS Boundary Survey, Baseline Control Fixation & Pillar Coordinates Demarcation Plan",
                 'proforma_title' => "DGPS Land Survey & Boundary Demarcation",
+                'applicant_name' => $d->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $d->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "Differential GPS baseline observation & high-precision pillar coordinate table",
                     "Geo-referenced KML file preparation and overlay with Survey of India Topo-sheet",
@@ -1663,9 +1785,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 7. Drone Volumetric Surveys
-        foreach ($customer->droneSurveys as $dr) {
-            $dist = $customer->district?->name ?: 'Tamil Nadu';
-            $mineral = $customer->mineral?->name ?: 'Rough Stone and Gravel';
+        foreach ($droneSurveys as $dr) {
+            $dist = $dr->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
+            $mineral = $dr->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
             $loc = $dr->location ?: ($dist . ' Dist.');
             $val = (float)$dr->product_value;
             $amt = $val > 0 ? $val : 50000.00;
@@ -1690,6 +1812,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998342',
                 'tax_title'      => "Drone Aerial Photogrammetry Survey, High-Resolution Orthomosaic & 3D Volumetric Computation Report",
                 'proforma_title' => "Drone Aerial Volumetric Survey & 3D Modeling",
+                'applicant_name' => $dr->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $dr->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "DGCA-compliant UAV aerial photogrammetry survey of quarry concession area",
                     "High-resolution orthomosaic map, Digital Elevation Model (DEM / DTM) generation",
@@ -1699,9 +1823,9 @@ class CustomerTrackingController extends Controller
         }
 
         // 8. EC Compliance Monitoring
-        foreach ($customer->ecCompliances as $comp) {
-            $dist = $comp->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu');
-            $mineral = $comp->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel');
+        foreach ($ecCompliances as $comp) {
+            $dist = $comp->district?->name ?: ($comp->customer?->district?->name ?: ($customer->district?->name ?: 'Tamil Nadu'));
+            $mineral = $comp->mineral?->name ?: ($comp->customer?->mineral?->name ?: ($customer->mineral?->name ?: 'Rough Stone and Gravel'));
             $loc = $comp->project_name ?: ($dist . ' Dist.');
             $val = (float)$comp->product_value;
             $amt = $val > 0 ? $val : 40000.00;
@@ -1726,6 +1850,8 @@ class CustomerTrackingController extends Controller
                 'sac'            => '998349',
                 'tax_title'      => "Environmental Clearance Half-Yearly Compliance Monitoring, NABL Lab Environmental Testing & MoEFCC Parivesh Portal Filing",
                 'proforma_title' => "EC Half-Yearly Compliance Monitoring & Testing",
+                'applicant_name' => $comp->customer?->customer_name ?: $customer->customer_name,
+                'applicant_mimas'=> $comp->customer?->mimas_no ?: $customer->mimas_no,
                 'bullets'        => [
                     "Conducting baseline AAQ, Water quality, Noise, and Vibration tests via NABL laboratory",
                     "Compilation of six-monthly environmental clearance condition monitoring report",

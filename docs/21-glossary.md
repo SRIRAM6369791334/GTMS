@@ -118,7 +118,7 @@ The chief district executive and revenue authority. In Tamil Nadu, the District 
 * **Plan Types Seeded in GTMS:**
   1. *Mining Plan:* Fresh 5-year operational plan for a newly granted quarry.
   2. *Revised Mining Plan:* Re-estimation of production caps or boundary adjustments during an active lease term.
-  3. *Modified Mining Plan:* Changes in method of extraction, safety distances, or target horizons.
+  3. *Plan Drawing :* Changes in method of extraction, safety distances, or target horizons.
   4. *Scheme of Mining:* 5-year renewal document submitted prior to the expiration of a previous 5-year plan.
 
 ### Recognized Qualified Person (RQP)

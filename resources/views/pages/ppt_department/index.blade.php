@@ -129,9 +129,22 @@
                   <td>
                     <span class="fw-bold text-navy">{{ $app->application_no }}</span>
                     @if($app->presentation_stage)
+                      @php
+                        $stageLabel = match($app->presentation_stage) {
+                          'tor_presentation'      => 'Stage 1: ToR Gate',
+                          'b2_presentation'       => 'Category B2 Gate',
+                          'final_ec_presentation' => 'Stage 2: Final EC Gate',
+                          default                 => ucwords(str_replace('_', ' ', $app->presentation_stage))
+                        };
+                      @endphp
                       <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10px;">
-                        {{ $app->presentation_stage === 'tor_presentation' ? 'ToR Gate' : 'Final EC Gate' }}
+                        {{ $stageLabel }}
                       </span>
+                    @endif
+                    @if($app->environment_project_id)
+                      <a href="{{ route('eviron.show', $app->environment_project_id) }}" class="badge bg-success-subtle text-success border border-success-subtle text-decoration-none" style="font-size:10px;" title="Linked EC Dossier">
+                        <i class="fa fa-leaf me-1"></i>EC Project
+                      </a>
                     @endif
                     @if($app->project_name)
                       <div class="small text-muted text-truncate" style="max-width:220px;" title="{{ $app->project_name }}">{{ $app->project_name }}</div>

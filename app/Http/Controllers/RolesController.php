@@ -11,7 +11,7 @@ class RolesController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->get();
+        $roles = Role::with('permissions')->withCount('users')->orderBy('id', 'asc')->get();
         $allPermissions = Permission::orderBy('name')->get();
 
         // Group permissions by prefix/module (e.g. 'users.create' => 'users')
@@ -36,7 +36,6 @@ class RolesController extends Controller
             'notification' => 'Notifications',
         ];
 
-
         $groupedPermissions = [];
         foreach ($allPermissions as $perm) {
             $parts = explode('.', $perm->name);
@@ -44,7 +43,23 @@ class RolesController extends Controller
             $groupedPermissions[$moduleKey][] = $perm;
         }
 
-        return view('pages.authentication.roles.index', compact('roles', 'groupedPermissions', 'modules'));
+        // Live KPI Metrics
+        $totalRoles = $roles->count();
+        $totalPermissions = $allPermissions->count();
+        $systemRolesCount = $roles->filter(fn($r) => in_array($r->name, ['Admin', 'Super Admin']))->count();
+        $customRolesCount = $totalRoles - $systemRolesCount;
+        $totalAssignedUsers = $roles->sum('users_count');
+
+        return view('pages.authentication.roles.index', compact(
+            'roles', 
+            'groupedPermissions', 
+            'modules',
+            'totalRoles',
+            'totalPermissions',
+            'systemRolesCount',
+            'customRolesCount',
+            'totalAssignedUsers'
+        ));
     }
 
     public function store(Request $request)

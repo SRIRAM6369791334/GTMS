@@ -50,15 +50,32 @@
             <div>
               <div class="d-flex align-items-center gap-2 mb-1">
                 <span class="badge bg-primary">Linked Environment Clearance Project</span>
-                <span class="badge {{ $ppt->presentation_stage === 'tor_presentation' ? 'bg-info text-white' : 'bg-success text-white' }}">
-                  {{ $ppt->presentation_stage === 'tor_presentation' ? 'Stage 1: ToR Presentation Gate' : 'Stage 2: Final EC Presentation Gate' }}
+                @php
+                  $stageBadge = match($ppt->presentation_stage) {
+                    'tor_presentation'  => 'Stage 1: ToR Presentation Gate',
+                    'b2_presentation'   => 'Category B2: SEAC EC Presentation Gate',
+                    default             => 'Stage 2: Final EC Presentation Gate',
+                  };
+                  $badgeColor = match($ppt->presentation_stage) {
+                    'tor_presentation' => 'bg-info text-white',
+                    'b2_presentation'  => 'bg-warning text-dark',
+                    default            => 'bg-success text-white',
+                  };
+                @endphp
+                <span class="badge {{ $badgeColor }}">
+                  {{ $stageBadge }}
                 </span>
                 <span class="fw-bold text-navy">{{ $ppt->environmentProject->project_code }}</span>
               </div>
               <div class="small text-muted">
                 <strong>Project:</strong> {{ $ppt->environmentProject->project_name }}
-                &bull; <strong>Current EC Sub Category:</strong> {{ $ppt->environmentProject->sub_category }}
-                &bull; <strong>B1 Stage:</strong> {{ strtoupper(str_replace('_', ' ', $ppt->environmentProject->b1_stage)) }}
+                &bull; <strong>Category:</strong> {{ $ppt->environmentProject->category_badge }}
+                @if($ppt->environmentProject->category === 'B1')
+                  &bull; <strong>Current EC Sub Category:</strong> {{ $ppt->environmentProject->sub_category }}
+                  &bull; <strong>B1 Stage:</strong> {{ strtoupper(str_replace('_', ' ', $ppt->environmentProject->b1_stage)) }}
+                @else
+                  &bull; <strong>Status:</strong> {{ strtoupper(str_replace('_', ' ', $ppt->environmentProject->status)) }}
+                @endif
               </div>
             </div>
 
@@ -74,6 +91,8 @@
                     <i class="fa fa-check-circle me-1"></i>
                     @if($ppt->presentation_stage === 'tor_presentation')
                       Approve ToR &amp; Unlock ETA Folders
+                    @elseif($ppt->presentation_stage === 'b2_presentation')
+                      Approve B2 Presentation &amp; Clear for EC Certificate
                     @else
                       Approve Final EC &amp; Complete Project
                     @endif
@@ -83,6 +102,17 @@
                 <span class="badge bg-success py-2 px-3">
                   <i class="fa fa-check-circle me-1"></i> Presentation Approved
                 </span>
+                @if($ppt->environmentProject && $ppt->environmentProject->status === 'approved')
+                  @if($ppt->environmentProject->ecCertificates?->isNotEmpty())
+                    <a href="{{ route('ec-certificate.show', $ppt->environmentProject->ecCertificates->first()->id) }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
+                      <i class="fa fa-certificate me-1"></i> View Issued EC Certificate
+                    </a>
+                  @else
+                    <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $ppt->environmentProject->id }}" class="btn btn-success btn-sm">
+                      <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+                    </a>
+                  @endif
+                @endif
               @endif
             </div>
           </div>

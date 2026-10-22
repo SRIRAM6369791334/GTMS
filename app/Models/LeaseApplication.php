@@ -21,6 +21,7 @@ class LeaseApplication extends Model
         'customer_id',
         'district_id',
         'category_id',
+        'other_category_rule',
         'mineral_id',
         'other_mineral_name',
         'taluk',
@@ -50,7 +51,7 @@ class LeaseApplication extends Model
     ];
 
     protected $casts = [
-        'area_extent_ha' => 'decimal:2',
+        'area_extent_ha' => 'string',
         'product_value' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'pending_amount' => 'decimal:2',
@@ -60,6 +61,17 @@ class LeaseApplication extends Model
         'current_step' => 'integer',
         'lease_period_years' => 'integer',
     ];
+
+    public function getAreaExtentNumericAttribute(): ?float
+    {
+        if (empty($this->area_extent_ha)) return null;
+        $val = trim($this->area_extent_ha);
+        $parts = explode('.', $val);
+        if (count($parts) === 3) {
+            return round((float)$parts[0] + ((float)$parts[1] / 100) + ((float)$parts[2] / 10000), 4);
+        }
+        return is_numeric($val) ? (float)$val : null;
+    }
 
     public function handlers(): HasMany
     {

@@ -100,6 +100,32 @@ class CustomerTrackingInvoiceTest extends TestCase
         ]);
     }
 
+    protected function tearDown(): void
+    {
+        $testCustomers = Customer::withTrashed()
+            ->where('customer_name', 'like', 'Test MultiApp Client%')
+            ->orWhere('mimas_no', 'like', 'CUST-INV-%')
+            ->get();
+
+        $ids = $testCustomers->pluck('id')->all();
+
+        if (!empty($ids)) {
+            $leaseIds = LeaseApplication::whereIn('customer_id', $ids)->pluck('id');
+            if ($leaseIds->isNotEmpty()) {
+                \Illuminate\Support\Facades\DB::table('lease_survey_numbers')->whereIn('lease_application_id', $leaseIds)->delete();
+                \Illuminate\Support\Facades\DB::table('lease_application_minerals')->whereIn('lease_application_id', $leaseIds)->delete();
+                \Illuminate\Support\Facades\DB::table('application_handlers')->where('application_type', LeaseApplication::class)->whereIn('application_id', $leaseIds)->delete();
+                \Illuminate\Support\Facades\DB::table('lease_documents')->whereIn('lease_application_id', $leaseIds)->delete();
+            }
+
+            LeaseApplication::whereIn('customer_id', $ids)->forceDelete();
+            MiningApplication::whereIn('customer_id', $ids)->forceDelete();
+            Customer::withTrashed()->whereIn('id', $ids)->forceDelete();
+        }
+
+        parent::tearDown();
+    }
+
     /** @test */
     public function tax_invoice_renders_with_high_fidelity_reference_ti_template()
     {

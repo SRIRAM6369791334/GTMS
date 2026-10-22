@@ -15,7 +15,7 @@ use App\Models\LeaseApplication;
 use App\Models\MiningApplication;
 use App\Models\EnvironmentProject;
 use App\Models\DgpsSurvey;
-use App\Models\Stockpile;
+use App\Models\MineralStockpile;
 use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Models\Role;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -57,6 +57,45 @@ class CustomerDirectoryCrudTest extends TestCase
             ['name' => 'Rough Stone'],
             ['type' => 'Minor Mineral', 'status' => 1]
         );
+    }
+
+    protected function tearDown(): void
+    {
+        $testCustomers = Customer::withTrashed()
+            ->where(function ($q) {
+                $q->where('mimas_no', 'like', 'SHOW-CUST-%')
+                  ->orWhere('mimas_no', 'like', 'ZERO-CUST-%')
+                  ->orWhere('mimas_no', 'like', 'LOOKUP-%')
+                  ->orWhere('mimas_no', 'like', 'CUST-ARCHIVE-%')
+                  ->orWhere('mimas_no', 'like', 'CUST-DRONE-%')
+                  ->orWhere('mimas_no', 'like', 'CUST-UP-%')
+                  ->orWhere('mimas_no', 'like', 'CUST-DEL-%')
+                  ->orWhere('mimas_no', 'like', 'CUST-TEST-%')
+                  ->orWhere('customer_name', 'like', '%Karuppasamy%')
+                  ->orWhere('customer_name', 'like', '%Full Dossier Client%')
+                  ->orWhere('customer_name', 'like', '%Updated Representative%')
+                  ->orWhere('customer_name', 'like', '%Drone Quarry Client%')
+                  ->orWhere('customer_name', 'like', '%Restored Client%')
+                  ->orWhere('customer_name', 'like', '%Lookup Client%')
+                  ->orWhere('customer_name', 'like', '%Zero State Client%');
+            })->get();
+
+        $ids = $testCustomers->pluck('id')->all();
+
+        if (!empty($ids)) {
+            LeaseApplication::whereIn('customer_id', $ids)->forceDelete();
+            MiningApplication::whereIn('customer_id', $ids)->forceDelete();
+            EnvironmentProject::whereIn('customer_id', $ids)->forceDelete();
+            EcCompliance::whereIn('customer_id', $ids)->forceDelete();
+            EcCertificate::whereIn('customer_id', $ids)->forceDelete();
+            PptApplication::whereIn('customer_id', $ids)->forceDelete();
+            DgpsSurvey::whereIn('customer_id', $ids)->forceDelete();
+            DroneSurvey::whereIn('customer_id', $ids)->forceDelete();
+            MineralStockpile::whereIn('quarry_customer_id', $ids)->forceDelete();
+            Customer::withTrashed()->whereIn('id', $ids)->forceDelete();
+        }
+
+        parent::tearDown();
     }
 
     /**

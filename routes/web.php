@@ -266,6 +266,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/step4', [CustomerController::class, 'step4'])->name('step4');
         Route::get('/step5', [CustomerController::class, 'step5'])->name('step5');
         Route::post('/step5/upload', [CustomerController::class, 'uploadDocument'])->name('step5.upload');
+        Route::post('/step5/remove', [CustomerController::class, 'removeDocument'])->name('step5.remove');
         Route::post('/step5/requirement', [CustomerController::class, 'saveDocumentRequirement'])->name('step5.requirement');
         Route::get('/step6', [CustomerController::class, 'step6'])->name('step6');
         Route::post('/step6', [CustomerController::class, 'saveStep6'])->name('step6.save');
@@ -283,6 +284,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/application/{id}/reject', [CustomerController::class, 'rejectApplication'])->name('application.reject');
         Route::post('/application/{id}/move-to-mining', [CustomerController::class, 'moveToMining'])->name('application.moveToMining');
         Route::post('/application/document/{id}/status', [CustomerController::class, 'updateDocumentStatus'])->name('application.document.status');
+        Route::post('/application/document/{id}/upload', [CustomerController::class, 'uploadDossierDocument'])->name('application.document.upload');
     });
     Route::middleware('permission:application.view')->group(function () {
         Route::get('/application/{id}/report', [CustomerController::class, 'generateReport'])->name('application.report');
@@ -298,6 +300,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:mining.create')->group(function () {
         Route::get('/newapplication', [MiningController::class, 'newApplication'])->name('newapplication');
         Route::post('/newapplication', [MiningController::class, 'store'])->name('newapplication.store');
+        Route::post('/newapplication/autosave', [MiningController::class, 'autoSaveStep'])->name('newapplication.autosave');
         Route::post('/mining/document/upload', [MiningController::class, 'uploadDocument'])->name('mining.document.upload');
     });
     Route::middleware('permission:mining.edit')->group(function () {
@@ -353,6 +356,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/eviron/{id}/status', [EnverionsoneController::class, 'updateStatus'])->name('eviron.status');
         Route::post('/eviron/{id}/submit-sc1-ppt', [EnverionsoneController::class, 'submitSc1ToPpt'])->name('eviron.submitSc1ToPpt');
         Route::post('/eviron/{id}/submit-sc2-ppt', [EnverionsoneController::class, 'submitSc2ToPpt'])->name('eviron.submitSc2ToPpt');
+        Route::post('/eviron/{id}/submit-b2-ppt', [EnverionsoneController::class, 'submitB2ToPpt'])->name('eviron.submitB2ToPpt');
 
         // Unified document review
         Route::post('/eviron/{id}/documents/{document}/review', [EnverionsoneController::class, 'reviewDocument'])->name('eviron.documents.review');
@@ -438,6 +442,19 @@ Route::middleware('auth')->group(function () {
 
     // Accounts & Financial Management Module
     Route::prefix('accounts')->name('accounts.')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('accounts.quotations.index');
+        })->name('index');
+
+        // Bank Accounts Management & Live AJAX Routes
+        Route::get('/bank-accounts', [QuotationController::class, 'getBankAccounts'])
+            ->middleware('permission:account.view')
+            ->name('bank-accounts.index');
+
+        Route::post('/bank-accounts', [QuotationController::class, 'storeBankAccount'])
+            ->middleware('permission:account.create')
+            ->name('bank-accounts.store');
+
         // Customer Concessions AJAX lookup
         Route::get('/quotations/customer-concessions/{customer}', [QuotationController::class, 'getCustomerConcessions'])
             ->middleware('permission:account.view')

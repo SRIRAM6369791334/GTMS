@@ -136,12 +136,12 @@
             @if($project->category === 'B1')
               {{-- B1 Sequential Statutory Stage Buttons --}}
               @if($project->b1_stage === 'sc1_prep')
-                <form method="POST" action="{{ route('eviron.submitSc1ToPpt', $project->id) }}" onsubmit="return confirm('Submit TOR (ToR & Mining Documents) to PPT Department for Stage 1 ToR Presentation?');">
-                  @csrf
-                  <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="fa fa-paper-plane me-1"></i> Submit TOR to PPT Department (Stage 1 Gate)
-                  </button>
-                </form>
+                <button type="button" class="btn btn-primary btn-sm btn-open-move-ppt"
+                  data-action="{{ route('eviron.submitSc1ToPpt', $project->id) }}"
+                  data-gate-title="Stage 1: ToR Presentation Gate"
+                  data-gate-desc="Promote Category B1 (Stage 1 TOR) to PPT Department for SEAC Terms of Reference Presentation Defense.">
+                  <i class="fa fa-paper-plane me-1"></i> Submit TOR to PPT Department (Stage 1 Gate)
+                </button>
               @elseif($project->b1_stage === 'sc1_ppt_review')
                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
                   <i class="fa fa-spinner fa-spin me-1"></i> Awaiting PPT ToR Approval
@@ -152,12 +152,12 @@
                   </a>
                 @endif
               @elseif($project->b1_stage === 'sc2_prep')
-                <form method="POST" action="{{ route('eviron.submitSc2ToPpt', $project->id) }}" onsubmit="return confirm('Submit ETA (EIA Study & TNPCB Submission) to PPT Department for Stage 2 Final EC Presentation?');">
-                  @csrf
-                  <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="fa fa-paper-plane me-1"></i> Submit ETA to PPT Department (Stage 2 Gate)
-                  </button>
-                </form>
+                <button type="button" class="btn btn-primary btn-sm btn-open-move-ppt"
+                  data-action="{{ route('eviron.submitSc2ToPpt', $project->id) }}"
+                  data-gate-title="Stage 2: Final EC Presentation Gate"
+                  data-gate-desc="Promote Category B1 (Stage 2 ETA) to PPT Department for Final SEAC / SEIAA EC Appraisal.">
+                  <i class="fa fa-paper-plane me-1"></i> Submit ETA to PPT Department (Stage 2 Gate)
+                </button>
               @elseif($project->b1_stage === 'sc2_ppt_review')
                 <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
                   <i class="fa fa-spinner fa-spin me-1"></i> Awaiting Final EC Approval
@@ -179,29 +179,29 @@
                 @endif
               @endif
             @else
-              {{-- Category B2 & Legacy Action Buttons --}}
+              {{-- Category B2 Statutory Action Buttons --}}
               @if($project->ecCertificates?->isNotEmpty())
                 <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
                   <i class="fa fa-certificate me-1"></i> View Issued EC Certificate ({{ $project->ecCertificates->first()->ec_ref_no }})
                 </a>
               @elseif($project->status === 'draft')
-                <form method="POST" action="{{ route('eviron.status', $project->id) }}">
-                  @csrf
-                  <input type="hidden" name="status" value="validation">
-                  <button type="submit" class="btn btn-warning btn-sm">
-                    <i class="fa fa-arrow-right me-1"></i> Send to Validation (6.2)
-                  </button>
-                </form>
+                <button type="button" class="btn btn-primary btn-sm btn-open-move-ppt"
+                  data-action="{{ route('eviron.submitB2ToPpt', $project->id) }}"
+                  data-gate-title="Category B2: SEAC Presentation Gate"
+                  data-gate-desc="Promote Category B2 Application to PPT Department for SEAC Presentation Defense.">
+                  <i class="fa fa-paper-plane me-1"></i> Submit B2 to PPT Department (Presentation Gate)
+                </button>
               @elseif($project->status === 'validation')
-                <form method="POST" action="{{ route('eviron.status', $project->id) }}">
-                  @csrf
-                  <input type="hidden" name="status" value="approved">
-                  <button type="submit" class="btn btn-success btn-sm">
-                    <i class="fa fa-check-circle me-1"></i> Approve Application (6.3)
-                  </button>
-                </form>
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2">
+                  <i class="fa fa-spinner fa-spin me-1"></i> Awaiting SEAC B2 Approval
+                </span>
+                @if($project->ppt_stage_1_id)
+                  <a href="{{ route('ppt-department.show', $project->ppt_stage_1_id) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fa fa-tv me-1"></i> View PPT Dossier
+                  </a>
+                @endif
               @elseif($project->status === 'approved')
-                <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-navy btn-sm" style="background:#0F1E4D; color:#fff;">
+                <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-success btn-sm">
                   <i class="fa fa-certificate me-1"></i> Issue EC Certificate
                 </a>
               @endif
@@ -331,6 +331,102 @@
             @if(!$project->ecCertificates?->isNotEmpty())
               <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-sm btn-success text-nowrap ms-2">
                 <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+              </a>
+            @endif
+          </div>
+        @endif
+      </div>
+    </div>
+    @elseif($project->category === 'B2')
+    {{-- ================= CATEGORY B2 STATUTORY LIFECYCLE STEPPER ================= --}}
+    <div class="card mb-4 border-0 shadow-sm" style="border-radius:14px; border-left: 5px solid #059669 !important;">
+      <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <div>
+          <span class="badge bg-success me-2">Category B2 Statutory Lifecycle</span>
+          <span class="small fw-bold text-navy">Direct Single-Stage Process Flow (B2 ➔ PPT Department ➔ EC Certificate)</span>
+        </div>
+        <span class="badge bg-light text-navy border">
+          Current State: {{ $project->status === 'approved' ? 'SEAC APPROVED & CLEARED' : ($project->status === 'validation' ? 'PPT SEAC APPRAISAL' : 'B2 DOCUMENT INTAKE') }}
+        </span>
+      </div>
+      <div class="card-body py-3">
+        @php
+          $isB2Draft = ($project->status === 'draft');
+          $isB2Review = ($project->status === 'validation');
+          $isB2Approved = ($project->status === 'approved');
+          $isB2CertIssued = $project->ecCertificates?->isNotEmpty();
+        @endphp
+        <div class="row g-2 align-items-center">
+          {{-- Step 1: B2 Intake & Environmental Documents --}}
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border {{ $isB2Draft ? 'bg-primary text-white border-primary shadow-sm' : 'bg-light text-success border-success' }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isB2Draft ? 'bg-white text-primary' : 'bg-success text-white' }} px-2 py-1">
+                  @if(!$isB2Draft)<i class="fa fa-check"></i>@else 1 @endif
+                </span>
+                <span class="fw-bold small {{ $isB2Draft ? 'text-white' : 'text-success' }}">Stage 1: B2 Document Preparation</span>
+              </div>
+              <div class="small {{ $isB2Draft ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
+                Environmental Concession (6 Folders)
+              </div>
+            </div>
+          </div>
+
+          {{-- Step 2: PPT Department Gate --}}
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border {{ $isB2Review ? 'bg-warning text-dark border-warning shadow-sm' : ($isB2Approved ? 'bg-light text-success border-success' : 'bg-light text-muted') }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isB2Review ? 'bg-dark text-white' : ($isB2Approved ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
+                  @if($isB2Approved)<i class="fa fa-check"></i>@else 2 @endif
+                </span>
+                <span class="fw-bold small {{ $isB2Review ? 'text-dark' : ($isB2Approved ? 'text-success' : 'text-dark') }}">Stage 2: PPT Department Gate</span>
+              </div>
+              <div class="small {{ $isB2Review ? 'text-dark' : 'text-muted' }}" style="font-size:0.78rem;">
+                SEAC EC Defense Presentation
+              </div>
+            </div>
+          </div>
+
+          {{-- Step 3: EC Certificate Issuance --}}
+          <div class="col-md-4">
+            <div class="p-3 rounded-3 border {{ $isB2Approved ? ($isB2CertIssued ? 'bg-light text-success border-success' : 'bg-success text-white border-success shadow-sm') : 'bg-light text-muted' }}">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge rounded-circle {{ $isB2Approved ? ($isB2CertIssued ? 'bg-success text-white' : 'bg-white text-success') : 'bg-secondary text-white' }} px-2 py-1">
+                  @if($isB2CertIssued)<i class="fa fa-check"></i>@else 3 @endif
+                </span>
+                <span class="fw-bold small {{ $isB2Approved ? ($isB2CertIssued ? 'text-success' : 'text-white') : 'text-dark' }}">Stage 3: EC Certificate Issuance</span>
+              </div>
+              <div class="small {{ $isB2Approved ? ($isB2CertIssued ? 'text-muted' : 'text-white-50') : 'text-muted' }}" style="font-size:0.78rem;">
+                SEIAA Clearance &amp; Compliance Handover
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if($isB2Review && $project->pptStage1)
+          <div class="alert alert-warning py-2 px-3 mt-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+            <div class="small">
+              <i class="fa fa-info-circle me-1"></i>
+              <strong>PPT Appraisal In Progress:</strong> This Category B2 application is submitted for SEAC Defense in PPT Department (Dossier: <strong>{{ $project->pptStage1->application_no }}</strong>).
+              Once approved by the committee, the project will automatically become cleared for EC Certificate Issuance.
+            </div>
+            <a href="{{ route('ppt-department.show', $project->pptStage1->id) }}" class="btn btn-sm btn-navy text-nowrap ms-2" style="background:#0F1E4D; color:#fff;">
+              <i class="fa fa-tv me-1"></i> Go to PPT Review
+            </a>
+          </div>
+        @elseif($isB2Approved)
+          <div class="alert alert-success py-2 px-3 mt-3 mb-0 d-flex align-items-center justify-content-between" role="alert">
+            <div class="small">
+              <i class="fa fa-check-circle me-1"></i>
+              <strong>Category B2 Appraisal Complete!</strong> SEAC EC Presentation has been approved by the PPT Department. The project is fully cleared for EC Certificate issuance.
+            </div>
+            @if(!$isB2CertIssued)
+              <a href="{{ route('ec-certificate.step', 1) }}?project_id={{ $project->id }}" class="btn btn-sm btn-success text-nowrap ms-2">
+                <i class="fa fa-certificate me-1"></i> Issue EC Certificate
+              </a>
+            @else
+              <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-sm btn-navy text-nowrap ms-2" style="background:#0F1E4D; color:#fff;">
+                <i class="fa fa-certificate me-1"></i> View Issued EC Certificate
               </a>
             @endif
           </div>
@@ -1022,6 +1118,58 @@
   </div>
 </div>
 
+{{-- Modal for Promote to PPT Department --}}
+<div class="modal fade" id="modalMoveToPpt" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow" style="border-radius:14px; overflow:hidden;">
+      <form id="formMoveToPpt" action="" method="POST">
+        @csrf
+        <div class="modal-header text-white" style="background:#0F1E4D;">
+          <h5 class="modal-title text-white mb-0" style="font-size:1.05rem;">
+            <i class="fa fa-rocket me-2 text-warning"></i> Promote to PPT Department
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="p-3 mb-3 rounded" style="background:#f8fafc; border:1px solid #e2e8f0;">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Project Code:</span>
+              <strong class="font-monospace text-primary">{{ $project->project_code ?? ('EC-' . $project->id) }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Applicant / Firm:</span>
+              <strong class="text-dark">{{ $project->customer?->company_name ?: ($project->customer?->customer_name ?: 'Applicant') }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted small">Target Gate:</span>
+              <strong id="modal_ppt_gate_title" class="text-success">Presentation Gate</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span class="text-muted small">Quarry Location:</span>
+              <strong class="text-dark">{{ $project->district?->name ?? 'N/A' }} {{ $project->location ? '— ' . $project->location : '' }}</strong>
+            </div>
+          </div>
+          <p class="small text-muted mb-2" id="modal_ppt_gate_desc">
+            Promoting this project to the <b>PPT Department</b> will:
+          </p>
+          <ul class="small text-muted mb-0 ps-3">
+            <li class="mb-1">Generate an official PPT record (<b>PPT-YYYY-XXXX</b>) in the PPT Department master register.</li>
+            <li class="mb-1">Propagate lead technical handlers for SEAC committee presentation defense.</li>
+            <li class="mb-1">Unlock all 11 statutory folders (PPTX slides, KML, demand notes, SEAC agendas, minutes).</li>
+            <li>Initiate scheduled presentation review workflow in the PPT portal.</li>
+          </ul>
+        </div>
+        <div class="modal-footer" style="background:#f8fafc; border-top:1px solid #e2e8f0;">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" id="btnSubmitMovePpt" class="btn btn-sm px-3 text-white" style="background:#0F1E4D;">
+            <i class="fa fa-rocket me-1 text-warning"></i> Proceed &amp; Promote to PPT
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const modalShowStatus = document.getElementById('modalUpdateStatus');
@@ -1219,6 +1367,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('review_modal_note').value = btn.dataset.reviewNote || '';
       }
     });
+  }
+
   // Dynamic Document Requirement (Mandatory / Optional) Toggle
   document.querySelectorAll('.doc-req-select').forEach(function(sel) {
     sel.addEventListener('change', function() {
@@ -1231,6 +1381,120 @@ document.addEventListener('DOMContentLoaded', function() {
         this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
       } else {
         this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+      }
+    });
+  });
+
+  // Handle Promote to PPT Modal Opening
+  $(document).on('click', '.btn-open-move-ppt', function(e) {
+    e.preventDefault();
+    const actionUrl = $(this).data('action');
+    const gateTitle = $(this).data('gate-title') || 'Presentation Gate';
+    const gateDesc = $(this).data('gate-desc') || 'Promote this project to PPT Department.';
+
+    $('#formMoveToPpt').attr('action', actionUrl);
+    $('#modal_ppt_gate_title').text(gateTitle);
+    $('#modal_ppt_gate_desc').html(gateDesc);
+
+    const modalEl = document.getElementById('modalMoveToPpt');
+    if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    }
+  });
+
+  // Handle Promote to PPT Submission via AJAX
+  $(document).on('submit', '#formMoveToPpt', function(e) {
+    e.preventDefault();
+    const $form = $(this);
+    const $btn = $('#btnSubmitMovePpt');
+    const origHtml = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status"></span> Promoting...');
+
+    const actionUrl = $form.attr('action');
+    const formData = $form.serialize();
+
+    $.ajax({
+      url: actionUrl,
+      type: 'POST',
+      data: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+      },
+      success: function(resp) {
+        $btn.prop('disabled', false).html(origHtml);
+        const modalEl = document.getElementById('modalMoveToPpt');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          bootstrap.Modal.getInstance(modalEl)?.hide();
+        }
+
+        const alertHtml = '' +
+          '<div class="text-start mt-2" style="font-size:0.85rem;">' +
+            '<div class="p-2 px-3 rounded mb-2" style="background:#f0fdf4; border:1px solid #bbf7d0; color:#166534;">' +
+              '<i class="fa fa-check-circle text-success me-1"></i> ' +
+              'Project successfully promoted to PPT Department for committee presentation defense.' +
+            '</div>' +
+            '<div class="p-2 px-3 rounded mb-2" style="background:#f8fafc; border:1px solid #e2e8f0;">' +
+              '<div class="d-flex justify-content-between mb-1">' +
+                '<span class="text-muted">PPT Application No:</span>' +
+                '<strong class="font-monospace text-primary">' + (resp.ppt_app_no || '') + '</strong>' +
+              '</div>' +
+              '<div class="d-flex justify-content-between mb-1">' +
+                '<span class="text-muted">Target Gate:</span>' +
+                '<strong class="text-dark">' + (resp.stage_label || 'Presentation Gate') + '</strong>' +
+              '</div>' +
+              '<div class="d-flex justify-content-between">' +
+                '<span class="text-muted">Statutory Folders:</span>' +
+                '<strong class="text-success">11 Folders Ready</strong>' +
+              '</div>' +
+            '</div>' +
+          '</div>';
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'success',
+            title: 'Promoted to PPT Department!',
+            html: alertHtml,
+            showCancelButton: true,
+            confirmButtonColor: '#0F1E4D',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '<i class="fa fa-external-link-alt me-1"></i> Open PPT Application',
+            cancelButtonText: '<i class="fa fa-sync-alt me-1"></i> Stay on EC Dossier',
+            allowOutsideClick: false,
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = resp.ppt_url;
+            } else {
+              window.location.reload();
+            }
+          });
+        } else {
+          alert('Promoted to PPT Department: ' + (resp.ppt_app_no || ''));
+          window.location.reload();
+        }
+      },
+      error: function(xhr) {
+        $btn.prop('disabled', false).html(origHtml);
+        const modalEl = document.getElementById('modalMoveToPpt');
+        if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+          bootstrap.Modal.getInstance(modalEl)?.hide();
+        }
+
+        let errorMsg = 'Failed to promote application to PPT Department.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+          errorMsg = xhr.responseJSON.message;
+        }
+
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: 'Promotion Failed',
+            text: errorMsg,
+            confirmButtonColor: '#0F1E4D'
+          });
+        } else {
+          alert(errorMsg);
+        }
       }
     });
   });

@@ -33,16 +33,20 @@ class MiningController extends Controller
         $approvedCount = MiningApplication::where('status', 'approved')->count();
         $scrutinyCount = MiningApplication::whereIn('status', ['scrutiny', 'inspection', 'presentation'])->count();
         
+        $districts = District::where('status', 1)->orderBy('name')->get();
+        $natureOfWorks = NatureOfWork::where('status', 1)->orderBy('name')->get();
+
         $applications = MiningApplication::with(['customer', 'district', 'mineral', 'minerals', 'planType', 'natureOfWork', 'documents', 'leaseApplication'])
             ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
         return view('pages.mining-portal.index', compact(
             'totalApplications',
             'draftCount',
             'approvedCount',
             'scrutinyCount',
+            'districts',
+            'natureOfWorks',
             'applications'
         ));
     }
@@ -81,7 +85,9 @@ class MiningController extends Controller
         }
 
         // Prefill Data (from resume ID or lease_id)
-        $prefillData = [];
+        $prefillData = [
+            'current_step' => max(1, min(9, (int)$request->query('step', 1))),
+        ];
         if ($request->filled('resume')) {
             $resumeApp = MiningApplication::with([
                 'customer', 'district', 'mineral', 'minerals', 'planType', 'natureOfWork',
@@ -96,6 +102,7 @@ class MiningController extends Controller
                     : ($resumeApp->mineral_id ? [$resumeApp->mineral_id] : ($lease?->minerals?->pluck('id')->toArray() ?? []));
 
                 $prefillData = [
+                    'current_step'             => max(1, min(9, (int)$request->query('step', $resumeApp->current_step ?? 1))),
                     'mining_app_id'            => $resumeApp->id,
                     'application_no'           => $resumeApp->application_no,
                     'common_id'                => $resumeApp->common_id,
@@ -112,6 +119,7 @@ class MiningController extends Controller
                     'gstin'                    => $customer?->gstin ?? '',
                     'address'                  => $customer?->address ?? ($lease?->taluk ?? ''),
                     'nature_of_work_id'        => $resumeApp->nature_of_work_id,
+                    'other_nature_of_work_name'=> $resumeApp->other_nature_of_work_name ?? '',
                     'applicant_type_id'        => $resumeApp->applicant_type_id,
                     'plan_type_id'             => $resumeApp->plan_type_id,
                     'district_id'              => $resumeApp->district_id,
@@ -190,16 +198,18 @@ class MiningController extends Controller
     {
         $now = NatureOfWork::find($request->nature_of_work_id);
         $isMiningPlan = $now && strtolower(trim($now->name)) === 'mining plan';
+        $isOthersNatureOfWork = $now && strtolower(trim($now->name)) === 'others';
 
         $rules = [
-            'nature_of_work_id'   => 'required|exists:nature_of_works,id',
-            'applicant_type_id'   => 'required|exists:applicant_types,id',
-            'district_id'         => 'required|exists:districts,id',
-            'taluk'               => 'nullable|string|max:255',
-            'village'             => 'nullable|string|max:255',
-            'survey_numbers_text' => 'nullable|string|max:500',
-            'area_extent_ha'      => 'nullable|numeric',
-            'other_mineral_name'  => 'nullable|string|max:255',
+            'nature_of_work_id'         => 'required|exists:nature_of_works,id',
+            'other_nature_of_work_name' => $isOthersNatureOfWork ? 'required|string|max:255' : 'nullable|string|max:255',
+            'applicant_type_id'         => 'required|exists:applicant_types,id',
+            'district_id'               => 'required|exists:districts,id',
+            'taluk'                     => 'nullable|string|max:255',
+            'village'                   => 'nullable|string|max:255',
+            'survey_numbers_text'       => 'nullable|string|max:500',
+            'area_extent_ha'            => 'nullable|numeric',
+            'other_mineral_name'        => 'nullable|string|max:255',
         ];
 
         if ($isMiningPlan) {
@@ -295,10 +305,12 @@ class MiningController extends Controller
 
         if ($request->filled('mining_app_id')) {
             $miningApp = MiningApplication::findOrFail($request->input('mining_app_id'));
+            $isDraftOrInitial = ($miningApp->status === 'draft' || $miningApp->stage === '6.1');
             $appUpdates = [
-                'customer_id'         => $customerId,
-                'nature_of_work_id'   => $request->nature_of_work_id,
-                'applicant_type_id'   => $request->applicant_type_id,
+                'customer_id'               => $customerId,
+                'nature_of_work_id'         => $request->nature_of_work_id,
+                'other_nature_of_work_name' => $isOthersNatureOfWork ? $request->input('other_nature_of_work_name') : null,
+                'applicant_type_id'         => $request->applicant_type_id,
                 'district_id'         => $request->district_id,
                 'mineral_id'          => $isMiningPlan ? $primaryMineralId : null,
                 'other_mineral_name'  => $isMiningPlan ? $request->input('other_mineral_name') : null,
@@ -311,7 +323,9 @@ class MiningController extends Controller
                 'paid_amount'         => $paidVal,
                 'pending_amount'      => $pendingVal,
                 'payment_status'      => $payStatus,
-                'status'              => 'draft',
+                'stage'               => $isDraftOrInitial ? '6.2' : $miningApp->stage,
+                'current_step'        => 9,
+                'status'              => $isDraftOrInitial ? 'scrutiny' : $miningApp->status,
             ];
 
             // Ensure common_id exists if previously empty
@@ -333,9 +347,10 @@ class MiningController extends Controller
                 'common_id'           => $commonId,
                 'lease_application_id'=> $request->input('lease_application_id') ?: null,
                 'application_no'      => $applicationNo,
-                'customer_id'         => $customerId,
-                'nature_of_work_id'   => $request->nature_of_work_id,
-                'applicant_type_id'   => $request->applicant_type_id,
+                'customer_id'               => $customerId,
+                'nature_of_work_id'         => $request->nature_of_work_id,
+                'other_nature_of_work_name' => $isOthersNatureOfWork ? $request->input('other_nature_of_work_name') : null,
+                'applicant_type_id'         => $request->applicant_type_id,
                 'district_id'         => $request->district_id,
                 'mineral_id'          => $isMiningPlan ? $primaryMineralId : null,
                 'other_mineral_name'  => $isMiningPlan ? $request->input('other_mineral_name') : null,
@@ -348,8 +363,9 @@ class MiningController extends Controller
                 'paid_amount'         => $paidVal,
                 'pending_amount'      => $pendingVal,
                 'payment_status'      => $payStatus,
-                'stage'               => '6.1',
-                'status'              => 'draft',
+                'stage'               => '6.2',
+                'current_step'        => 9,
+                'status'              => 'scrutiny',
                 'branch_id'           => Auth::user()->branch_id ?? null,
                 'created_by'          => Auth::id(),
             ]);
@@ -455,7 +471,7 @@ class MiningController extends Controller
                                 'uploaded_at' => $uploadedAt,
                             ]);
                         }
-                    } else {
+                    } elseif (!$request->filled('mining_app_id') || $hasFile) {
                         MiningDocument::create([
                             'mining_application_id' => $miningApp->id,
                             'folder_id'             => $folder->id,
@@ -552,6 +568,159 @@ class MiningController extends Controller
     }
 
     /**
+     * AJAX auto-save endpoint when advancing steps or editing draft wizard
+     */
+    public function autoSaveStep(Request $request)
+    {
+        $appId = $request->input('mining_app_id');
+        $step = max(1, min(9, (int)$request->input('current_step', 1)));
+
+        // Resolve or create Customer record if client info is present
+        $customerId = $request->input('customer_id');
+        $customer = null;
+        if ($customerId) {
+            $customer = Customer::withTrashed()->find($customerId);
+        }
+        if (!$customer && $request->filled('client_name')) {
+            $mimasNo = $request->input('mimas_no') ?: ('MMS-' . strtoupper(uniqid()));
+            $customer = Customer::withTrashed()->where('mimas_no', $mimasNo)->first();
+            if (!$customer && $request->filled('aadhaar_no')) {
+                $customer = Customer::withTrashed()->where('aadhaar_no', $request->input('aadhaar_no'))->first();
+            }
+            if ($customer && $customer->trashed()) {
+                $customer->restore();
+            }
+            if (!$customer) {
+                $customer = Customer::create([
+                    'customer_name'            => $request->input('client_name'),
+                    'secondary_contact_person' => $request->input('secondary_contact_person'),
+                    'company_name'             => $request->input('company_name'),
+                    'mimas_no'                 => $mimasNo,
+                    'mobile_num'               => $request->input('mobile_num'),
+                    'secondary_mobile_num'     => $request->input('secondary_mobile_num'),
+                    'email'                    => $request->input('email'),
+                    'district_id'              => $request->input('district_id') ?: null,
+                    'pan'                      => $request->input('pan'),
+                    'aadhaar_no'               => $request->input('aadhaar_no'),
+                    'gstin'                    => $request->input('gstin'),
+                    'address'                  => $request->input('address'),
+                    'status'                   => 1,
+                    'branch_id'                => Auth::user()->branch_id ?? null,
+                    'created_by'               => Auth::id() ?? 1,
+                ]);
+            }
+            $customerId = $customer->id;
+        } elseif ($customer) {
+            $customerUpdates = array_filter([
+                'customer_name'            => $request->input('client_name'),
+                'secondary_contact_person' => $request->input('secondary_contact_person'),
+                'company_name'             => $request->input('company_name'),
+                'mobile_num'               => $request->input('mobile_num'),
+                'secondary_mobile_num'     => $request->input('secondary_mobile_num'),
+                'email'                    => $request->input('email'),
+                'pan'                      => $request->input('pan'),
+                'aadhaar_no'               => $request->input('aadhaar_no'),
+                'gstin'                    => $request->input('gstin'),
+                'address'                  => $request->input('address'),
+            ], fn($v) => !is_null($v));
+            if (!empty($customerUpdates)) {
+                $customer->update($customerUpdates);
+            }
+            $customerId = $customer->id;
+        }
+
+        $now = NatureOfWork::find($request->input('nature_of_work_id'));
+        $isMiningPlan = $now && strtolower(trim($now->name)) === 'mining plan';
+        $isOthers = $now && strtolower(trim($now->name)) === 'others';
+
+        $mineralIds = $request->input('mineral_ids', []);
+        if (empty($mineralIds) && $request->filled('mineral_id')) {
+            $mineralIds = [$request->input('mineral_id')];
+        }
+        $primaryMineralId = !empty($mineralIds) ? $mineralIds[0] : null;
+
+        $prodVal = (float)$request->input('product_value', 0);
+        $paidVal = (float)$request->input('paid_amount', 0);
+        $pendingVal = max(0, $prodVal - $paidVal);
+        $payStatus = $request->input('payment_status') ?: ($paidVal <= 0 ? 'pending' : ($pendingVal <= 0 ? 'paid' : 'partial'));
+
+        if ($appId) {
+            $miningApp = MiningApplication::findOrFail($appId);
+            $appUpdates = [
+                'current_step' => $step,
+            ];
+            if ($customerId) $appUpdates['customer_id'] = $customerId;
+            if ($request->filled('nature_of_work_id')) {
+                $appUpdates['nature_of_work_id'] = $request->input('nature_of_work_id');
+                $appUpdates['other_nature_of_work_name'] = $isOthers ? $request->input('other_nature_of_work_name') : null;
+            }
+            if ($request->filled('applicant_type_id')) $appUpdates['applicant_type_id'] = $request->input('applicant_type_id');
+            if ($request->filled('district_id')) $appUpdates['district_id'] = $request->input('district_id');
+            if ($isMiningPlan) {
+                if ($primaryMineralId) $appUpdates['mineral_id'] = $primaryMineralId;
+                if ($request->filled('other_mineral_name')) $appUpdates['other_mineral_name'] = $request->input('other_mineral_name');
+                if ($request->filled('plan_type_id')) $appUpdates['plan_type_id'] = $request->input('plan_type_id');
+            }
+            if ($request->filled('taluk')) $appUpdates['taluk'] = $request->input('taluk');
+            if ($request->filled('village')) $appUpdates['village'] = $request->input('village');
+            if ($request->filled('survey_numbers_text')) $appUpdates['survey_numbers_text'] = $request->input('survey_numbers_text');
+            if ($request->filled('area_extent_ha')) $appUpdates['area_extent_ha'] = $request->input('area_extent_ha');
+            if ($request->filled('product_value')) {
+                $appUpdates['product_value'] = $prodVal;
+                $appUpdates['paid_amount'] = $paidVal;
+                $appUpdates['pending_amount'] = $pendingVal;
+                $appUpdates['payment_status'] = $payStatus;
+            }
+
+            $miningApp->update($appUpdates);
+
+            if ($isMiningPlan && !empty($mineralIds)) {
+                $miningApp->minerals()->sync($mineralIds);
+            }
+        } else {
+            // Create initial draft mining application
+            [$applicationNo, $generatedCommonId] = $this->generateMiningAppNumber();
+            $commonId = $request->input('common_id') ?: $generatedCommonId;
+
+            $miningApp = MiningApplication::create([
+                'common_id'                 => $commonId,
+                'lease_application_id'      => $request->input('lease_application_id') ?: null,
+                'application_no'            => $applicationNo,
+                'customer_id'               => $customerId ?: 1,
+                'nature_of_work_id'         => $request->input('nature_of_work_id') ?: 1,
+                'other_nature_of_work_name' => $isOthers ? $request->input('other_nature_of_work_name') : null,
+                'applicant_type_id'         => $request->input('applicant_type_id') ?: 1,
+                'district_id'               => $request->input('district_id') ?: 1,
+                'mineral_id'                => $primaryMineralId,
+                'other_mineral_name'        => $isMiningPlan ? $request->input('other_mineral_name') : null,
+                'plan_type_id'              => $isMiningPlan ? $request->input('plan_type_id') : null,
+                'taluk'                     => $request->input('taluk'),
+                'village'                   => $request->input('village'),
+                'survey_numbers_text'       => $request->input('survey_numbers_text'),
+                'area_extent_ha'            => $request->input('area_extent_ha'),
+                'stage'                     => '6.1',
+                'current_step'              => $step,
+                'status'                    => 'draft',
+                'branch_id'                 => Auth::user()->branch_id ?? null,
+                'created_by'                => Auth::id() ?? 1,
+            ]);
+
+            if ($isMiningPlan && !empty($mineralIds)) {
+                $miningApp->minerals()->sync($mineralIds);
+            }
+        }
+
+        return response()->json([
+            'status'         => 1,
+            'mining_app_id'  => $miningApp->id,
+            'application_no' => $miningApp->application_no,
+            'common_id'      => $miningApp->common_id,
+            'current_step'   => $miningApp->current_step,
+            'message'        => 'Step auto-saved successfully.',
+        ]);
+    }
+
+    /**
      * 2. Project Folders - Table List (when no ?id=) OR Full Dossier (when ?id=X)
      */
     public function projectFolder(Request $request)
@@ -573,8 +742,10 @@ class MiningController extends Controller
             $uploadedDocs = 0;
 
             foreach ($folders as $folder) {
-                $docs = MiningDocument::where('mining_application_id', $application->id)
+                $docs = MiningDocument::with('uploader')
+                    ->where('mining_application_id', $application->id)
                     ->where('folder_id', $folder->id)
+                    ->orderBy('id')
                     ->get();
                 $count = $docs->count();
                 $uploaded = $docs->whereIn('status', ['uploaded', 'validated', 'approved'])->count();
@@ -585,10 +756,12 @@ class MiningController extends Controller
                     'total' => $count,
                     'uploaded' => $uploaded,
                     'percent' => $count > 0 ? round(($uploaded / $count) * 100) : 0,
+                    'documents' => $docs,
                 ];
             }
 
             $overallPercent = $totalDocs > 0 ? round(($uploadedDocs / $totalDocs) * 100) : 0;
+            $activeFolderId = (int)$request->query('folder', $folders->first()->id ?? 1);
 
             // Also load other applications for quick-switch dropdown
             $allApplications = MiningApplication::with(['customer', 'natureOfWork'])->latest()->get();
@@ -600,17 +773,36 @@ class MiningController extends Controller
                 'overallPercent',
                 'totalDocs',
                 'uploadedDocs',
-                'allApplications'
+                'allApplications',
+                'activeFolderId'
             ));
         }
 
         // When NO ID is provided -> Show Table of All Applications with Folder Progress
         $applications = MiningApplication::with(['customer', 'district', 'mineral', 'minerals', 'planType', 'natureOfWork', 'documents', 'leaseApplication'])
             ->latest()
-            ->paginate(15)
-            ->withQueryString();
+            ->get();
 
-        return view('pages.mining-portal.projectfolder', compact('applications', 'folders'));
+        $totalApplications = $applications->count();
+        $inScrutinyCount = $applications->whereIn('status', ['scrutiny', 'in_scrutiny', 'review', 'inspection', 'presentation'])->count();
+        $approvedCount = $applications->where('status', 'approved')->count();
+        $draftCount = $applications->where('status', 'draft')->count();
+        $totalFilesStored = DB::table('mining_documents')->whereIn('status', ['uploaded', 'validated', 'approved'])->count();
+
+        $districts = District::where('status', 1)->orderBy('name')->get();
+        $natureOfWorks = NatureOfWork::where('status', 1)->orderBy('name')->get();
+
+        return view('pages.mining-portal.projectfolder', compact(
+            'applications',
+            'folders',
+            'totalApplications',
+            'inScrutinyCount',
+            'approvedCount',
+            'draftCount',
+            'totalFilesStored',
+            'districts',
+            'natureOfWorks'
+        ));
     }
 
     /**
@@ -654,12 +846,20 @@ class MiningController extends Controller
             ->orderBy('id')
             ->get();
 
+        $allApplications = MiningApplication::with('customer')->orderBy('id', 'desc')->get();
+        $totalAppDocs = MiningDocument::where('mining_application_id', $application->id)->count();
+        $uploadedAppDocs = MiningDocument::where('mining_application_id', $application->id)
+            ->whereIn('status', ['uploaded', 'validated', 'approved'])->count();
+
         return view('pages.mining-portal.document', compact(
             'application',
             'folders',
             'activeFolder',
             'folderCounts',
-            'documents'
+            'documents',
+            'allApplications',
+            'totalAppDocs',
+            'uploadedAppDocs'
         ));
     }
 
@@ -765,7 +965,14 @@ class MiningController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('pages.mining-portal.process', compact('applications'));
+        $stats = [
+            'total' => MiningApplication::count(),
+            'stage_61' => MiningApplication::where('stage', '6.1')->count(),
+            'stage_62' => MiningApplication::where('stage', '6.2')->count(),
+            'stage_advanced' => MiningApplication::where('stage', '>=', '6.3')->count(),
+        ];
+
+        return view('pages.mining-portal.process', compact('applications', 'stats'));
     }
 
     /**

@@ -8,97 +8,117 @@
 @endpush
 
 <style>
-    /* ─── GTMS EXECUTIVE FINTECH FORM SYSTEM ─── */
+    /* ─── GTMS EXECUTIVE FINTECH FORM SYSTEM (UI-UX-PRO-MAX STANDARD) ─── */
     .quotation-wrapper {
-        max-width: 1400px;
+        max-width: 1440px;
         margin: 0 auto;
     }
 
+    /* Bento Cards & Surface Elevation */
     .bento-card {
         background: #FFFFFF;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid #E2E8F0;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
-        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px -4px rgba(15, 23, 42, 0.05);
+        margin-bottom: 1.75rem;
         overflow: hidden;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    .card-accent-navy { border-top: 3px solid #0F1E4D; }
-    .card-accent-blue { border-top: 3px solid #1E3A8A; }
-    .card-accent-emerald { border-top: 3px solid #059669; }
-    .card-accent-sky { border-top: 3px solid #0284C7; }
+    .card-accent-navy { border-top: 4px solid #0F1E4D; }
+    .card-accent-blue { border-top: 4px solid #1E3A8A; }
+    .card-accent-emerald { border-top: 4px solid #059669; }
+    .card-accent-sky { border-top: 4px solid #0284C7; }
 
-    /* Executive Stepper Navigation (ui-ux-pro-max standard) */
+    /* Executive Multi-Stage Stepper Navigation */
     .form-stepper {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        background: transparent;
+        margin-bottom: 1.75rem;
+    }
+    @media (max-width: 991px) {
+        .form-stepper {
+            grid-template-columns: 1fr;
+        }
+    }
+    .stepper-card {
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 14px;
         background: #FFFFFF;
-        padding: 10px 18px;
+        padding: 14px 18px;
         border-radius: 12px;
-        border: 1px solid #E2E8F0;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
-        overflow-x: auto;
-    }
-    .stepper-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: #64748B;
+        border: 1.5px solid #E2E8F0;
         text-decoration: none;
-        padding: 6px 12px;
-        border-radius: 8px;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        white-space: nowrap;
+        color: #64748B;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
     }
-    .stepper-item:hover {
-        color: #0F1E4D;
+    .stepper-card:hover {
+        border-color: #93C5FD;
         background: #F8FAFC;
+        color: #1E3A8A;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px -2px rgba(30, 58, 138, 0.08);
     }
-    .stepper-item.active {
+    .stepper-card.active {
+        border-color: #0F1E4D;
+        background: #FFFFFF;
         color: #0F1E4D;
-        background: #EFF6FF;
+        box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.12), 0 8px 20px -3px rgba(15, 30, 77, 0.1);
     }
-    .stepper-num {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
+    .stepper-icon-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.78rem;
+        font-size: 0.88rem;
         font-weight: 800;
         background: #F1F5F9;
         color: #475569;
         border: 1.5px solid #CBD5E1;
+        flex-shrink: 0;
         transition: all 0.2s ease;
     }
-    .stepper-item.active .stepper-num {
+    .stepper-card.active .stepper-icon-badge {
         background: #0F1E4D;
         color: #FFFFFF;
         border-color: #0F1E4D;
-        box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.15);
+        box-shadow: 0 4px 12px rgba(15, 30, 77, 0.25);
     }
-    .stepper-item.completed .stepper-num {
+    .stepper-card.completed .stepper-icon-badge {
         background: #059669;
         color: #FFFFFF;
         border-color: #059669;
     }
-    .stepper-separator {
-        color: #CBD5E1;
-        font-size: 0.95rem;
-        user-select: none;
+    .stepper-card-title {
+        font-size: 0.88rem;
+        font-weight: 800;
+        line-height: 1.3;
+        margin-bottom: 2px;
+    }
+    .stepper-card-sub {
+        font-size: 0.74rem;
+        color: #64748B;
+        font-weight: 500;
+    }
+    .stepper-card.active .stepper-card-sub {
+        color: #2563EB;
+        font-weight: 600;
     }
 
-    /* Section Step Pill */
+    /* Section Step Badge */
     .step-badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.72rem;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.74rem;
         font-weight: 800;
         letter-spacing: 0.05em;
         text-transform: uppercase;
@@ -109,45 +129,48 @@
 
     /* Subsection Header Labels */
     .form-subsection-title {
-        font-size: 0.74rem;
+        font-size: 0.75rem;
         font-weight: 800;
-        color: #1E3A8A;
+        color: #0F1E4D;
         letter-spacing: 0.06em;
         text-transform: uppercase;
         border-bottom: 1px solid #F1F5F9;
-        padding-bottom: 6px;
-        margin-bottom: 14px;
+        padding-bottom: 8px;
+        margin-bottom: 16px;
         display: flex;
         align-items: center;
         gap: 8px;
     }
 
-    /* ── UNIFORM 42px FORM CONTROLS & ALIGNMENT ── */
+    /* ── UNIFORM 42px FORM CONTROLS & ERGONOMIC ALIGNMENT ── */
     .form-label {
-        font-size: 0.72rem !important;
+        font-size: 0.74rem !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        color: #475569 !important;
+        letter-spacing: 0.04em !important;
+        color: #334155 !important;
         margin-bottom: 6px !important;
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
     }
     .form-control, .form-select {
-        height: 42px !important;
+        height: 44px !important;
         line-height: 1.5 !important;
-        border: 1px solid #CBD5E1 !important;
+        border: 1.5px solid #CBD5E1 !important;
         color: #0F172A !important;
         font-weight: 500 !important;
         font-size: 0.88rem !important;
         border-radius: 8px !important;
         padding: 8px 12px !important;
         background-color: #FFFFFF !important;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
     }
     .form-control:focus, .form-select:focus {
-        border-color: #1E3A8A !important;
-        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12) !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
         color: #0F172A !important;
+        background-color: #FFFFFF !important;
     }
     .form-control::placeholder {
         color: #94A3B8 !important;
@@ -155,15 +178,16 @@
     }
     textarea.form-control {
         height: auto !important;
-        min-height: 80px !important;
+        min-height: 85px !important;
+        line-height: 1.6 !important;
     }
     .input-group .form-control {
         border-top-right-radius: 0 !important;
         border-bottom-right-radius: 0 !important;
     }
     .input-group .input-group-text {
-        height: 42px !important;
-        border: 1px solid #CBD5E1 !important;
+        height: 44px !important;
+        border: 1.5px solid #CBD5E1 !important;
         border-left: none !important;
         border-top-right-radius: 8px !important;
         border-bottom-right-radius: 8px !important;
@@ -172,45 +196,69 @@
         font-weight: 700 !important;
         font-size: 0.82rem !important;
     }
+    .input-group:focus-within .input-group-text {
+        border-color: #2563EB !important;
+        background-color: #EFF6FF !important;
+        color: #1E3A8A !important;
+    }
 
-    /* Monospace Voucher Badge */
-    .mono-voucher-badge {
-        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-        font-size: 0.86rem;
-        font-weight: 700;
-        color: #0F1E4D;
-        background-color: #EFF6FF;
-        border: 1px solid #BFDBFE;
-        border-radius: 6px;
-        padding: 3px 9px;
-        display: inline-flex;
+    /* Icon Input Group Enhancement */
+    .icon-input-group {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+    }
+    .icon-input-group .input-icon-box {
+        width: 42px;
+        display: flex;
         align-items: center;
+        justify-content: center;
+        background: #F8FAFC;
+        border: 1.5px solid #CBD5E1;
+        border-right: none;
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        color: #64748B;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .icon-input-group .form-control {
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+    }
+    .icon-input-group:focus-within .input-icon-box {
+        border-color: #2563EB;
+        background: #EFF6FF;
+        color: #1E3A8A;
     }
 
     /* Select2 Height & Border Harmonization */
     .select2-container .select2-selection--single {
-        height: 42px !important;
-        border: 1px solid #CBD5E1 !important;
+        height: 44px !important;
+        border: 1.5px solid #CBD5E1 !important;
         border-radius: 8px !important;
         padding: 6px 12px !important;
         display: flex !important;
         align-items: center !important;
+        background-color: #FFFFFF !important;
+        transition: all 0.2s ease !important;
     }
     .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 28px !important;
+        line-height: 30px !important;
         color: #0F172A !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
         font-size: 0.88rem !important;
         padding-left: 0 !important;
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 40px !important;
+        height: 42px !important;
         right: 8px !important;
     }
     .select2-container--default.select2-container--focus .select2-selection--single,
     .select2-container--default.select2-container--open .select2-selection--single {
-        border-color: #1E3A8A !important;
-        box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.12) !important;
+        border-color: #2563EB !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12) !important;
     }
 
     /* ─── ULTRA-CLEAN TABLE STYLING & PERFECT ALIGNMENT ─── */
@@ -223,55 +271,50 @@
     .table-items thead th {
         background-color: #F8FAFC;
         color: #1E293B;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 0.72rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         border-top: none;
         border-bottom: 2px solid #CBD5E1;
-        padding: 10px 12px;
+        padding: 12px 14px;
         white-space: nowrap;
     }
     .table-items tbody tr.item-main-row td {
-        padding: 10px 8px 4px 8px;
+        padding: 12px 10px 4px 10px;
         vertical-align: middle;
         border-top: 1px solid #E2E8F0;
         border-bottom: none;
+        background: #FFFFFF;
     }
     .table-items tbody tr.item-desc-row td {
-        padding: 0 8px 12px 8px;
+        padding: 2px 10px 14px 10px;
         vertical-align: middle;
         border-top: none;
         border-bottom: 1px solid #E2E8F0;
+        background: #FFFFFF;
     }
     .table-items tbody tr:hover td {
         background-color: #F8FAFC;
     }
 
-    /* ─── COMMERCIAL SCHEDULE DROPDOWN & STACKING CONTEXT RESILIENCY ─── */
+    /* Dropdown Menus inside Tables */
     #section-commercial,
     #section-commercial .card-body,
-    #section-commercial .table-responsive,
-    #section-services,
-    #section-services .card-body,
-    #section-services .table-responsive {
+    #section-commercial .table-responsive {
         overflow: visible !important;
     }
-
-    /* Elevate table dropdown menus above all rows, inputs, and card footers */
     #section-commercial .dropdown-menu,
-    #section-services .dropdown-menu,
     .table-items .dropdown-menu {
         z-index: 1070 !important;
-        min-width: 360px;
-        max-width: 540px;
+        min-width: 380px;
+        max-width: 560px;
         box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.22), 0 8px 10px -6px rgba(15, 23, 42, 0.1) !important;
         border: 1px solid #CBD5E1 !important;
         background-color: #FFFFFF !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
+        padding: 6px;
     }
-
-    /* Stacking context management for table rows */
     .table-items tbody tr.item-main-row {
         position: relative;
         z-index: 2;
@@ -280,8 +323,6 @@
         position: relative;
         z-index: 1;
     }
-
-    /* When a row's dropdown is open, elevate that specific row and its cells above all other rows */
     .table-items tbody tr.item-main-row:has(.dropdown-menu.show),
     .table-items tbody tr.item-main-row.has-dropdown-open {
         position: relative;
@@ -292,18 +333,14 @@
         position: relative;
         z-index: 1060 !important;
     }
-    .table-items tbody tr.item-main-row:has(.dropdown-menu.show) .input-group,
-    .table-items tbody tr.item-main-row.has-dropdown-open .input-group {
-        position: relative;
-        z-index: 1065 !important;
-    }
 
-    /* Polish catalog split button to eliminate pink outline and harmonize with GTMS Navy */
+    /* Catalog Picker Split Button */
     .btn-catalog-picker {
         border-color: #CBD5E1 !important;
         background-color: #F8FAFC !important;
         color: #1E3A8A !important;
         transition: all 0.15s ease;
+        padding: 0 10px !important;
     }
     .btn-catalog-picker:hover,
     .btn-catalog-picker:focus,
@@ -314,11 +351,11 @@
         box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.12) !important;
     }
 
-    /* Dropdown item styling inside table */
     .table-items .dropdown-item {
         padding: 8px 12px !important;
         border-bottom: 1px solid #F1F5F9;
         white-space: normal;
+        border-radius: 6px;
         transition: background-color 0.12s ease;
     }
     .table-items .dropdown-item:last-child {
@@ -334,8 +371,8 @@
 
     .table-items .form-control,
     .table-items .form-select {
-        height: 38px !important;
-        font-size: 0.84rem !important;
+        height: 40px !important;
+        font-size: 0.85rem !important;
         padding: 6px 10px !important;
         border-radius: 6px !important;
     }
@@ -348,45 +385,56 @@
         text-align: center;
     }
     .item-subtotal-box {
-        height: 38px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: flex-end;
         padding: 6px 12px;
         background-color: #F8FAFC;
-        border: 1px solid #CBD5E1;
+        border: 1.5px solid #CBD5E1;
         border-radius: 6px;
-        font-weight: 700;
-        font-size: 0.90rem;
+        font-weight: 800;
+        font-size: 0.92rem;
         color: #0F172A;
         font-variant-numeric: tabular-nums;
         font-feature-settings: "tnum";
     }
 
+    /* Nested Scope Deliverables Row */
     .desc-wrapper {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
         background: #F8FAFC;
-        border: 1px dashed #CBD5E1;
-        border-radius: 6px;
-        padding: 4px 10px;
+        border: 1.5px solid #E2E8F0;
+        border-left: 3.5px solid #2563EB;
+        border-radius: 8px;
+        padding: 6px 14px;
+        transition: all 0.2s ease;
+    }
+    .desc-wrapper:focus-within {
+        background: #FFFFFF;
+        border-color: #2563EB;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
     }
     .desc-prefix {
         font-size: 0.72rem;
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #64748B;
+        letter-spacing: 0.05em;
+        color: #1E3A8A;
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
     .desc-input {
-        height: 30px !important;
+        height: 32px !important;
         border: none !important;
         background: transparent !important;
         padding: 2px 6px !important;
-        font-size: 0.80rem !important;
-        color: #334155 !important;
+        font-size: 0.84rem !important;
+        color: #1E293B !important;
         width: 100% !important;
         box-shadow: none !important;
     }
@@ -395,22 +443,42 @@
         border-radius: 4px !important;
     }
 
+    /* Badges & Action Buttons */
     .row-num-badge {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.74rem;
+        font-size: 0.76rem;
         font-weight: 800;
         background: #EFF6FF;
         color: #1E3A8A;
         border: 1px solid #BFDBFE;
     }
+    .btn-row-duplicate {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid #BFDBFE;
+        background-color: #EFF6FF;
+        color: #1E40AF;
+        transition: all 0.15s ease;
+        margin-right: 4px;
+    }
+    .btn-row-duplicate:hover {
+        background-color: #1E40AF;
+        color: #FFFFFF;
+        border-color: #1E40AF;
+    }
     .btn-row-delete {
-        width: 34px;
-        height: 34px;
+        width: 32px;
+        height: 32px;
         padding: 0;
         display: inline-flex;
         align-items: center;
@@ -432,63 +500,73 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-size: 0.74rem;
-        font-weight: 600;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
         background: #F1F5F9;
         color: #334155;
         border: 1px solid #CBD5E1;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.18s ease;
         user-select: none;
     }
     .quick-pill:hover {
         background: #E2E8F0;
         color: #0F172A;
         border-color: #94A3B8;
+        transform: translateY(-1px);
     }
     .quick-pill.active {
-        background: #EFF6FF;
-        color: #1E3A8A;
-        border-color: #1E3A8A;
-        font-weight: 700;
+        background: #0F1E4D;
+        color: #FFFFFF;
+        border-color: #0F1E4D;
+        box-shadow: 0 2px 8px rgba(15, 30, 77, 0.2);
     }
 
-    /* Calculation & Endorsement Summary Cards */
+    .financial-summary-deck {
+        background-color: #F8FAFC !important;
+        border-top: 1px solid #E2E8F0 !important;
+    }
+    .bento-card-nav-footer {
+        background-color: #FFFFFF !important;
+        border-top: 1px solid #E2E8F0 !important;
+    }
+
+    /* Financial Bento Calculation Box */
     .endorsement-box {
         background: #FFFFFF;
-        border: 1px solid #BFDBFE;
-        border-left: 4px solid #1E3A8A;
-        border-radius: 10px;
-        padding: 20px;
+        border: 1.5px solid #E2E8F0;
+        border-left: 4px solid #059669;
+        border-radius: 12px;
+        padding: 22px;
         height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        box-shadow: 0 1px 3px rgba(30, 58, 138, 0.04);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.04);
     }
     .calculation-box {
         background-color: #FFFFFF;
-        border: 1px solid #CBD5E1;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        border: 1.5px solid #CBD5E1;
+        border-radius: 12px;
+        padding: 22px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
     .calc-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 7px 0;
-        font-size: 0.86rem;
+        padding: 8px 0;
+        font-size: 0.88rem;
         color: #475569;
     }
     .calc-row.total-row {
         border-top: 2px dashed #CBD5E1;
-        margin-top: 10px;
-        padding-top: 14px;
+        margin-top: 12px;
+        padding-top: 16px;
         font-weight: 800;
-        font-size: 1.35rem;
+        font-size: 1.4rem;
         color: #0F1E4D;
     }
     .live-amount-words {
@@ -505,27 +583,35 @@
         position: sticky;
         bottom: 12px;
         z-index: 100;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid #CBD5E1;
-        border-radius: 12px;
-        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 4px 10px -2px rgba(15, 23, 42, 0.05);
+        background: rgba(255, 255, 255, 0.96);
+        border: 1.5px solid #CBD5E1;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.18), 0 4px 12px -2px rgba(15, 23, 42, 0.08);
         padding: 12px 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        backdrop-filter: blur(8px);
+        backdrop-filter: blur(12px);
     }
 
     /* Executive Signatory Badge */
     .signatory-card {
         background: #F8FAFC;
-        border: 1px solid #CBD5E1;
-        border-radius: 8px;
-        padding: 8px 14px;
-        height: 42px;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 10px 16px;
+        height: 52px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+    }
+
+    /* Section Sub-Card Enclosures */
+    .panel-inset {
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        padding: 18px;
     }
 </style>
 
@@ -542,12 +628,17 @@
                             <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Edit {{ $quotation->quotation_number }}</li>
                         </ol>
                     </nav>
-                    <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
-                        <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
-                            <i class="fas fa-edit text-primary"></i>
-                            <span>Edit Quotation Dossier:</span>
-                            <span class="mono-voucher-badge">{{ $quotation->quotation_number }}</span>
-                        </h4>
+                    <div class="d-flex align-items-center gap-3 mt-1">
+                        <div class="rounded-3 p-2 d-flex align-items-center justify-content-center" style="background: #EFF6FF; border: 1px solid #BFDBFE; width: 44px; height: 44px;">
+                            <i class="fas fa-edit fs-4 text-primary"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0 fw-bold text-dark d-flex align-items-center gap-2">
+                                <span>Edit Quotation:</span>
+                                <span class="mono-voucher-badge">{{ $quotation->quotation_number }}</span>
+                            </h4>
+                            <span class="text-muted small">Update Statutory Proposal Particulars &bull; Q-28 Standard Compliance</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -564,31 +655,28 @@
             </div>
         </div>
 
-        <!-- Section Navigation Stepper Bar (Matching Q-28.html 3-Page Flow) -->
+        <!-- Section Navigation Stepper Cards -->
         <div class="form-stepper">
-            <a href="#section-consignee" class="stepper-item active">
-                <span class="stepper-num">1</span>
-                <span>Page 1: Consignee &amp; Subject</span>
+            <a href="#section-consignee" class="stepper-card active" data-step="1">
+                <div class="stepper-icon-badge">1</div>
+                <div>
+                    <div class="stepper-card-title">Consignee &amp; Quarry Site</div>
+                    <div class="stepper-card-sub">Client Profile &amp; Land Survey Particulars</div>
+                </div>
             </a>
-            <span class="stepper-separator">&rarr;</span>
-            <a href="#section-scope" class="stepper-item">
-                <span class="stepper-num">2</span>
-                <span>Page 1 &amp; 2: Complete Scope</span>
+            <a href="#section-commercial" class="stepper-card" data-step="2">
+                <div class="stepper-icon-badge">2</div>
+                <div>
+                    <div class="stepper-card-title">Pricing Schedule &amp; Scope</div>
+                    <div class="stepper-card-sub">Statutory Services, Deliverables &amp; GST</div>
+                </div>
             </a>
-            <span class="stepper-separator">&rarr;</span>
-            <a href="#section-milestones" class="stepper-item">
-                <span class="stepper-num">3</span>
-                <span>Page 2: Payment Details</span>
-            </a>
-            <span class="stepper-separator">&rarr;</span>
-            <a href="#section-commercial" class="stepper-item">
-                <span class="stepper-num">4</span>
-                <span>Page 3: Commercial Cost Table</span>
-            </a>
-            <span class="stepper-separator">&rarr;</span>
-            <a href="#section-terms" class="stepper-item">
-                <span class="stepper-num">5</span>
-                <span>Page 3: Terms &amp; Bank Details</span>
+            <a href="#section-terms" class="stepper-card" data-step="3">
+                <div class="stepper-icon-badge">3</div>
+                <div>
+                    <div class="stepper-card-title">Terms &amp; Remittance</div>
+                    <div class="stepper-card-sub">Payment Terms, Bank A/C &amp; Validity</div>
+                </div>
             </a>
         </div>
 
@@ -597,7 +685,7 @@
             <div class="alert alert-danger alert-dismissible fade show py-3 px-4 mb-4 border-0 shadow-sm" role="alert">
                 <div class="fw-bold mb-1 d-flex align-items-center gap-2">
                     <i class="fas fa-exclamation-circle text-danger fs-5"></i>
-                    <span>Please correct the following errors before updating the quotation:</span>
+                    <span>Please correct the following errors before updating quotation:</span>
                 </div>
                 <ul class="mb-0 ps-3 small mt-2">
                     @foreach ($errors->all() as $error)
@@ -612,13 +700,13 @@
             @csrf
             @method('PUT')
 
-            <!-- STEP 1 (Page 1): Consignee Particulars, Quarry Reference & Subject -->
-            <div class="bento-card card-accent-blue" id="section-consignee">
+            <!-- STEP 1: Consignee Particulars, Quarry Reference & Subject -->
+            <div class="bento-card card-accent-blue mb-4" id="section-consignee">
                 <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 1</span>
+                        <span class="step-badge"><i class="fas fa-id-badge"></i> Step 1 of 3</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-user-tie text-primary me-2"></i>Page 1: Consignee Particulars &amp; Quotation Subject
+                            Consignee Particulars &amp; Concession Location
                         </h5>
                     </div>
                     <span class="badge bg-light text-dark border px-2 py-1 small">
@@ -626,252 +714,203 @@
                     </span>
                 </div>
                 <div class="card-body p-4 bg-white">
-                    <!-- Client Profile & Manual Quarry Concession Input -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label">
-                                <i class="fas fa-building text-primary me-1"></i>Select Registered Client Profile <span class="text-danger">*</span>
-                            </label>
-                            <select name="customer_id" id="customer_select" class="form-select @error('customer_id') is-invalid @enderror" required>
-                                <option value="">-- Choose Client Profile --</option>
-                                @foreach($customers as $c)
-                                    <option value="{{ $c->id }}" {{ (old('customer_id', $quotation->customer_id) == $c->id) ? 'selected' : '' }}>
-                                        {{ $c->customer_name }} {{ $c->company_name ? "({$c->company_name})" : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <div class="form-text small text-muted">Select an existing client to auto-fill Company, Address &amp; Contact info below.</div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label">
-                                <i class="fas fa-mountain text-primary me-1"></i>Linked Quarry Concession / Lease Application (Manual Entry)
-                            </label>
-                            <input type="text" name="quarry_name" id="quarry_name" class="form-control" value="{{ old('quarry_name', $quotation->quarry_name) }}" placeholder="e.g. Chinnagoundanur Rough Stone Quarry / Lease Application No.">
-                            <div class="form-text small text-muted">Manually enter quarry site name or lease application reference.</div>
-                        </div>
-                    </div>
-
-                    <!-- Client Details Snapshot Fields -->
-                    <div class="form-subsection-title">
-                        <i class="fas fa-id-card"></i> Client Particulars (Included on Official Letterhead)
-                    </div>
-                    <!-- Row 1: Contact Person, Company, GSTIN (4 + 4 + 4 = 12) -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Contact Person / Client Name</label>
-                            <input type="text" name="customer_name" id="customer_name" class="form-control" value="{{ old('customer_name', $quotation->customer_name) }}" placeholder="Client Name">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Firm / Company Name</label>
-                            <input type="text" name="company_name" id="company_name" class="form-control" value="{{ old('company_name', $quotation->company_name) }}" placeholder="M/s. Company Name">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Client GSTIN</label>
-                            <input type="text" name="gst_number" id="gst_number" class="form-control text-uppercase" value="{{ old('gst_number', $quotation->gst_number) }}" placeholder="33ABCDE1234F1Z5">
-                        </div>
-                    </div>
-                    <!-- Row 2: Phone, Email, Billing Address (3 + 3 + 6 = 12) -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-3">
-                            <label class="form-label">Mobile / Phone Number</label>
-                            <input type="text" name="phone" id="phone" class="form-control" value="{{ old('phone', $quotation->phone) }}" placeholder="+91 94432 XXXXX">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Email Address</label>
-                            <input type="email" name="email" id="email" class="form-control" value="{{ old('email', $quotation->email) }}" placeholder="client@example.com" autocomplete="new-password">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Registered Billing Address</label>
-                            <input type="text" name="address" id="address" class="form-control" value="{{ old('address', $quotation->address) }}" placeholder="Door No, Street, Town/District, Pincode">
-                        </div>
-                    </div>
-
-                    <!-- Quotation Official Subject -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-12">
-                            <label class="form-label">
-                                <i class="fas fa-heading text-primary me-1"></i>Quotation Subject (Printed on Letterhead) <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" name="subject" id="subject_input" class="form-control"
-                                   value="{{ old('subject', $quotation->subject ?? 'Quotation for Environmental Clearance falls in “B2” Category Project') }}"
-                                   placeholder="e.g. Quotation for Environmental Clearance falls in “B2” Category Project" required>
-                            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-                                <span class="small text-muted fw-bold"><i class="fas fa-bolt text-warning me-1"></i>Quick Presets:</span>
-                                <button type="button" class="btn btn-xs btn-outline-primary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Environmental Clearance falls in “B2” Category Project">
-                                    B2 Category EC
-                                </button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Mining Plan Preparation &amp; DGPS Boundary Demarcation">
-                                    Mining Plan &amp; DGPS
-                                </button>
-                                <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill py-0 px-2 quick-subject-preset" data-text="Quotation for Baseline Environmental Study &amp; EIA/EMP Report Preparation">
-                                    EIA/EMP Baseline
-                                </button>
+                    <!-- Client Selection & Linked Concession -->
+                    <div class="panel-inset mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-primary">
+                                    <i class="fas fa-building text-primary"></i> Select Registered Client Profile <span class="text-danger">*</span>
+                                </label>
+                                <select name="customer_id" id="customer_select" class="form-select @error('customer_id') is-invalid @enderror" required>
+                                    <option value="">-- Choose Client Profile --</option>
+                                    @foreach($customers as $c)
+                                        <option value="{{ $c->id }}" {{ (old('customer_id', $quotation->customer_id) == $c->id) ? 'selected' : '' }}>
+                                            {{ $c->customer_name }} {{ $c->company_name ? "({$c->company_name})" : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <div class="form-text small text-muted mt-1">Select an existing client to auto-populate company name, GSTIN, phone and quarry details.</div>
                             </div>
-                            <div class="form-text small text-muted">Official proposal subject line printed on the Consignee Table and the Commercial Schedule table.</div>
-                        </div>
-                    </div>
 
-                    <!-- Quarry Concession Snapshot Fields -->
-                    <div class="form-subsection-title">
-                        <i class="fas fa-layer-group"></i> Quarry Concession & Statutory Location Details
-                    </div>
-                    <!-- Row 1: Quarry Name, Mineral, Area Extent (6 + 3 + 3 = 12) -->
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Quarry / Site Name</label>
-                            <input type="text" name="quarry_name" id="quarry_name" class="form-control" value="{{ old('quarry_name', $quotation->quarry_name) }}" placeholder="e.g. Chinnagoundanur Rough Stone Quarry">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Mineral Name</label>
-                            <input type="text" name="mineral_name" id="mineral_name" class="form-control" value="{{ old('mineral_name', $quotation->mineral_name) }}" placeholder="Rough Stone">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Area Extent (Ha)</label>
-                            <div class="input-group">
-                                <input type="number" step="0.0001" min="0" name="area_extent_ha" id="area_extent_ha" class="form-control" value="{{ old('area_extent_ha', $quotation->area_extent_ha) }}" placeholder="4.5000">
-                                <span class="input-group-text">Ha</span>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-mountain text-primary"></i> Linked Quarry Concession / Lease Application
+                                </label>
+                                <div class="icon-input-group">
+                                    <span class="input-icon-box"><i class="fas fa-mountain"></i></span>
+                                    <input type="text" name="quarry_name" id="quarry_name" class="form-control" value="{{ old('quarry_name', $quotation->quarry_name) }}" placeholder="e.g. Chinnagoundanur Rough Stone Quarry / Lease Application No.">
+                                </div>
+                                <div class="form-text small text-muted mt-1">Manually enter quarry site name or statutory concession reference.</div>
                             </div>
                         </div>
+
+                        <!-- Dynamic Auto-Population Status Banner -->
+                        <div id="clientProfileBanner" class="alert alert-success d-none py-2 px-3 mb-0 mt-3 small d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-check-circle text-success fs-6"></i>
+                                <span id="clientProfileText" class="fw-semibold text-dark">Client profile loaded successfully.</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Auto-Populated</span>
+                        </div>
                     </div>
-                    <!-- Row 2: District, Taluk, Village, Survey Nos (3 + 3 + 3 + 3 = 12) -->
-                    <div class="row g-3">
-                        <div class="col-md-3">
-                            <label class="form-label">Revenue District</label>
-                            <select name="district_id" id="district_id" class="form-select">
-                                <option value="">-- Select District --</option>
-                                @foreach($districts as $d)
-                                    <option value="{{ $d->id }}" {{ (old('district_id', $quotation->district_id) == $d->id) ? 'selected' : '' }}>
-                                        {{ $d->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+
+                    <div class="row g-4 mb-4">
+                        <!-- Left Column: Name & Address of Consignee -->
+                        <div class="col-lg-6">
+                            <div class="form-subsection-title">
+                                <i class="fas fa-user-tie text-primary"></i> Name &amp; Address of the Consignee
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Client / Firm / Company Name</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-building"></i></span>
+                                        <input type="text" name="company_name" id="company_name" class="form-control fw-semibold" value="{{ old('company_name', $quotation->company_name) }}" placeholder="M/s. Company Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Contact Person &amp; Designation</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-user"></i></span>
+                                        <input type="text" name="customer_name" id="customer_name" class="form-control" value="{{ old('customer_name', $quotation->customer_name) }}" placeholder="Contact Person Name">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Client GSTIN</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-receipt"></i></span>
+                                        <input type="text" name="gst_number" id="gst_number" class="form-control text-uppercase font-monospace fw-bold" value="{{ old('gst_number', $quotation->gst_number) }}" placeholder="33ABCDE1234F1Z5">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Mobile / Phone Number</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-phone-alt"></i></span>
+                                        <input type="text" name="phone" id="phone" class="form-control" value="{{ old('phone', $quotation->phone) }}" placeholder="+91 94432 XXXXX">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email Address</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" name="email" id="email" class="form-control" value="{{ old('email', $quotation->email) }}" placeholder="client@example.com" autocomplete="new-password">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Registered Billing Address</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-map-marker-alt"></i></span>
+                                        <input type="text" name="address" id="address" class="form-control" value="{{ old('address', $quotation->address) }}" placeholder="Door No, Street, Town/District, Pincode, Tamil Nadu">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Taluk</label>
-                            <input type="text" name="taluk" id="taluk" class="form-control" value="{{ old('taluk', $quotation->taluk) }}" placeholder="e.g. Sankari">
+
+                        <!-- Right Column: Quarry Concession Statutory Coordinates -->
+                        <div class="col-lg-6">
+                            <div class="form-subsection-title">
+                                <i class="fas fa-layer-group text-primary"></i> Quarry Concession Statutory Location
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Target Mineral Name</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-gem"></i></span>
+                                        <input type="text" name="mineral_name" id="mineral_name" class="form-control" value="{{ old('mineral_name', $quotation->mineral_name) }}" placeholder="e.g. Rough Stone">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sanctioned Area Extent</label>
+                                    <div class="input-group">
+                                        <input type="number" step="0.0001" min="0" name="area_extent_ha" id="area_extent_ha" class="form-control font-monospace fw-bold" value="{{ old('area_extent_ha', $quotation->area_extent_ha) }}" placeholder="4.5000">
+                                        <span class="input-group-text">Ha</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Survey Field Nos (S.F. Nos)</label>
+                                    <div class="icon-input-group">
+                                        <span class="input-icon-box"><i class="fas fa-map"></i></span>
+                                        <input type="text" name="survey_numbers" id="survey_numbers" class="form-control" value="{{ old('survey_numbers', $quotation->survey_numbers) }}" placeholder="e.g. 102/1A, 102/1B, 103/2">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Revenue District</label>
+                                    <select name="district_id" id="district_id" class="form-select">
+                                        <option value="">-- District --</option>
+                                        @foreach($districts as $d)
+                                            <option value="{{ $d->id }}" {{ (old('district_id', $quotation->district_id) == $d->id) ? 'selected' : '' }}>
+                                                {{ $d->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Taluk</label>
+                                    <input type="text" name="taluk" id="taluk" class="form-control" value="{{ old('taluk', $quotation->taluk) }}" placeholder="e.g. Sankari">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Village / Panchayat</label>
+                                    <input type="text" name="village" id="village" class="form-control" value="{{ old('village', $quotation->village) }}" placeholder="e.g. Chinnagoundanur">
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Village / Panchayat</label>
-                            <input type="text" name="village" id="village" class="form-control" value="{{ old('village', $quotation->village) }}" placeholder="e.g. Chinnagoundanur">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Survey Field Nos (S.F. Nos)</label>
-                            <input type="text" name="survey_numbers" id="survey_numbers" class="form-control" value="{{ old('survey_numbers', $quotation->survey_numbers) }}" placeholder="e.g. 102/1A, 102/1B, 103/2">
+                    </div>
+
+                    <!-- Quotation Official Subject Line -->
+                    <div class="p-3 rounded-3 border" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                        <label class="form-label text-dark fw-bold mb-2">
+                            <i class="fas fa-heading text-primary"></i> Official Quotation Subject (Printed on Letterhead &amp; Table Header) <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" name="subject" id="subject_input" class="form-control fw-semibold text-dark"
+                               value="{{ old('subject', $quotation->subject) }}"
+                               placeholder="e.g. Quotation for Environmental Clearance falls in “B2” Category Project" required>
+                        <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                            <span class="small text-muted fw-bold"><i class="fas fa-bolt text-warning me-1"></i>Quick Subject Presets:</span>
+                            <span class="quick-pill quick-subject-preset" data-text="Quotation for Environmental Clearance falls in “B2” Category Project">
+                                B2 Category EC
+                            </span>
+                            <span class="quick-pill quick-subject-preset" data-text="Quotation for Mining Plan Preparation &amp; DGPS Boundary Demarcation">
+                                Mining Plan &amp; DGPS
+                            </span>
+                            <span class="quick-pill quick-subject-preset" data-text="Quotation for Baseline Environmental Study &amp; EIA/EMP Report Preparation">
+                                EIA/EMP Baseline
+                            </span>
+                            <span class="quick-pill quick-subject-preset" data-text="Comprehensive Statutory Proposal for Mining Plan, EC, DGPS &amp; Drone Surveys">
+                                Comprehensive Cluster
+                            </span>
                         </div>
                     </div>
                 </div>
-                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                <div class="card-footer bento-card-nav-footer py-3 px-4 d-flex justify-content-between align-items-center border-top">
                     <span class="text-muted small"><i class="fas fa-check-circle text-success me-1"></i> Step 1: Consignee &amp; Subject ready</span>
-                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-scope">
-                        Next: Complete Scope (Step 2) <i class="fas fa-arrow-right ms-1"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- STEP 2 (Page 1 & 2): Sub: Complete Scope (All Department) -->
-            <div class="bento-card card-accent-emerald mb-4" id="section-scope">
-                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge" style="background-color: #ECFDF5; color: #059669; border-color: #A7F3D0;">Step 2</span>
-                        <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-sitemap text-success me-2"></i>Page 1 &amp; 2: Sub: Complete Scope (All Department)
-                        </h5>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary fw-semibold" id="btnResetScopeQ28" title="Reload Standard Q-28 Scope Template">
-                            <i class="fas fa-undo me-1"></i> Load Q-28 Scope Template
-                        </button>
-                        <button type="button" class="btn btn-sm btn-success fw-semibold" id="btnAddScopeSection">
-                            <i class="fas fa-plus me-1"></i> Add Scope Section
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-4 bg-white">
-                    <div class="alert alert-light border small text-muted mb-3 d-flex align-items-center gap-2">
-                        <i class="fas fa-info-circle text-primary fs-5"></i>
-                        Each section heading will appear as a category on Page 1 &amp; Page 2 of the letterhead quotation, with its bullet items listed beneath. Enter each bullet point on a new line.
-                    </div>
-                    <div id="scopeSectionsContainer" class="d-flex flex-column gap-3">
-                        <!-- Dynamic Scope Cards will be rendered by JS -->
-                    </div>
-                </div>
-                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
-                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-consignee">
-                        <i class="fas fa-arrow-left me-1"></i> Previous: Consignee &amp; Subject
-                    </button>
-                    <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-milestones">
-                        Next: Payment Details (Step 3) <i class="fas fa-arrow-right ms-1"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- STEP 3 (Page 2): Payment Details Schedule (Milestones Table) -->
-            <div class="bento-card card-accent-blue mb-4" id="section-milestones">
-                <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 3</span>
-                        <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-list-ol text-primary me-2"></i>Page 2: Payment Details Schedule (Amount in Lakhs)
-                        </h5>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-light text-dark border px-3 py-2 fw-bold" id="milestonesTotalBadge">
-                            <i class="fas fa-calculator text-primary me-1"></i> Total Milestones: <span id="milestoneSumDisplay">₹ 3.89 Lakhs</span>
-                        </span>
-                        <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" id="btnAddMilestone">
-                            <i class="fas fa-plus me-1"></i> Add Milestone Row
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body p-4 bg-white">
-                    <p class="small text-muted mb-3">
-                        <i class="fas fa-info-circle text-primary me-1"></i>
-                        This milestone schedule is printed directly on Page 2 under <strong>"Payment Details"</strong>.
-                    </p>
-                    <div class="table-responsive">
-                        <table class="table table-bordered align-middle mb-0" id="milestonesTable" style="max-width: 850px;">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 10%; text-align: center;">S. No</th>
-                                    <th style="width: 60%;">Milestone Stage / Description</th>
-                                    <th style="width: 22%; text-align: center;">Amount (₹ in Lakhs)</th>
-                                    <th style="width: 8%; text-align: center;">Act</th>
-                                </tr>
-                            </thead>
-                            <tbody id="milestonesTbody">
-                                <!-- Dynamic Milestone Rows -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
-                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-scope">
-                        <i class="fas fa-arrow-left me-1"></i> Previous: Complete Scope
-                    </button>
                     <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-commercial">
-                        Next: Commercial Cost Table (Step 4) <i class="fas fa-arrow-right ms-1"></i>
+                        Next: Commercial Cost Table (Step 2) <i class="fas fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- STEP 4 (Page 3): Commercial Cost Table Bento Card -->
+            <input type="hidden" name="milestones" value="[]">
+
+            <!-- STEP 2: Commercial Cost Table Bento Card -->
             <div class="bento-card card-accent-navy mb-4" id="section-commercial">
                 <div class="card-header bg-white py-3 px-4 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 4</span>
+                        <span class="step-badge"><i class="fas fa-calculator"></i> Step 2 of 3</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-tasks text-primary me-2"></i>Page 3: Commercial Cost Table &amp; Pricing Schedule
+                            Commercial Cost Table &amp; Pricing Schedule
                         </h5>
                     </div>
 
                     <!-- Quick Catalog Insertion Bar -->
                     <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge bg-light text-dark border px-2 py-1 small me-1">
+                            <i class="fas fa-list-ol text-primary me-1"></i><span id="serviceLineCount">{{ count($quotation->items) }}</span> Items Scheduled
+                        </span>
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-primary dropdown-toggle fw-semibold" type="button" id="quickCatalogDropdown" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                                 <i class="fas fa-bolt text-warning me-1"></i> Quick-Add from Catalog
                             </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="quickCatalogDropdown" style="min-width: 320px; max-height: 350px; overflow-y: auto;">
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="quickCatalogDropdown" style="min-width: 340px; max-height: 350px; overflow-y: auto;">
                                 <li class="dropdown-header small text-uppercase fw-bold text-muted">Statutory Mining Services</li>
                                 @foreach($services as $s)
                                     <li>
@@ -906,13 +945,12 @@
                             <thead>
                                 <tr>
                                     <th style="width: 4%; text-align: center;">#</th>
-                                    <th style="width: 40%;">Statutory Service Specification</th>
-                                    <th style="width: 11%; text-align: center;">SAC Code</th>
+                                    <th style="width: 46%;">Statutory Service Specification</th>
                                     <th style="width: 10%; text-align: center;">Qty / Extent</th>
                                     <th style="width: 10%; text-align: center;">Unit</th>
-                                    <th style="width: 11%; text-align: right;">Unit Rate (₹)</th>
-                                    <th style="width: 10%; text-align: right;">Line Total (₹)</th>
-                                    <th style="width: 4%; text-align: center;">Act</th>
+                                    <th style="width: 13%; text-align: right;">Unit Rate (₹)</th>
+                                    <th style="width: 12%; text-align: right;">Line Total (₹)</th>
+                                    <th style="width: 5%; text-align: center;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="itemsTbody">
@@ -932,20 +970,20 @@
                                     if (empty($itemsToLoop)) {
                                         $itemsToLoop = [
                                             [
-                                                'service_name' => 'DGPS Demarcation & Boundary Survey',
-                                                'sac_code'     => '998334',
-                                                'description'  => 'Precision DGPS boundary demarcation, pillar fixing, geo-referencing and cadastral overlay map preparation.',
+                                                'service_name' => 'Preparation of Mining Plan.',
+                                                'sac_code'     => '998341',
+                                                'description'  => 'Mining Survey and data collection at proposed quarry area, Preparation of Mining Plan, Three Copies of Mining Plan Print out.',
                                                 'quantity'     => 1,
-                                                'unit'         => 'Ha',
-                                                'unit_rate'    => 35000.00,
-                                                'subtotal'     => 35000.00,
+                                                'unit'         => 'Job',
+                                                'unit_rate'    => 60000.00,
+                                                'subtotal'     => 60000.00,
                                             ]
                                         ];
                                     }
                                 @endphp
 
                                 @foreach($itemsToLoop as $index => $item)
-                                <!-- Row 1: Primary Parameters (Uniform 38px height) -->
+                                <!-- Row 1: Primary Parameters (Uniform 40px height) -->
                                 <tr class="item-main-row" data-index="{{ $index }}">
                                     <td class="text-center" rowspan="2" style="vertical-align: middle;">
                                         <span class="row-num-badge">{{ $loop->iteration }}</span>
@@ -953,6 +991,7 @@
                                     <td>
                                         <div class="input-group input-group-sm">
                                             <input type="text" name="items[{{ $index }}][service_name]" class="form-control item-service-name fw-bold text-dark" value="{{ $item['service_name'] ?? '' }}" placeholder="Service Name" required>
+                                            <input type="hidden" name="items[{{ $index }}][sac_code]" class="item-sac" value="{{ $item['sac_code'] ?? '998341' }}">
                                             <button type="button" class="btn btn-outline-primary btn-catalog-picker dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" title="Switch from Catalog"></button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 360px; max-height: 260px; overflow-y: auto;">
                                                 <li class="dropdown-header small text-uppercase fw-bold text-muted">Select Standard Service</li>
@@ -973,23 +1012,16 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <input type="text" name="items[{{ $index }}][sac_code]" class="form-control item-sac" value="{{ $item['sac_code'] ?? '998341' }}" placeholder="998341">
-                                    </td>
-                                    <td>
                                         <input type="number" step="0.01" min="0.01" name="items[{{ $index }}][quantity]" class="form-control item-qty text-center fw-bold financial-number" value="{{ $item['quantity'] ?? 1 }}" required>
                                     </td>
                                     <td>
-                                        <select name="items[{{ $index }}][unit]" class="form-select item-unit">
-                                            <option value="Ha" {{ ($item['unit'] ?? '') === 'Ha' ? 'selected' : '' }}>Ha</option>
-                                            <option value="Nos" {{ ($item['unit'] ?? '') === 'Nos' ? 'selected' : '' }}>Nos</option>
-                                            <option value="Job" {{ ($item['unit'] ?? '') === 'Job' ? 'selected' : '' }}>Job</option>
-                                            <option value="Survey" {{ ($item['unit'] ?? '') === 'Survey' ? 'selected' : '' }}>Survey</option>
-                                            <option value="Year" {{ ($item['unit'] ?? '') === 'Year' ? 'selected' : '' }}>Year</option>
-                                            <option value="Month" {{ ($item['unit'] ?? '') === 'Month' ? 'selected' : '' }}>Month</option>
-                                        </select>
+                                        <input type="text" name="items[{{ $index }}][unit]" class="form-control item-unit text-center fw-semibold" value="{{ $item['unit'] ?? 'Job' }}" placeholder="e.g. Job" required>
                                     </td>
                                     <td>
-                                        <input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_rate]" class="form-control item-rate text-end fw-semibold financial-number" value="{{ $item['unit_rate'] ?? 0 }}" required>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text py-0 px-2 bg-light">₹</span>
+                                            <input type="number" step="0.01" min="0" name="items[{{ $index }}][unit_rate]" class="form-control item-rate text-end fw-semibold financial-number" value="{{ $item['unit_rate'] ?? 0 }}" required>
+                                        </div>
                                     </td>
                                     <td>
                                         <input type="hidden" class="item-subtotal-input" value="{{ number_format($item['subtotal'] ?? 0, 2, '.', '') }}">
@@ -998,16 +1030,21 @@
                                         </div>
                                     </td>
                                     <td class="text-center" rowspan="2" style="vertical-align: middle;">
-                                        <button type="button" class="btn-row-delete" title="Remove line item">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                        <div class="d-flex align-items-center justify-content-center">
+                                            <button type="button" class="btn-row-duplicate" title="Duplicate line item">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                            <button type="button" class="btn-row-delete" title="Remove line item">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
-                                <!-- Row 2: Secondary Scope Deliverables Details (Spans cleanly under parameters) -->
+                                <!-- Row 2: Secondary Scope Deliverables Details -->
                                 <tr class="item-desc-row" data-index="{{ $index }}">
-                                    <td colspan="6">
+                                    <td colspan="5">
                                         <div class="desc-wrapper">
-                                            <span class="desc-prefix"><i class="fas fa-level-up-alt fa-rotate-90 me-1"></i> Scope &amp; Deliverables:</span>
+                                            <span class="desc-prefix"><i class="fas fa-feather-alt text-primary"></i> Scope &amp; Deliverables:</span>
                                             <input type="text" name="items[{{ $index }}][description]" class="desc-input item-desc" value="{{ $item['description'] ?? '' }}" placeholder="Technical deliverables, statutory compliance scope, cadastral specifications...">
                                         </div>
                                     </td>
@@ -1018,23 +1055,23 @@
                     </div>
 
                     <!-- Financial Calculation Summary Footer -->
-                    <div class="card-footer bg-light p-4 border-top">
+                    <div class="card-footer financial-summary-deck p-4 border-top">
                         <div class="row g-4 align-items-stretch">
                             <!-- Amount in Words FinTech Box -->
                             <div class="col-lg-6">
                                 <div class="endorsement-box">
                                     <div>
-                                        <div class="d-flex align-items-center gap-2 mb-2" style="font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #1E3A8A;">
-                                            <i class="fas fa-coins text-warning"></i>
+                                        <div class="d-flex align-items-center gap-2 mb-2" style="font-size: 0.74rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #059669;">
+                                            <i class="fas fa-coins text-warning fs-5"></i>
                                             <span>Statutory Endorsement in Words (Indian Currency)</span>
                                         </div>
                                         <div class="live-amount-words" id="amountInWordsDisplay">
                                             Rupees Zero Only
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center gap-2 mt-3 pt-2 border-top" style="font-size: 0.78rem; color: #475569;">
-                                        <i class="fas fa-shield-alt text-success fs-6"></i>
-                                        <span>Statutory Goods &amp; Services Tax (CGST 9% + SGST 9%) computed automatically.</span>
+                                    <div class="d-flex align-items-center gap-2 mt-3 pt-3 border-top" style="font-size: 0.80rem; color: #475569;">
+                                        <i class="fas fa-shield-alt text-success fs-5"></i>
+                                        <span>Statutory Goods &amp; Services Tax (CGST 9% + SGST 9%) computed automatically as per GST Council regulations.</span>
                                     </div>
                                 </div>
                             </div>
@@ -1058,8 +1095,8 @@
                                             <!-- Interactive GST Rate Pills -->
                                             <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) == '18.00') ? 'active' : '' }}" data-rate="18.00">18% Standard</span>
                                             <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) === '0.00') ? 'active' : '' }}" data-rate="0.00">0% Exempt</span>
-                                            <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) === '5.00') ? 'active' : '' }}" data-rate="5.00">5%</span>
-                                            <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) === '12.00') ? 'active' : '' }}" data-rate="12.00">12%</span>
+                                            <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) === '5.00') ? 'active' : '' }}" data-rate="5.00">5% Transport</span>
+                                            <span class="quick-pill gst-pill {{ (old('tax_rate', $quotation->tax_rate) === '12.00') ? 'active' : '' }}" data-rate="12.00">12% Concessional</span>
                                         </span>
                                         <span class="badge bg-light text-dark border fw-bold" id="displayTaxRateBreakdown">CGST 9% + SGST 9%</span>
                                     </div>
@@ -1076,37 +1113,40 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
-                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-milestones">
-                        <i class="fas fa-arrow-left me-1"></i> Previous: Payment Details
+                <div class="card-footer bento-card-nav-footer py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-consignee">
+                        <i class="fas fa-arrow-left me-1"></i> Previous: Consignee &amp; Subject
                     </button>
                     <button type="button" class="btn btn-primary fw-semibold btn-step-nav" data-target="#section-terms">
-                        Next: Terms &amp; Bank Details (Step 5) <i class="fas fa-arrow-right ms-1"></i>
+                        Next: Terms &amp; Bank Details (Step 3) <i class="fas fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- STEP 5 (Page 3): Statutory Terms, Conditions, Bank Details & Status -->
+            <!-- STEP 3: Statutory Terms, Conditions, Bank Details & Status -->
             <div class="bento-card card-accent-sky" id="section-terms">
                 <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center gap-2">
-                        <span class="step-badge">Step 5</span>
+                        <span class="step-badge"><i class="fas fa-file-contract"></i> Step 3 of 3</span>
                         <h5 class="mb-0 fw-bold text-dark">
-                            <i class="fas fa-file-contract text-primary me-2"></i>Page 3: Commercial Terms, Conditions &amp; Remittance Details
+                            Commercial Terms, Conditions &amp; Remittance Details
                         </h5>
                     </div>
-                    <span class="badge bg-light text-muted border small">Q-28 Page 3 Finale</span>
+                    <span class="badge bg-light text-muted border small">Official Proposal Finale</span>
                 </div>
                 <div class="card-body p-4 bg-white">
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <label class="form-label">Offer Validity Period</label>
-                            <div class="input-group mb-2">
+                            <label class="form-label" for="validity_days_input">Offer Validity Period</label>
+                            <div class="icon-input-group">
+                                <div class="input-icon-box">
+                                    <i class="fas fa-calendar-alt text-primary"></i>
+                                </div>
                                 <input type="number" min="1" max="365" name="validity_days" id="validity_days_input" class="form-control" value="{{ old('validity_days', $quotation->validity_days) }}" required>
-                                <span class="input-group-text">Days</span>
+                                <span class="input-group-text bg-white border-0 fw-semibold text-muted px-3">Days</span>
                             </div>
                             <!-- Quick Validity Presets -->
-                            <div class="d-flex gap-1 flex-wrap">
+                            <div class="d-flex gap-1 flex-wrap mt-2">
                                 <span class="quick-pill validity-pill {{ old('validity_days', $quotation->validity_days) == 15 ? 'active' : '' }}" data-days="15">15 Days</span>
                                 <span class="quick-pill validity-pill {{ old('validity_days', $quotation->validity_days) == 30 ? 'active' : '' }}" data-days="30">30 Days</span>
                                 <span class="quick-pill validity-pill {{ old('validity_days', $quotation->validity_days) == 45 ? 'active' : '' }}" data-days="45">45 Days</span>
@@ -1114,31 +1154,51 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Proposal Lifecycle Status</label>
-                            <select name="status" class="form-select">
-                                <option value="draft" {{ old('status', $quotation->status) === 'draft' ? 'selected' : '' }}>Draft (Internal Review)</option>
-                                <option value="sent" {{ old('status', $quotation->status) === 'sent' ? 'selected' : '' }}>Sent to Client</option>
-                                <option value="accepted" {{ old('status', $quotation->status) === 'accepted' ? 'selected' : '' }}>Accepted / Confirmed</option>
-                                <option value="converted" {{ old('status', $quotation->status) === 'converted' ? 'selected' : '' }}>Converted to Job</option>
-                                <option value="rejected" {{ old('status', $quotation->status) === 'rejected' ? 'selected' : '' }}>Rejected</option>
-                            </select>
+                            <label class="form-label" for="quotation_status_select">Initial Proposal Status</label>
+                            <div class="icon-input-group">
+                                <div class="input-icon-box">
+                                    <i class="fas fa-traffic-light text-primary"></i>
+                                </div>
+                                <select name="status" id="quotation_status_select" class="form-select fw-semibold">
+                                    <option value="draft" {{ old('status', $quotation->status) === 'draft' ? 'selected' : '' }}>Draft (Internal Review)</option>
+                                    <option value="sent" {{ old('status', $quotation->status) === 'sent' ? 'selected' : '' }}>Sent to Client</option>
+                                    <option value="accepted" {{ old('status', $quotation->status) === 'accepted' ? 'selected' : '' }}>Accepted / Confirmed</option>
+                                </select>
+                            </div>
+                            <!-- Quick Status Presets -->
+                            <div class="d-flex gap-1 flex-wrap mt-2">
+                                <span class="quick-pill status-pill {{ old('status', $quotation->status) === 'draft' ? 'active' : '' }}" data-status="draft">Draft</span>
+                                <span class="quick-pill status-pill {{ old('status', $quotation->status) === 'sent' ? 'active' : '' }}" data-status="sent">Sent</span>
+                                <span class="quick-pill status-pill {{ old('status', $quotation->status) === 'accepted' ? 'active' : '' }}" data-status="accepted">Accepted</span>
+                            </div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Authorized Signatory / Branch</label>
-                            <div class="signatory-card">
-                                <i class="fas fa-user-check text-success fs-5"></i>
-                                <div class="text-truncate">
-                                    <span class="fw-bold text-dark d-block text-truncate" style="font-size: 0.84rem;">Dr. S. Karuppannan, M.Sc., Ph.D.</span>
-                                    <span class="text-muted d-block text-truncate" style="font-size: 0.72rem;">Managing Partner &amp; Recognized Qualified Person (RQP)</span>
+                            <label class="form-label" for="authorized_signatory_input">Authorized Signatory / Branch</label>
+                            <div class="icon-input-group">
+                                <div class="input-icon-box">
+                                    <i class="fas fa-signature text-primary"></i>
                                 </div>
+                                <input type="text" 
+                                       name="authorized_signatory" 
+                                       id="authorized_signatory_input" 
+                                       class="form-control fw-semibold" 
+                                       value="{{ old('authorized_signatory', $quotation->authorized_signatory ?? 'Dr. S. Karuppannan, M.Sc., Ph.D.') }}" 
+                                       placeholder="e.g. Dr. S. Karuppannan, M.Sc., Ph.D." 
+                                       required>
+                            </div>
+                            <!-- Quick Signatory Presets -->
+                            <div class="d-flex gap-1 flex-wrap mt-2">
+                                <span class="quick-pill signatory-pill" data-val="Dr. S. Karuppannan, M.Sc., Ph.D.">Dr. S. Karuppannan</span>
+                                <span class="quick-pill signatory-pill" data-val="GTMS Head Office (Dharmapuri)">Head Office</span>
+                                <span class="quick-pill signatory-pill" data-val="Authorized Signatory">Generic</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-4">
+                    <div class="row g-4 mb-4">
                         <div class="col-md-6">
                             <div class="d-flex justify-content-between align-items-center mb-1">
-                                <label class="form-label mb-0">Payment Terms &amp; Conditions</label>
+                                <label class="form-label mb-0">Commercial Payment Terms</label>
                                 <div class="d-flex gap-1">
                                     <span class="quick-pill" onclick="setPaymentPreset('q28')">Q-28 Terms</span>
                                     <span class="quick-pill" onclick="setPaymentPreset('50-30-20')">50-30-20</span>
@@ -1163,40 +1223,8 @@
                         </div>
                     </div>
 
-                    <!-- Bank Account Details Card (Matching Q-28 Page 3) -->
-                    <div class="p-3 rounded border mb-3" style="background-color: #F8FAFC; border-color: #CBD5E1 !important;">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <div class="fw-bold text-dark small d-flex align-items-center gap-2">
-                                <i class="fas fa-university text-primary"></i>
-                                <span>Official GTMS Remittance Bank Account (Printed on Page 3)</span>
-                            </div>
-                            <span class="badge bg-white text-muted border small">Q-28 Letterhead Details</span>
-                        </div>
-                        <div class="row g-2 small text-muted">
-                            <div class="col-md-3">
-                                <span class="d-block fw-semibold text-dark">Name:</span>
-                                <span>Geo Technical Mining Solutions</span>
-                            </div>
-                            <div class="col-md-3">
-                                <span class="d-block fw-semibold text-dark">Account No.:</span>
-                                <div class="d-flex align-items-center gap-1">
-                                    <span class="font-monospace fw-bold text-dark">107302000001265</span>
-                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 copy-bank-btn" data-copy="107302000001265" title="Copy Account Number"><i class="fas fa-copy"></i></button>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <span class="d-block fw-semibold text-dark">Bank / Branch:</span>
-                                <span>Indian Overseas Bank / Oddapatti, Dharmapuri</span>
-                            </div>
-                            <div class="col-md-3">
-                                <span class="d-block fw-semibold text-dark">IFSC Code:</span>
-                                <div class="d-flex align-items-center gap-1">
-                                    <span class="font-monospace fw-bold text-primary">IOBA0001073</span>
-                                    <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 copy-bank-btn" data-copy="IOBA0001073" title="Copy IFSC"><i class="fas fa-copy"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- Dynamic Remittance Bank Account Selector & Modal -->
+                    @include('pages.accounts.partials.bank_account_selector', ['bankAccounts' => $bankAccounts])
 
                     <div class="row g-3">
                         <div class="col-12">
@@ -1205,7 +1233,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-footer bg-light py-3 px-4 d-flex justify-content-between align-items-center border-top">
+                <div class="card-footer bento-card-nav-footer py-3 px-4 d-flex justify-content-between align-items-center border-top">
                     <button type="button" class="btn btn-outline-secondary fw-semibold btn-step-nav" data-target="#section-commercial">
                         <i class="fas fa-arrow-left me-1"></i> Previous: Commercial Cost Table
                     </button>
@@ -1241,6 +1269,8 @@
     </div>
 </div>
 
+@include('pages.accounts.partials.bank_account_modal')
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -1258,7 +1288,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 1. Customer Concession Resolver
     function handleCustomerChange(customerId) {
-        if (!customerId) return;
+        if (!customerId) {
+            const banner = document.getElementById('clientProfileBanner');
+            if (banner) banner.classList.add('d-none');
+            return;
+        }
 
         fetch('{{ url("accounts/quotations/customer-concessions") }}/' + customerId, {
             headers: {
@@ -1278,6 +1312,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('address').value = c.address || '';
                 if (c.district_id) {
                     document.getElementById('district_id').value = c.district_id;
+                }
+
+                // Show dynamic loaded banner
+                const banner = document.getElementById('clientProfileBanner');
+                const bannerText = document.getElementById('clientProfileText');
+                if (banner && bannerText) {
+                    bannerText.textContent = `Loaded profile for ${c.customer_name} ${c.company_name ? '('+c.company_name+')' : ''} (GST: ${c.gst_number || 'N/A'})`;
+                    banner.classList.remove('d-none');
                 }
 
                 // If customer has a linked concession, auto-fill quarry coordinates
@@ -1324,6 +1366,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const sUnit = serviceData ? escapeHtml(serviceData.unit) : 'Job';
         const sRate = serviceData ? parseFloat(serviceData.unit_rate).toFixed(2) : '0.00';
         const sDesc = serviceData ? escapeHtml(serviceData.description) : '';
+        const sQty  = serviceData && serviceData.quantity ? parseFloat(serviceData.quantity) : 1;
 
         let catalogOptionsHtml = '';
         catalogServices.forEach(s => {
@@ -1355,6 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>
                 <div class="input-group input-group-sm">
                     <input type="text" name="items[${rowIndex}][service_name]" class="form-control item-service-name fw-bold text-dark" value="${sName}" placeholder="Service Name" required>
+                    <input type="hidden" name="items[${rowIndex}][sac_code]" class="item-sac" value="${sSac}">
                     <button type="button" class="btn btn-outline-primary btn-catalog-picker dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false" title="Switch from Catalog"></button>
                     <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width: 360px; max-height: 260px; overflow-y: auto;">
                         <li class="dropdown-header small text-uppercase fw-bold text-muted">Select Standard Service</li>
@@ -1363,34 +1407,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </td>
             <td>
-                <input type="text" name="items[${rowIndex}][sac_code]" class="form-control item-sac" value="${sSac}" placeholder="998341">
+                <input type="number" step="0.01" min="0.01" name="items[${rowIndex}][quantity]" class="form-control item-qty text-center fw-bold financial-number" value="${sQty}" required>
             </td>
             <td>
-                <input type="number" step="0.01" min="0.01" name="items[${rowIndex}][quantity]" class="form-control item-qty text-center fw-bold financial-number" value="1" required>
+                <input type="text" name="items[${rowIndex}][unit]" class="form-control item-unit text-center fw-semibold" value="${sUnit}" placeholder="e.g. Job" required>
             </td>
             <td>
-                <select name="items[${rowIndex}][unit]" class="form-select item-unit">
-                    <option value="Ha" ${sUnit === 'Ha' ? 'selected' : ''}>Ha</option>
-                    <option value="Nos" ${sUnit === 'Nos' ? 'selected' : ''}>Nos</option>
-                    <option value="Job" ${sUnit === 'Job' ? 'selected' : ''}>Job</option>
-                    <option value="Survey" ${sUnit === 'Survey' ? 'selected' : ''}>Survey</option>
-                    <option value="Year" ${sUnit === 'Year' ? 'selected' : ''}>Year</option>
-                    <option value="Month" ${sUnit === 'Month' ? 'selected' : ''}>Month</option>
-                </select>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text py-0 px-2 bg-light">₹</span>
+                    <input type="number" step="0.01" min="0" name="items[${rowIndex}][unit_rate]" class="form-control item-rate text-end fw-semibold financial-number" value="${sRate}" required>
+                </div>
             </td>
             <td>
-                <input type="number" step="0.01" min="0" name="items[${rowIndex}][unit_rate]" class="form-control item-rate text-end fw-semibold financial-number" value="${sRate}" required>
-            </td>
-            <td>
-                <input type="hidden" class="item-subtotal-input" value="${sRate}">
+                <input type="hidden" class="item-subtotal-input" value="${(sQty * parseFloat(sRate)).toFixed(2)}">
                 <div class="item-subtotal-box">
-                    ₹ <span class="item-subtotal-text ms-1">${formatIndianNumber(sRate)}</span>
+                    ₹ <span class="item-subtotal-text ms-1">${formatIndianNumber(sQty * parseFloat(sRate))}</span>
                 </div>
             </td>
             <td class="text-center" rowspan="2" style="vertical-align: middle;">
-                <button type="button" class="btn-row-delete" title="Remove line item">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
+                <div class="d-flex align-items-center justify-content-center">
+                    <button type="button" class="btn-row-duplicate" title="Duplicate line item">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" class="btn-row-delete" title="Remove line item">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </td>
         `;
 
@@ -1399,9 +1441,9 @@ document.addEventListener('DOMContentLoaded', function () {
         trDesc.className = 'item-desc-row';
         trDesc.setAttribute('data-index', rowIndex);
         trDesc.innerHTML = `
-            <td colspan="6">
+            <td colspan="5">
                 <div class="desc-wrapper">
-                    <span class="desc-prefix"><i class="fas fa-level-up-alt fa-rotate-90 me-1"></i> Scope &amp; Deliverables:</span>
+                    <span class="desc-prefix"><i class="fas fa-feather-alt text-primary"></i> Scope &amp; Deliverables:</span>
                     <input type="text" name="items[${rowIndex}][description]" class="desc-input item-desc" value="${sDesc}" placeholder="Technical deliverables, statutory compliance scope, cadastral specifications...">
                 </div>
             </td>
@@ -1415,10 +1457,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateRowNumbers() {
-        itemsTbody.querySelectorAll('.item-main-row').forEach((row, idx) => {
+        const rows = itemsTbody.querySelectorAll('.item-main-row');
+        rows.forEach((row, idx) => {
             const badge = row.querySelector('.row-num-badge');
             if (badge) badge.textContent = idx + 1;
         });
+        const counter = document.getElementById('serviceLineCount');
+        if (counter) counter.textContent = rows.length;
     }
 
     if (btnAddItem) {
@@ -1427,77 +1472,114 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Quick-Add from Top Catalog Menu
-    document.querySelectorAll('.quick-add-service').forEach(btn => {
-        btn.addEventListener('click', function () {
-            const serviceData = {
-                service_name: this.getAttribute('data-name'),
-                sac_code: this.getAttribute('data-sac'),
-                unit: this.getAttribute('data-unit'),
-                unit_rate: this.getAttribute('data-rate'),
-                description: this.getAttribute('data-desc')
-            };
-            addServiceRow(serviceData);
-        });
-    });
-
-    // 3. Delegate Dynamic Actions (Pick Service, Remove Row, Input Changes)
+    // Event Delegation: Delete Line Item & Duplicate Line Item
     itemsTbody.addEventListener('click', function (e) {
-        // Remove button
-        const removeBtn = e.target.closest('.btn-row-delete');
-        if (removeBtn) {
-            const mainRows = itemsTbody.querySelectorAll('.item-main-row');
-            if (mainRows.length > 1) {
-                const mainRow = removeBtn.closest('tr');
-                const rowIdx = mainRow.getAttribute('data-index');
-                const descRow = itemsTbody.querySelector(`.item-desc-row[data-index="${rowIdx}"]`);
-                if (mainRow) mainRow.remove();
-                if (descRow) descRow.remove();
-                updateRowNumbers();
-                recalculateTotals();
-            } else {
-                alert('At least one statutory service line item is required.');
+        const delBtn = e.target.closest('.btn-row-delete');
+        if (delBtn) {
+            const mainRow = delBtn.closest('tr.item-main-row');
+            if (!mainRow) return;
+            const idx = mainRow.getAttribute('data-index');
+            const descRow = itemsTbody.querySelector(`tr.item-desc-row[data-index="${idx}"]`);
+
+            if (itemsTbody.querySelectorAll('.item-main-row').length <= 1) {
+                alert('A valid quotation must contain at least 1 service line item.');
+                return;
             }
+
+            mainRow.remove();
+            if (descRow) descRow.remove();
+            updateRowNumbers();
+            recalculateTotals();
             return;
         }
 
-        // Pick from catalog dropdown inside table
-        const pickItem = e.target.closest('.pick-service');
-        if (pickItem) {
-            const mainRow = pickItem.closest('.item-main-row');
-            const rowIdx = mainRow.getAttribute('data-index');
-            const descRow = itemsTbody.querySelector(`.item-desc-row[data-index="${rowIdx}"]`);
+        const dupBtn = e.target.closest('.btn-row-duplicate');
+        if (dupBtn) {
+            const mainRow = dupBtn.closest('tr.item-main-row');
+            if (!mainRow) return;
+            const idx = mainRow.getAttribute('data-index');
+            const descRow = itemsTbody.querySelector(`tr.item-desc-row[data-index="${idx}"]`);
 
-            mainRow.querySelector('.item-service-name').value = pickItem.getAttribute('data-name');
-            mainRow.querySelector('.item-sac').value = pickItem.getAttribute('data-sac');
-            mainRow.querySelector('.item-unit').value = pickItem.getAttribute('data-unit');
-            mainRow.querySelector('.item-rate').value = pickItem.getAttribute('data-rate');
+            const sName = mainRow.querySelector('.item-service-name')?.value || '';
+            const sSac  = mainRow.querySelector('.item-sac')?.value || '998341';
+            const sQty  = mainRow.querySelector('.item-qty')?.value || 1;
+            const sUnit = mainRow.querySelector('.item-unit')?.value || 'Job';
+            const sRate = mainRow.querySelector('.item-rate')?.value || 0;
+            const sDesc = descRow?.querySelector('.item-desc')?.value || '';
+
+            addServiceRow({
+                service_name: sName,
+                sac_code: sSac,
+                quantity: sQty,
+                unit: sUnit,
+                unit_rate: sRate,
+                description: sDesc
+            });
+            return;
+        }
+
+        // Dropdown service picker inside line item
+        const pickServiceLink = e.target.closest('.pick-service');
+        if (pickServiceLink) {
+            e.preventDefault();
+            const mainRow = pickServiceLink.closest('tr.item-main-row');
+            if (!mainRow) return;
+            const idx = mainRow.getAttribute('data-index');
+            const descRow = itemsTbody.querySelector(`tr.item-desc-row[data-index="${idx}"]`);
+
+            const name = pickServiceLink.dataset.name;
+            const sac  = pickServiceLink.dataset.sac;
+            const unit = pickServiceLink.dataset.unit;
+            const rate = pickServiceLink.dataset.rate;
+            const desc = pickServiceLink.dataset.desc;
+
+            mainRow.querySelector('.item-service-name').value = name;
+            mainRow.querySelector('.item-sac').value = sac;
+            mainRow.querySelector('.item-unit').value = unit;
+            mainRow.querySelector('.item-rate').value = rate;
             if (descRow) {
-                descRow.querySelector('.item-desc').value = pickItem.getAttribute('data-desc');
+                descRow.querySelector('.item-desc').value = desc;
             }
+
+            // Close bootstrap dropdown
+            const dropdownEl = mainRow.querySelector('.dropdown-toggle');
+            if (dropdownEl && window.bootstrap && bootstrap.Dropdown) {
+                const inst = bootstrap.Dropdown.getInstance(dropdownEl);
+                if (inst) inst.hide();
+            }
+
             recalculateTotals();
         }
     });
 
-    // Elevate row z-index when Bootstrap dropdown opens/closes to prevent stacking conflicts
-    document.addEventListener('show.bs.dropdown', function (e) {
-        const mainRow = e.target.closest('.item-main-row');
-        if (mainRow) {
-            mainRow.classList.add('has-dropdown-open');
-            mainRow.style.zIndex = '1060';
-        }
-    });
-    document.addEventListener('hidden.bs.dropdown', function (e) {
-        const mainRow = e.target.closest('.item-main-row');
-        if (mainRow) {
-            mainRow.classList.remove('has-dropdown-open');
-            mainRow.style.removeProperty('z-index');
-        }
+    // Quick-Add from Top Catalog Bar
+    document.querySelectorAll('.quick-add-service').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            addServiceRow({
+                service_name: this.dataset.name,
+                sac_code: this.dataset.sac,
+                unit: this.dataset.unit,
+                unit_rate: this.dataset.rate,
+                description: this.dataset.desc,
+                quantity: 1
+            });
+        });
     });
 
+    // Input change listeners for real-time recalculation
     itemsTbody.addEventListener('input', function (e) {
         if (e.target.classList.contains('item-qty') || e.target.classList.contains('item-rate')) {
-            recalculateTotals();
+            const mainRow = e.target.closest('tr.item-main-row');
+            if (mainRow) {
+                const qty  = parseFloat(mainRow.querySelector('.item-qty').value) || 0;
+                const rate = parseFloat(mainRow.querySelector('.item-rate').value) || 0;
+                const lineTotal = qty * rate;
+
+                mainRow.querySelector('.item-subtotal-input').value = lineTotal.toFixed(2);
+                mainRow.querySelector('.item-subtotal-text').textContent = formatIndianNumber(lineTotal);
+                recalculateTotals();
+            }
         }
     });
 
@@ -1506,126 +1588,145 @@ document.addEventListener('DOMContentLoaded', function () {
         pill.addEventListener('click', function () {
             document.querySelectorAll('.gst-pill').forEach(p => p.classList.remove('active'));
             this.classList.add('active');
-            const rate = this.getAttribute('data-rate');
+            const rate = this.dataset.rate;
             if (taxRateSelect) {
                 taxRateSelect.value = rate;
+            }
+            const breakdown = document.getElementById('displayTaxRateBreakdown');
+            if (breakdown) {
+                if (rate === '18.00') breakdown.textContent = 'CGST 9% + SGST 9%';
+                else if (rate === '0.00') breakdown.textContent = 'Statutory GST Exempt (0%)';
+                else if (rate === '5.00') breakdown.textContent = 'CGST 2.5% + SGST 2.5%';
+                else if (rate === '12.00') breakdown.textContent = 'CGST 6% + SGST 6%';
+                else breakdown.textContent = rate + '%';
             }
             recalculateTotals();
         });
     });
 
-    // Validity Days Interactive Pills
+    // Offer Validity Interactive Pills
     document.querySelectorAll('.validity-pill').forEach(pill => {
-        pill.addEventListener('click', function () {
+        pill.addEventListener('click', function() {
             document.querySelectorAll('.validity-pill').forEach(p => p.classList.remove('active'));
             this.classList.add('active');
-            const days = this.getAttribute('data-days');
-            document.getElementById('validity_days_input').value = days;
+            const daysInput = document.getElementById('validity_days_input');
+            if (daysInput) {
+                daysInput.value = this.dataset.days;
+            }
         });
     });
 
-    // 4. Live Calculation Engine
+    // Status Interactive Pills
+    document.querySelectorAll('.status-pill').forEach(pill => {
+        pill.addEventListener('click', function() {
+            document.querySelectorAll('.status-pill').forEach(p => p.classList.remove('active'));
+            this.classList.add('active');
+            const statusSelect = document.getElementById('quotation_status_select');
+            if (statusSelect) {
+                statusSelect.value = this.dataset.status;
+            }
+        });
+    });
+
+    const statusSelect = document.getElementById('quotation_status_select');
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            document.querySelectorAll('.status-pill').forEach(p => {
+                p.classList.toggle('active', p.dataset.status === this.value);
+            });
+        });
+    }
+
+    // Signatory / Branch Interactive Pills
+    document.querySelectorAll('.signatory-pill').forEach(pill => {
+        pill.addEventListener('click', function() {
+            const signatoryInput = document.getElementById('authorized_signatory_input');
+            if (signatoryInput) {
+                signatoryInput.value = this.dataset.val;
+                signatoryInput.focus();
+            }
+        });
+    });
+
+    // Recalculate Totals Function
     function recalculateTotals() {
         let subtotal = 0;
-        const mainRows = itemsTbody.querySelectorAll('.item-main-row');
-
-        mainRows.forEach(row => {
-            const qtyInput = row.querySelector('.item-qty');
-            const rateInput = row.querySelector('.item-rate');
-            const subtotalInput = row.querySelector('.item-subtotal-input');
-            const subtotalText = row.querySelector('.item-subtotal-text');
-
-            const qty = parseFloat(qtyInput.value) || 0;
-            const rate = parseFloat(rateInput.value) || 0;
-            const lineSubtotal = Math.round(qty * rate * 100) / 100;
-
-            subtotal += lineSubtotal;
-            if (subtotalInput) {
-                subtotalInput.value = lineSubtotal.toFixed(2);
-            }
-            if (subtotalText) {
-                subtotalText.textContent = formatIndianNumber(lineSubtotal.toFixed(2));
-            }
+        itemsTbody.querySelectorAll('.item-main-row').forEach(row => {
+            const qty  = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const rate = parseFloat(row.querySelector('.item-rate').value) || 0;
+            const line = qty * rate;
+            subtotal += line;
         });
 
         const activeGstPill = document.querySelector('.gst-pill.active');
-        const taxRate = parseFloat(activeGstPill ? activeGstPill.getAttribute('data-rate') : (taxRateSelect ? taxRateSelect.value : 18.00)) || 0;
-        const taxAmount = Math.round(subtotal * (taxRate / 100) * 100) / 100;
+        const taxRate = activeGstPill ? parseFloat(activeGstPill.dataset.rate) : 18.00;
+        const taxAmount = (subtotal * taxRate) / 100;
         const grandTotal = subtotal + taxAmount;
 
-        const subtotalFormatted = '₹ ' + formatIndianNumber(subtotal.toFixed(2));
-        const taxFormatted = '₹ ' + formatIndianNumber(taxAmount.toFixed(2));
-        const totalFormatted = '₹ ' + formatIndianNumber(grandTotal.toFixed(2));
+        const subtotalEl = document.getElementById('displaySubtotal');
+        const taxAmountEl = document.getElementById('displayTaxAmount');
+        const grandTotalEl = document.getElementById('displayGrandTotal');
+        const floatingTotalEl = document.getElementById('floatingBarTotal');
+        const wordsEl = document.getElementById('amountInWordsDisplay');
 
-        document.getElementById('displaySubtotal').textContent = subtotalFormatted;
-        document.getElementById('displayTaxAmount').textContent = taxFormatted;
-        document.getElementById('displayGrandTotal').textContent = totalFormatted;
-        document.getElementById('floatingBarTotal').textContent = totalFormatted;
-
-        if (taxRate === 18.00) {
-            document.getElementById('displayTaxRateBreakdown').textContent = 'CGST 9% + SGST 9%';
-        } else if (taxRate === 0) {
-            document.getElementById('displayTaxRateBreakdown').textContent = 'Exempt / Zero Tax';
-        } else {
-            document.getElementById('displayTaxRateBreakdown').textContent = `GST @ ${taxRate}%`;
-        }
-
-        // Update Amount in Words
-        document.getElementById('amountInWordsDisplay').textContent = convertNumberToWords(grandTotal);
+        if (subtotalEl) subtotalEl.textContent = '₹ ' + formatIndianNumber(subtotal);
+        if (taxAmountEl) taxAmountEl.textContent = '₹ ' + formatIndianNumber(taxAmount);
+        if (grandTotalEl) grandTotalEl.textContent = '₹ ' + formatIndianNumber(grandTotal);
+        if (floatingTotalEl) floatingTotalEl.textContent = '₹ ' + formatIndianNumber(grandTotal);
+        if (wordsEl) wordsEl.textContent = numberToWordsIndian(Math.round(grandTotal));
     }
 
-    function formatIndianNumber(x) {
-        x = x.toString();
-        const afterPoint = x.indexOf('.') > 0 ? x.substring(x.indexOf('.')) : '';
-        let beforePoint = Math.floor(parseFloat(x)).toString();
-        const lastThree = beforePoint.substring(beforePoint.length - 3);
-        const otherNumbers = beforePoint.substring(0, beforePoint.length - 3);
+    // Number to Indian Currency Formatter (e.g. 3,89,400.00)
+    function formatIndianNumber(num) {
+        num = parseFloat(num) || 0;
+        const parts = num.toFixed(2).split('.');
+        let integerPart = parts[0];
+        const decimalPart = parts[1];
+
+        let lastThree = integerPart.substring(integerPart.length - 3);
+        const otherNumbers = integerPart.substring(0, integerPart.length - 3);
         if (otherNumbers !== '') {
-            beforePoint = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree;
-        } else {
-            beforePoint = lastThree;
+            lastThree = ',' + lastThree;
         }
-        return beforePoint + afterPoint;
+        const formattedInteger = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+        return formattedInteger + '.' + decimalPart;
     }
 
-    function convertNumberToWords(amount) {
-        amount = Math.round(amount * 100) / 100;
-        const words = [
-            '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-            'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
-        ];
+    // Number to Words Converter in Indian Rupee format
+    function numberToWordsIndian(n) {
+        if (n === 0) return 'Rupees Zero Only';
+
+        const singleDigits = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
         const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
-        function underThousand(n) {
-            let str = '';
-            if (n >= 100) {
-                str += words[Math.floor(n / 100)] + ' Hundred ';
-                n %= 100;
+        function underThousand(num) {
+            let s = '';
+            if (num >= 100) {
+                s += singleDigits[Math.floor(num / 100)] + ' Hundred ';
+                num %= 100;
             }
-            if (n > 0) {
-                if (str !== '') str += 'and ';
-                if (n < 20) {
-                    str += words[n] + ' ';
-                } else {
-                    str += tens[Math.floor(n / 10)] + ' ';
-                    if (n % 10 > 0) str += words[n % 10] + ' ';
-                }
+            if (num >= 20) {
+                s += tens[Math.floor(num / 10)] + ' ';
+                num %= 10;
+            } else if (num >= 10) {
+                s += teens[num - 10] + ' ';
+                num = 0;
             }
-            return str.trim();
+            if (num > 0) {
+                s += singleDigits[num] + ' ';
+            }
+            return s.trim();
         }
 
-        const num = Math.floor(amount);
-        const decimal = Math.round((amount - num) * 100);
-
-        if (num === 0 && decimal === 0) return 'Rupees Zero Only';
-
-        const crore = Math.floor(num / 10000000);
-        let rem = num % 10000000;
-        const lakh = Math.floor(rem / 100000);
-        rem %= 100000;
-        const thousand = Math.floor(rem / 1000);
-        rem %= 1000;
-        const hundredAndBelow = rem;
+        const crore = Math.floor(n / 10000000);
+        n %= 10000000;
+        const lakh = Math.floor(n / 100000);
+        n %= 100000;
+        const thousand = Math.floor(n / 1000);
+        n %= 1000;
+        const hundredAndBelow = Math.floor(n);
+        const decimal = Math.round((n - hundredAndBelow) * 100);
 
         let out = '';
         if (crore > 0) out += underThousand(crore) + ' Crore ';
@@ -1650,7 +1751,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/'/g, "&#039;");
     }
 
-    // P0.3 & P0.4: Form Submit Loading State & Double-Click Prevention
+    // Form Submit Loading State & Double-Click Prevention
     const quotationForm = document.getElementById('quotationForm');
     const submitBtn = document.getElementById('submitQuotationBtn');
     if (quotationForm && submitBtn) {
@@ -1669,206 +1770,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // -------------------------------------------------------------------------
-    // DYNAMIC SCOPE OF WORK SECTIONS BUILDER (Q-28 Letterhead Complete Scope)
-    // -------------------------------------------------------------------------
-    const initialScopeSections = @json(old('scope_sections', $quotation->scope_sections ?? $defaultScopeSections));
-    const defaultQ28Scope = @json($defaultScopeSections);
-    let scopeSectionsList = Array.isArray(initialScopeSections) && initialScopeSections.length > 0 
-        ? initialScopeSections 
-        : JSON.parse(JSON.stringify(defaultQ28Scope));
-
-    const scopeContainer = document.getElementById('scopeSectionsContainer');
-    const btnAddScope = document.getElementById('btnAddScopeSection');
-    const btnResetScope = document.getElementById('btnResetScopeQ28');
-
-    function renderScopeSections() {
-        if (!scopeContainer) return;
-        scopeContainer.innerHTML = '';
-
-        if (scopeSectionsList.length === 0) {
-            scopeContainer.innerHTML = '<div class="text-center py-4 text-muted small border rounded bg-light">No departmental scope sections added. Click "+ Add Scope Section" or "Load Q-28 Scope Template" above.</div>';
-            return;
-        }
-
-        scopeSectionsList.forEach((sec, idx) => {
-            const card = document.createElement('div');
-            card.className = 'scope-card-item rounded-3 p-3 bg-white shadow-sm mb-3';
-            card.style.cssText = 'border: 1px solid #E2E8F0 !important; border-left: 4px solid #059669 !important; background: #FFFFFF !important;';
-            
-            const rawItems = Array.isArray(sec.items) ? sec.items.join('\n') : (sec.items || '');
-            const titleVal = escapeHtml(sec.title || '');
-            const itemsVal = escapeHtml(rawItems);
-
-            card.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold px-2 py-1" style="font-size: 0.72rem;">Phase ${idx + 1}</span>
-                        <span class="fw-bold text-dark small">${titleVal || 'New Scope Category'}</span>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-light border text-danger fw-semibold btn-delete-scope" data-index="${idx}" title="Delete Section">
-                        <i class="fas fa-trash-alt me-1"></i> Delete
-                    </button>
-                </div>
-                <div class="row g-2">
-                    <div class="col-md-5">
-                        <label class="form-label small fw-bold text-muted mb-1">Section Heading</label>
-                        <input type="text" name="scope_sections[${idx}][title]" class="form-control scope-title-input" data-index="${idx}" value="${titleVal}" placeholder="e.g. Feasibility Study" required>
-                    </div>
-                    <div class="col-md-7">
-                        <label class="form-label small fw-bold text-muted mb-1">Scope Bullet Points (One per line)</label>
-                        <textarea name="scope_sections[${idx}][items]" class="form-control scope-items-input" data-index="${idx}" rows="3" placeholder="Field Visit at proposed quarry area.\nPreparation of Lease Plan and Surface Plan,\nPreparation of Satellite Imagery plan with 500m radius">${itemsVal}</textarea>
-                    </div>
-                </div>
-            `;
-            scopeContainer.appendChild(card);
-        });
-
-        // Attach listeners
-        scopeContainer.querySelectorAll('.scope-title-input').forEach(inp => {
-            inp.addEventListener('input', function() {
-                const i = parseInt(this.dataset.index);
-                if (scopeSectionsList[i]) scopeSectionsList[i].title = this.value;
-            });
-        });
-        scopeContainer.querySelectorAll('.scope-items-input').forEach(inp => {
-            inp.addEventListener('input', function() {
-                const i = parseInt(this.dataset.index);
-                if (scopeSectionsList[i]) {
-                    scopeSectionsList[i].items = this.value.split('\n');
-                }
-            });
-        });
-        scopeContainer.querySelectorAll('.btn-delete-scope').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const i = parseInt(this.dataset.index);
-                scopeSectionsList.splice(i, 1);
-                renderScopeSections();
-            });
-        });
-    }
-
-    if (btnAddScope) {
-        btnAddScope.addEventListener('click', function() {
-            scopeSectionsList.push({
-                title: 'New Departmental Scope',
-                items: ['New scope specification item.']
-            });
-            renderScopeSections();
-            const cards = scopeContainer.querySelectorAll('.border.rounded');
-            if (cards.length > 0) {
-                cards[cards.length - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }
-        });
-    }
-
-    if (btnResetScope) {
-        btnResetScope.addEventListener('click', function() {
-            if (confirm('Load the standard Q-28 complete departmental scope template? Any unsaved custom scope edits will be replaced.')) {
-                scopeSectionsList = JSON.parse(JSON.stringify(defaultQ28Scope));
-                renderScopeSections();
-            }
-        });
-    }
-
-    renderScopeSections();
-
-    // -------------------------------------------------------------------------
-    // PAYMENT DETAILS SCHEDULE (Page 2 Milestone Table)
-    // -------------------------------------------------------------------------
-    const initialMilestones = @json(old('milestones', $quotation->milestones ?? $defaultMilestones));
-    const defaultQ28Milestones = @json($defaultMilestones);
-    let milestonesList = Array.isArray(initialMilestones) && initialMilestones.length > 0
-        ? initialMilestones
-        : JSON.parse(JSON.stringify(defaultQ28Milestones));
-
-    const milestonesTbody = document.getElementById('milestonesTbody');
-    const btnAddMilestone = document.getElementById('btnAddMilestone');
-
-    function renderMilestones() {
-        if (!milestonesTbody) return;
-        milestonesTbody.innerHTML = '';
-
-        milestonesList.forEach((m, idx) => {
-            const tr = document.createElement('tr');
-            const desc = escapeHtml(m.description || '');
-            const amt = escapeHtml(m.amount_lakhs || '');
-
-            tr.innerHTML = `
-                <td class="text-center fw-bold text-muted">${idx + 1}</td>
-                <td>
-                    <input type="text" name="milestones[${idx}][description]" class="form-control milestone-desc-input" data-index="${idx}" value="${desc}" placeholder="Milestone description..." required>
-                </td>
-                <td>
-                    <div class="input-group input-group-sm">
-                        <input type="text" name="milestones[${idx}][amount_lakhs]" class="form-control text-center fw-bold milestone-amt-input" data-index="${idx}" value="${amt}" placeholder="e.g. 0.70" required>
-                        <span class="input-group-text bg-light">Lakhs</span>
-                    </div>
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-sm btn-light border text-danger btn-delete-milestone" data-index="${idx}" title="Remove row">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                </td>
-            `;
-            milestonesTbody.appendChild(tr);
-        });
-
-        milestonesTbody.querySelectorAll('.milestone-desc-input').forEach(inp => {
-            inp.addEventListener('input', function() {
-                const i = parseInt(this.dataset.index);
-                if (milestonesList[i]) milestonesList[i].description = this.value;
-            });
-        });
-        milestonesTbody.querySelectorAll('.milestone-amt-input').forEach(inp => {
-            inp.addEventListener('input', function() {
-                const i = parseInt(this.dataset.index);
-                if (milestonesList[i]) milestonesList[i].amount_lakhs = this.value;
-                updateMilestonesTotal();
-            });
-        });
-        milestonesTbody.querySelectorAll('.btn-delete-milestone').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const i = parseInt(this.dataset.index);
-                milestonesList.splice(i, 1);
-                renderMilestones();
-                updateMilestonesTotal();
-            });
-        });
-        updateMilestonesTotal();
-    }
-
-    function updateMilestonesTotal() {
-        let totalLakhs = 0;
-        if (milestonesTbody) {
-            milestonesTbody.querySelectorAll('.milestone-amt-input').forEach(inp => {
-                totalLakhs += parseFloat(inp.value) || 0;
-            });
-        }
-        const disp = document.getElementById('milestoneSumDisplay');
-        if (disp) {
-            disp.textContent = '₹ ' + totalLakhs.toFixed(2) + ' Lakhs';
-        }
-    }
-
-    if (btnAddMilestone) {
-        btnAddMilestone.addEventListener('click', function() {
-            milestonesList.push({
-                s_no: milestonesList.length + 1,
-                description: 'Final report and clearance submission',
-                amount_lakhs: '0.50'
-            });
-            renderMilestones();
-            updateMilestonesTotal();
-        });
-    }
-
-    renderMilestones();
-
-    // -------------------------------------------------------------------------
     // STEP NAVIGATION & PRESET LISTENERS
-    // -------------------------------------------------------------------------
-    document.querySelectorAll('.btn-step-nav, .stepper-item').forEach(el => {
+    document.querySelectorAll('.btn-step-nav, .stepper-card').forEach(el => {
         el.addEventListener('click', function(e) {
             const target = this.dataset.target || this.getAttribute('href');
             if (target && target.startsWith('#')) {
@@ -1878,13 +1781,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     const yOffset = -80;
                     const y = targetEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
                     window.scrollTo({ top: y, behavior: 'smooth' });
-                    document.querySelectorAll('.stepper-item').forEach(item => item.classList.remove('active'));
-                    const stepLink = document.querySelector(`.stepper-item[href="${target}"]`);
+                    document.querySelectorAll('.stepper-card').forEach(item => item.classList.remove('active'));
+                    const stepLink = document.querySelector(`.stepper-card[href="${target}"]`);
                     if (stepLink) stepLink.classList.add('active');
 
                     // Highlight card border briefly
                     targetEl.style.transition = 'box-shadow 0.3s ease';
-                    targetEl.style.boxShadow = '0 0 0 3px rgba(30, 58, 138, 0.25)';
+                    targetEl.style.boxShadow = '0 0 0 4px rgba(30, 58, 138, 0.25)';
                     setTimeout(() => { targetEl.style.boxShadow = ''; }, 1200);
                 }
             }
@@ -1902,22 +1805,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Copy Bank Account & IFSC Buttons
-    document.querySelectorAll('.copy-bank-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const textToCopy = this.dataset.copy;
-            if (!textToCopy) return;
-            const originalHtml = this.innerHTML;
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                this.innerHTML = '<i class="fas fa-check text-success"></i>';
-                setTimeout(() => { this.innerHTML = originalHtml; }, 1800);
-            }).catch(() => {
-                this.innerHTML = '<i class="fas fa-check text-success"></i>';
-                setTimeout(() => { this.innerHTML = originalHtml; }, 1800);
-            });
-        });
-    });
-
     // Reload Q-28 Standard Line Items
     const btnReloadQ28 = document.getElementById('btnReloadQ28Items');
     if (btnReloadQ28) {
@@ -1926,12 +1813,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 itemsTbody.innerHTML = '';
                 rowIndex = 0;
                 const defaultQ28Items = [
-                    { service_name: "Mining Plan Preparation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "60000.00", subtotal: "60000.00", description: "Preparation of Mining Plan by Recognized Qualified Person (RQP) and statutory approval from Department of Geology and Mining." },
-                    { service_name: "Baseline Environmental Study (1 Month)", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "70000.00", subtotal: "70000.00", description: "Baseline environmental quality monitoring for Ambient Air Quality, Water Quality, Soil Quality, and Noise levels as per MoEF&CC / CPCB norms." },
-                    { service_name: "EIA/EMP Report Preparation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "80000.00", subtotal: "80000.00", description: "Preparation of comprehensive Environmental Impact Assessment and Environmental Management Plan report by NABET Accredited EIA Consultant." },
-                    { service_name: "Form-I, Form-1M & Project Presentation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "40000.00", subtotal: "40000.00", description: "Preparation and filing of Form-1, Form-1M, Pre-Feasibility Report, and PowerPoint presentation for SEAC appraisal committee." },
-                    { service_name: "Environmental Clearance (SEIAA/DEIAA)", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "50000.00", subtotal: "50000.00", description: "Technical presentation and follow-up liaison before State Expert Appraisal Committee (SEAC) and obtaining Environmental Clearance order." },
-                    { service_name: "Post-EC Compliance & Documentation", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "30000.00", subtotal: "30000.00", description: "Half-yearly environmental compliance documentation, newspaper advertisement filing, and TNPCB CTO statutory documentation." }
+                    { service_name: "Feasibility Study", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "25000.00", subtotal: "25000.00", description: "Field Visit at proposed quarry area, Preparation of Lease Plan and Surface Plan, Satellite Imagery plan with 500m radius." },
+                    { service_name: "Online Lease Application", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "25000.00", subtotal: "25000.00", description: "Fresh Lease Application, New Lease Marking, Application Preparation & technical assistance in uploading of lease application." },
+                    { service_name: "Preparation of Mining Plan.", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "60000.00", subtotal: "60000.00", description: "Mining Survey and data collection at proposed quarry area, Preparation of Mining Plan, Three Copies of Mining Plan Print out." },
+                    { service_name: "DGPS Survey", sac_code: "998334", quantity: "1.00", unit: "Survey", unit_rate: "30000.00", subtotal: "30000.00", description: "DGPS Survey (static points, fixed coordinates, create pillar ID), boundary demarcation and contour." },
+                    { service_name: "Drone Survey", sac_code: "998334", quantity: "1.00", unit: "Survey", unit_rate: "40000.00", subtotal: "40000.00", description: "Drone Survey for Accurate Topographical Mapping, boundary demarcation and contour, DGPS Survey for GCP Marking & report." },
+                    { service_name: "Preparation of EC Report", sac_code: "998341", quantity: "1.00", unit: "Job", unit_rate: "150000.00", subtotal: "150000.00", description: "Preparation of EC Report Form-1, PFR, PMCP, Baseline Report, HGR, Parivesh submission, SEAC presentation & technical assistance." }
                 ];
                 defaultQ28Items.forEach(item => addServiceRow(item));
                 recalculateTotals();

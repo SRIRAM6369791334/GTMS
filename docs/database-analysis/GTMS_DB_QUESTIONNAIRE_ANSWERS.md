@@ -27,7 +27,7 @@
 | Q011 | **[A]** | தனி `districts` மாஸ்டர் அட்டவணை; 38 தமிழ்நாடு மாவட்டங்களும் சீடரில் (Seeder) சேர்க்கப்படும். |
 | Q012 | **[A]** | கனிமங்கள் மாஸ்டர்: Rough Stone, Gravel, Granite, Limestone, Fire Clay, Quartz, Feldspar, Others. |
 | Q013 | **[A]** | குத்தகை விதிகள்: TN Minor Mineral Concession Rules (Rule 12, Rule 19(1), 19-A, 36-F, MDCC, etc.). |
-| Q014 | **[A]** | திட்ட வகைகள்: Mining Plan, Revised Mining Plan, Modified Mining Plan, Scheme of Mining. |
+| Q014 | **[A]** | திட்ட வகைகள்: Mining Plan, Revised Mining Plan, Plan Drawing , Scheme of Mining. |
 | Q015 | **[A]** | விண்ணப்பதாரர் வகை: Individual, Partnership Firm, Pvt Ltd, Public Ltd, Trust/Society. |
 | Q016 | **[B]** | மாவட்டம் மட்டும் மாஸ்டர்; தாலுகா மற்றும் கிராமம் டெக்ஸ்ட் ஃபீல்டுகளாக உள்ளிடப்படும். |
 | Q017 | **[A]** | மாஸ்டர் டேட்டாவை Super Admin மட்டுமே உருவாக்க/மாற்ற முடியும். |

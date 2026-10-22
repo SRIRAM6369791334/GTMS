@@ -38,9 +38,20 @@ class Customer extends Model
     ];
 
     protected $casts = [
-        'area' => 'decimal:2',
+        'area' => 'string',
         'status' => 'integer',
     ];
+
+    public function getAreaNumericAttribute(): ?float
+    {
+        if (empty($this->area)) return null;
+        $val = trim($this->area);
+        $parts = explode('.', $val);
+        if (count($parts) === 3) {
+            return round((float)$parts[0] + ((float)$parts[1] / 100) + ((float)$parts[2] / 10000), 4);
+        }
+        return is_numeric($val) ? (float)$val : null;
+    }
 
     protected static function booted(): void
     {

@@ -202,7 +202,7 @@ The following table records the complete chronological sequence of all 48 databa
 
 #### 23. `nature_of_works`
 * **Domain:** Mining Plan Scope Classifications.
-* **Schema:** `id` (`BIGINT UNSIGNED`, `PRIMARY`, Auto-Inc), `name` (`VARCHAR(255)`), `status` (`TINYINT`, default `1`), `created_at`, `updated_at`. *(Values: Mining Plan, Scheme of Mining, Modified Mining Plan, Review of Mining Plan)*.
+* **Schema:** `id` (`BIGINT UNSIGNED`, `PRIMARY`, Auto-Inc), `name` (`VARCHAR(255)`), `status` (`TINYINT`, default `1`), `created_at`, `updated_at`. *(Values: Mining Plan, Scheme of Mining, Plan Drawing , Review of Mining Plan)*.
 
 ---
 

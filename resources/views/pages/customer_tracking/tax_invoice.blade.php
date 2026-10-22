@@ -529,14 +529,11 @@
         <tr>
           <td class="ti-company-info-cell">
             <div class="ti-company-name">GEO TECHNICAL MINING SOLUTIONS</div>
-            <div class="ti-company-iso">(ISO 9001: 2015 Certified Company)</div>
-            <div>No: 2/548/D, Thadangam,</div>
-            <div>Thokkampatti Post,</div>
-            <div>Dharmapuri-636705.</div>
-            <div style="margin-top: 4px;">Ph: +91 9443937841, 70100 76633.</div>
-            <div>Ofc Ph.: 04342-232777</div>
-            <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;04342-292377</div>
-            <div style="margin-top: 2px;">E-mail: info.gtmsdpi@gmail.com.</div>
+            <div class="ti-company-iso">(A NABET Accredited &amp; ISO Certified)</div>
+            <div>No: 2/548/D, Thadangam, Thokkampatti (post),</div>
+            <div>Dharmapuri-636705. Tamil Nadu.</div>
+            <div style="margin-top: 4px;"><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+            <div style="margin-top: 2px;"><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
           </td>
           <td style="padding: 0; vertical-align: top;">
             <table class="ti-meta-sub-table">
