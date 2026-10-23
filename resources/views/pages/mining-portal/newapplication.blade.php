@@ -1328,17 +1328,22 @@
                         {{-- STEP 8: PAYMENT & FINANCIAL SETTLEMENT                     --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_7">
-                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
-                                <div>
-                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
-                                        <i class="bi bi-cash-stack me-1"></i> STEP 8 OF 9 &bull; FINANCIAL SETTLEMENT &amp; BILLING LEDGER
+                            <div class="s1-header-block mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                            <i class="bi bi-cash-stack me-1"></i> STEP 8 OF 9 &bull; FINANCIAL SETTLEMENT &amp; BILLING LEDGER
+                                        </div>
+                                        <h4 class="s1-title mb-1">Payment &amp; Financial Settlement</h4>
+                                        <p class="s1-subtitle mb-0">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
                                     </div>
-                                    <h4 class="fw-bold text-navy mt-1 mb-0">Financial &amp; Billing Ledger</h4>
-                                    <p class="text-muted small mb-0 mt-1">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge s1-time-tag"><i class="bi bi-clock-history me-1"></i> Est. ~1-2 mins</span>
+                                        <span class="badge s7-ledger-pill">
+                                            <i class="bi bi-cash-stack me-1.5"></i>Billing Ledger
+                                        </span>
+                                    </div>
                                 </div>
-                                <span class="badge s7-ledger-pill">
-                                    <i class="bi bi-cash-stack me-1.5"></i>Billing Ledger
-                                </span>
                             </div>
 
                             @php
@@ -1371,133 +1376,163 @@
                                 </div>
                             </div>
 
-                            <!-- 3-BENTO KPI CARDS (EXACT LEASE STEP 7 PARITY WITH LEFT BORDER ACCENTS) -->
+                            <!-- 3-BENTO KPI CARDS (EXACT LEASE STEP 7 PARITY) -->
                             <div class="row g-3 mb-4">
                                 <!-- Bento 1: Product Value -->
                                 <div class="col-md-4">
-                                    <div class="mining-kpi-card kpi-val-card">
+                                    <div class="s7-kpi-card s7-kpi-contract">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label">Product / Service Value</span>
-                                            <div class="mining-kpi-icon icon-navy"><i class="bi bi-currency-rupee"></i></div>
+                                            <span class="s7-kpi-label">Product / Service Value</span>
+                                            <div class="s7-kpi-icon-badge s7-kpi-icon-contract"><i class="bi bi-receipt-cutoff"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-navy" id="disp_mining_product_val">₹ {{ number_format((float)($prefillData['product_value'] ?? 0), 2) }}</div>
-                                        <div class="mining-kpi-sub">Total agreed statutory fee or quotation</div>
+                                        <div class="s7-kpi-value text-navy" id="disp_mining_product_val">₹ {{ number_format((float)($prefillData['product_value'] ?? 0), 2) }}</div>
+                                        <div class="s7-kpi-subtext">Total agreed statutory fee or quotation</div>
                                     </div>
                                 </div>
 
                                 <!-- Bento 2: Paid Amount -->
                                 <div class="col-md-4">
-                                    <div class="mining-kpi-card kpi-paid-card">
+                                    <div class="s7-kpi-card s7-kpi-paid">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label text-success">Advance / Paid Amount</span>
-                                            <div class="mining-kpi-icon icon-emerald"><i class="bi bi-check-circle-fill"></i></div>
+                                            <span class="s7-kpi-label text-success">Advance / Paid Amount</span>
+                                            <div class="s7-kpi-icon-badge s7-kpi-icon-paid"><i class="bi bi-check-circle-fill"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-success" id="disp_mining_paid_val">₹ {{ number_format((float)($prefillData['paid_amount'] ?? 0), 2) }}</div>
-                                        <div class="mining-kpi-sub">Received advance via Bank / NEFT / Cash</div>
+                                        <div class="s7-kpi-value text-success" id="disp_mining_paid_val">₹ {{ number_format((float)($prefillData['paid_amount'] ?? 0), 2) }}</div>
+                                        <div class="s7-kpi-subtext">Received advance via Bank / NEFT / Cash</div>
                                     </div>
                                 </div>
 
                                 <!-- Bento 3: Pending Balance -->
                                 <div class="col-md-4">
-                                    <div class="mining-kpi-card kpi-pending-card">
+                                    <div class="s7-kpi-card s7-kpi-pending">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label text-danger">Pending Balance Due</span>
-                                            <div class="mining-kpi-icon icon-rose"><i class="bi bi-hourglass-split"></i></div>
+                                            <span class="s7-kpi-label text-danger">Pending Balance Due</span>
+                                            <div class="s7-kpi-icon-badge s7-kpi-icon-pending"><i class="bi bi-hourglass-split"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-danger" id="disp_mining_pending_val">₹ {{ number_format((float)($prefillData['pending_amount'] ?? 0), 2) }}</div>
-                                        <div class="mining-kpi-sub">Remaining balance to be collected</div>
+                                        <div class="s7-kpi-value text-danger" id="disp_mining_pending_val">₹ {{ number_format((float)($prefillData['pending_amount'] ?? 0), 2) }}</div>
+                                        <div class="s7-kpi-subtext">Remaining balance to be collected</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Financial Breakdown Form Card -->
-                            <div class="mining-section-panel p-3 p-lg-4 mb-3">
-                                <h6 class="fw-bold text-navy mb-3"><i class="bi bi-wallet2 text-success me-2"></i>Fee Entry &amp; Settlement Assessment</h6>
-                                
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label mining-label">Product / Service Value (₹) <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-navy fw-bold">₹</span>
-                                            <input type="number" step="0.01" min="0" class="form-control mining-input fw-bold text-navy" 
-                                                   id="mining_product_value" name="product_value" 
-                                                   value="{{ old('product_value', $prefillData['product_value'] ?? '0.00') }}" placeholder="0.00" required>
-                                        </div>
-                                        <div class="form-text mining-hint">Total agreed fee for mining application.</div>
-                                    </div>
+                            <!-- Financial Breakdown Form Section (Lease Step 7 Parity) -->
+                            <div class="s7-form-section mb-4">
+                                <div class="s7-form-section-header d-flex align-items-center justify-content-between">
+                                    <span class="s7-form-section-title">
+                                        <i class="bi bi-currency-rupee me-1.5 text-primary"></i>Fee Entry &amp; Settlement Assessment
+                                    </span>
+                                    <span class="badge s7-badge-status-tag">Statutory Accounting</span>
+                                </div>
 
-                                    <div class="col-md-4">
-                                        <label class="form-label mining-label">Paid Amount (₹) <span class="text-danger">*</span></label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-success fw-bold">₹</span>
-                                            <input type="number" step="0.01" min="0" class="form-control mining-input fw-bold text-success" 
-                                                   id="mining_paid_amount" name="paid_amount" 
-                                                   value="{{ old('paid_amount', $prefillData['paid_amount'] ?? '0.00') }}" placeholder="0.00" required>
-                                        </div>
-                                        <div class="d-flex align-items-center justify-content-between mt-1 flex-wrap gap-1">
-                                            <span class="form-text mining-hint mb-0">Advance paid.</span>
-                                            <div class="d-flex align-items-center gap-1">
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5" id="btn_quick_full" title="Set paid equal to value" style="font-size:10px;">100% Full</button>
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5" id="btn_quick_half" title="Set paid to 50%" style="font-size:10px;">50% Advance</button>
-                                                <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1.5" id="btn_quick_zero" title="Set paid to 0" style="font-size:10px;">Clear (₹0)</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <label class="form-label mining-label">Pending Balance (₹)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text bg-light text-danger fw-bold">₹</span>
-                                            <input type="number" step="0.01" class="form-control mining-input fw-bold text-danger bg-light" 
-                                                   id="mining_pending_amount" name="pending_amount" 
-                                                   value="{{ old('pending_amount', $prefillData['pending_amount'] ?? '0.00') }}" readonly placeholder="0.00">
-                                        </div>
-                                        <div class="form-text mining-hint">Auto-calculated: (Value &minus; Paid).</div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label mining-label">Settlement Status <span class="text-danger">*</span></label>
-                                        <select class="form-select mining-select fw-semibold" id="mining_payment_status" name="payment_status" required>
-                                            <option value="pending" {{ old('payment_status', $prefillData['payment_status'] ?? 'pending') == 'pending' ? 'selected' : '' }}>🔴 Pending (Full Balance Due)</option>
-                                            <option value="partial" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'partial' ? 'selected' : '' }}>🟡 Partial (Part Payment Received)</option>
-                                            <option value="paid" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>🟢 Paid (Fully Cleared)</option>
-                                        </select>
-                                        <div class="form-text mining-hint">Adapts dynamically based on amounts, or select manually.</div>
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <label class="form-label mining-label">Live Settlement Assessment</label>
-                                        <div class="s7-assessment-wrapper">
-                                            <div class="s7-feedback-box d-flex align-items-center justify-content-between" id="mining_status_feedback_box">
-                                                <div class="d-flex align-items-center gap-3">
-                                                    <div class="s7-feedback-icon" id="mining_status_feedback_icon">
-                                                        <i class="bi bi-clock-history"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="s7-feedback-sub">Settlement Assessment</div>
-                                                        <div class="s7-feedback-title fw-bold" id="mining_status_feedback_text">Pending Payment</div>
-                                                    </div>
-                                                </div>
-                                                <span class="badge s7-feedback-badge px-3 py-2 rounded-pill bg-danger text-white" id="mining_status_feedback_badge">
-                                                    Pending
+                                <div class="s7-form-section-body">
+                                    <div class="row g-4 mb-4">
+                                        <!-- Product Value -->
+                                        <div class="col-md-4">
+                                            <label class="form-label s7-label mb-2">
+                                                Product / Service Value (₹) <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="s7-input-group">
+                                                <span class="s7-input-addon s7-addon-navy">
+                                                    <i class="bi bi-currency-rupee"></i>
                                                 </span>
+                                                <input type="number" step="0.01" min="0" class="form-control s7-input fw-bold text-navy" 
+                                                       id="mining_product_value" name="product_value" 
+                                                       value="{{ old('product_value', $prefillData['product_value'] ?? '0.00') }}" placeholder="0.00" required>
+                                            </div>
+                                            <div class="s7-field-hint mt-2">Total agreed fee for mining application.</div>
+                                        </div>
+
+                                        <!-- Paid Amount -->
+                                        <div class="col-md-4">
+                                            <label class="form-label s7-label mb-2">
+                                                Paid Amount (₹) <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="s7-input-group">
+                                                <span class="s7-input-addon s7-addon-success">
+                                                    <i class="bi bi-currency-rupee"></i>
+                                                </span>
+                                                <input type="number" step="0.01" min="0" class="form-control s7-input fw-bold text-success" 
+                                                       id="mining_paid_amount" name="paid_amount" 
+                                                       value="{{ old('paid_amount', $prefillData['paid_amount'] ?? '0.00') }}" placeholder="0.00" required>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-1">
+                                                <span class="s7-field-hint">Advance paid by applicant.</span>
+                                                <div class="s7-quick-presets d-flex align-items-center gap-1.5">
+                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_full" title="Set paid equal to value">100% Full</button>
+                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_half" title="Set paid to 50%">50% Advance</button>
+                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_zero" title="Set paid to 0">Clear (₹0)</button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="form-text mining-hint">Automated financial ledger status.</div>
+
+                                        <!-- Pending Balance -->
+                                        <div class="col-md-4">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <label class="form-label s7-label mb-0">Pending Balance (₹)</label>
+                                                <span class="badge s7-auto-tag">Auto-Calculated</span>
+                                            </div>
+                                            <div class="s7-input-group s7-group-readonly">
+                                                <span class="s7-input-addon s7-addon-danger">
+                                                    <i class="bi bi-currency-rupee"></i>
+                                                </span>
+                                                <input type="number" step="0.01" class="form-control s7-input s7-input-readonly fw-bold text-danger" 
+                                                       id="mining_pending_amount" name="pending_amount" 
+                                                       value="{{ old('pending_amount', $prefillData['pending_amount'] ?? '0.00') }}" readonly placeholder="0.00">
+                                            </div>
+                                            <div class="s7-field-hint mt-2">Auto-calculated: (Value &minus; Paid).</div>
+                                        </div>
                                     </div>
 
-                                    <div class="col-12">
-                                        <label class="form-label mining-label">Payment Notes / Transaction Reference</label>
-                                        <input type="text" class="form-control mining-input" id="mining_payment_notes" name="payment_notes" 
-                                               placeholder="e.g. Advance paid via NEFT Ref: UTR291840, Cheque #10294" 
-                                               value="{{ old('payment_notes', '') }}">
-                                        <div class="form-text mining-hint">Optional instrument number, bank name, or receipt remarks.</div>
+                                    <div class="row g-4 align-items-center">
+                                        <!-- Settlement Status -->
+                                        <div class="col-md-6">
+                                            <label class="form-label s7-label mb-2">
+                                                Settlement Status <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="s7-select-wrap">
+                                                <select class="form-select s7-select fw-semibold" id="mining_payment_status" name="payment_status" required>
+                                                    <option value="pending" {{ old('payment_status', $prefillData['payment_status'] ?? 'pending') == 'pending' ? 'selected' : '' }}>🔴 Pending (Full Balance Due)</option>
+                                                    <option value="partial" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'partial' ? 'selected' : '' }}>🟡 Partial (Part Payment Received)</option>
+                                                    <option value="paid" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>🟢 Paid (Fully Cleared)</option>
+                                                </select>
+                                            </div>
+                                            <div class="s7-field-hint mt-2">Adapts dynamically based on amounts, or select manually.</div>
+                                        </div>
+
+                                        <!-- Live Settlement Assessment Feedback Box -->
+                                        <div class="col-md-6">
+                                            <div class="s7-assessment-wrapper">
+                                                <div class="s7-feedback-box d-flex align-items-center justify-content-between" id="mining_status_feedback_box">
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="s7-feedback-icon" id="mining_status_feedback_icon">
+                                                            <i class="bi bi-clock-history"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="s7-feedback-sub">Settlement Assessment</div>
+                                                            <div class="s7-feedback-title fw-bold" id="mining_status_feedback_text">Pending Payment</div>
+                                                        </div>
+                                                    </div>
+                                                    <span class="badge s7-feedback-badge px-3 py-2 rounded-pill bg-danger text-white" id="mining_status_feedback_badge">
+                                                        Pending
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Payment Notes / Transaction Reference -->
+                                        <div class="col-12 mt-3">
+                                            <label class="form-label s7-label mb-2">Payment Notes / Transaction Reference</label>
+                                            <input type="text" class="form-control s7-notes-input" id="mining_payment_notes" name="payment_notes" 
+                                                   placeholder="e.g. Advance paid via NEFT Ref: UTR291840, Cheque #10294" 
+                                                   value="{{ old('payment_notes', '') }}">
+                                            <div class="s7-field-hint mt-2">Optional instrument number, bank name, or receipt remarks.</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- PRO TIP CALLOUT BOX (LEASE STEP 7 PARITY) -->
-                            <div class="s7-tip-box d-flex align-items-center gap-3 mt-3 mb-2">
+                            <div class="s7-tip-box d-flex align-items-center gap-3 mb-2">
                                 <div class="s7-tip-icon flex-shrink-0">
                                     <i class="bi bi-lightbulb-fill"></i>
                                 </div>
@@ -1511,74 +1546,101 @@
                         {{-- STEP 9: APPLICATION SUMMARY & SUBMISSION                   --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_8">
-                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
-                                <div>
-                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
-                                        <i class="bi bi-clipboard2-check-fill me-1"></i> STEP 9 OF 9 &bull; DOSSIER SCRUTINY &amp; FINAL REVIEW
+                            <div class="s1-header-block mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                            <i class="bi bi-clipboard2-check-fill me-1"></i> STEP 9 OF 9 &bull; DOSSIER SCRUTINY &amp; FINAL REVIEW
+                                        </div>
+                                        <h4 class="s1-title mb-1">
+                                            <i class="bi bi-clipboard2-check-fill text-primary me-2"></i>Application Scrutiny &amp; Final Review
+                                        </h4>
+                                        <p class="s1-subtitle mb-0">Verify all applicant metadata, legal work scope, assigned team, uploaded documents, and billing ledger before final launch.</p>
                                     </div>
-                                    <h4 class="fw-bold text-navy mt-1 mb-0">Application Scrutiny &amp; Final Review</h4>
-                                    <p class="text-muted small mb-0 mt-1">Verify all applicant metadata, legal work scope, assigned team, uploaded documents, and billing ledger before final launch.</p>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge s1-time-tag"><i class="bi bi-clock-history me-1"></i> Est. ~2-3 mins</span>
+                                        <span class="badge s8-scrutiny-pill">
+                                            <i class="bi bi-shield-check me-1.5"></i>Pre-Submission Scrutiny
+                                        </span>
+                                    </div>
                                 </div>
-                                <span class="badge mining-badge-success-pill">
-                                    <i class="bi bi-shield-lock-fill me-1"></i>Pre-Submission Audit
-                                </span>
+                            </div>
+
+                            <!-- EXECUTIVE AUDIT & READINESS BANNER (LEASE STEP 8 PARITY) -->
+                            <div class="s8-banner-card mb-4">
+                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="s8-banner-icon-badge">
+                                            <i class="bi bi-patch-check-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="s8-banner-title fw-bold">Statutory Dossier Audit &amp; Compliance Verification</div>
+                                            <div class="s8-banner-desc text-muted small">Complete multi-step mining application dossier assembled. Inspect each section below for legal accuracy before generating the official application number.</div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge s8-banner-status-pill">
+                                            <i class="bi bi-shield-lock-fill me-1.5"></i>Ready for Final Submission
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- 4-BENTO EXECUTIVE METRIC OVERVIEW (EXACT LEASE STEP 8 PARITY) -->
                             <div class="row g-3 mb-4">
                                 <!-- Bento 1: Applicant & Identity -->
                                 <div class="col-xl-3 col-md-6">
-                                    <div class="mining-kpi-card kpi-val-card">
+                                    <div class="s8-kpi-card s8-kpi-applicant">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label">Applicant Entity</span>
-                                            <div class="mining-kpi-icon icon-navy"><i class="bi bi-person-badge-fill"></i></div>
+                                            <span class="s8-kpi-label">Applicant Entity</span>
+                                            <div class="s8-kpi-icon-badge s8-kpi-icon-blue"><i class="bi bi-person-badge-fill"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-truncate" id="prev_client">-</div>
-                                        <div class="mining-kpi-sub" id="prev_mimas_box">
-                                            <span class="badge bg-light text-primary border font-monospace">MIMAS: <span id="prev_mimas_val">-</span></span>
+                                        <div class="s8-kpi-val text-truncate" id="prev_client">-</div>
+                                        <div class="s8-kpi-sub" id="prev_mimas_box">
+                                            <span class="badge s8-chip-blue font-monospace">MIMAS: <span id="prev_mimas_val">-</span></span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Bento 2: Quarry Location & Mineral -->
                                 <div class="col-xl-3 col-md-6">
-                                    <div class="mining-kpi-card kpi-paid-card">
+                                    <div class="s8-kpi-card s8-kpi-location">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label text-success">Jurisdiction &amp; Scope</span>
-                                            <div class="mining-kpi-icon icon-emerald"><i class="bi bi-geo-alt-fill"></i></div>
+                                            <span class="s8-kpi-label">Jurisdiction &amp; Scope</span>
+                                            <div class="s8-kpi-icon-badge s8-kpi-icon-emerald"><i class="bi bi-geo-alt-fill"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-truncate" id="prev_district">-</div>
-                                        <div class="mining-kpi-sub">
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle" id="prev_extent">-</span>
+                                        <div class="s8-kpi-val text-truncate" id="prev_district">-</div>
+                                        <div class="s8-kpi-sub">
+                                            <span class="badge s8-chip-emerald" id="prev_extent">-</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Bento 3: Statutory Uploads -->
                                 <div class="col-xl-3 col-md-6">
-                                    <div class="mining-kpi-card kpi-amber-card">
+                                    <div class="s8-kpi-card s8-kpi-docs">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label text-warning">Statutory Uploads</span>
-                                            <div class="mining-kpi-icon icon-amber"><i class="bi bi-folder-check"></i></div>
+                                            <span class="s8-kpi-label">Statutory Uploads</span>
+                                            <div class="s8-kpi-icon-badge s8-kpi-icon-amber"><i class="bi bi-folder-check"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val" id="prev_uploaded_docs">0 Files Attached</div>
-                                        <div class="mining-kpi-sub text-muted small" id="prev_docs_meta">
-                                            Ready for dossier initialization
+                                        <div class="s8-kpi-val" id="prev_uploaded_docs">0 Files Attached</div>
+                                        <div class="s8-kpi-sub">
+                                            <span class="badge s8-chip-amber text-truncate d-inline-block" style="max-width:100%;" id="prev_docs_meta">Ready for dossier initialization</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Bento 4: Settlement & Ledger -->
                                 <div class="col-xl-3 col-md-6">
-                                    <div class="mining-kpi-card kpi-purple-card">
+                                    <div class="s8-kpi-card s8-kpi-finance">
                                         <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="mining-kpi-label text-primary">Billing Ledger</span>
-                                            <div class="mining-kpi-icon icon-purple"><i class="bi bi-cash-stack"></i></div>
+                                            <span class="s8-kpi-label">Billing Ledger</span>
+                                            <div class="s8-kpi-icon-badge s8-kpi-icon-purple"><i class="bi bi-cash-stack"></i></div>
                                         </div>
-                                        <div class="mining-kpi-val text-success" id="prev_pay_paid">₹ 0.00</div>
-                                        <div class="mining-kpi-sub d-flex justify-content-between align-items-center">
+                                        <div class="s8-kpi-val text-success" id="prev_pay_paid">₹ 0.00</div>
+                                        <div class="s8-kpi-sub d-flex justify-content-between align-items-center">
                                             <span class="text-muted small">Due: <b id="prev_pay_pending">₹ 0.00</b></span>
-                                            <span id="prev_pay_status"><span class="badge bg-secondary">Pending</span></span>
+                                            <span id="prev_pay_status"><span class="badge bg-secondary rounded-pill px-2 py-0.5" style="font-size:10.5px;">Pending</span></span>
                                         </div>
                                     </div>
                                 </div>
@@ -1586,93 +1648,95 @@
 
                             <!-- STRUCTURED SECTION PANELS (MATCHING LEASE STEP 8 WITH QUICK-JUMP EDIT BUTTONS) -->
                             <!-- 1. APPLICANT & FIRM IDENTITY -->
-                            <div class="mining-section-panel mb-4">
-                                <div class="mining-panel-header d-flex justify-content-between align-items-center">
+                            <div class="s8-section-panel mb-4">
+                                <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="mining-panel-icon icon-navy"><i class="bi bi-person-badge-fill"></i></div>
-                                        <h6 class="mining-panel-title mb-0">1. Applicant &amp; Entity Identity (Step 1)</h6>
+                                        <div class="s8-panel-header-icon s8-icon-blue"><i class="bi bi-person-badge-fill"></i></div>
+                                        <h6 class="s8-panel-title mb-0">1. Applicant &amp; Entity Identity (Step 1)</h6>
+                                        <span class="badge s8-panel-step-badge">Step 1</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="0">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 1
                                     </button>
                                 </div>
-                                <div class="mining-panel-body p-3">
+                                <div class="s8-panel-body">
                                     <div class="row g-3">
                                         <div class="col-lg-4 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Client / Representative</span>
-                                                <span class="tile-val fw-bold text-navy" id="disp_rev_client_name">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Client / Representative</span>
+                                                <span class="s8-tile-value text-navy" id="disp_rev_client_name">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-4 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Firm / Enterprise Name</span>
-                                                <span class="tile-val fw-bold text-navy" id="disp_rev_company_name">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Firm / Enterprise Name</span>
+                                                <span class="s8-tile-value text-navy" id="disp_rev_company_name">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-4 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Customer Unique ID (MIMAS)</span>
-                                                <span class="tile-val font-monospace text-primary fw-bold" id="disp_rev_mimas">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Customer Unique ID (MIMAS)</span>
+                                                <span class="s8-tile-value font-monospace text-primary" id="disp_rev_mimas">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-4 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Contact Phone &amp; Email</span>
-                                                <span class="tile-val" id="prev_contact">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Contact Phone &amp; Email</span>
+                                                <span class="s8-tile-value" id="prev_contact">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-8 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Registered Office Address</span>
-                                                <span class="tile-val text-muted small" id="disp_rev_address">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Registered Office Address</span>
+                                                <span class="s8-tile-value text-muted small" id="disp_rev_address">-</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 2. WORK SCOPE & JURISDICTION -->
-                            <div class="mining-section-panel mb-4">
-                                <div class="mining-panel-header d-flex justify-content-between align-items-center">
+                            <!-- 2. WORK NATURE & LOCATION SCOPE -->
+                            <div class="s8-section-panel mb-4">
+                                <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="mining-panel-icon icon-emerald"><i class="bi bi-compass"></i></div>
-                                        <h6 class="mining-panel-title mb-0">2. Work Nature &amp; Location Scope (Steps 2 &ndash; 4)</h6>
+                                        <div class="s8-panel-header-icon s8-icon-emerald"><i class="bi bi-compass"></i></div>
+                                        <h6 class="s8-panel-title mb-0">2. Work Nature &amp; Location Scope (Steps 2 &ndash; 4)</h6>
+                                        <span class="badge s8-panel-step-badge">Steps 2 &ndash; 4</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="3">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 4
                                     </button>
                                 </div>
-                                <div class="mining-panel-body p-3">
+                                <div class="s8-panel-body">
                                     <div class="row g-3">
                                         <div class="col-lg-3 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Nature of Work</span>
-                                                <span class="tile-val"><span class="badge bg-primary text-white" id="prev_nature">-</span></span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Nature of Work</span>
+                                                <span class="s8-tile-value"><span class="badge bg-primary text-white" id="prev_nature">-</span></span>
                                             </div>
                                         </div>
                                         <div class="col-lg-3 col-md-6" id="prev_mineral_box">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">2.1 Mineral(s)</span>
-                                                <span class="tile-val fw-bold text-navy" id="prev_mineral">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">2.1 Mineral(s)</span>
+                                                <span class="s8-tile-value text-navy" id="prev_mineral">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-3 col-md-6" id="prev_plan_box">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">2.1.1 Plan Type</span>
-                                                <span class="tile-val fw-bold text-navy" id="prev_plan">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">2.1.1 Plan Type</span>
+                                                <span class="s8-tile-value text-navy" id="prev_plan">-</span>
                                             </div>
                                         </div>
                                         <div class="col-lg-3 col-md-6">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Folder Structure</span>
-                                                <span class="tile-val"><span class="badge bg-success text-white" id="prev_folder_badge">6 Folders Active</span></span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Folder Structure</span>
+                                                <span class="s8-tile-value"><span class="badge s8-chip-emerald" id="prev_folder_badge">Folders Active</span></span>
                                             </div>
                                         </div>
                                         <div class="col-12">
-                                            <div class="mining-data-tile">
-                                                <span class="tile-label">Quarry Site Location &amp; Survey Number(s)</span>
-                                                <span class="tile-val fw-semibold text-navy" id="prev_location">-</span>
+                                            <div class="s8-data-tile">
+                                                <span class="s8-tile-label">Quarry Site Location &amp; Survey Number(s)</span>
+                                                <span class="s8-tile-value fw-semibold text-navy" id="prev_location">-</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1682,54 +1746,59 @@
                             <!-- 3. TEAM ALLOCATION & FINANCIAL SUMMARY -->
                             <div class="row g-3 mb-4">
                                 <div class="col-lg-7">
-                                    <div class="mining-section-panel h-100">
-                                        <div class="mining-panel-header d-flex justify-content-between align-items-center">
+                                    <div class="s8-section-panel h-100">
+                                        <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="mining-panel-icon icon-navy"><i class="bi bi-people-fill"></i></div>
-                                                <h6 class="mining-panel-title mb-0">3. Assigned Handling Team (Step 7)</h6>
+                                                <div class="s8-panel-header-icon s8-icon-teal"><i class="bi bi-people-fill"></i></div>
+                                                <h6 class="s8-panel-title mb-0">3. Assigned Handling Team (Step 7)</h6>
+                                                <span class="badge s8-panel-step-badge">Step 7</span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
-                                                <span class="badge bg-light text-dark border" id="prev_handler_count_badge">0 Members</span>
+                                                <span class="badge s8-chip-blue" id="prev_handler_count_badge">0 Members</span>
                                                 <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="6">
                                                     <i class="bi bi-pencil-square me-1"></i>Edit Step 7
                                                 </button>
                                             </div>
                                         </div>
-                                        <div class="mining-panel-body p-3" id="prev_handlers_box">
+                                        <div class="s8-panel-body" id="prev_handlers_box">
                                             <span class="text-muted small fst-italic">No handlers assigned</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div class="col-lg-5">
-                                    <div class="mining-section-panel h-100">
-                                        <div class="mining-panel-header d-flex justify-content-between align-items-center">
+                                    <div class="s8-section-panel h-100">
+                                        <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center gap-2">
-                                                <div class="mining-panel-icon icon-purple"><i class="bi bi-cash-stack"></i></div>
-                                                <h6 class="mining-panel-title mb-0">4. Financial Settlement (Step 8)</h6>
+                                                <div class="s8-panel-header-icon s8-icon-green"><i class="bi bi-cash-stack"></i></div>
+                                                <h6 class="s8-panel-title mb-0">4. Financial Settlement (Step 8)</h6>
+                                                <span class="badge s8-panel-step-badge">Step 8</span>
                                             </div>
                                             <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="7">
                                                 <i class="bi bi-pencil-square me-1"></i>Edit Step 8
                                             </button>
                                         </div>
-                                        <div class="mining-panel-body p-3">
+                                        <div class="s8-panel-body">
                                             <div class="row g-2 text-center">
                                                 <div class="col-4">
-                                                    <div class="p-2 border rounded bg-light">
-                                                        <span class="text-muted d-block small" style="font-size:0.7rem;">Product Value</span>
-                                                        <b class="text-navy" style="font-size:0.85rem;" id="prev_pay_value">₹ 0.00</b>
+                                                    <div class="s8-ledger-card s8-ledger-contract">
+                                                        <span class="s8-ledger-sub">Product Value</span>
+                                                        <div class="s8-ledger-amount text-navy" id="prev_pay_value">₹ 0.00</div>
+                                                        <span class="s8-ledger-hint text-muted">Total Fee</span>
                                                     </div>
                                                 </div>
                                                 <div class="col-4">
-                                                    <div class="p-2 border rounded bg-light">
-                                                        <span class="text-muted d-block small" style="font-size:0.7rem;">Paid Amount</span>
-                                                        <b class="text-success" style="font-size:0.85rem;" id="prev_pay_paid_card">₹ 0.00</b>
+                                                    <div class="s8-ledger-card s8-ledger-paid">
+                                                        <span class="s8-ledger-sub text-success">Paid Amount</span>
+                                                        <div class="s8-ledger-amount text-success" id="prev_pay_paid_card">₹ 0.00</div>
+                                                        <span class="s8-ledger-hint text-muted">Received</span>
                                                     </div>
                                                 </div>
                                                 <div class="col-4">
-                                                    <div class="p-2 border rounded bg-light">
-                                                        <span class="text-muted d-block small" style="font-size:0.7rem;">Pending Due</span>
-                                                        <b class="text-danger" style="font-size:0.85rem;" id="prev_pay_pending_card">₹ 0.00</b>
+                                                    <div class="s8-ledger-card s8-ledger-pending">
+                                                        <span class="s8-ledger-sub text-danger">Pending Due</span>
+                                                        <div class="s8-ledger-amount text-danger" id="prev_pay_pending_card">₹ 0.00</div>
+                                                        <span class="s8-ledger-hint text-muted">Balance</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1739,18 +1808,18 @@
                             </div>
 
                             <!-- 5. STATUTORY DOCUMENT FOLDERS & DETAILED FILE REGISTRY (LEASE STEP 8 PARITY) -->
-                            <div class="mining-section-panel mb-4">
-                                <div class="mining-panel-header d-flex justify-content-between align-items-center">
+                            <div class="s8-section-panel mb-4">
+                                <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
-                                        <div class="mining-panel-icon icon-amber"><i class="bi bi-folder-check"></i></div>
-                                        <h6 class="mining-panel-title mb-0">5. Statutory Document Folders (Steps 5 &amp; 6)</h6>
-                                        <span class="badge bg-light text-muted border">Step 6</span>
+                                        <div class="s8-panel-header-icon s8-icon-amber"><i class="bi bi-folder-check"></i></div>
+                                        <h6 class="s8-panel-title mb-0">5. Statutory Document Folders (Steps 5 &amp; 6)</h6>
+                                        <span class="badge s8-panel-step-badge">Steps 5 &amp; 6</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="5">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 6
                                     </button>
                                 </div>
-                                <div class="mining-panel-body p-3">
+                                <div class="s8-panel-body">
                                     <div class="row g-2 mb-3" id="prev_folder_cards_grid">
                                         <!-- Dynamically generated folder count pills -->
                                     </div>
@@ -3777,6 +3846,57 @@ body[data-theme-version="dark"] .mining-modal-header {
     padding: 3px 8px;
     border-radius: 5px;
 }
+.s5-modal-header {
+    background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%) !important;
+    border-bottom: none !important;
+}
+.s5-modal-icon-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #ffffff;
+    flex-shrink: 0;
+}
+.s5-modal-label {
+    font-size: 0.80rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.35rem;
+}
+.s5-field-hint {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.35;
+}
+.s5-modal-footer {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+#modalAddCustomMiningDoc .form-control,
+#modalAddCustomMiningDoc .form-select {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    color: #0f172a !important;
+    font-size: 0.86rem !important;
+    box-shadow: none !important;
+}
+#modalAddCustomMiningDoc .form-control:focus,
+#modalAddCustomMiningDoc .form-select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+#modalAddCustomMiningDoc #mining_custom_folder_name {
+    background: #f1f5f9 !important;
+    color: #0F1E4D !important;
+    font-weight: 700 !important;
+}
 
 /* Step 7 Handling Team Banner & Badges */
 #gtms-mining-page .s6-banner-card {
@@ -3832,19 +3952,21 @@ body[data-theme-version="dark"] .mining-modal-header {
     color: #f59e0b;
 }
 
-/* Step 8 Billing Ledger Styles */
+/* Step 8 Billing Ledger Styles (Lease Step 7 Visual Parity) */
 #gtms-mining-page .s7-ledger-pill {
-    background: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
-    font-weight: 600;
-    font-size: 0.75rem;
-    padding: 5px 10px;
-    border-radius: 20px;
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
 }
 #gtms-mining-page .s7-banner-card {
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    border: 1px solid #e2e8f0;
+    border: 1.5px solid #e2e8f0;
     border-radius: 12px;
     padding: 16px 20px;
 }
@@ -3852,79 +3974,659 @@ body[data-theme-version="dark"] .mining-modal-header {
     width: 44px;
     height: 44px;
     border-radius: 10px;
-    background: #0F1E4D;
-    color: #ffffff;
+    background: #e0e7ff;
+    color: #3b82f6;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 20px;
+    flex-shrink: 0;
 }
 #gtms-mining-page .s7-banner-title {
+    font-size: 14.5px;
+    font-weight: 700;
     color: #0F1E4D;
-    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+#gtms-mining-page .s7-banner-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.35;
 }
 #gtms-mining-page .s7-banner-status-pill {
-    font-weight: 600;
-    font-size: 0.8rem;
-    padding: 6px 14px;
-    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
 }
-#gtms-mining-page .kpi-val-card {
+
+/* 3-Bento KPI Metric Cards */
+#gtms-mining-page .s7-kpi-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#gtms-mining-page .s7-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+}
+#gtms-mining-page .s7-kpi-contract {
+    background: #f8fafc;
     border-left: 4px solid #0F1E4D !important;
 }
-#gtms-mining-page .kpi-paid-card {
+#gtms-mining-page .s7-kpi-paid {
+    background: #f0fdf4;
     border-left: 4px solid #10b981 !important;
 }
-#gtms-mining-page .kpi-pending-card {
-    border-left: 4px solid #ef4444 !important;
+#gtms-mining-page .s7-kpi-pending {
+    background: #fff7ed;
+    border-left: 4px solid #f97316 !important;
+}
+#gtms-mining-page .s7-kpi-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+}
+#gtms-mining-page .s7-kpi-icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+#gtms-mining-page .s7-kpi-icon-contract {
+    background: #e2e8f0;
+    color: #0F1E4D;
+}
+#gtms-mining-page .s7-kpi-icon-paid {
+    background: #dcfce7;
+    color: #10b981;
+}
+#gtms-mining-page .s7-kpi-icon-pending {
+    background: #ffedd5;
+    color: #f97316;
+}
+#gtms-mining-page .s7-kpi-value {
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+}
+#gtms-mining-page .s7-kpi-subtext {
+    font-size: 11.5px;
+    color: #64748b;
+}
+
+/* Integrated Form Section */
+#gtms-mining-page .s7-form-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+}
+#gtms-mining-page .s7-form-section-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 14px 20px;
+}
+#gtms-mining-page .s7-form-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F1E4D;
+}
+#gtms-mining-page .s7-badge-status-tag {
+    background: #e2e8f0;
+    color: #475569;
+    font-weight: 600;
+    font-size: 11px;
+    border-radius: 6px;
+    padding: 4px 10px;
+}
+#gtms-mining-page .s7-form-section-body {
+    padding: 24px;
+}
+#gtms-mining-page .s7-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0F1E4D;
+}
+#gtms-mining-page .s7-auto-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    background: #e2e8f0;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+#gtms-mining-page .s7-input-group {
+    display: flex;
+    align-items: stretch;
+    height: 44px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    overflow: hidden;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+#gtms-mining-page .s7-input-group:focus-within {
+    border-color: #0F1E4D;
+    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.12);
+}
+#gtms-mining-page .s7-group-readonly {
+    background: #fff1f2;
+    border-color: #fecaca;
+}
+#gtms-mining-page .s7-group-readonly:focus-within {
+    border-color: #fca5a5;
+    box-shadow: none;
+}
+#gtms-mining-page .s7-input-addon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    background: #f8fafc;
+    border-right: 1.5px solid #cbd5e1;
+    font-weight: 700;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+#gtms-mining-page .s7-addon-navy {
+    color: #0F1E4D;
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+#gtms-mining-page .s7-addon-success {
+    color: #10b981;
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+#gtms-mining-page .s7-addon-danger {
+    color: #dc2626;
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+#gtms-mining-page .s7-input {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 8px 14px;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0f172a;
+    width: 100%;
+    height: 100%;
+}
+#gtms-mining-page .s7-input:focus {
+    outline: none !important;
+}
+#gtms-mining-page .s7-input-readonly {
+    color: #dc2626 !important;
+    cursor: default;
+}
+#gtms-mining-page .s7-field-hint {
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.35;
+}
+#gtms-mining-page .s7-preset-btn {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    color: #334155;
+    transition: all 0.15s ease;
+}
+#gtms-mining-page .s7-preset-btn:hover {
+    background: #0F1E4D;
+    border-color: #0F1E4D;
+    color: #ffffff;
+}
+#gtms-mining-page .s7-select {
+    height: 44px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-size: 13.5px;
+    color: #0f172a;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+#gtms-mining-page .s7-select:focus {
+    border-color: #0F1E4D;
+    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.12);
+}
+#gtms-mining-page .s7-notes-input {
+    height: 44px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 9px;
+    padding: 8px 14px;
+    font-size: 13.5px;
+    color: #0f172a;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+#gtms-mining-page .s7-notes-input:focus {
+    border-color: #0F1E4D;
+    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.12);
 }
 #gtms-mining-page .s7-assessment-wrapper {
+    margin-top: 0;
+}
+#gtms-mining-page .s7-feedback-box {
+    height: 60px;
+    border: 1px solid #e2e8f0;
     background: #f8fafc;
+    border-radius: 10px;
+    padding: 10px 18px;
+    transition: all 0.2s ease;
+}
+#gtms-mining-page .s7-feedback-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+#gtms-mining-page .s7-feedback-sub {
+    color: #64748b;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+#gtms-mining-page .s7-feedback-title {
+    font-size: 13.5px;
+    color: #0F1E4D;
+    line-height: 1.25;
+}
+#gtms-mining-page .s7-feedback-badge {
+    font-size: 12px;
+    font-weight: 700;
+}
+#gtms-mining-page .s7-tip-box {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-left: 4px solid #f59e0b;
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+#gtms-mining-page .s7-tip-icon {
+    font-size: 20px;
+    color: #d97706;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#gtms-mining-page .s7-tip-content {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: #78350f;
+}
+
+/* Step 9 Dossier Scrutiny & Final Review Styles (Lease Step 8 Visual Parity) */
+#gtms-mining-page .s8-scrutiny-pill {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+}
+#gtms-mining-page .s8-banner-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+#gtms-mining-page .s8-banner-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: #ecfdf5;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+#gtms-mining-page .s8-banner-title {
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #0F1E4D;
+    margin-bottom: 2px;
+}
+#gtms-mining-page .s8-banner-desc {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.35;
+}
+#gtms-mining-page .s8-banner-status-pill {
+    background: #0F1E4D;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 9999px;
+    letter-spacing: 0.02em;
+}
+
+/* 4-Bento KPI Metric Cards */
+#gtms-mining-page .s8-kpi-card {
+    border-radius: 12px;
+    padding: 16px 18px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#gtms-mining-page .s8-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+#gtms-mining-page .s8-kpi-applicant {
+    border-left: 4px solid #0284c7 !important;
+}
+#gtms-mining-page .s8-kpi-location {
+    border-left: 4px solid #10b981 !important;
+}
+#gtms-mining-page .s8-kpi-docs {
+    border-left: 4px solid #f59e0b !important;
+}
+#gtms-mining-page .s8-kpi-finance {
+    border-left: 4px solid #9333ea !important;
+}
+#gtms-mining-page .s8-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+#gtms-mining-page .s8-kpi-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0F1E4D;
+    margin-bottom: 8px;
+    line-height: 1.25;
+}
+#gtms-mining-page .s8-kpi-sub {
+    font-size: 12px;
+}
+#gtms-mining-page .s8-kpi-icon-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+#gtms-mining-page .s8-kpi-icon-blue { background: #e0f2fe; color: #0284c7; }
+#gtms-mining-page .s8-kpi-icon-emerald { background: #ecfdf5; color: #10b981; }
+#gtms-mining-page .s8-kpi-icon-amber { background: #fffbeb; color: #d97706; }
+#gtms-mining-page .s8-kpi-icon-purple { background: #f3e8ff; color: #9333ea; }
+
+/* Chips & Tags */
+#gtms-mining-page .s8-chip-blue {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-chip-emerald {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-chip-amber {
+    background: #fffbeb;
+    color: #b45309;
+    border: 1px solid #fde68a;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-chip-purple {
+    background: #f3e8ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+/* Section Review Panels */
+#gtms-mining-page .s8-section-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.2s ease;
+}
+#gtms-mining-page .s8-section-panel:hover {
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+#gtms-mining-page .s8-panel-header {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 13px 20px;
+}
+#gtms-mining-page .s8-panel-header-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+#gtms-mining-page .s8-icon-blue { background: #e0f2fe; color: #0284c7; }
+#gtms-mining-page .s8-icon-emerald { background: #dcfce7; color: #16a34a; }
+#gtms-mining-page .s8-icon-teal { background: #ccfbf1; color: #0d9488; }
+#gtms-mining-page .s8-icon-green { background: #dcfce7; color: #16a34a; }
+#gtms-mining-page .s8-icon-amber { background: #fef3c7; color: #d97706; }
+#gtms-mining-page .s8-panel-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F1E4D;
+}
+#gtms-mining-page .s8-panel-step-badge {
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+#gtms-mining-page .s8-panel-body {
+    padding: 20px 22px;
+}
+#gtms-mining-page .s8-btn-edit {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 4px 12px;
+    transition: all 0.2s ease;
+}
+#gtms-mining-page .s8-btn-edit:hover {
+    color: #0F1E4D;
+    border-color: #0F1E4D;
+    background: #f1f5f9;
+}
+
+/* Data Tiles */
+#gtms-mining-page .s8-data-tile {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    min-height: 70px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: border-color 0.2s ease;
+}
+#gtms-mining-page .s8-data-tile:hover {
+    border-color: #cbd5e1;
+}
+#gtms-mining-page .s8-tile-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+#gtms-mining-page .s8-tile-value {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Table Styling */
+#gtms-mining-page .s8-table {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    width: 100%;
+}
+#gtms-mining-page .s8-table thead {
+    background: #f8fafc;
+}
+#gtms-mining-page .s8-table th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 10px 14px;
+}
+#gtms-mining-page .s8-table td {
+    padding: 12px 14px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e2e8f0;
+    color: #0f172a;
+}
+#gtms-mining-page .s8-avatar-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e0f2fe;
+    color: #0284c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+#gtms-mining-page .s8-role-badge {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-empty-notice {
+    background: #f8fafc;
+    border: 1px dashed #e2e8f0;
+    border-radius: 8px;
+    padding: 16px 20px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* Payment Ledger Cards (Step 8 Review) */
+#gtms-mining-page .s8-ledger-card {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+#gtms-mining-page .s8-ledger-sub {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+#gtms-mining-page .s8-ledger-amount {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+#gtms-mining-page .s8-ledger-hint {
+    font-size: 10.5px;
+}
+
+/* Folder Cards & Detailed Registry */
+#gtms-mining-page .s8-folder-card {
+    background: #ffffff;
     border: 1.5px solid #e2e8f0;
     border-radius: 10px;
     padding: 10px 14px;
+    transition: all 0.15s ease;
 }
-#gtms-mining-page .s7-feedback-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+#gtms-mining-page .s8-folder-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
-#gtms-mining-page .s7-feedback-icon {
+#gtms-mining-page .s8-folder-icon-wrap {
     width: 34px;
     height: 34px;
     border-radius: 8px;
-    background: #e2e8f0;
-    color: #475569;
+    background: #eff6ff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 16px;
+    flex-shrink: 0;
 }
-#gtms-mining-page .s7-feedback-sub {
-    font-size: 0.70rem;
-    color: #64748b;
-    text-transform: uppercase;
-    font-weight: 600;
-}
-#gtms-mining-page .s7-feedback-title {
-    font-size: 0.88rem;
+#gtms-mining-page .s8-folder-title {
+    font-size: 12.5px;
+    font-weight: 700;
     color: #0F1E4D;
 }
-#gtms-mining-page .s7-tip-box {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-left: 4px solid #3b82f6;
-    border-radius: 8px;
-    padding: 12px 16px;
-    font-size: 0.82rem;
-    color: #1e40af;
+#gtms-mining-page .s8-folder-meta {
+    font-size: 11px;
+    color: #64748b;
 }
-#gtms-mining-page .s7-tip-icon {
-    font-size: 1.1rem;
-    color: #3b82f6;
-}
-
-/* Step 9 Detailed File Registry & Declaration */
 #gtms-mining-page .s8-registry-wrapper {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
@@ -3940,43 +4642,96 @@ body[data-theme-version="dark"] .mining-modal-header {
     font-size: 0.78rem;
     padding: 4px 10px;
     border-radius: 6px;
+    transition: all 0.15s ease;
 }
 #gtms-mining-page .s8-btn-registry:hover {
     background: #0F1E4D;
     color: #ffffff;
     border-color: #0F1E4D;
 }
+#gtms-mining-page .s8-doc-attached {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-doc-pending {
+    background: #f8fafc;
+    color: #94a3b8;
+    border: 1px solid #e2e8f0;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+#gtms-mining-page .s8-btn-action-open {
+    background: #ffffff;
+    color: #0F1E4D;
+    border: 1px solid #cbd5e1;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    line-height: 1.2;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.15s ease;
+}
+#gtms-mining-page .s8-btn-action-open:hover {
+    background: #0F1E4D;
+    color: #ffffff;
+    border-color: #0F1E4D;
+}
+
+/* Pre-Submission Declaration Card */
 #gtms-mining-page .s8-declaration-card {
     background: #f0fdf4;
     border: 1.5px solid #86efac;
     border-radius: 12px;
-    padding: 16px 20px;
+    padding: 18px 22px;
 }
 #gtms-mining-page .s8-declaration-icon-badge {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: 10px;
-    background: #10b981;
-    color: #ffffff;
+    background: #dcfce7;
+    color: #16a34a;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
+    font-size: 20px;
     flex-shrink: 0;
 }
 #gtms-mining-page .s8-declaration-title {
-    color: #065f46;
-    font-size: 0.95rem;
+    font-size: 14px;
+    font-weight: 700;
+    color: #14532d;
 }
 #gtms-mining-page .s8-declaration-text {
+    font-size: 12.5px;
     color: #166534;
-    font-size: 0.82rem;
     line-height: 1.5;
 }
+#gtms-mining-page .s8-check-confirm .form-check-input {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #86efac;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+#gtms-mining-page .s8-check-confirm .form-check-input:checked {
+    background-color: #16a34a;
+    border-color: #16a34a;
+}
 #gtms-mining-page .s8-check-confirm .form-check-label {
-    color: #0f172a;
-    font-size: 0.85rem;
+    font-size: 13px;
+    color: #14532d;
     cursor: pointer;
+    padding-left: 4px;
 }
 
 /* DARK MODE OVERRIDES FOR NEW HARMONIZED COMPONENTS */
@@ -4234,6 +4989,34 @@ body[data-theme-version="dark"] #gtms-mining-page .s5-rule-pill {
     border-color: #3b82f6 !important;
     color: #93c5fd !important;
 }
+body[data-theme-version="dark"] .s5-modal-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    border-bottom: 1px solid #334155 !important;
+}
+body[data-theme-version="dark"] .s5-modal-content {
+    background-color: #1a1b1d !important;
+    border: 1px solid #2e3440 !important;
+}
+body[data-theme-version="dark"] .s5-modal-label {
+    color: #e2e8f0 !important;
+}
+body[data-theme-version="dark"] .s5-field-hint {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] .s5-modal-footer {
+    background: #18191a !important;
+    border-top-color: #2b2d30 !important;
+}
+body[data-theme-version="dark"] #modalAddCustomMiningDoc .form-control,
+body[data-theme-version="dark"] #modalAddCustomMiningDoc .form-select {
+    background: #161717 !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+body[data-theme-version="dark"] #modalAddCustomMiningDoc #mining_custom_folder_name {
+    background: #1e293b !important;
+    color: #60a5fa !important;
+}
 body[data-theme-version="dark"] #gtms-mining-page .s6-banner-title,
 body[data-theme-version="dark"] #gtms-mining-page .s7-banner-title {
     color: #f1f5f9;
@@ -4395,27 +5178,372 @@ body[data-theme-version="dark"] #gtms-mining-page .s-btn-submit {
     border-color: #2563eb !important;
     color: #ffffff !important;
 }
-body[data-theme-version="dark"] #gtms-mining-page .s8-registry-wrapper {
-    border-color: #334155;
-    background: #1e293b;
+/* -------------------------------------------------------------------------
+   STEP 8 (FINANCIAL SETTLEMENT) DARK MODE PARITY
+   ------------------------------------------------------------------------- */
+body[data-theme-version="dark"] #gtms-mining-page .s7-ledger-pill {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-banner-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-banner-icon-badge {
+    background: rgba(59, 130, 246, 0.15) !important;
+    color: #60a5fa !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-banner-title {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-banner-desc {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-banner-status-pill {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-card {
+    border-color: #334155 !important;
+    background: #0f172a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-contract {
+    background: #0f172a !important;
+    border-left: 4px solid #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-contract .text-navy {
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-icon-contract {
+    background: #1e293b !important;
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-paid {
+    background: #0f172a !important;
+    border-left: 4px solid #10b981 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-icon-paid {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-pending {
+    background: #0f172a !important;
+    border-left: 4px solid #f97316 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-icon-pending {
+    background: rgba(249, 115, 22, 0.15) !important;
+    color: #fb923c !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-label {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-value {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-kpi-subtext {
+    color: #64748b !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-form-section {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-form-section-header {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-form-section-title {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-badge-status-tag {
+    background: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-label {
+    color: #f1f5f9 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-auto-tag {
+    background: #334155 !important;
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-input-group {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-input-group:focus-within {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-group-readonly {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-input-addon {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-addon-navy {
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-addon-success {
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-addon-danger {
+    color: #f87171 !important;
+    background: rgba(239, 68, 68, 0.15) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-input {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-input-readonly {
+    color: #f87171 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-field-hint {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-preset-btn {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-preset-btn:hover {
+    background: #38bdf8 !important;
+    border-color: #38bdf8 !important;
+    color: #0f172a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-select,
+body[data-theme-version="dark"] #gtms-mining-page .s7-notes-input {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-feedback-box {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-feedback-sub {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-tip-box {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+    color: #fde68a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s7-tip-content {
+    color: #fde68a !important;
+}
+
+/* -------------------------------------------------------------------------
+   STEP 9 (DOSSIER SCRUTINY) DARK MODE PARITY
+   ------------------------------------------------------------------------- */
+body[data-theme-version="dark"] #gtms-mining-page .s8-scrutiny-pill {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-banner-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-banner-icon-badge {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #34d399 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-banner-title {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-banner-desc {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-banner-status-pill {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-card {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-val {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-label {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-sub {
+    color: #64748b !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-icon-blue {
+    background: rgba(2, 132, 199, 0.18) !important;
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-icon-emerald {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #34d399 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-icon-amber {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-kpi-icon-purple {
+    background: rgba(147, 51, 234, 0.18) !important;
+    color: #c084fc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-chip-blue {
+    background: rgba(2, 132, 199, 0.18) !important;
+    color: #38bdf8 !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-chip-emerald {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #34d399 !important;
+    border-color: rgba(52, 211, 153, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-chip-amber {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border-color: rgba(251, 191, 36, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-chip-purple {
+    background: rgba(147, 51, 234, 0.18) !important;
+    color: #c084fc !important;
+    border-color: rgba(192, 132, 252, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-section-panel {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-panel-header {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-panel-title {
+    color: #f8fafc !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-panel-step-badge {
+    background: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-btn-edit {
+    background: #1e293b !important;
+    border-color: #475569 !important;
+    color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-btn-edit:hover {
+    background: #334155 !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-data-tile {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-data-tile:hover {
+    border-color: #475569 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-tile-label {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-tile-value {
+    color: #f1f5f9 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-table {
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-table thead {
+    background: #0f172a !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-table th,
+body[data-theme-version="dark"] #gtms-mining-page .s8-table td {
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-role-badge {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-avatar-icon {
+    background: rgba(2, 132, 199, 0.2) !important;
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-empty-notice {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-ledger-card {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-ledger-sub {
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-folder-card {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-folder-card:hover {
+    border-color: #475569 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-folder-icon-wrap {
+    background: #1e293b !important;
+    color: #38bdf8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-folder-title {
+    color: #f1f5f9 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-folder-meta {
+    color: #94a3b8 !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-btn-registry {
-    background: #1e293b;
-    border-color: #334155;
-    color: #cbd5e1;
+    background: #0f172a !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-btn-registry:hover {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-registry-wrapper {
+    background: #0f172a !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-doc-attached {
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+    color: #34d399 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-doc-pending {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #94a3b8 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-btn-action-open {
+    background: #0f172a !important;
+    color: #38bdf8 !important;
+    border-color: #334155 !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-btn-action-open:hover {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+    border-color: #38bdf8 !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-declaration-card {
-    background: rgba(16, 185, 129, 0.08);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}
+body[data-theme-version="dark"] #gtms-mining-page .s8-declaration-icon-badge {
+    background: rgba(16, 185, 129, 0.2) !important;
+    color: #34d399 !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-declaration-title {
-    color: #34d399;
+    color: #34d399 !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-declaration-text {
-    color: #a7f3d0;
+    color: #a7f3d0 !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-check-confirm .form-check-label {
-    color: #f1f5f9;
+    color: #f1f5f9 !important;
 }
 </style>
 
@@ -5510,15 +6638,15 @@ function initMiningWizard() {
                 }
 
                 folderCardsHtml += '<div class="col-md-4 col-sm-6">' +
-                    '<div class="p-2.5 rounded-3 border bg-light d-flex align-items-center justify-content-between">' +
-                        '<div class="d-flex align-items-center gap-2 text-truncate">' +
-                            '<i class="bi bi-folder-fill text-warning fs-5"></i>' +
+                    '<div class="s8-folder-card d-flex align-items-center justify-content-between p-2.5">' +
+                        '<div class="d-flex align-items-center gap-2.5 text-truncate">' +
+                            '<div class="s8-folder-icon-wrap"><i class="bi bi-folder2-open text-primary"></i></div>' +
                             '<div class="text-truncate">' +
-                                '<div class="fw-bold small text-navy text-truncate">' + escapeHtml(fTitle) + '</div>' +
-                                '<div class="text-muted" style="font-size:11px;">' + fUp + ' of ' + fTot + ' attached</div>' +
+                                '<div class="s8-folder-title text-truncate">' + escapeHtml(fTitle) + '</div>' +
+                                '<div class="s8-folder-meta text-muted">' + fUp + ' of ' + fTot + ' attached</div>' +
                             '</div>' +
                         '</div>' +
-                        '<span class="badge ' + badgeClass + ' rounded-pill px-2 py-1" style="font-size:10px;">' + statusText + '</span>' +
+                        '<span class="badge ' + badgeClass + ' rounded-pill px-2 py-1" style="font-size:10.5px;">' + statusText + '</span>' +
                     '</div>' +
                 '</div>';
             });
@@ -5551,23 +6679,23 @@ function initMiningWizard() {
                 registryRowsHtml += '<tr>' +
                     '<td class="text-center text-muted fw-bold">' + (rIdx + 1) + '</td>' +
                     '<td>' +
-                        '<span class="badge bg-light text-navy border py-1 px-2 fw-semibold" style="font-size:11px;">' +
-                            '<i class="bi bi-folder2 text-warning me-1"></i>' + escapeHtml(fTitle) +
+                        '<span class="badge s8-chip-blue py-1 px-2 fw-semibold">' +
+                            '<i class="bi bi-folder2 text-primary me-1"></i>' + escapeHtml(fTitle) +
                         '</span>' +
                     '</td>' +
                     '<td>' +
-                        '<div class="fw-semibold text-dark" style="font-size:0.83rem;">' + escapeHtml(cleanDocName) + '</div>' +
+                        '<div class="fw-semibold text-navy" style="font-size:13px;">' + escapeHtml(cleanDocName) + '</div>' +
                         (isMandatory ? '<span class="badge bg-danger-subtle text-danger border border-danger-subtle mt-0.5" style="font-size:9.5px;">Mandatory</span>' : '<span class="badge bg-light text-muted border mt-0.5" style="font-size:9.5px;">Optional</span>') +
                     '</td>' +
                     '<td>' +
                         (isAttached ?
-                            '<div class="d-flex align-items-center gap-1.5">' +
-                                '<span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size:11px;">' +
+                            '<div class="d-flex align-items-center gap-1.5 flex-wrap">' +
+                                '<span class="badge s8-doc-attached py-1 px-2.5">' +
                                     '<i class="bi bi-check-circle-fill me-1"></i>Attached' +
                                 '</span>' +
-                                (viewUrl ? '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success py-0 px-1.5" title="View attached document"><i class="bi bi-eye"></i></a>' : '') +
+                                (viewUrl ? '<a href="' + viewUrl + '" target="_blank" rel="noopener noreferrer" class="btn btn-xs s8-btn-action-open" title="View attached document"><i class="bi bi-box-arrow-up-right me-1"></i>View</a>' : '') +
                             '</div>' :
-                            '<span class="badge bg-secondary-subtle text-muted border py-1 px-2" style="font-size:11px;">' +
+                            '<span class="badge s8-doc-pending py-1 px-2">' +
                                 '<i class="bi bi-dash-circle me-1"></i>Pending Upload' +
                             '</span>') +
                     '</td>' +
@@ -5622,22 +6750,27 @@ function initMiningWizard() {
 
         $('#prev_handler_count_badge').text(validHandlers.length + ' Members');
         if (validHandlers.length > 0) {
-            var hHtml = '<table class="table table-sm table-borderless align-middle mb-0" style="font-size:0.83rem;">' +
-                '<thead class="text-muted border-bottom" style="font-size:0.75rem;">' +
-                '<tr><th style="width:30px;">#</th><th>Name</th><th>Role</th><th>Notes</th></tr>' +
+            var hHtml = '<table class="table s8-table mb-0">' +
+                '<thead>' +
+                '<tr><th style="width:40px;" class="text-center">#</th><th style="width:30%;">Personnel Name</th><th style="width:25%;">Role / Designation</th><th>Notes &amp; Responsibilities</th></tr>' +
                 '</thead><tbody>';
             validHandlers.forEach(function(h, idx) {
                 hHtml += '<tr>' +
-                    '<td class="text-muted fw-bold">' + (idx + 1) + '</td>' +
-                    '<td class="fw-semibold text-navy"><i class="bi bi-person-badge text-primary me-1"></i> ' + escapeHtml(h.name) + '</td>' +
-                    '<td><span class="badge bg-light text-dark border py-1 px-2">' + escapeHtml(h.role || 'Personnel') + '</span></td>' +
-                    '<td class="text-muted small">' + escapeHtml(h.notes || '—') + '</td>' +
+                    '<td class="text-center text-muted fw-bold">' + (idx + 1) + '</td>' +
+                    '<td class="fw-bold text-navy">' +
+                        '<div class="d-flex align-items-center gap-2">' +
+                            '<div class="s8-avatar-icon"><i class="bi bi-person-fill"></i></div>' +
+                            '<span>' + escapeHtml(h.name) + '</span>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td><span class="badge s8-role-badge"><i class="bi bi-briefcase-fill me-1"></i>' + escapeHtml(h.role || 'Personnel') + '</span></td>' +
+                    '<td class="text-muted small">' + escapeHtml(h.notes || 'No specific notes recorded') + '</td>' +
                 '</tr>';
             });
             hHtml += '</tbody></table>';
             $('#prev_handlers_box').html(hHtml);
         } else {
-            $('#prev_handlers_box').html('<span class="text-muted small fst-italic py-2"><i class="bi bi-info-circle me-1"></i> No project handling personnel assigned.</span>');
+            $('#prev_handlers_box').html('<div class="s8-empty-notice d-flex align-items-center gap-2"><i class="bi bi-info-circle-fill text-muted"></i><span>No dedicated handling personnel assigned yet. You can allocate project managers or surveyors in Step 7.</span></div>');
         }
 
         // Payment preview

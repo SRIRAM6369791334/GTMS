@@ -123,11 +123,13 @@ class PptDepartmentController extends Controller
 
         // Step 1: Client & Basic Info
         if ($step === 1) {
-            $draft['customer_id']     = $request->input('customer_id');
-            $draft['project_name']    = $request->input('project_name', 'Presentation Project');
-            $draft['application_no']  = $request->input('application_no', 'PPT-' . date('Y') . '-' . sprintf('%04d', PptApplication::count() + 1));
-            $draft['primary_phone']   = $request->input('primary_phone');
-            $draft['secondary_phone'] = $request->input('secondary_phone');
+            $draft['customer_id']       = $request->input('customer_id');
+            $draft['project_name']      = $request->input('project_name', 'Presentation Project');
+            $draft['application_no']    = $request->input('application_no', 'PPT-' . date('Y') . '-' . sprintf('%04d', PptApplication::count() + 1));
+            $draft['primary_phone']     = $request->input('primary_phone');
+            $draft['secondary_phone']   = $request->input('secondary_phone');
+            $draft['parivesh_password'] = $request->input('parivesh_password');
+            $draft['email_password']    = $request->input('email_password');
         }
 
         // Step 2: District
@@ -185,8 +187,16 @@ class PptDepartmentController extends Controller
         $pending    = max(0, $val - $paid);
         $pStatus    = $request->input('payment_status', $draft['payment_status'] ?? ($pending == 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')));
 
-        $count = PptApplication::count() + 1;
-        $appNo = $request->input('application_no') ?: ($draft['application_no'] ?? sprintf('PPT-%s-%04d', date('Y'), $count));
+        // Safe unique application number generation
+        $appNo = $request->input('application_no') ?: ($draft['application_no'] ?? null);
+        if (!$appNo || PptApplication::withoutGlobalScopes()->where('application_no', $appNo)->exists()) {
+            $count = PptApplication::withoutGlobalScopes()->count() + 1;
+            do {
+                $candidate = sprintf('PPT-%s-%04d', date('Y'), $count);
+                $count++;
+            } while (PptApplication::withoutGlobalScopes()->where('application_no', $candidate)->exists());
+            $appNo = $candidate;
+        }
 
         DB::beginTransaction();
         try {
@@ -204,6 +214,8 @@ class PptDepartmentController extends Controller
                 'payment_status'        => $pStatus,
                 'rep_mobile'            => $request->input('primary_phone', $draft['primary_phone'] ?? null),
                 'rep_secondary_mobile'  => $request->input('secondary_phone', $draft['secondary_phone'] ?? null),
+                'parivesh_password'     => $request->input('parivesh_password', $draft['parivesh_password'] ?? null),
+                'email_password'        => $request->input('email_password', $draft['email_password'] ?? null),
             ]);
 
             // Save Handlers

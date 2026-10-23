@@ -211,7 +211,7 @@
                                                 <i class="fas fa-phone-alt text-muted me-1"></i>{{ $customer->mobile_num }}
                                             @endif
                                             @if($customer->mimas_no || $customer->mimas_number)
-                                                &bull; <span class="badge bg-light text-secondary border font-monospace">MIMAS: {{ $customer->mimas_no ?: $customer->mimas_number }}</span>
+                                                &bull; <span class="badge bg-light text-primary border font-monospace">MIMAS: {{ $customer->mimas_no ?: $customer->mimas_number }}</span>
                                             @endif
                                         </div>
                                     </td>

@@ -366,7 +366,7 @@
 # பகுதி 8: பிபிடி துறை (PPT Department & SEIAA Presentation) — 8 கேள்விகள்
 
 #### Q065. பிபிடி துறையில் உள்ள 11 கோப்புறைகளும் (11 Folders) நிலையானவையா?
-- [A] ஆம் (Documents, EDS & EDS Reply, Demand Note, File No, SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, EC).
+- [A] ஆம் (Documents, EDS & EDS Reply, Demand Note, PPT Documents , SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, EC).
 - [B] சில திட்டங்களுக்கு தேவையைப் பொறுத்து கூடுதல் கோப்புறைகள் தேவைப்படலாம்.
 - [C] ஆம், இவை அனைத்தும் மாஸ்டர் டேபிளிலிருந்து தானாக வர வேண்டும்.
 

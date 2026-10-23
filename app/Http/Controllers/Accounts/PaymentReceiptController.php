@@ -499,6 +499,7 @@ class PaymentReceiptController extends Controller implements HasMiddleware
         }
 
         // Totals calculation
+        // Item amounts are base prices (exclusive of GST). GST @18% (9% CGST + 9% SGST) is added on top.
         $grossTotal = collect($items)->sum('amount');
         if ($receipt->quotation && !$isConsolidated && (float)$receipt->quotation->subtotal > 0) {
             $subtotal = (float)$receipt->quotation->subtotal;
@@ -506,7 +507,7 @@ class PaymentReceiptController extends Controller implements HasMiddleware
             $sgst = (float)$receipt->quotation->tax_amount / 2;
             $grandTotal = (float)$receipt->quotation->total_amount;
         } else {
-            $subtotal = round($grossTotal / 1.18, 2);
+            $subtotal = round($grossTotal, 2);
             $cgst = round($subtotal * 0.09, 2);
             $sgst = round($subtotal * 0.09, 2);
             $grandTotal = $subtotal + $cgst + $sgst;

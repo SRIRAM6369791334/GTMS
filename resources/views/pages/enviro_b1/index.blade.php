@@ -64,7 +64,7 @@
 
           <div class="admin-panel">
             <div class="panel-head">
-              <div><h5>ETA &middot; EIA &amp; TNPCB Submission</h5><p class="sub">6 folders &middot; 15 checklist items</p></div>
+              <div><h5>EIA &middot; EIA &amp; TNPCB Submission</h5><p class="sub">6 folders &middot; 15 checklist items</p></div>
               @can('environment.view')
               <a href="{{ route('environstage2') }}" class="panel-link">Open <i class="fa fa-arrow-right"></i></a>
               @endcan
@@ -97,11 +97,11 @@
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:#e8ecfb; color:var(--c-documents);"><i class="fa fa-cloud-upload" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">ToR Letter uploaded</div><div class="text-muted" style="font-size:.76rem;">ETA &middot; 5 hours ago</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">ToR Letter uploaded</div><div class="text-muted" style="font-size:.76rem;">EIA &middot; 5 hours ago</div></div>
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:var(--warn-tint); color:var(--warn);"><i class="fa fa-hourglass-half" style="font-size:.9rem;padding: 10px"></i></span>
-                <div><div class="fw-bold" style="font-size:14px;">Baseline Study pending review</div><div class="text-muted" style="font-size:.76rem;">ETA &middot; Yesterday</div></div>
+                <div><div class="fw-bold" style="font-size:14px;">Baseline Study pending review</div><div class="text-muted" style="font-size:.76rem;">EIA &middot; Yesterday</div></div>
               </div>
               <div class="d-flex gap-3 mb-3">
                 <span class="ic" style="width:34px;height:34px;font-size:.9rem;background:var(--danger-tint); color:var(--danger);"><i class="fa fa-paper-plane" style="font-size:.9rem;padding: 10px"></i></span>

@@ -25,6 +25,8 @@ class Customer extends Model
         'mobile_num',
         'secondary_mobile_num',
         'email',
+        'parivesh_password',
+        'email_password',
         'district_id',
         'mineral_id',
         'pan',

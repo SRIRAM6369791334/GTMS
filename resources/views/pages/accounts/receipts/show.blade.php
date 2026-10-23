@@ -316,7 +316,7 @@
                                                     {{ $sRec->receipt_number }}
                                                 </a>
                                             </td>
-                                            <td><span class="badge bg-light text-secondary border">{{ $sRec->payment_mode }}</span></td>
+                                            <td><span class="badge bg-light text-primary border">{{ $sRec->payment_mode }}</span></td>
                                             <td class="text-end text-success fw-bold">₹ {{ number_format($sRec->amount_paid, 2) }}</td>
                                             <td class="text-end {{ $sRec->balance_due > 0 ? 'text-danger' : 'text-success' }}">
                                                 {{ $sRec->balance_due > 0 ? '₹ ' . number_format($sRec->balance_due, 2) : 'Settled' }}

@@ -408,7 +408,7 @@
                                                 <i class="fas fa-receipt me-1"></i> {{ $due->receipts_count }} Paid
                                             </span>
                                         @else
-                                            <span class="badge bg-light text-muted border px-2 py-1" style="font-size:0.75rem;">
+                                            <span class="badge bg-light text-primary border px-2 py-1" style="font-size:0.75rem;">
                                                 0 Paid
                                             </span>
                                         @endif

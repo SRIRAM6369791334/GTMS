@@ -11,6 +11,8 @@ use App\Models\DroneDocument;
 use App\Models\ChunkedUpload;
 use App\Services\ChunkedUploadService;
 use App\Models\Folder;
+use App\Models\LeaseApplication;
+use App\Models\MiningApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -73,7 +75,7 @@ class DroneSurveyController extends Controller
     public function show(int $id)
     {
         $survey = DroneSurvey::with([
-            'customer', 'leaseApplication', 'miningApplication',
+            'customer.district', 'leaseApplication.district', 'miningApplication',
             'handlers', 'payments', 'documents', 'creator'
         ])->findOrFail($id);
 
@@ -120,8 +122,9 @@ class DroneSurveyController extends Controller
 
         $customers = Customer::withTrashed()->orderBy('customer_name')->get();
         $districts = District::where('status', 1)->orderBy('name')->get();
+        $leaseApplications = LeaseApplication::with('customer')->orderByDesc('id')->get();
 
-        return view('pages.drone_survey.wizard', compact('step', 'draft', 'customers', 'districts'));
+        return view('pages.drone_survey.wizard', compact('step', 'draft', 'customers', 'districts', 'leaseApplications'));
     }
 
     public function saveStep(int $step, Request $request)
@@ -132,9 +135,10 @@ class DroneSurveyController extends Controller
 
         if ($step === 1) {
             $draft['survey_no']             = $request->input('survey_no');
-            $draft['customer_id']           = $request->input('customer_id');
-            $draft['lease_application_id']  = $request->input('lease_application_id');
-            $draft['mining_application_id'] = $request->input('mining_application_id');
+            $draft['customer_id']           = $request->filled('customer_id') ? (int) $request->input('customer_id') : ($draft['customer_id'] ?? null);
+            $draft['lease_application_id']  = $request->filled('lease_application_id') ? (int) $request->input('lease_application_id') : null;
+            $draft['mining_application_id'] = $request->filled('mining_application_id') ? (int) $request->input('mining_application_id') : null;
+            $draft['applicant_name']        = $request->input('applicant_name');
             $draft['location']              = $request->input('location');
             $draft['lease_area']            = $request->input('lease_area');
             $draft['survey_type']           = $request->input('survey_type');
@@ -194,39 +198,91 @@ class DroneSurveyController extends Controller
     {
         $draft = session('drone_wizard', []);
 
-        $customerId = $request->input('customer_id') ?: ($draft['customer_id'] ?? Customer::value('id'));
+        // Safe customer ID resolution
+        $customerId = $request->filled('customer_id')
+            ? (int) $request->input('customer_id')
+            : (!empty($draft['customer_id']) ? (int) $draft['customer_id'] : null);
+
+        if (!$customerId || !Customer::where('id', $customerId)->exists()) {
+            $customerId = Customer::value('id') ?? 1;
+        }
+
         $val     = (float) ($request->input('product_value', $draft['product_value'] ?? 50000));
         $paid    = (float) ($request->input('paid_amount', $draft['paid_amount'] ?? 30000));
         $pending = max(0, $val - $paid);
-        $pStatus = $request->input('payment_status', $draft['payment_status'] ?? ($pending == 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')));
+        $pStatus = strtolower($request->input('payment_status', $draft['payment_status'] ?? ''));
+        if (!in_array($pStatus, ['pending', 'partial', 'paid'])) {
+            $pStatus = ($pending <= 0) ? 'paid' : (($paid > 0) ? 'partial' : 'pending');
+        }
 
-        $count   = DroneSurvey::count() + 1;
-        $surveyNo = $request->input('survey_no') ?: ($draft['survey_no'] ?? sprintf('DRN-%s-%04d', date('Y'), $count));
+        // Safe unique survey number generation
+        $surveyNo = $request->input('survey_no') ?: ($draft['survey_no'] ?? null);
+        if (!$surveyNo || DroneSurvey::where('survey_no', $surveyNo)->exists()) {
+            $count = DroneSurvey::count() + 1;
+            do {
+                $candidate = sprintf('DRN-%s-%04d', date('Y'), $count);
+                $count++;
+            } while (DroneSurvey::where('survey_no', $candidate)->exists());
+            $surveyNo = $candidate;
+        }
+
+        // Safe foreign key validation for lease_application_id and mining_application_id
+        $leaseAppId = $request->filled('lease_application_id')
+            ? (int) $request->input('lease_application_id')
+            : (!empty($draft['lease_application_id']) ? (int) $draft['lease_application_id'] : null);
+        if ($leaseAppId && !DB::table('lease_applications')->where('id', $leaseAppId)->exists()) {
+            $leaseAppId = null;
+        }
+
+        $miningAppId = $request->filled('mining_application_id')
+            ? (int) $request->input('mining_application_id')
+            : (!empty($draft['mining_application_id']) ? (int) $draft['mining_application_id'] : null);
+        if ($miningAppId && !DB::table('mining_applications')->where('id', $miningAppId)->exists()) {
+            $miningAppId = null;
+        }
+
+        $branchId = auth()->user()->branch_id ?? 1;
+        if (!DB::table('branches')->where('id', $branchId)->exists()) {
+            $branchId = DB::table('branches')->value('id');
+        }
+
+        $createdBy = Auth::id() ?? 1;
+        if (!DB::table('users')->where('id', $createdBy)->exists()) {
+            $createdBy = DB::table('users')->value('id');
+        }
+
+        $validStatuses = ['scheduled', 'flying_completed', 'processing', 'deliverables_ready', 'report_signed'];
+        $surveyStatus = $draft['survey_status'] ?? 'deliverables_ready';
+        if (!in_array($surveyStatus, $validStatuses)) {
+            $surveyStatus = 'deliverables_ready';
+        }
 
         DB::beginTransaction();
         try {
             $survey = DroneSurvey::create([
-                'survey_no'             => $surveyNo,
-                'customer_id'           => $customerId,
-                'lease_application_id'  => $request->input('lease_application_id', $draft['lease_application_id'] ?? null),
-                'mining_application_id' => $request->input('mining_application_id', $draft['mining_application_id'] ?? null),
-                'lease_area'            => (float) ($draft['lease_area'] ?? 3.85),
-                'location'              => $request->input('location', $draft['location'] ?? 'Quarry Site'),
-                'flight_date'           => $request->input('flight_date', $draft['flight_date'] ?? date('Y-m-d')),
-                'drone_pilot_name'      => $draft['drone_pilot_name'] ?? null,
-                'pilot_rpc_no'          => $draft['pilot_rpc_no'] ?? null,
-                'drone_uin_no'          => $draft['drone_uin_no'] ?? null,
-                'drone_model'           => $draft['drone_model'] ?? null,
-                'altitude_meters'       => (float) ($draft['altitude_meters'] ?? 120),
-                'gsd_cm_px'             => (float) ($draft['gsd_cm_px'] ?? 2.5),
-                'extracted_volume_cbm'  => (float) ($draft['extracted_volume_cbm'] ?? 0),
-                'survey_status'         => in_array($draft['survey_status'] ?? '', ['scheduled', 'flying_completed', 'processing', 'deliverables_ready', 'report_signed']) ? $draft['survey_status'] : 'deliverables_ready',
-                'product_value'         => $val,
-                'paid_amount'           => $paid,
-                'pending_amount'        => $pending,
-                'payment_status'        => $pStatus,
-                'branch_id'             => auth()->user()->branch_id ?? 1,
-                'created_by'            => Auth::id() ?? 1,
+                'survey_no'              => $surveyNo,
+                'customer_id'            => $customerId,
+                'lease_application_id'   => $leaseAppId,
+                'mining_application_id'  => $miningAppId,
+                'lease_area'             => (float) ($draft['lease_area'] ?? 3.85),
+                'location'               => $request->input('location', $draft['location'] ?? 'Quarry Site'),
+                'flight_date'            => $request->input('flight_date', $draft['flight_date'] ?? date('Y-m-d')),
+                'drone_pilot_name'       => $draft['drone_pilot_name'] ?? 'S. Karthik',
+                'pilot_rpc_no'           => $draft['pilot_rpc_no'] ?? 'RPC #DRN-TN-8821',
+                'drone_uin_no'           => $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901',
+                'drone_model'            => $draft['drone_model'] ?? 'DJI Matrice 300 RTK',
+                'altitude_meters'        => (float) ($draft['altitude_meters'] ?? 120),
+                'gsd_cm_px'              => (float) ($draft['gsd_cm_px'] ?? 2.5),
+                'extracted_volume_cbm'   => (float) ($draft['extracted_volume_cbm'] ?? 18450),
+                'survey_status'          => $surveyStatus,
+                'deliverable_files_path' => $draft['deliverable_files_path'] ?? null,
+                'gtms_report_file'       => $draft['gtms_report_file'] ?? null,
+                'product_value'          => $val,
+                'paid_amount'            => $paid,
+                'pending_amount'         => $pending,
+                'payment_status'         => $pStatus,
+                'branch_id'              => $branchId,
+                'created_by'             => $createdBy,
             ]);
 
             // Save Handlers
@@ -248,10 +304,18 @@ class DroneSurveyController extends Controller
                 ApplicationHandler::create([
                     'application_type' => 'drone',
                     'application_id'   => $survey->id,
-                    'name'             => 'DGCA Certified Pilot',
-                    'role'             => 'Lead Drone Pilot',
-                    'notes'            => 'Autonomous grid flight execution and safety compliance',
+                    'name'             => 'S. Karthik',
+                    'role'             => 'DGCA Certified Drone Pilot',
+                    'notes'            => 'Autonomous grid flight execution & safety compliance',
                     'sort_order'       => 1,
+                ]);
+                ApplicationHandler::create([
+                    'application_type' => 'drone',
+                    'application_id'   => $survey->id,
+                    'name'             => 'M. Vignesh',
+                    'role'             => 'Photogrammetry & 3D Analyst',
+                    'notes'            => 'Image stitching, GCP georeferencing & cut/fill volume calculation',
+                    'sort_order'       => 2,
                 ]);
             }
 

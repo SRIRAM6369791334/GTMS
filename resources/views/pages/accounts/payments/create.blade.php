@@ -1249,7 +1249,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </a>
                             </td>
                             <td>
-                                <span class="badge bg-light text-secondary border" style="font-size:0.72rem;">${escapeHtml(r.payment_mode)}</span>
+                                <span class="badge bg-light text-primary border" style="font-size:0.72rem;">${escapeHtml(r.payment_mode)}</span>
                                 ${r.reference_number ? `<br><small class="text-muted font-monospace" style="font-size:0.68rem;">Ref: ${escapeHtml(r.reference_number)}</small>` : ''}
                             </td>
                             <td class="text-end fw-bold text-success tabular-nums">

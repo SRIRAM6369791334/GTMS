@@ -532,7 +532,8 @@
             <div class="ti-company-iso">(A NABET Accredited &amp; ISO Certified)</div>
             <div>No: 2/548/D, Thadangam, Thokkampatti (post),</div>
             <div>Dharmapuri-636705. Tamil Nadu.</div>
-            <div style="margin-top: 4px;"><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+            <div style="margin-top: 3px;"><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
+            <div style="margin-top: 2px;"><strong>Mob:</strong> +91 9790462882, 7010076633</div>
             <div style="margin-top: 2px;"><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
           </td>
           <td style="padding: 0; vertical-align: top;">
@@ -558,8 +559,8 @@
                 <td>www.gtmsind.com</td>
               </tr>
               <tr>
-                <td class="m-lbl">Ofc Ph.:</td>
-                <td>04342-232777<br>04342-292377</td>
+                <td class="m-lbl">Mob:</td>
+                <td>+91 9790462882<br>+91 7010076633</td>
               </tr>
             </table>
           </td>

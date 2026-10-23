@@ -34,6 +34,165 @@
 .btn-action-icon:hover {
   transform: translateY(-1px);
 }
+
+/* TABLE ALIGNMENT & STRUCTURAL INTEGRITY */
+.table-admin {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: auto !important;
+}
+.table-admin thead tr,
+.table-admin tbody tr {
+  display: table-row !important;
+}
+.table-admin thead th,
+.table-admin tbody td {
+  display: table-cell !important;
+  vertical-align: middle !important;
+}
+.table-admin thead th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 0.85rem 1rem !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+  white-space: nowrap;
+}
+.table-admin tbody td {
+  padding: 0.85rem 1rem !important;
+  font-size: 0.84rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+.table-admin tbody tr:hover td {
+  background-color: #f8fafc !important;
+}
+
+/* Dark mode overrides for table-admin */
+body[data-theme-version="dark"] .table-admin thead th {
+  background: #1e222d !important;
+  color: #94a3b8 !important;
+  border-bottom-color: #334155 !important;
+}
+body[data-theme-version="dark"] .table-admin tbody td {
+  border-bottom-color: #262b36 !important;
+  color: #cbd5e1 !important;
+}
+body[data-theme-version="dark"] .table-admin tbody tr:hover td {
+  background-color: #212631 !important;
+}
+body[data-theme-version="dark"] .table-admin .doc-name {
+  color: #f1f5f9 !important;
+}
+
+/* DOSSIER BOOK DESIGN SYSTEM (UI/UX PRO MAX STANDARD) */
+.card-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+}
+.card-panel:hover {
+  box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+}
+.chapter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.chapter-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.chapter-tag {
+  background: #0F1E4D;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+}
+.panel-title {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #0F1E4D;
+  margin-bottom: 0.15rem;
+  font-family: 'Sora', sans-serif;
+}
+.panel-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+.dossier-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+}
+.data-cell {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.data-cell-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+.data-cell-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0F1E4D;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  word-break: break-word;
+}
+.data-cell-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 0.35rem;
+}
+.btn-copy-chip {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  padding: 0;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: color 0.15s ease;
+}
+.btn-copy-chip:hover {
+  color: #0F1E4D;
+}
 </style>
 
 <div class="content-body default-height">
@@ -155,7 +314,7 @@
                 <button type="button" class="btn btn-primary btn-sm btn-open-move-ppt"
                   data-action="{{ route('eviron.submitSc2ToPpt', $project->id) }}"
                   data-gate-title="Stage 2: Final EC Presentation Gate"
-                  data-gate-desc="Promote Category B1 (Stage 2 ETA) to PPT Department for Final SEAC / SEIAA EC Appraisal.">
+                  data-gate-desc="Promote Category B1 (Stage 2 EIA) to PPT Department for Final SEAC / SEIAA EC Appraisal.">
                   <i class="fa fa-paper-plane me-1"></i> Submit ETA to PPT Department (Stage 2 Gate)
                 </button>
               @elseif($project->b1_stage === 'sc2_ppt_review')
@@ -276,7 +435,7 @@
                 <span class="badge rounded-circle {{ $isStep3Active ? 'bg-white text-primary' : ($isStep3Done ? 'bg-success text-white' : 'bg-secondary text-white') }} px-2 py-1">
                   @if($isStep3Done)<i class="fa fa-check"></i>@else 3 @endif
                 </span>
-                <span class="fw-bold small {{ $isStep3Active ? 'text-white' : ($isStep3Done ? 'text-success' : 'text-dark') }}">Stage 2: ETA Unlocked</span>
+                <span class="fw-bold small {{ $isStep3Active ? 'text-white' : ($isStep3Done ? 'text-success' : 'text-dark') }}">Stage 2: EIA Unlocked</span>
               </div>
               <div class="small {{ $isStep3Active ? 'text-white-50' : 'text-muted' }}" style="font-size:0.78rem;">
                 EIA Study &amp; TNPCB Submission (6 Folders)
@@ -471,6 +630,393 @@
       </div>
     </div>
 
+    {{-- ================= CHAPTER I: APPLICANT IDENTITY & LEGAL ENTITY DOSSIER ================= --}}
+    <div class="card-panel">
+      <div class="chapter-header">
+        <div class="chapter-title-group">
+          <span class="chapter-tag">Chapter I</span>
+          <div>
+            <h5 class="panel-title"><i class="fa fa-id-card text-primary me-2"></i>Statutory Applicant &amp; Legal Entity Profile</h5>
+            <div class="panel-sub">Verified corporate credentials, tax identifiers, and official representation</div>
+          </div>
+        </div>
+        <span class="dossier-chip">
+          <i class="fa fa-database text-primary"></i> Project ID: #{{ $project->id }}
+        </span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Client / Firm Name</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->customer?->company_name ?: ($project->customer?->customer_name ?: 'Applicant') }}</span>
+              <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->customer?->company_name ?: $project->customer?->customer_name }}" title="Copy Firm Name"><i class="fa fa-copy"></i></button>
+            </div>
+            <div class="data-cell-sub">Proprietor: {{ $project->customer?->customer_name ?: 'N/A' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Customer Unique ID (MIMAS)</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->customer?->mimas_no ?: 'N/A' }}</span>
+              @if(!empty($project->customer?->mimas_no))
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->customer->mimas_no }}" title="Copy MIMAS ID"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">Mining Directorate Account</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Income Tax PAN</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->customer?->pan ?: 'N/A' }}</span>
+              @if(!empty($project->customer?->pan))
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->customer->pan }}" title="Copy PAN"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">Tax Assessment Identifier</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">GSTIN (15 Digits)</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->customer?->gstin ?: 'Not Registered' }}</span>
+              @if(!empty($project->customer?->gstin))
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->customer->gstin }}" title="Copy GSTIN"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">Indirect Tax Registration</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Primary Contact Mobile</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->contact_phone ?: ($project->customer?->mobile_num ?: 'N/A') }}</span>
+              <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->contact_phone ?: $project->customer?->mobile_num }}" title="Copy Mobile"><i class="fa fa-copy"></i></button>
+            </div>
+            <div class="data-cell-sub">SMS &amp; Telephonic Alert Dispatch</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Official Email Address</div>
+            <div class="data-cell-value">
+              <span class="data-value-text text-truncate" style="max-width: 180px;">{{ $project->contact_email ?: ($project->customer?->email ?: 'N/A') }}</span>
+              <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->contact_email ?: $project->customer?->email }}" title="Copy Email"><i class="fa fa-copy"></i></button>
+            </div>
+            <div class="data-cell-sub">Statutory Communication Channel</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Secondary Contact Person</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->secondary_contact_person ?: 'N/A' }}</span>
+            </div>
+            <div class="data-cell-sub">Phone: {{ $project->secondary_phone ?: 'N/A' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Registered Office Address</div>
+            <div class="data-cell-value">
+              <span class="data-value-text text-truncate" style="max-width: 190px;" title="{{ $project->customer?->address ?: ($project->location ?: 'Quarry Site') }}">{{ $project->customer?->address ?: ($project->location ?: 'Quarry Site') }}</span>
+            </div>
+            <div class="data-cell-sub">Official Legal Domicile</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label"><i class="fa fa-key text-muted me-1"></i> Parivesh Password</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->parivesh_password ?: ($project->customer?->parivesh_password ?: 'Not Configured') }}</span>
+              @if(!empty($project->parivesh_password) || !empty($project->customer?->parivesh_password))
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->parivesh_password ?: $project->customer?->parivesh_password }}" title="Copy Parivesh Password"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">Parivesh Portal Credential</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label"><i class="fa fa-lock text-muted me-1"></i> Email Password</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->email_password ?: ($project->customer?->email_password ?: 'Not Configured') }}</span>
+              @if(!empty($project->email_password) || !empty($project->customer?->email_password))
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->email_password ?: $project->customer?->email_password }}" title="Copy Email Password"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">Correspondence Email Access</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ================= CHAPTER II: REVENUE CADASTRAL & CONCESSION EXTENT ================= --}}
+    <div class="card-panel">
+      <div class="chapter-header">
+        <div class="chapter-title-group">
+          <span class="chapter-tag" style="background:#059669;">Chapter II</span>
+          <div>
+            <h5 class="panel-title"><i class="fa fa-compass text-success me-2"></i>Geo-Spatial Cadastral &amp; Concession Extent</h5>
+            <div class="panel-sub">Revenue jurisdiction, survey field parcel boundaries, and statutory land extent</div>
+          </div>
+        </div>
+        <span class="dossier-chip">
+          <i class="fa fa-ruler-combined text-success"></i> Extent: {{ $project->area_extent_ha_display ? $project->area_extent_ha_display . ' Ha' : ($project->location ?: 'Quarry Concession') }}
+        </span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">District Mining Office</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->district?->name ?: 'N/A' }}</span>
+              <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->district?->name }}" title="Copy District"><i class="fa fa-copy"></i></button>
+            </div>
+            <div class="data-cell-sub">Deputy Director / AD Jurisdiction</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Taluk &amp; Revenue Village</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ ($project->village_name ? $project->village_name . ', ' : '') . ($project->taluk_name ?: ($project->location ?: 'N/A')) }}</span>
+            </div>
+            <div class="data-cell-sub">Taluk Jurisdiction: {{ $project->taluk_name ?: 'N/A' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Total Extent (Hectares)</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->area_extent_ha_display ? $project->area_extent_ha_display . ' Ha' : 'N/A' }}</span>
+              @if($project->area_extent_ha_display)
+                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->area_extent_ha_display }}" title="Copy Extent"><i class="fa fa-copy"></i></button>
+              @endif
+            </div>
+            <div class="data-cell-sub">{{ $project->area_extent_acres_display ? '(' . $project->area_extent_acres_display . ' Acres)' : 'Metric Standard Extent' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Survey Field Numbers (S.F. Nos)</div>
+            <div class="data-cell-value">
+              <span class="data-value-text text-truncate" style="max-width: 190px;" title="{{ $project->survey_numbers_list ?: 'S.F. Nos demarcated' }}">{{ $project->survey_numbers_list ?: 'Demarcated SF Nos' }}</span>
+            </div>
+            <div class="data-cell-sub">Cadastral Parcels Linked</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ================= CHAPTER III: MINERAL CONCESSION & STATUTORY APPROVALS ================= --}}
+    <div class="card-panel">
+      <div class="chapter-header">
+        <div class="chapter-title-group">
+          <span class="chapter-tag" style="background:#d97706;">Chapter III</span>
+          <div>
+            <h5 class="panel-title"><i class="fa fa-mountain text-warning me-2"></i>Mineral Concession, Applicable Rules &amp; Mining Approvals</h5>
+            <div class="panel-sub">Concession classification, approved mining plan reference, and government order</div>
+          </div>
+        </div>
+        <span class="dossier-chip">
+          <i class="fa fa-hourglass-half text-warning"></i> Lease Tenure: {{ $project->lease_tenure_years }} Years
+        </span>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Mineral Concession</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->primary_mineral_name }}</span>
+            </div>
+            <div class="data-cell-sub">Minor Mineral Concession Scope</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Approved Mining Plan No</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->approved_mining_plan_no ?: 'Approved Plan Linked' }}</span>
+            </div>
+            <div class="data-cell-sub">Approval Date: {{ $project->approved_mining_plan_date ? \Carbon\Carbon::parse($project->approved_mining_plan_date)->format('d M Y') : 'Departmental Record' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Government Order (G.O.) / Proceedings</div>
+            <div class="data-cell-value">
+              <span class="data-value-text font-monospace">{{ $project->go_number ?: 'Precise Area Communicated' }}</span>
+            </div>
+            <div class="data-cell-sub">Order Date: {{ $project->go_date ? \Carbon\Carbon::parse($project->go_date)->format('d M Y') : 'Official Proceedings' }}</div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="data-cell">
+            <div class="data-cell-label">Statutory Concession Duration</div>
+            <div class="data-cell-value">
+              <span class="data-value-text">{{ $project->lease_tenure_years }} Years Concession</span>
+            </div>
+            <div class="data-cell-sub">Tenure as per Mining Scheme</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- ================= CHAPTER IV: UPSTREAM CONCESSION PEDIGREE & STATUTORY LINKAGES ================= --}}
+    <div class="card-panel">
+      <div class="chapter-header">
+        <div class="chapter-title-group">
+          <span class="chapter-tag" style="background:#7c3aed;">Chapter IV</span>
+          <div>
+            <h5 class="panel-title"><i class="fa fa-diagram-project text-info me-2"></i>Upstream Concession Pedigree &amp; Departmental Linkages</h5>
+            <div class="panel-sub">Traceability across Lease Application, Mining Plan, PPT Presentation, and EC Certificate</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        {{-- Lease Application Link --}}
+        <div class="col-md-3 col-sm-6">
+          <div class="p-3 rounded-3 border h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="small fw-bold text-uppercase text-muted" style="font-size:0.7rem;">1. Lease Application</span>
+                @if($project->leaseApplication)
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Linked</span>
+                @else
+                  <span class="badge bg-secondary-subtle text-muted">Direct EC</span>
+                @endif
+              </div>
+              <div class="fw-bold text-navy font-monospace mb-1">
+                {{ $project->leaseApplication ? $project->leaseApplication->application_no : 'LA Reference N/A' }}
+              </div>
+              <div class="small text-muted" style="font-size:0.75rem;">
+                {{ $project->leaseApplication ? 'Taluk: ' . ($project->leaseApplication->taluk ?: 'Demarcated') : 'Direct statutory intake' }}
+              </div>
+            </div>
+            @if($project->leaseApplication)
+              <div class="mt-2">
+                <a href="{{ url('/viewapplication') }}?id={{ $project->leaseApplication->id }}" class="btn btn-outline-primary btn-sm w-100 py-1" style="font-size:0.75rem;">
+                  <i class="fa fa-arrow-up-right-from-square me-1"></i> Open Lease Dossier
+                </a>
+              </div>
+            @endif
+          </div>
+        </div>
+
+        {{-- Mining Plan Link --}}
+        <div class="col-md-3 col-sm-6">
+          <div class="p-3 rounded-3 border h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="small fw-bold text-uppercase text-muted" style="font-size:0.7rem;">2. Mining Plan</span>
+                @if($project->miningApplication)
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Linked</span>
+                @else
+                  <span class="badge bg-secondary-subtle text-muted">Direct EC</span>
+                @endif
+              </div>
+              <div class="fw-bold text-navy font-monospace mb-1">
+                {{ $project->miningApplication ? $project->miningApplication->application_no : 'MP Reference N/A' }}
+              </div>
+              <div class="small text-muted" style="font-size:0.75rem;">
+                {{ $project->miningApplication ? 'Order: ' . ($project->miningApplication->approval_order_no ?: 'Approved') : 'Direct statutory intake' }}
+              </div>
+            </div>
+            @if($project->miningApplication)
+              <div class="mt-2">
+                <a href="{{ route('mining.show', $project->miningApplication->id) }}" class="btn btn-outline-primary btn-sm w-100 py-1" style="font-size:0.75rem;">
+                  <i class="fa fa-arrow-up-right-from-square me-1"></i> Open Mining Plan
+                </a>
+              </div>
+            @endif
+          </div>
+        </div>
+
+        {{-- PPT Department Link --}}
+        <div class="col-md-3 col-sm-6">
+          <div class="p-3 rounded-3 border h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="small fw-bold text-uppercase text-muted" style="font-size:0.7rem;">3. PPT Department</span>
+                @if($project->pptStage1 || $project->pptStage2)
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Active</span>
+                @else
+                  <span class="badge bg-warning-subtle text-warning-emphasis">Pending Gate</span>
+                @endif
+              </div>
+              <div class="fw-bold text-navy font-monospace mb-1">
+                {{ $project->pptStage2?->application_no ?: ($project->pptStage1?->application_no ?: 'Not Promoted Yet') }}
+              </div>
+              <div class="small text-muted" style="font-size:0.75rem;">
+                {{ $project->pptStage2 ? 'Stage 2 Final EC Gate' : ($project->pptStage1 ? 'Stage 1 ToR / B2 Gate' : 'Awaiting promotion') }}
+              </div>
+            </div>
+            @if($project->pptStage2 || $project->pptStage1)
+              <div class="mt-2">
+                <a href="{{ route('ppt-department.show', $project->pptStage2?->id ?: $project->pptStage1->id) }}" class="btn btn-outline-primary btn-sm w-100 py-1" style="font-size:0.75rem;">
+                  <i class="fa fa-tv me-1"></i> Open PPT Dossier
+                </a>
+              </div>
+            @endif
+          </div>
+        </div>
+
+        {{-- EC Certificate Link --}}
+        <div class="col-md-3 col-sm-6">
+          <div class="p-3 rounded-3 border h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="small fw-bold text-uppercase text-muted" style="font-size:0.7rem;">4. EC Certificate</span>
+                @if($project->ecCertificates?->isNotEmpty())
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Issued</span>
+                @else
+                  <span class="badge bg-secondary-subtle text-muted">Not Issued</span>
+                @endif
+              </div>
+              <div class="fw-bold text-navy font-monospace mb-1">
+                {{ $project->ecCertificates?->isNotEmpty() ? $project->ecCertificates->first()->ec_ref_no : 'Pending Issuance' }}
+              </div>
+              <div class="small text-muted" style="font-size:0.75rem;">
+                {{ $project->ecCertificates?->isNotEmpty() ? 'Parivesh: ' . ($project->ecCertificates->first()->parivesh_app_no ?: 'Verified') : 'Requires committee approval' }}
+              </div>
+            </div>
+            @if($project->ecCertificates?->isNotEmpty())
+              <div class="mt-2">
+                <a href="{{ route('ec-certificate.show', $project->ecCertificates->first()->id) }}" class="btn btn-outline-success btn-sm w-100 py-1" style="font-size:0.75rem;">
+                  <i class="fa fa-certificate me-1"></i> View EC Certificate
+                </a>
+              </div>
+            @endif
+          </div>
+        </div>
+      </div>
+    </div>
+
     {{-- ================= HANDLING TEAM & FINANCIAL LEDGER CARDS ================= --}}
     <div class="row g-3 mb-4">
       {{-- Project Handling Team Card --}}
@@ -623,16 +1169,16 @@
               <p class="sub mb-0">Checklist items for {{ $folder->name }}</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-              @can('environment.b2.upload')
+              @canany(['environment.b2.upload', 'environment.create', 'environment.edit'])
               <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2 btn-open-add-enviro-doc"
                       data-folder-id="{{ $folder->id }}"
                       data-folder-name="{{ $folder->name }}"
                       data-bs-toggle="modal" data-bs-target="#modalAddEnviroDoc">
                 <i class="bi bi-plus-circle me-1"></i>Add Document
               </button>
-              @endcan
-              <span class="panel-progress-chip fw-bold" style="font-size:.82rem; color:{{ $fPalette[0] }};">
-                {{ $approvedCount }} / {{ $docs->count() }} Approved
+              @endcanany
+              <span class="panel-progress-chip fw-bold px-2.5 py-1 rounded-pill" style="font-size:0.82rem; background:{{ $fPalette[1] }}; color:{{ $fPalette[0] }}; border:1px solid {{ $fPalette[0] }}33;">
+                <i class="fa fa-circle-check me-1"></i>{{ $approvedCount }} / {{ $docs->count() }} Approved
               </span>
             </div>
           </div>
@@ -641,13 +1187,13 @@
             <table class="table table-admin align-middle mb-0">
               <thead>
                 <tr>
-                  <th style="width:36px;">#</th>
-                  <th>Document Name</th>
-                  <th style="width:115px;">Requirement</th>
-                  <th>Status</th>
-                  <th>Uploaded File</th>
-                  <th>Uploaded At</th>
-                  <th class="text-end" style="min-width:110px;">Actions</th>
+                  <th style="width:45px;" class="text-center">#</th>
+                  <th style="min-width:240px;">Document Name</th>
+                  <th style="width:130px;" class="text-center">Requirement</th>
+                  <th style="width:120px;" class="text-center">Status</th>
+                  <th style="min-width:180px;">Uploaded File</th>
+                  <th style="width:160px;">Uploaded At</th>
+                  <th class="text-end" style="width:120px;">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -662,27 +1208,27 @@
                     default             => 'bg-secondary text-white',
                   };
                 @endphp
-                <tr class="checklist-row" data-mandatory="{{ $isMandatory ? '1' : '0' }}">
-                  <td class="text-muted small">{{ $dIdx + 1 }}</td>
+                <tr class="enviro-doc-row" data-mandatory="{{ $isMandatory ? '1' : '0' }}">
+                  <td class="text-center text-muted small fw-bold">{{ $dIdx + 1 }}</td>
                   <td>
                     <span class="row-mod-dot" style="background:{{ $fPalette[0] }};"></span>
-                    <span class="doc-name font-w600">{{ $doc->document_name }}</span>
+                    <span class="doc-name font-w600" style="color:#0F1E4D; font-size:0.86rem;">{{ $doc->document_name }}</span>
                     @if($doc->review_note)
                       <div class="doc-hint text-danger mt-1 small">
                         <i class="fa fa-info-circle me-1"></i> {{ $doc->review_note }}
                       </div>
                     @endif
                   </td>
-                  <td>
-                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                  <td class="text-center">
+                    <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center mx-auto {{ $isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
                             style="font-size:0.75rem; width:105px; border-radius:6px;"
                             data-doc-id="{{ $doc->id }}">
                       <option value="mandatory" {{ $isMandatory ? 'selected' : '' }}>Mandatory</option>
                       <option value="optional" {{ !$isMandatory ? 'selected' : '' }}>Optional</option>
                     </select>
                   </td>
-                  <td>
-                    <span class="badge {{ $statusBadgeClass }}" style="font-size:0.75rem;">
+                  <td class="text-center">
+                    <span class="badge {{ $statusBadgeClass }}" style="font-size:0.75rem; font-weight:600; padding:0.35rem 0.65rem;">
                       {{ ucfirst(str_replace('_', ' ', $doc->status)) }}
                     </span>
                   </td>
@@ -700,17 +1246,24 @@
                   </td>
                   <td class="text-end">
                     <div class="table-action-group">
-                      {{-- View Button (Opens in separate page) --}}
+                      {{-- In-Modal Preview Button & External Tab Link --}}
                       @if($doc->file_path)
-                      <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" rel="noopener noreferrer"
-                         class="btn-action-icon" style="background:#eff6ff; color:#0284c7; border-color:#bae6fd;"
-                         title="View Document in separate page">
+                      <button type="button" class="btn-action-icon btn-preview-doc" style="background:#eff6ff; color:#0284c7; border-color:#bae6fd;"
+                         data-file-url="{{ asset('storage/' . $doc->file_path) }}"
+                         data-file-name="{{ $doc->file_name ?: $doc->document_name }}"
+                         data-file-ext="{{ strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION)) }}"
+                         title="Preview Document">
                         <i class="fa fa-eye"></i>
+                      </button>
+                      <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" rel="noopener noreferrer"
+                         class="btn-action-icon" style="background:#f8fafc; color:#64748b; border-color:#cbd5e1;"
+                         title="Open in separate tab">
+                        <i class="fa fa-external-link-alt"></i>
                       </a>
                       @endif
 
                       {{-- Upload Button (triggers shared modal) --}}
-                      @can('environment.b2.upload')
+                      @canany(['environment.b2.upload', 'environment.create', 'environment.edit'])
                       <button type="button" class="btn-action-icon" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"
                               data-bs-toggle="modal" data-bs-target="#modalUploadDoc"
                               data-doc-name="{{ $doc->document_name }}"
@@ -718,10 +1271,10 @@
                               title="Upload File">
                         <i class="fa fa-upload"></i>
                       </button>
-                      @endcan
+                      @endcanany
 
                       {{-- Review Button (triggers shared modal) --}}
-                      @can('environment.b2.review')
+                      @canany(['environment.b2.review', 'environment.edit'])
                       @if($doc->file_path)
                       <button type="button" class="btn-action-icon" style="background:#ecfdf5; color:#15803d; border-color:#86efac;"
                               data-bs-toggle="modal" data-bs-target="#modalReviewDoc"
@@ -732,7 +1285,7 @@
                         <i class="fa fa-check"></i>
                       </button>
                       @endif
-                      @endcan
+                      @endcanany
                     </div>
                   </td>
                 </tr>
@@ -755,6 +1308,38 @@
 </div>
 
 {{-- ================= SHARED MODALS (OUTSIDE TABLE TO PREVENT BACKDROP FREEZE) ================= --}}
+
+{{-- In-Modal PDF & Image Document Previewer --}}
+<div class="modal fade" id="modalDocPreview" tabindex="-1" aria-labelledby="modalDocPreviewTitle" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 90vw;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+      <div class="modal-header py-3 px-4" style="background: #0F1E4D; color: #ffffff;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa fa-file-lines text-warning fs-5"></i>
+          <div>
+            <h6 class="modal-title fw-bold mb-0 text-white" id="modalDocPreviewTitle">Document Preview</h6>
+            <small class="text-white-50" id="modalDocPreviewSubtitle">Statutory Dossier In-Modal Viewer</small>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <a href="#" id="modalDocDownloadBtn" class="btn btn-sm btn-outline-light" download>
+            <i class="fa fa-download me-1"></i> Download
+          </a>
+          <a href="#" id="modalDocNewTabBtn" class="btn btn-sm btn-outline-light" target="_blank" rel="noopener noreferrer">
+            <i class="fa fa-external-link-alt me-1"></i> Open in New Tab
+          </a>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+      </div>
+      <div class="modal-body p-0 text-center bg-light" style="min-height: 550px; max-height: 80vh; overflow: auto;" id="modalDocPreviewBody">
+        <div class="p-5 text-muted">
+          <i class="fa fa-spinner fa-spin fa-2x mb-2 text-primary"></i>
+          <div>Loading preview...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 {{-- Shared Upload Modal --}}
 <div class="modal fade" id="modalUploadDoc" tabindex="-1" aria-hidden="true">
@@ -1313,6 +1898,66 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Dynamic In-Modal Document Preview Binding
+  document.querySelectorAll('.btn-preview-doc').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const fileUrl = this.dataset.fileUrl;
+      const fileName = this.dataset.fileName || 'Document Preview';
+      const fileExt = (this.dataset.fileExt || '').toLowerCase();
+
+      const titleEl = document.getElementById('modalDocPreviewTitle');
+      const subtitleEl = document.getElementById('modalDocPreviewSubtitle');
+      const downloadBtn = document.getElementById('modalDocDownloadBtn');
+      const newTabBtn = document.getElementById('modalDocNewTabBtn');
+      const bodyEl = document.getElementById('modalDocPreviewBody');
+
+      if (titleEl) titleEl.textContent = fileName;
+      if (subtitleEl) subtitleEl.textContent = 'Document Format: ' + (fileExt.toUpperCase() || 'FILE');
+      if (downloadBtn) {
+        downloadBtn.href = fileUrl;
+        downloadBtn.setAttribute('download', fileName);
+      }
+      if (newTabBtn) newTabBtn.href = fileUrl;
+
+      if (bodyEl) {
+        if (fileExt === 'pdf') {
+          bodyEl.innerHTML = '<iframe src="' + fileUrl + '#toolbar=1" style="width:100%; height:75vh; border:none;" title="PDF Preview"></iframe>';
+        } else if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(fileExt)) {
+          bodyEl.innerHTML = '<div class="p-4 d-flex align-items-center justify-content-center" style="min-height:60vh;"><img src="' + fileUrl + '" class="img-fluid rounded shadow" style="max-height:75vh; max-width:100%; object-fit:contain;" alt="' + fileName + '"></div>';
+        } else {
+          bodyEl.innerHTML = '<div class="p-5 text-center">' +
+            '<i class="fa fa-file-circle-check fa-4x text-primary mb-3"></i>' +
+            '<h5 class="fw-bold" style="color:#0F1E4D;">' + fileName + '</h5>' +
+            '<p class="text-muted small">Direct in-browser preview is not supported for .' + fileExt.toUpperCase() + ' files.</p>' +
+            '<a href="' + fileUrl + '" class="btn btn-primary px-4 py-2 mt-2" download>' +
+            '<i class="fa fa-download me-1"></i> Download PPT Documents w</a>' +
+            '</div>';
+        }
+      }
+
+      const modalEl = document.getElementById('modalDocPreview');
+      if (modalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+      }
+    });
+  });
+
+  // Copy button helper for cadastral / applicant data
+  document.querySelectorAll('.btn-copy-val').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const textToCopy = this.dataset.copyText;
+      if (textToCopy && navigator.clipboard) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          const origIcon = this.innerHTML;
+          this.innerHTML = '<i class="fa fa-check text-success"></i>';
+          setTimeout(() => { this.innerHTML = origIcon; }, 1500);
+        });
+      }
+    });
+  });
+
   // Dynamic Folder Tabs Switcher
   const tabs = document.querySelectorAll('.admin-tab');
   const panels = document.querySelectorAll('.tab-panel');

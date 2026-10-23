@@ -319,6 +319,7 @@ Route::middleware('auth')->group(function () {
 
         // Create Wizard — Step 1: Category Selection, Step 2: Project Details
         Route::get('/eviron/create', [EnverionsoneController::class, 'create'])->name('eviron.create');
+        Route::get('/eviron/api/customer-lookup/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])->where('mimas_no', '.*')->name('eviron.customer-lookup');
 
         // Backward-compatible routes (still accessible, now redirect to show page)
         Route::get('/environstage1', [EnverionsoneController::class, 'index1'])->name('environstage1');

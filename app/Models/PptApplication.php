@@ -24,6 +24,8 @@ class PptApplication extends Model
         'district_id',
         'taluk_village',
         'mineral_id',
+        'parivesh_password',
+        'email_password',
         'status',
         'status_notes',
         'product_value',

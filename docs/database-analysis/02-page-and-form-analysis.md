@@ -221,7 +221,7 @@ Table: App No, Client Name, District, Mineral, Folders, Status, Updated.
 | 1 | Client Name, Project/Quarry Name, Mobile, Email |
 | 2 | District, Taluk/Village |
 | 3 | Mineral (Rough Stone, Gravel, Granite, Lime Stone, Fire Clay, Others) |
-| 4 | 11 folders (Documents, EDS & EDS Reply, Demand Note, File No, SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, Environmental Clearance) |
+| 4 | 11 folders (Documents, EDS & EDS Reply, Demand Note, PPT Documents , SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, Environmental Clearance) |
 | 5 | Document upload |
 | 6 | Approve / Reports / Archive |
 | 7 | Preview |

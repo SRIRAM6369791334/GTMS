@@ -373,6 +373,7 @@
           Dharmapuri-636705. Tamil Nadu.
         </div>
         <div class="gtms-letterhead-contact">
+          <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
           <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
           <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
         </div>
@@ -510,6 +511,7 @@
           Dharmapuri-636705. Tamil Nadu.
         </div>
         <div class="gtms-letterhead-contact">
+          <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
           <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
           <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
         </div>

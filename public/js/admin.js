@@ -49,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chip = panel.querySelector('.panel-progress-chip');
     if (!chip) return;
     const rows = panel.querySelectorAll('.badge-status[data-cyclable]');
+    if (!rows.length) return;
     const approved = panel.querySelectorAll('.badge-status[data-state="approved"]').length;
     chip.textContent = `${approved} / ${rows.length} approved`;
   }

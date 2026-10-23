@@ -45,10 +45,10 @@ class VerifyFileChecksumJob implements ShouldQueue
 
         $fullPath = public_path($upload->file_path);
         if (!file_exists($fullPath)) {
-            Log::error("[VerifyFileChecksumJob] File not found at {$fullPath} for upload #{$upload->id}");
+            Log::error("[VerifyFileChecksumJob] PPT Documents t found at {$fullPath} for upload #{$upload->id}");
             $upload->update([
                 'status' => 'failed',
-                'error_message' => "Assembled file not found at: {$fullPath}",
+                'error_message' => "Assembled PPT Documents t found at: {$fullPath}",
             ]);
             return;
         }

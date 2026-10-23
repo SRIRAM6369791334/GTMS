@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Storage;
 class EnverionsoneController extends Controller
 {
     // ─── Module ID for Environment folders ────────────────────────────────
-    const ENV_MODULE_ID = 3;
+    const ENV_MODULE_ID = 1;
 
     /**
      * UNIFIED Landing Page — lists all Environment Clearance projects (B1 + B2)
@@ -82,10 +82,31 @@ class EnverionsoneController extends Controller
         $category = $request->query('category', null);
         $subCat   = $request->query('sub_category', null);
 
-        $customers = Customer::orderBy('customer_name')->get();
+        $customers = Customer::with('district')->orderBy('customer_name')->get();
         $districts = District::where('status', 1)->orderBy('name')->get();
+        $miningApplications = \App\Models\MiningApplication::with(['customer', 'district', 'mineral', 'leaseApplication'])
+            ->latest()
+            ->get();
+        $leaseApplications = \App\Models\LeaseApplication::with(['customer', 'district', 'mineral', 'surveyNumbers'])
+            ->latest()
+            ->get();
 
-        return view('pages.eviron.create', compact('step', 'category', 'subCat', 'customers', 'districts'));
+        $b1FolderNames = ['Documents', 'Report', 'GIS & Maps', 'Signed Reports', 'PARIVESH Acknowledgements'];
+        $b1Folders = Folder::where('module_id', self::ENV_MODULE_ID)
+            ->whereIn('name', $b1FolderNames)
+            ->with(['documentFields' => fn($q) => $q->where('status', 1)->orderBy('sort_order')])
+            ->get();
+
+        $b2FolderNames = ['Documents', 'Site Photographs', 'Report', 'GIS & Maps', 'Signed Reports', 'PARIVESH Acknowledgements'];
+        $b2Folders = Folder::where('module_id', self::ENV_MODULE_ID)
+            ->whereIn('name', $b2FolderNames)
+            ->with(['documentFields' => fn($q) => $q->where('status', 1)->orderBy('sort_order')])
+            ->get();
+
+        return view('pages.eviron.create', compact(
+            'step', 'category', 'subCat', 'customers', 'districts',
+            'miningApplications', 'leaseApplications', 'b1Folders', 'b2Folders'
+        ));
     }
 
     /**
@@ -107,7 +128,11 @@ class EnverionsoneController extends Controller
             'contact_phone'            => 'required|string|max:20',
             'secondary_phone'          => 'nullable|string|max:20',
             'contact_email'            => 'nullable|email|max:255',
+            'parivesh_password'        => 'nullable|string|max:255',
+            'email_password'           => 'nullable|string|max:255',
             'mimas_no'                 => 'nullable|string|max:50',
+            'mining_application_id'    => 'nullable|integer|exists:mining_applications,id',
+            'lease_application_id'     => 'nullable|integer|exists:lease_applications,id',
         ]);
 
         // B1 must have sub_category
@@ -140,7 +165,7 @@ class EnverionsoneController extends Controller
             } while (EnvironmentProject::withTrashed()->where('project_code', $code)->exists());
 
             // Resolve or link customer
-            $customerId = $validated['customer_id'];
+            $customerId = $validated['customer_id'] ?? null;
             if (!$customerId) {
                 $customer = Customer::withTrashed()
                     ->where('customer_name', $validated['client_name'])->first();
@@ -155,10 +180,22 @@ class EnverionsoneController extends Controller
                         'secondary_mobile_num'     => $validated['secondary_phone'] ?? null,
                         'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
                         'email'                    => $validated['contact_email'] ?? null,
+                        'parivesh_password'        => $validated['parivesh_password'] ?? null,
+                        'email_password'           => $validated['email_password'] ?? null,
                         'mimas_no'                 => $validated['mimas_no'] ?? null,
                         'branch_id'                => auth()->user()->branch_id ?? 1,
                     ]);
                     $customerId = $customer->id;
+                }
+            }
+
+            if ($customerId && (!empty($validated['parivesh_password']) || !empty($validated['email_password']))) {
+                $syncCust = Customer::find($customerId);
+                if ($syncCust) {
+                    $custUpdate = [];
+                    if (!empty($validated['parivesh_password'])) $custUpdate['parivesh_password'] = $validated['parivesh_password'];
+                    if (!empty($validated['email_password'])) $custUpdate['email_password'] = $validated['email_password'];
+                    $syncCust->update($custUpdate);
                 }
             }
 
@@ -167,10 +204,19 @@ class EnverionsoneController extends Controller
             $pe = max(0, $pv - $pa);
             $status = $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
 
+            $miningAppId = $request->input('mining_application_id');
+            $leaseAppId  = $request->input('lease_application_id');
+            if ($miningAppId && !$leaseAppId) {
+                $mApp = \App\Models\MiningApplication::find($miningAppId);
+                $leaseAppId = $mApp?->lease_application_id;
+            }
+
             // Create environment project
             $project = EnvironmentProject::create([
                 'project_code'             => $code,
                 'customer_id'              => $customerId,
+                'mining_application_id'    => $miningAppId,
+                'lease_application_id'     => $leaseAppId,
                 'category'                 => $cat,
                 'sub_category'             => $sc,
                 'b1_stage'                 => ($cat === 'B1') ? 'sc1_prep' : null,
@@ -182,6 +228,8 @@ class EnverionsoneController extends Controller
                 'contact_phone'            => $validated['contact_phone'],
                 'secondary_phone'          => $validated['secondary_phone'] ?? null,
                 'contact_email'            => $validated['contact_email'] ?? null,
+                'parivesh_password'        => $validated['parivesh_password'] ?? null,
+                'email_password'           => $validated['email_password'] ?? null,
                 'product_value'            => $pv,
                 'paid_amount'              => $pa,
                 'pending_amount'           => $pe,
@@ -226,6 +274,32 @@ class EnverionsoneController extends Controller
             // Auto-generate document checklist slots for this category
             $this->autoGenerateDocumentSlots($project);
 
+            // Handle optional document uploads from Step 3 intake wizard
+            if ($request->hasFile('documents')) {
+                $files = $request->file('documents');
+                $dir   = "environment/{$project->project_code}";
+                foreach ($files as $fieldId => $file) {
+                    if ($file && $file->isValid()) {
+                        $filename = time() . '_' . $file->getClientOriginalName();
+                        $path = $file->storeAs($dir, $filename, 'public');
+                        $doc = EnvironmentDocument::where('environment_project_id', $project->id)
+                            ->where('document_field_id', $fieldId)
+                            ->first();
+                        if ($doc) {
+                            $doc->update([
+                                'file_name'   => $file->getClientOriginalName(),
+                                'file_path'   => $path,
+                                'file_type'   => $file->extension(),
+                                'file_size'   => $file->getSize(),
+                                'status'      => 'uploaded',
+                                'uploaded_by' => Auth::id(),
+                                'uploaded_at' => now(),
+                            ]);
+                        }
+                    }
+                }
+            }
+
             ActivityLog::create([
                 'loggable_type' => EnvironmentProject::class,
                 'loggable_id'   => $project->id,
@@ -245,12 +319,28 @@ class EnverionsoneController extends Controller
      */
     public function show(int $id)
     {
-        $project = EnvironmentProject::with(['customer', 'district', 'ecCertificates', 'handlers', 'payments', 'pptStage1', 'pptStage2', 'pptApplications'])->findOrFail($id);
+        $project = EnvironmentProject::with([
+            'customer',
+            'district',
+            'ecCertificates',
+            'handlers',
+            'payments',
+            'pptStage1',
+            'pptStage2',
+            'pptApplications',
+            'miningApplication.mineral',
+            'miningApplication.minerals',
+            'miningApplication.natureOfWork',
+            'miningApplication.handlers',
+            'leaseApplication.surveyNumbers',
+            'leaseApplication.minerals',
+            'leaseApplication.mineral',
+            'leaseApplication.category',
+            'leaseApplication.handlers',
+        ])->findOrFail($id);
 
-        // Auto-generate document slots if legacy project has zero slots
-        if ($project->documents()->count() === 0) {
-            $this->autoGenerateDocumentSlots($project);
-        }
+        // Auto-generate or synchronize document slots
+        $this->autoGenerateDocumentSlots($project);
 
         // Get folder names for this project type
         $folderNames = $project->folder_names;
@@ -504,6 +594,8 @@ class EnverionsoneController extends Controller
                 'district_id'            => $project->district_id,
                 'taluk_village'          => $project->location ?? 'Quarry Site',
                 'mineral_id'             => $project->mineral_id ?? 1,
+                'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
+                'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
                 'product_value'          => 25000.00,
                 'paid_amount'            => 25000.00,
@@ -591,6 +683,8 @@ class EnverionsoneController extends Controller
                 'district_id'            => $project->district_id,
                 'taluk_village'          => $project->location ?? 'Quarry Site',
                 'mineral_id'             => $project->mineral_id ?? 1,
+                'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
+                'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
                 'product_value'          => 25000.00,
                 'paid_amount'            => 25000.00,
@@ -678,6 +772,8 @@ class EnverionsoneController extends Controller
                 'district_id'            => $project->district_id,
                 'taluk_village'          => $project->location ?? 'Quarry Site',
                 'mineral_id'             => $project->mineral_id ?? 1,
+                'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
+                'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
                 'product_value'          => 25000.00,
                 'paid_amount'            => 25000.00,
@@ -750,6 +846,15 @@ class EnverionsoneController extends Controller
      */
     public function autoGenerateDocumentSlots(EnvironmentProject $project): void
     {
+        // 1. Purge legacy mismatched placeholder slots that point to module 3 (mining) folders
+        $invalidFolderIds = Folder::where('module_id', '!=', self::ENV_MODULE_ID)->pluck('id');
+        if ($invalidFolderIds->isNotEmpty()) {
+            EnvironmentDocument::where('environment_project_id', $project->id)
+                ->whereIn('folder_id', $invalidFolderIds)
+                ->whereNull('file_path')
+                ->delete();
+        }
+
         $folderNames = $project->folder_names;
 
         $folders = Folder::where('module_id', self::ENV_MODULE_ID)

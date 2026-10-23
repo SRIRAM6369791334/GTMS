@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'EC Compliance Dossier — ' . $comp->compliance_no)
 @section('main_content')
-<div class="content-body default-height">
+<div class="content-body default-height ec-compliance-dossier">
   <div class="container-fluid">
     {{-- Top Action Header --}}
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
@@ -125,7 +125,7 @@
                 '19. CCTV Camera & Security Installation Photo'
               ];
             @endphp
-            <div class="list-group list-group-flush" style="max-height:480px; overflow-y:auto;">
+            <div class="list-group list-group-flush pillar-checklist-scroll">
               @foreach($pillar1Items as $item)
                 @php
                   $docMatch = $p1Docs->firstWhere('document_name', $item);
@@ -441,6 +441,57 @@
 
 {{-- Dynamic Update EC Compliance Status Modal (UI/UX Pro Max Enhanced) --}}
 <style>
+  /* =========================================================================
+     EC COMPLIANCE DOSSIER STRUCTURAL LAYOUT FIXES
+     Neutralize theme vendor .card { height: calc(100% - 30px); } trap on stacked columns
+     ========================================================================= */
+  .ec-compliance-dossier .col-lg-8 > .card,
+  .ec-compliance-dossier .col-lg-4 > .card,
+  .ec-compliance-dossier .row.mb-4 .card {
+    height: auto !important;
+  }
+  .ec-compliance-dossier .pillar-checklist-scroll {
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+  .ec-compliance-dossier .list-group-item {
+    transition: background-color 0.15s ease;
+  }
+  .ec-compliance-dossier .list-group-item:hover {
+    background-color: #f8fafc;
+  }
+
+  /* Dark Theme Visual Parity */
+  body[data-theme-version="dark"] .ec-compliance-dossier .card-header.bg-white {
+    background: transparent !important;
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .text-navy {
+    color: #93c5fd !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .text-dark {
+    color: #f1f5f9 !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .list-group-item {
+    background: transparent !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: #cbd5e1 !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .list-group-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .list-group-item .text-dark {
+    color: #e2e8f0 !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .bg-light {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #cbd5e1 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+  body[data-theme-version="dark"] .ec-compliance-dossier .border-bottom {
+    border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
   #modalUpdateCompStatus .modal-content {
     border-radius: 16px;
     border: none;

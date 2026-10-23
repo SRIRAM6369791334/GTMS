@@ -69,7 +69,7 @@ class DgpsSurveyController extends Controller
      */
     public function wizard(int $step, Request $request)
     {
-        abort_unless($step >= 1 && $step <= 8, 404);
+        abort_unless($step >= 1 && $step <= 6, 404);
 
         $draft = session('dgps_wizard', []);
 
@@ -119,7 +119,7 @@ class DgpsSurveyController extends Controller
      */
     public function saveStep(int $step, Request $request)
     {
-        abort_unless($step >= 1 && $step <= 8, 404);
+        abort_unless($step >= 1 && $step <= 6, 404);
 
         $draft = session('dgps_wizard', []);
 
@@ -140,13 +140,13 @@ class DgpsSurveyController extends Controller
             $draft['survey_team_notes'] = $request->input('survey_team_notes');
         }
 
-        // Step 6: Handlers
-        if ($step === 6) {
+        // Step 4 (formerly 6): Handlers
+        if ($step === 4) {
             $draft['handlers'] = $request->input('handlers', []);
         }
 
-        // Step 7: Payment
-        if ($step === 7) {
+        // Step 5 (formerly 7): Payment
+        if ($step === 5) {
             $val = (float)$request->input('product_value', 0);
             $paid = (float)$request->input('paid_amount', 0);
             $draft['product_value']  = $val;
@@ -162,11 +162,11 @@ class DgpsSurveyController extends Controller
             return response()->json(['success' => true, 'next_step' => $step + 1]);
         }
 
-        if ($step < 8) {
+        if ($step < 6) {
             return redirect()->route('dgps-survey.step', $step + 1);
         }
 
-        return redirect()->route('dgps-survey.step', 8);
+        return redirect()->route('dgps-survey.step', 6);
     }
 
     /**
@@ -261,7 +261,7 @@ class DgpsSurveyController extends Controller
      */
     public function show($id)
     {
-        $survey = DgpsSurvey::with(['customer', 'leaseApplication', 'handlers', 'payments', 'documents'])->findOrFail($id);
+        $survey = DgpsSurvey::with(['customer', 'leaseApplication', 'handlers', 'payments', 'documents', 'points', 'surveyor'])->findOrFail($id);
         return view('pages.dgps_survey.show', compact('survey'));
     }
 

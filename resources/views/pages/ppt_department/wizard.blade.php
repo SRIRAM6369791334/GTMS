@@ -8,14 +8,13 @@ $folders = [
   ['Documents','PARIVESH online uploading documents','fa-file-alt'],
   ['EDS & EDS Reply','EDS and EDS reply','fa-comments'],
   ['Demand Note','SPCB payment receipt and comments','fa-file-invoice-dollar'],
-  ['File No','Schedule, PPT, Radius KML, NOC and CER','fa-folder-open'],
+  ['PPT Documents ','Schedule, PPT, Radius KML, NOC and CER','fa-folder-open'],
   ['SEAC Agenda','SEAC agenda','fa-users'],
   ['SEAC Minutes','ADS and ADS reply if any','fa-clipboard-list'],
   ['ADS','ADS reply documents and PPT','fa-file-alt'],
-  ['CER Affidavit','CER affidavit','fa-balance-scale'],
   ['SEIAA Agenda','SEIAA agenda','fa-users'],
   ['SEIAA Minutes','ADS and ADS reply if any','fa-clipboard-check'],
-  ['Environmental Clearance','Environmental clearance','fa-leaf']
+  ['TOR Letter','Environmental clearance','fa-leaf']
 ];
 @endphp
 
@@ -40,6 +39,21 @@ $folders = [
 
       <div class="wizard-card">
         <div class="wc-eyebrow">Step {{ $step }} of 9 &middot; PPT Department Statutory Presentation Domain</div>
+
+        @if(session('error'))
+          <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Submission Error:</strong> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        @endif
+        @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        @endif
 
         <form method="POST" action="{{ $step === 9 ? route('ppt-department.store') : route('ppt-department.saveStep', $step) }}" id="pptWizardForm">
           @csrf
@@ -91,6 +105,8 @@ $folders = [
                       data-mobile="{{ $c->mobile_num }}"
                       data-secondary-mobile="{{ $c->secondary_mobile_num }}"
                       data-mimas="{{ $c->mimas_no }}"
+                      data-parivesh-password="{{ $c->parivesh_password }}"
+                      data-email-password="{{ $c->email_password }}"
                       {{ ($draft['customer_id'] ?? '') == $c->id ? 'selected' : ($loop->first && empty($draft['customer_id']) ? 'selected' : '') }}>
                       {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
                     </option>
@@ -116,6 +132,38 @@ $folders = [
                 <label class="form-label fw-bold text-navy">Secondary Phone Number <span class="text-muted small fw-normal">(Optional)</span></label>
                 <input class="form-control auto-filled-field" name="secondary_phone" id="field_ppt_secondary_mobile" placeholder="10-digit secondary phone number"
                   value="{{ $draft['secondary_phone'] ?? ($customers->first()?->secondary_mobile_num ?? '') }}" maxlength="15">
+              </div>
+
+              {{-- Parivesh Portal Password --}}
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy"><i class="fa fa-key me-1 text-muted"></i> Parivesh Portal Password</label>
+                <div class="input-group">
+                  <input type="text" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ppt_parivesh_password"
+                    placeholder="e.g. Parivesh@Pass2026" value="{{ $draft['parivesh_password'] ?? '' }}" autocomplete="off">
+                  <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ppt_parivesh_password" title="Toggle visibility">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-secondary btn-copy-pass" type="button" data-target="field_ppt_parivesh_password" title="Copy password">
+                    <i class="fa fa-copy"></i>
+                  </button>
+                </div>
+                <div class="form-text small text-muted">Parivesh clearance credential (saved in plain text)</div>
+              </div>
+
+              {{-- Portal / Email Password --}}
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-navy"><i class="fa fa-lock me-1 text-muted"></i> Portal / Email Password</label>
+                <div class="input-group">
+                  <input type="text" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ppt_email_password"
+                    placeholder="e.g. Email@Pass2026" value="{{ $draft['email_password'] ?? '' }}" autocomplete="off">
+                  <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ppt_email_password" title="Toggle visibility">
+                    <i class="fa fa-eye"></i>
+                  </button>
+                  <button class="btn btn-outline-secondary btn-copy-pass" type="button" data-target="field_ppt_email_password" title="Copy password">
+                    <i class="fa fa-copy"></i>
+                  </button>
+                </div>
+                <div class="form-text small text-muted">Correspondence email password (saved in plain text)</div>
               </div>
             </div>
 
@@ -465,6 +513,27 @@ $folders = [
             <div class="card-panel mb-0" style="background:var(--green-soft);border:none">
               <i class="bi bi-check-circle"></i> <span style="font-size:.78rem">All PPT statutory items, handling officers, and billing records verified. Ready to synchronize with database.</span>
             </div>
+
+            {{-- Hidden fields to ensure form data is submitted even if session is lost --}}
+            <input type="hidden" name="customer_id" value="{{ $draft['customer_id'] ?? $customerObj?->id }}">
+            <input type="hidden" name="district_id" value="{{ $draft['district_id'] ?? $districtObj?->id }}">
+            <input type="hidden" name="mineral_id" value="{{ $draft['mineral_id'] ?? $mineralObj?->id }}">
+            <input type="hidden" name="application_no" value="{{ $draft['application_no'] ?? '' }}">
+            <input type="hidden" name="project_name" value="{{ $draft['project_name'] ?? 'SEAC/SEIAA Presentation Process' }}">
+            <input type="hidden" name="taluk_village" value="{{ $draft['taluk_village'] ?? '' }}">
+            <input type="hidden" name="primary_phone" value="{{ $draft['primary_phone'] ?? '' }}">
+            <input type="hidden" name="secondary_phone" value="{{ $draft['secondary_phone'] ?? '' }}">
+            <input type="hidden" name="parivesh_password" value="{{ $draft['parivesh_password'] ?? '' }}">
+            <input type="hidden" name="email_password" value="{{ $draft['email_password'] ?? '' }}">
+            <input type="hidden" name="product_value" value="{{ $draft['product_value'] ?? 45000 }}">
+            <input type="hidden" name="paid_amount" value="{{ $draft['paid_amount'] ?? 0 }}">
+            <input type="hidden" name="payment_status" value="{{ $pStatus }}">
+            <input type="hidden" name="payment_notes" value="{{ $draft['payment_notes'] ?? '' }}">
+            @foreach($previewHandlers as $hIdx => $h)
+              <input type="hidden" name="handlers[{{ $hIdx }}][person_name]" value="{{ $h['person_name'] ?? ($h['name'] ?? '') }}">
+              <input type="hidden" name="handlers[{{ $hIdx }}][role]" value="{{ $h['role'] ?? 'Consultant' }}">
+              <input type="hidden" name="handlers[{{ $hIdx }}][notes]" value="{{ $h['notes'] ?? '' }}">
+            @endforeach
           @endif
 
           {{-- WIZARD NAVIGATION ACTIONS --}}
@@ -472,11 +541,11 @@ $folders = [
             <a href="{{ $step === 1 ? route('ppt-department.index') : route('ppt-department.step', $step - 1) }}" class="btn btn-outline-navy btn-sm">
               <i class="bi bi-arrow-left"></i> {{ $step === 1 ? 'Cancel' : 'Back' }}
             </a>
-            @can('ppt.create')
+            @if(!auth()->check() || auth()->user()->can('ppt.create') || auth()->user()->can('ppt.manage') || auth()->user()->can('ppt.edit') || auth()->user()->hasRole(['Admin', 'Super Admin', 'Officer', 'Staff']))
               <button type="submit" class="btn {{ $step === 9 ? 'btn-green' : 'btn-navy' }} px-4">
                 {{ $step === 9 ? 'Finish & Save to Database' : 'Save & Continue' }} <i class="bi {{ $step === 9 ? 'bi-check2-circle' : 'bi-arrow-right' }}"></i>
               </button>
-            @endcan
+            @endif
           </div>
         </form>
       </div>
@@ -765,6 +834,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selCust = document.getElementById('select_ppt_customer');
     const fProject = document.getElementById('field_ppt_project_name');
     const fMobile = document.getElementById('field_ppt_mobile');
+    const fSecMobile = document.getElementById('field_ppt_secondary_mobile');
 
     if (selCust) {
       for (let i = 0; i < selCust.options.length; i++) {
@@ -782,9 +852,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
 
-    const fMobile = document.getElementById('field_ppt_mobile');
-    const fSecMobile = document.getElementById('field_ppt_secondary_mobile');
-
     if (fProject) {
       const entity = c.company_name || c.customer_name || 'Presentation';
       fProject.value = entity + ' Presentation Concession';
@@ -795,6 +862,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     if (fSecMobile) {
       fSecMobile.value = c.secondary_mobile_num || '';
+    }
+
+    const fPariveshPass = document.getElementById('field_ppt_parivesh_password');
+    const fEmailPass = document.getElementById('field_ppt_email_password');
+    if (fPariveshPass && c.parivesh_password) {
+      fPariveshPass.value = c.parivesh_password;
+    }
+    if (fEmailPass && c.email_password) {
+      fEmailPass.value = c.email_password;
     }
 
     // Visual cue on all autofilled fields
@@ -875,8 +951,44 @@ document.addEventListener('DOMContentLoaded', function() {
       if (opt && fSecMobile) {
         fSecMobile.value = opt.dataset.secondaryMobile || '';
       }
+      const fParivesh = document.getElementById('field_ppt_parivesh_password');
+      const fEmailPass = document.getElementById('field_ppt_email_password');
+      if (opt && fParivesh) {
+        fParivesh.value = opt.dataset.pariveshPassword || '';
+      }
+      if (opt && fEmailPass) {
+        fEmailPass.value = opt.dataset.emailPassword || '';
+      }
     });
   }
+
+  // Toggle password visibility (text <-> password) & copy
+  document.addEventListener('click', function(e) {
+    const toggleBtn = e.target.closest('.btn-toggle-pass-visibility');
+    if (toggleBtn) {
+      const targetId = toggleBtn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input) {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        toggleBtn.innerHTML = isPass ? '<i class="fa fa-eye"></i>' : '<i class="fa fa-eye-slash"></i>';
+      }
+    }
+
+    const copyBtn = e.target.closest('.btn-copy-pass');
+    if (copyBtn) {
+      const targetId = copyBtn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input && input.value) {
+        navigator.clipboard.writeText(input.value).then(() => {
+          const origHtml = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fa fa-check text-success"></i>';
+          setTimeout(() => { copyBtn.innerHTML = origHtml; }, 2000);
+          if (typeof toastr !== 'undefined') toastr.info('Password copied to clipboard');
+        });
+      }
+    }
+  });
 
   if (btnLookupMimas) btnLookupMimas.addEventListener('click', performPptMimasLookup);
   if (mimasSearchInput) {

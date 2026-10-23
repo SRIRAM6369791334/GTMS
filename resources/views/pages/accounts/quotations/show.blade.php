@@ -444,7 +444,7 @@
                                             <i class="fas fa-check-circle text-success me-1"></i>{{ $quotation->gst_number }}
                                         </span>
                                     @else
-                                        <span class="badge bg-light text-muted border px-2 py-1">Not Registered</span>
+                                        <span class="badge bg-light text-primary border px-2 py-1">Not Registered</span>
                                     @endif
                                 </div>
                             </div>

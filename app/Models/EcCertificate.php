@@ -20,6 +20,8 @@ class EcCertificate extends Model
         'customer_id',
         'lease_application_id',
         'parivesh_app_no',
+        'parivesh_password',
+        'email_password',
         'applicant_name',
         'issue_date',
         'expiry_date',

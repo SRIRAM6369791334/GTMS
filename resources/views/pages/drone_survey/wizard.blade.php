@@ -64,9 +64,25 @@ $stepTitles = [
           <div class="wc-sub s-subtitle">{{ $stepTitles[$step][1] }}</div>
         </div>
 
+        @if(session('error'))
+          <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong>Submission Notice:</strong> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        @endif
+
+        @if(session('success'))
+          <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        @endif
+
         <form method="POST" action="{{ $step === 6 ? route('drone-survey.store') : route('drone-survey.saveStep', $step) }}" id="droneWizardForm" enctype="multipart/form-data">
           @csrf
-          <input type="hidden" name="customer_id" id="drone_customer_id" value="{{ $draft['customer_id'] ?? ($customers->first()?->id ?? 1) }}">
+          <input type="hidden" name="customer_id" id="drone_customer_id" value="{{ $draft['customer_id'] ?? ($customers->first()?->id ?? '') }}">
           <input type="hidden" name="save_draft_exit" id="save_draft_exit" value="0">
 
         <!-- ========================================================= -->
@@ -192,8 +208,8 @@ $stepTitles = [
               </div>
             </div>
 
-            <input type="hidden" name="lease_application_id" value="{{ $draft['lease_application_id'] ?? 1 }}">
-            <input type="hidden" name="mining_application_id" value="{{ $draft['mining_application_id'] ?? 1 }}">
+            <input type="hidden" name="lease_application_id" value="{{ $draft['lease_application_id'] ?? '' }}">
+            <input type="hidden" name="mining_application_id" value="{{ $draft['mining_application_id'] ?? '' }}">
           </div>
 
           <!-- SYSTEM NOTICE BANNER -->
@@ -479,7 +495,7 @@ $stepTitles = [
                   </div>
                   <div class="text-truncate">
                     <div class="ci-name fw-semibold small text-dark text-truncate">
-                      <span class="badge bg-light text-secondary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
+                      <span class="badge bg-light text-primary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
                       {{ $dItem['name'] }}
                     </div>
                     <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
@@ -761,25 +777,27 @@ $stepTitles = [
             $pa = (float)($draft['paid_amount'] ?? 30000);
             $pe = max(0, $pv - $pa);
             $st = $draft['payment_status'] ?? ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
+            $customerObj = !empty($draft['customer_id']) ? $customers->firstWhere('id', $draft['customer_id']) : $customers->first();
             $handlers = $draft['handlers'] ?? [
               ['person_name' => 'S. Karthik', 'role' => 'DGCA Certified Drone Pilot', 'notes' => 'Autonomous grid flight execution & safety compliance'],
               ['person_name' => 'M. Vignesh', 'role' => 'Photogrammetry & 3D Analyst', 'notes' => 'Image stitching, GCP georeferencing & cut/fill volume calculation']
             ];
+            $volCbm = (float)($draft['extracted_volume_cbm'] ?? 18450);
           @endphp
 
           <!-- EXECUTIVE AUDIT & READINESS BANNER -->
           <div class="s-banner-card mb-4">
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
               <div class="d-flex align-items-center gap-3">
-                <div class="s-banner-icon-badge" style="background:#dcfce7; color:#10b981;">
+                <div class="s-banner-icon-badge" style="background:#dcfce7; color:#10b981; width:44px; height:44px; border-radius:12px; font-size:20px; display:inline-flex; align-items:center; justify-content:center;">
                   <i class="bi bi-patch-check-fill"></i>
                 </div>
                 <div>
-                  <div class="s-banner-title fw-bold">Statutory Drone Dossier Audit &amp; Compliance Verification</div>
-                  <div class="s-banner-desc">Complete multi-step drone survey dossier assembled. Inspect each section below for accuracy before submitting to customer dossier.</div>
+                  <div class="s-banner-title fw-bold" style="font-size:1.05rem;">Statutory Drone Photogrammetric Dossier Audit &amp; Final Scrutiny</div>
+                  <div class="s-banner-desc text-muted" style="font-size:0.83rem;">Cross-examine DGCA flight parameters, photogrammetric volumetric calculations, flight crew roster, and financial settlement ledger before submission.</div>
                 </div>
               </div>
-              <span class="badge s-banner-status-pill" style="background:#10b981;">
+              <span class="badge s-banner-status-pill px-3 py-2 fw-semibold" style="background:#10b981; font-size:0.8rem;">
                 <i class="bi bi-shield-lock-fill me-1.5"></i>Ready for Final Submission
               </span>
             </div>
@@ -787,32 +805,64 @@ $stepTitles = [
 
           <!-- 4-BENTO EXECUTIVE METRIC OVERVIEW -->
           <div class="row g-3 mb-4">
-            <div class="col-md-3">
-              <div class="s-kpi-card" style="border-top:3px solid #3b82f6 !important;">
-                <span class="s-kpi-label">Applicant Entity</span>
-                <div class="s-kpi-value text-navy text-truncate" style="font-size:18px;" title="{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}">{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}</div>
-                <div class="s-kpi-subtext text-truncate">{{ $draft['location'] ?? 'Salem / Semmandapatti' }}</div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="s-kpi-card h-100" style="border-left:4px solid #3b82f6 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label">Applicant Entity</span>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:rgba(59,130,246,0.12); color:#3b82f6;">
+                    <i class="bi bi-building" style="font-size:13px;"></i>
+                  </div>
+                </div>
+                <div class="s-kpi-value text-navy text-truncate" title="{{ $draft['applicant_name'] ?? ($customerObj?->company_name ?: ($customerObj?->customer_name ?: 'Kaveri Granites Pvt Ltd')) }}">
+                  {{ $draft['applicant_name'] ?? ($customerObj?->company_name ?: ($customerObj?->customer_name ?: 'Kaveri Granites Pvt Ltd')) }}
+                </div>
+                <div class="s-kpi-subtext text-truncate">
+                  <i class="bi bi-geo-alt me-1"></i>{{ $draft['location'] ?? 'Salem / Semmandapatti' }}
+                </div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="s-kpi-card" style="border-top:3px solid #10b981 !important;">
-                <span class="s-kpi-label">Extracted Volume</span>
-                <div class="s-kpi-value text-success" style="font-size:18px;">{{ number_format((float)($draft['extracted_volume_cbm'] ?? 18450), 2) }} CBM</div>
-                <div class="s-kpi-subtext">Lease Area: {{ $draft['lease_area'] ?? '3.85 Ha' }}</div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="s-kpi-card h-100" style="border-left:4px solid #10b981 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label">Extracted Volume</span>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:rgba(16,185,129,0.12); color:#10b981;">
+                    <i class="bi bi-box-seam" style="font-size:13px;"></i>
+                  </div>
+                </div>
+                <div class="s-kpi-value text-success">{{ number_format($volCbm, 2) }} CBM</div>
+                <div class="s-kpi-subtext">
+                  <i class="bi bi-pin-map me-1"></i>Lease Area: {{ $draft['lease_area'] ?? '3.85 Ha' }}
+                </div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="s-kpi-card" style="border-top:3px solid #f97316 !important;">
-                <span class="s-kpi-label">Pending Balance</span>
-                <div class="s-kpi-value text-danger" style="font-size:18px;">₹ {{ number_format($pe, 2) }}</div>
-                <div class="s-kpi-subtext">Total: ₹ {{ number_format($pv, 2) }}</div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="s-kpi-card h-100" style="border-left:4px solid {{ $pe > 0 ? '#ef4444' : '#10b981' }} !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label">Financial Settlement</span>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:rgba(239,68,68,0.12); color:#ef4444;">
+                    <i class="bi bi-cash-stack" style="font-size:13px;"></i>
+                  </div>
+                </div>
+                <div class="s-kpi-value {{ $pe > 0 ? 'text-danger' : 'text-success' }}">₹ {{ number_format($pe, 2) }}</div>
+                <div class="s-kpi-subtext">
+                  Total Fee: ₹ {{ number_format($pv, 2) }} &bull; {{ ucfirst($st) }}
+                </div>
               </div>
             </div>
-            <div class="col-md-3">
-              <div class="s-kpi-card" style="border-top:3px solid #8b5cf6 !important;">
-                <span class="s-kpi-label">Flight Hardware</span>
-                <div class="s-kpi-value text-navy text-truncate" style="font-size:18px;">{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}</div>
-                <div class="s-kpi-subtext">Altitude: {{ $draft['altitude_meters'] ?? 120 }}m AGL</div>
+            <div class="col-sm-6 col-lg-3">
+              <div class="s-kpi-card h-100" style="border-left:4px solid #8b5cf6 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                  <span class="s-kpi-label">Flight Hardware &amp; UAV</span>
+                  <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:28px; height:28px; background:rgba(139,92,246,0.12); color:#8b5cf6;">
+                    <i class="bi bi-airplane-engines" style="font-size:13px;"></i>
+                  </div>
+                </div>
+                <div class="s-kpi-value text-navy text-truncate" title="{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}">
+                  {{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}
+                </div>
+                <div class="s-kpi-subtext">
+                  <i class="bi bi-arrow-up-right me-1"></i>{{ $draft['altitude_meters'] ?? 120 }}m AGL &bull; {{ $draft['gsd_cm_px'] ?? 2.5 }} cm/px
+                </div>
               </div>
             </div>
           </div>
@@ -824,8 +874,13 @@ $stepTitles = [
             <div class="s-section-panel">
               <div class="s-panel-header">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#eff6ff; color:#2563eb;"><i class="bi bi-person-badge"></i></div>
-                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">1. Applicant Identity &amp; Quarry Extent</h6>
+                  <div class="s-banner-icon-badge" style="width:34px; height:34px; font-size:16px; background:#eff6ff; color:#2563eb; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-person-badge"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">1. Applicant Identity &amp; Quarry Extent</h6>
+                    <small class="text-muted" style="font-size:11px;">Client enterprise profile, concession parameters, and contact channels</small>
+                  </div>
                 </div>
                 <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-sm s-btn-edit">
                   <i class="bi bi-pencil-square me-1"></i>Edit Step 1
@@ -833,52 +888,77 @@ $stepTitles = [
               </div>
               <div class="p-3">
                 <div class="row g-2.5">
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
                       <span class="s-tile-label">Request No</span>
-                      <span class="s-tile-value font-monospace">{{ $draft['survey_no'] ?? 'DRN-2026-0026' }}</span>
+                      <span class="s-tile-value font-monospace text-primary">{{ $draft['survey_no'] ?? 'DRN-2026-0026' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
                       <span class="s-tile-label">Applicant Entity</span>
-                      <span class="s-tile-value text-truncate">{{ $draft['applicant_name'] ?? 'Kaveri Granites Pvt Ltd' }}</span>
+                      <span class="s-tile-value text-truncate" title="{{ $draft['applicant_name'] ?? ($customerObj?->company_name ?: ($customerObj?->customer_name ?: 'Kaveri Granites Pvt Ltd')) }}">
+                        {{ $draft['applicant_name'] ?? ($customerObj?->company_name ?: ($customerObj?->customer_name ?: 'Kaveri Granites Pvt Ltd')) }}
+                      </span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Primary Phone</span>
-                      <span class="s-tile-value">{{ $draft['primary_phone'] ?? '9840123456' }}</span>
+                      <span class="s-tile-label">Customer / MIMAS ID</span>
+                      <span class="s-tile-value font-monospace">{{ $customerObj?->mimas_no ?: 'TN-MMS-SLM-0088' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Primary Contact Phone</span>
+                      <span class="s-tile-value">{{ $draft['primary_phone'] ?? ($customerObj?->mobile_num ?? '9840123456') }}</span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Secondary Contact</span>
+                      <span class="s-tile-value">{{ $draft['secondary_phone'] ?? ($customerObj?->secondary_mobile_num ?? 'N/A') }}</span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Quarry Site Location</span>
+                      <span class="s-tile-value text-truncate" title="{{ $draft['location'] ?? 'Salem / Semmandapatti' }}">{{ $draft['location'] ?? 'Salem / Semmandapatti' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile">
+                      <span class="s-tile-label">Associated Concession</span>
+                      <span class="s-tile-value">
+                        @if(!empty($draft['lease_application_id']))
+                          Lease #{{ $draft['lease_application_id'] }}
+                        @else
+                          Standalone Aerial Mission
+                        @endif
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
                       <span class="s-tile-label">Lease Area Extent</span>
                       <span class="s-tile-value">{{ $draft['lease_area'] ?? '3.85 Hectares' }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6 mt-1.5">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Quarry Site Location</span>
-                      <span class="s-tile-value">{{ $draft['location'] ?? 'Salem / Semmandapatti' }}</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6 mt-1.5">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Secondary Phone</span>
-                      <span class="s-tile-value">{{ $draft['secondary_phone'] ?? 'N/A' }}</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- PANEL 2: FLIGHT MISSION & HARDWARE SPECS -->
+            <!-- PANEL 2: FLIGHT MISSION & HARDWARE SPECS (8-TILE BALANCED 4x2 MATRIX) -->
             <div class="s-section-panel">
               <div class="s-panel-header">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#eff6ff; color:#0284c7;"><i class="bi bi-airplane-engines"></i></div>
-                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">2. Flight Operations &amp; DGCA Aerial Specs</h6>
+                  <div class="s-banner-icon-badge" style="width:34px; height:34px; font-size:16px; background:#eff6ff; color:#0284c7; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-airplane-engines"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">2. Flight Operations &amp; DGCA Aerial Specs</h6>
+                    <small class="text-muted" style="font-size:11px;">DGCA DigitalSky mission flight parameters, remote pilot credentials, and sensor resolution</small>
+                  </div>
                 </div>
                 <a href="{{ route('drone-survey.step', 2) }}" class="btn btn-sm s-btn-edit">
                   <i class="bi bi-pencil-square me-1"></i>Edit Step 2
@@ -886,88 +966,225 @@ $stepTitles = [
               </div>
               <div class="p-3">
                 <div class="row g-2.5">
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Flight Date</span>
+                      <span class="s-tile-label">Flight Execution Date</span>
                       <span class="s-tile-value">{{ $draft['flight_date'] ?? date('Y-m-d') }}</span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Drone Model</span>
-                      <span class="s-tile-value text-truncate">{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}</span>
+                      <span class="s-tile-label">Drone Hardware Model</span>
+                      <span class="s-tile-value text-truncate" title="{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}">{{ $draft['drone_model'] ?? 'DJI Matrice 300 RTK' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Drone UIN No</span>
-                      <span class="s-tile-value font-monospace text-truncate">{{ $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901' }}</span>
+                      <span class="s-tile-label">Drone UIN Registration No</span>
+                      <span class="s-tile-value font-monospace text-primary text-truncate">{{ $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Certified Pilot</span>
+                      <span class="s-tile-label">Certified Remote Pilot</span>
                       <span class="s-tile-value text-truncate">{{ $draft['drone_pilot_name'] ?? 'S. Karthik' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-4 mt-1.5">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
                       <span class="s-tile-label">Pilot RPC License</span>
                       <span class="s-tile-value font-monospace">{{ $draft['pilot_rpc_no'] ?? 'RPC #DRN-TN-8821' }}</span>
                     </div>
                   </div>
-                  <div class="col-md-4 mt-1.5">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">Flight Altitude</span>
-                      <span class="s-tile-value">{{ $draft['altitude_meters'] ?? 120 }}m AGL</span>
+                      <span class="s-tile-label">Flight Altitude (AGL)</span>
+                      <span class="s-tile-value">{{ $draft['altitude_meters'] ?? 120 }}m Above Ground</span>
                     </div>
                   </div>
-                  <div class="col-md-4 mt-1.5">
+                  <div class="col-sm-6 col-lg-3">
                     <div class="s-data-tile">
-                      <span class="s-tile-label">GSD Resolution</span>
-                      <span class="s-tile-value">{{ $draft['gsd_cm_px'] ?? 2.5 }} cm/px</span>
+                      <span class="s-tile-label">GSD Ground Resolution</span>
+                      <span class="s-tile-value">{{ $draft['gsd_cm_px'] ?? 2.5 }} cm / pixel</span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #10b981;">
+                      <span class="s-tile-label">DGCA Airspace Clearance</span>
+                      <span class="s-tile-value text-success" style="font-size:0.82rem;">
+                        <i class="bi bi-check-circle-fill me-1"></i>Green Zone (DigitalSky)
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- PANEL 3: DELIVERABLES & STATUTORY DEEDS REGISTRY -->
+            <!-- PANEL 3: DELIVERABLES & STATUTORY DEEDS REGISTRY (EXECUTIVE FOLDERS ARCHITECTURE) -->
             <div class="s-section-panel">
               <div class="s-panel-header">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#dcfce7; color:#10b981;"><i class="bi bi-folder-check"></i></div>
-                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">3. Volumetric Deliverables &amp; Statutory Registry</h6>
-                  <span class="badge s-multi-badge">Extracted: {{ number_format((float)($draft['extracted_volume_cbm'] ?? 18450), 2) }} CBM</span>
+                  <div class="s-banner-icon-badge" style="width:34px; height:34px; font-size:16px; background:#dcfce7; color:#10b981; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-folder-check"></i>
+                  </div>
+                  <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                      <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">3. Volumetric Deliverables &amp; Statutory Registry</h6>
+                      <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold" style="font-size:11px;">
+                        Extracted: {{ number_format($volCbm, 2) }} CBM
+                      </span>
+                    </div>
+                    <small class="text-muted" style="font-size:11px;">Statutory deeds, aerial photogrammetry deliverables, and DSM volumetric extraction models</small>
+                  </div>
                 </div>
                 <a href="{{ route('drone-survey.step', 3) }}" class="btn btn-sm s-btn-edit">
                   <i class="bi bi-pencil-square me-1"></i>Edit Step 3
                 </a>
               </div>
               <div class="p-3">
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <div class="p-2.5 rounded-3 bg-light border">
-                      <span class="fw-bold text-navy small"><i class="fa fa-folder-open text-primary me-1.5"></i> Folder 01: Requisition Deeds</span>
-                      <ul class="mb-0 ps-3 mt-1.5 text-muted" style="font-size:11.5px; line-height:1.6;">
-                        <li>1. Request Letter &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
-                        <li>2. Lease Area Details &amp; Combined FMB Sketch &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
-                        <li>3. Approved Mining Plan (MP Copy) &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
-                        <li>4. Environmental Clearance (EC) Copy &middot; <span class="badge bg-white text-success border">Mandatory</span></li>
-                      </ul>
+                <!-- Mini Volumetric Spec Strip -->
+                <div class="row g-2.5 mb-3">
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #10b981;">
+                      <span class="s-tile-label">Extracted Volume</span>
+                      <span class="s-tile-value text-success fw-bold" style="font-size:1.05rem;">{{ number_format($volCbm, 2) }} CBM</span>
                     </div>
                   </div>
-                  <div class="col-md-6">
-                    <div class="p-2.5 rounded-3 bg-light border">
-                      <span class="fw-bold text-navy small"><i class="fa fa-layer-group text-info me-1.5"></i> Folder 02: Photogrammetry Deliverables</span>
-                      <ul class="mb-0 ps-3 mt-1.5 text-muted" style="font-size:11.5px; line-height:1.6;">
-                        <li>5. Drone Mission Flight Log &amp; RPC Certificate</li>
-                        <li>6. Ground Control Points (GCP) Coordinates Sheet</li>
-                        <li>7. High-Resolution Orthomosaic Map (GeoTIFF)</li>
-                        <li>8. DSM / DTM Elevation Contours</li>
-                        <li>9. 3D Dense Point Cloud File (LAS)</li>
-                        <li>10. Volumetric Excavation &amp; Stockpile Report</li>
-                      </ul>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #3b82f6;">
+                      <span class="s-tile-label">Processing Engine</span>
+                      <span class="s-tile-value text-truncate" title="{{ $draft['deliverable_files_path'] ?? 'Pix4Dmapper & Cloud Suite' }}">
+                        {{ $draft['deliverable_files_path'] ?? 'Pix4Dmapper & Cloud Photogrammetry Suite' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #06b6d4;">
+                      <span class="s-tile-label">Volumetric Method</span>
+                      <span class="s-tile-value">3D DSM Differencing</span>
+                    </div>
+                  </div>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #8b5cf6;">
+                      <span class="s-tile-label">Statutory Compliance</span>
+                      <span class="s-tile-value text-truncate">TNMMCR 1959 Rule 36</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2-Card Folder Registry Grid -->
+                <div class="row g-3">
+                  <!-- Folder 01: Requisition Deeds -->
+                  <div class="col-lg-6">
+                    <div class="s-folder-box h-100">
+                      <div class="s-folder-header d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                          <div class="s-folder-icon s-folder-blue">
+                            <i class="fa fa-folder-open"></i>
+                          </div>
+                          <div>
+                            <span class="fw-bold text-navy" style="font-size:0.86rem;">Folder 01: Requisition Deeds</span>
+                            <div class="text-muted" style="font-size:0.72rem;">Applicant statutory documents</div>
+                          </div>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:10px;">4 Documents</span>
+                      </div>
+                      <div class="p-2.5">
+                        <div class="d-flex flex-column gap-1.5">
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">01</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">1. Request Letter</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">Mandatory</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">02</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">2. Combined FMB &amp; Lease Map</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">Mandatory</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">03</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">3. Approved Mining Plan (MP Copy)</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">Mandatory</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">04</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">4. Environmental Clearance (EC) Copy</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">Mandatory</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Folder 02: Photogrammetry Deliverables -->
+                  <div class="col-lg-6">
+                    <div class="s-folder-box h-100">
+                      <div class="s-folder-header d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                          <div class="s-folder-icon s-folder-emerald">
+                            <i class="fa fa-layer-group"></i>
+                          </div>
+                          <div>
+                            <span class="fw-bold text-navy" style="font-size:0.86rem;">Folder 02: Photogrammetry Deliverables</span>
+                            <div class="text-muted" style="font-size:0.72rem;">UAV datasets &amp; volumetric models</div>
+                          </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">6 Deliverables</span>
+                      </div>
+                      <div class="p-2.5">
+                        <div class="d-flex flex-column gap-1.5">
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">05</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">5. Drone Flight Log &amp; RPC Certificate</span>
+                            </div>
+                            <span class="badge bg-light text-muted border" style="font-size:10px;">PDF</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">06</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">6. Ground Control Points (GCP) Coordinates</span>
+                            </div>
+                            <span class="badge bg-light text-muted border" style="font-size:10px;">CSV / XLS</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">07</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">7. High-Res Orthomosaic Map (GeoTIFF)</span>
+                            </div>
+                            <span class="badge bg-light text-muted border" style="font-size:10px;">GeoTIFF</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">08</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">8. DSM / DTM Elevation Contours</span>
+                            </div>
+                            <span class="badge bg-light text-muted border" style="font-size:10px;">CAD / TIF</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">09</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">9. 3D Dense Point Cloud File</span>
+                            </div>
+                            <span class="badge bg-light text-muted border" style="font-size:10px;">LAS</span>
+                          </div>
+                          <div class="s-folder-item d-flex align-items-center justify-content-between p-2 rounded">
+                            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+                              <span class="badge bg-light text-primary border" style="font-size:9.5px;">10</span>
+                              <span class="text-truncate fw-semibold" style="font-size:0.82rem; color:var(--min-text-dark, #0F1E4D);">10. Volumetric Excavation &amp; Stockpile Report</span>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size:10px;">Mandatory</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -978,8 +1195,13 @@ $stepTitles = [
             <div class="s-section-panel">
               <div class="s-panel-header">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#fef3c7; color:#d97706;"><i class="bi bi-people-fill"></i></div>
-                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">4. Assigned Flight Crew &amp; Photogrammetry Personnel</h6>
+                  <div class="s-banner-icon-badge" style="width:34px; height:34px; font-size:16px; background:#fef3c7; color:#d97706; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-people-fill"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">4. Assigned Flight Crew &amp; Photogrammetry Personnel</h6>
+                    <small class="text-muted" style="font-size:11px;">Designated remote pilot in-charge and photogrammetry processing specialists</small>
+                  </div>
                 </div>
                 <a href="{{ route('drone-survey.step', 4) }}" class="btn btn-sm s-btn-edit">
                   <i class="bi bi-pencil-square me-1"></i>Edit Step 4
@@ -989,12 +1211,17 @@ $stepTitles = [
                 <div class="row g-2.5">
                   @foreach($handlers as $hIdx => $h)
                     <div class="col-md-6">
-                      <div class="s-data-tile d-flex justify-content-between align-items-center flex-row">
-                        <div>
-                          <div class="fw-bold text-navy" style="font-size:13.5px;">{{ $h['person_name'] ?? $h['name'] ?? 'Personnel' }}</div>
-                          <div class="text-muted" style="font-size:11px;">{{ $h['notes'] ?? 'Flight and regulatory coordination' }}</div>
+                      <div class="s-crew-card p-3 rounded-3 d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="s-crew-avatar">
+                            <i class="bi bi-person-fill"></i>
+                          </div>
+                          <div>
+                            <div class="fw-bold text-navy" style="font-size:14px;">{{ $h['person_name'] ?? ($h['name'] ?? 'Personnel') }}</div>
+                            <div class="text-muted" style="font-size:11.5px; line-height:1.4;">{{ $h['notes'] ?? 'Flight execution & photogrammetry processing' }}</div>
+                          </div>
                         </div>
-                        <span class="badge s-team-pill" style="font-size:11px;">{{ $h['role'] ?? 'Specialist' }}</span>
+                        <span class="badge s-team-pill flex-shrink-0 ms-2" style="font-size:11px;">{{ $h['role'] ?? 'Specialist' }}</span>
                       </div>
                     </div>
                   @endforeach
@@ -1006,8 +1233,13 @@ $stepTitles = [
             <div class="s-section-panel">
               <div class="s-panel-header">
                 <div class="d-flex align-items-center gap-2">
-                  <div class="s-banner-icon-badge" style="width:32px; height:32px; font-size:16px; background:#dcfce7; color:#10b981;"><i class="bi bi-cash-stack"></i></div>
-                  <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">5. Financial Settlement &amp; Billing Ledger</h6>
+                  <div class="s-banner-icon-badge" style="width:34px; height:34px; font-size:16px; background:#dcfce7; color:#10b981; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;">
+                    <i class="bi bi-cash-stack"></i>
+                  </div>
+                  <div>
+                    <h6 class="fw-bold text-navy mb-0" style="font-size:14px;">5. Financial Settlement &amp; Billing Ledger</h6>
+                    <small class="text-muted" style="font-size:11px;">Service quotation fee, collected advance remittance, and outstanding balance</small>
+                  </div>
                 </div>
                 <a href="{{ route('drone-survey.step', 5) }}" class="btn btn-sm s-btn-edit">
                   <i class="bi bi-pencil-square me-1"></i>Edit Step 5
@@ -1015,28 +1247,43 @@ $stepTitles = [
               </div>
               <div class="p-3">
                 <div class="row g-2.5">
-                  <div class="col-md-3">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Quoted Fee</span>
-                      <span class="s-tile-value text-navy">₹ {{ number_format($pv, 2) }}</span>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #3b82f6;">
+                      <span class="s-tile-label">Agreed Quoted Fee</span>
+                      <span class="s-tile-value text-navy" style="font-size:1.1rem;">₹ {{ number_format($pv, 2) }}</span>
+                      <small class="text-muted" style="font-size:10.5px;">Drone survey package</small>
                     </div>
                   </div>
-                  <div class="col-md-3">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Paid Advance</span>
-                      <span class="s-tile-value text-success">₹ {{ number_format($pa, 2) }}</span>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #10b981;">
+                      <span class="s-tile-label">Collected Advance</span>
+                      <span class="s-tile-value text-success" style="font-size:1.1rem;">₹ {{ number_format($pa, 2) }}</span>
+                      <small class="text-muted" style="font-size:10.5px;">Paid remittance</small>
                     </div>
                   </div>
-                  <div class="col-md-3">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Pending Due</span>
-                      <span class="s-tile-value text-danger">₹ {{ number_format($pe, 2) }}</span>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid {{ $pe > 0 ? '#ef4444' : '#10b981' }};">
+                      <span class="s-tile-label">Pending Balance Due</span>
+                      <span class="s-tile-value {{ $pe > 0 ? 'text-danger' : 'text-success' }}" style="font-size:1.1rem;">₹ {{ number_format($pe, 2) }}</span>
+                      <small class="text-muted" style="font-size:10.5px;">{{ $pe > 0 ? 'Outstanding collection' : 'Balanced (₹0 Due)' }}</small>
                     </div>
                   </div>
-                  <div class="col-md-3">
-                    <div class="s-data-tile">
-                      <span class="s-tile-label">Settlement</span>
-                      <span class="s-tile-value text-uppercase" style="font-size:12px;">{{ $st }}</span>
+                  <div class="col-sm-6 col-lg-3">
+                    <div class="s-data-tile" style="border-left:3px solid #8b5cf6;">
+                      <span class="s-tile-label">Settlement Status</span>
+                      <div class="mt-1">
+                        @php
+                          $sPillClass = match(strtolower($st)) {
+                            'paid'    => 'bg-success text-white',
+                            'partial' => 'bg-warning text-dark',
+                            default   => 'bg-danger text-white'
+                          };
+                        @endphp
+                        <span class="badge {{ $sPillClass }} px-2 py-1 text-uppercase" style="font-size:11px;">
+                          {{ $st }}
+                        </span>
+                      </div>
+                      <small class="text-muted" style="font-size:10.5px;">Commercial billing state</small>
                     </div>
                   </div>
                 </div>
@@ -1046,12 +1293,23 @@ $stepTitles = [
           </div>
 
           <!-- PRE-SUBMISSION STATUTORY DECLARATION CHECKBOX -->
-          <div class="s-notice-card mb-4 p-3" style="background:#f8fafc; border:1.5px solid #cbd5e1;">
-            <div class="form-check d-flex align-items-start gap-2">
-              <input class="form-check-input mt-1 flex-shrink-0" type="checkbox" id="statutory_declaration_drone" required>
-              <label class="form-check-label s-notice-text fw-semibold text-navy mb-0" for="statutory_declaration_drone">
-                I hereby declare that all unmanned aerial flight mission data, DGCA pilot credentials, RTK ground control benchmark coordinates, and volumetric earthwork calculations have been audited and conform to the Aircraft Rules, DGCA guidelines, and the Tamil Nadu Minor Mineral Concession Rules 1959.
-              </label>
+          <div class="s-declaration-card mb-4 p-3.5">
+            <div class="d-flex align-items-start gap-3">
+              <div class="s-declaration-icon-badge flex-shrink-0">
+                <i class="bi bi-shield-check"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold text-navy mb-1" style="font-size:13.5px;">Statutory DGCA Drone Survey &amp; Mining Compliance Declaration</h6>
+                <p class="text-muted mb-2" style="font-size:12px; line-height:1.5;">
+                  I hereby certify that all unmanned aerial flight mission data, DGCA pilot credentials, RTK ground control benchmark coordinates, and volumetric earthwork calculations have been audited and conform to the Aircraft Rules, DGCA UAS guidelines, and Rule 36 of the Tamil Nadu Minor Mineral Concession Rules 1959.
+                </p>
+                <div class="form-check">
+                  <input class="form-check-input mt-1" type="checkbox" id="statutory_declaration_drone" required checked>
+                  <label class="form-check-label fw-bold text-navy small" for="statutory_declaration_drone">
+                    I have verified all flight parameters, photogrammetric outputs, and financial ledgers, and authorize final submission.
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         @endif
@@ -1071,12 +1329,12 @@ $stepTitles = [
               </button>
             @endif
 
-            @can('drone.create')
+            @if(!auth()->check() || auth()->user()->can('drone.create') || auth()->user()->can('drone.manage') || auth()->user()->can('drone.edit') || auth()->user()->hasRole(['Admin', 'Super Admin', 'Officer', 'Staff']))
               <button type="submit" class="btn {{ $step === 6 ? 's-btn-finish' : 's-btn-submit' }} px-4 btn-drone-continue" id="btn_drone_main_submit">
                 <span>{{ $step === 6 ? 'Finish & Save Survey' : 'Save & Continue' }}</span>
                 <i class="bi {{ $step === 6 ? 'bi-check2-circle' : 'bi-arrow-right' }} ms-1"></i>
               </button>
-            @endcan
+            @endif
           </div>
         </div>
 
@@ -2072,8 +2330,108 @@ document.addEventListener('DOMContentLoaded', function() {
 
   #gtms-drone-wizard .s-panel-header {
     background: #f8fafc;
-    padding: 12px 16px;
+    padding: 12px 18px;
     border-bottom: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  #gtms-drone-wizard .s-folder-box {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-drone-wizard .s-folder-box:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  }
+
+  #gtms-drone-wizard .s-folder-header {
+    background: #f8fafc;
+    padding: 10px 14px;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  #gtms-drone-wizard .s-folder-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  #gtms-drone-wizard .s-folder-blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #2563eb;
+  }
+
+  #gtms-drone-wizard .s-folder-emerald {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+  }
+
+  #gtms-drone-wizard .s-folder-item {
+    background: #f8fafc;
+    border: 1px solid #edf2f7;
+    transition: background 0.15s ease;
+  }
+
+  #gtms-drone-wizard .s-folder-item:hover {
+    background: #f1f5f9;
+  }
+
+  #gtms-drone-wizard .s-crew-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.18s ease;
+  }
+
+  #gtms-drone-wizard .s-crew-card:hover {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+
+  #gtms-drone-wizard .s-crew-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(15, 30, 77, 0.08);
+    color: #0F1E4D;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border: 1.5px solid rgba(15, 30, 77, 0.15);
+    flex-shrink: 0;
+  }
+
+  #gtms-drone-wizard .s-declaration-card {
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-left: 5px solid #10b981;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+
+  #gtms-drone-wizard .s-declaration-icon-badge {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
   }
 
   #gtms-drone-wizard .s-data-tile {
@@ -2342,6 +2700,51 @@ document.addEventListener('DOMContentLoaded', function() {
   body[data-theme-version="dark"] #gtms-drone-wizard .s-btn-draft:hover {
     background: #1e3a8a !important;
     color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-folder-box {
+    background: #1a1b20 !important;
+    border-color: #2d3139 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-folder-header {
+    background: #161717 !important;
+    border-bottom-color: #262930 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-folder-item {
+    background: #161717 !important;
+    border-color: #262930 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-folder-item:hover {
+    background: #21242d !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-folder-item span {
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-crew-card {
+    background: #161717 !important;
+    border-color: #2d3139 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-crew-avatar {
+    background: rgba(96, 165, 250, 0.15) !important;
+    color: #60a5fa !important;
+    border-color: rgba(96, 165, 250, 0.3) !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-declaration-card {
+    background: #1a1b20 !important;
+    border-color: #2d3139 !important;
+    border-left-color: #10b981 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-declaration-card h6,
+  body[data-theme-version="dark"] #gtms-drone-wizard .s-declaration-card label {
+    color: #f8fafc !important;
   }
 </style>
 @endpush

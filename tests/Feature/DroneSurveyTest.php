@@ -225,4 +225,34 @@ class DroneSurveyTest extends TestCase
             'pending_amount'  => 25000,
         ]);
     }
+
+    /**
+     * Test wizard submission safely handles missing or non-existent foreign keys
+     */
+    public function test_wizard_submission_with_invalid_foreign_keys_sanitizes_and_creates_record(): void
+    {
+        $uniqueNo = 'DRN-FK-TEST-' . rand(1000, 9999);
+        session([
+            'drone_wizard' => [
+                'survey_no'             => $uniqueNo,
+                'customer_id'           => $this->customer->id,
+                'lease_application_id'  => 9999999, // Non-existent foreign key
+                'mining_application_id' => 9999999, // Non-existent foreign key
+                'location'              => 'FK Safety Test Site',
+                'lease_area'            => 4.20,
+            ]
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('drone-survey.store'));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('drone_surveys', [
+            'survey_no'             => $uniqueNo,
+            'customer_id'           => $this->customer->id,
+            'lease_application_id'  => null,
+            'mining_application_id' => null,
+            'location'              => 'FK Safety Test Site',
+        ]);
+    }
 }

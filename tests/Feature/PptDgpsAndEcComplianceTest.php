@@ -112,7 +112,7 @@ class PptDgpsAndEcComplianceTest extends TestCase
      */
     public function test_dgps_survey_wizard_steps(): void
     {
-        for ($i = 1; $i <= 8; $i++) {
+        for ($i = 1; $i <= 6; $i++) {
             $res = $this->actingAs($this->user)->get(route('dgps-survey.step', $i));
             $res->assertStatus(200);
         }

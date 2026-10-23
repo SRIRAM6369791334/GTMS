@@ -366,6 +366,8 @@ class CustomerDirectoryController extends Controller
                 'mobile_num'               => $customer->mobile_num,
                 'secondary_mobile_num'     => $customer->secondary_mobile_num,
                 'email'                    => $customer->email,
+                'parivesh_password'        => $customer->parivesh_password,
+                'email_password'           => $customer->email_password,
                 'district_id'     => $customer->district_id,
                 'district_name'   => $customer->district?->name,
                 'mineral_id'      => $customer->mineral_id,

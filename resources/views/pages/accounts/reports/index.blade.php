@@ -1131,7 +1131,7 @@
                 headers = ['Statutory Module', 'Type Code', 'Total Revenue (₹)', 'Applications / Receipts', 'Share (%)', 'Avg. Ticket (₹)'];
                 rows = analyticsData.module.table.map(r => [
                     `<span class="fw-bold text-dark">${r.module_name}</span>`,
-                    `<span class="badge bg-light text-secondary border font-monospace">${r.module_type}</span>`,
+                    `<span class="badge bg-light text-primary border font-monospace">${r.module_type}</span>`,
                     `<span class="fw-bold text-dark font-monospace">₹ ${formatInr(r.amount)}</span>`,
                     `<span class="badge bg-light text-dark border">${r.count}</span>`,
                     `<div class="d-flex align-items-center gap-2">

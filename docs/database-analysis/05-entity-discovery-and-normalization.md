@@ -71,7 +71,7 @@ This document walks through the process of extracting **candidate entities** fro
 - Folders appear across 6 modules, **each module has a different folder set**:
   - Mining: Field Log, Documents, Site Photos, Report, Plan, Others
   - Environment B2: Documents, Site Photographs, Report, GIS, Signed Reports, PARIVESH
-  - PPT: Documents, EDS & EDS Reply, Demand Note, File No, SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, EC
+  - PPT: Documents, EDS & EDS Reply, Demand Note, PPT Documents , SEAC Agenda, SEAC Minutes, ADS, CER Affidavit, SEIAA Agenda, SEIAA Minutes, EC
   - Lease: Documents, Lease Application, Plan
 - Do NOT repeat folder columns per module. Use a **polymorphic `project_documents`** table with `documentable_type` + `documentable_id`, and a `folders`/`document_fields` master keyed to each module.
 

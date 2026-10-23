@@ -289,6 +289,8 @@
                       data-mimas="{{ $p->customer?->mimas_no }}"
                       data-mobile="{{ $p->customer?->mobile_num ?? $p->contact_phone }}"
                       data-secondary-mobile="{{ $p->customer?->secondary_mobile_num ?? $p->secondary_phone }}"
+                      data-parivesh-password="{{ $p->parivesh_password ?? $p->customer?->parivesh_password }}"
+                      data-email-password="{{ $p->email_password ?? $p->customer?->email_password }}"
                       @selected($selectedProject && $selectedProject->id === $p->id)>
                       {{ $p->project_code }} — {{ $p->project_name }} ({{ $p->customer?->company_name ?: $p->customer?->customer_name }}) [{{ $p->category_badge }}]
                     </option>
@@ -339,6 +341,44 @@
               <input type="text" class="form-control auto-filled-field" name="secondary_phone" id="field_secondary_phone"
                 value="{{ old('secondary_phone', $s1['secondary_phone'] ?? ($selectedProject?->customer?->secondary_mobile_num ?? $selectedProject?->secondary_phone ?? '')) }}"
                 placeholder="10-digit secondary phone number" maxlength="15">
+            </div>
+
+            {{-- Parivesh Portal Password --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="fa fa-key me-1 text-muted"></i> Parivesh Portal Password
+              </label>
+              <div class="input-group">
+                <input type="text" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ec_parivesh_password"
+                  value="{{ old('parivesh_password', $s1['parivesh_password'] ?? ($selectedProject?->parivesh_password ?? ($selectedProject?->customer?->parivesh_password ?? ''))) }}"
+                  placeholder="e.g. Parivesh@Pass2026" autocomplete="off">
+                <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ec_parivesh_password" title="Toggle visibility">
+                  <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-copy-pass" type="button" data-target="field_ec_parivesh_password" title="Copy password">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+              <small class="text-muted">Parivesh login credential (saved in plain text)</small>
+            </div>
+
+            {{-- Portal / Email Password --}}
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                <i class="fa fa-lock me-1 text-muted"></i> Portal / Email Password
+              </label>
+              <div class="input-group">
+                <input type="text" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ec_email_password"
+                  value="{{ old('email_password', $s1['email_password'] ?? ($selectedProject?->email_password ?? ($selectedProject?->customer?->email_password ?? ''))) }}"
+                  placeholder="e.g. Email@Pass2026" autocomplete="off">
+                <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ec_email_password" title="Toggle visibility">
+                  <i class="fa fa-eye"></i>
+                </button>
+                <button class="btn btn-outline-secondary btn-copy-pass" type="button" data-target="field_ec_email_password" title="Copy password">
+                  <i class="fa fa-copy"></i>
+                </button>
+              </div>
+              <small class="text-muted">Applicant correspondence email credential (saved in plain text)</small>
             </div>
 
             {{-- Approval / Issue Date --}}
@@ -1016,6 +1056,15 @@ document.addEventListener('DOMContentLoaded', function() {
       secPhoneInput.value = c.secondary_mobile_num;
     }
 
+    const fPariveshPass = document.getElementById('field_ec_parivesh_password');
+    const fEmailPass = document.getElementById('field_ec_email_password');
+    if (fPariveshPass && c.parivesh_password) {
+      fPariveshPass.value = c.parivesh_password;
+    }
+    if (fEmailPass && c.email_password) {
+      fEmailPass.value = c.email_password;
+    }
+
     // Try matching customer in approved project dropdown
     if (projectSelect) {
       for (let i = 0; i < projectSelect.options.length; i++) {
@@ -1113,6 +1162,34 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // Toggle password visibility (text <-> password) & copy
+  document.addEventListener('click', function(e) {
+    const toggleBtn = e.target.closest('.btn-toggle-pass-visibility');
+    if (toggleBtn) {
+      const targetId = toggleBtn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input) {
+        const isPass = input.type === 'password';
+        input.type = isPass ? 'text' : 'password';
+        toggleBtn.innerHTML = isPass ? '<i class="fa fa-eye"></i>' : '<i class="fa fa-eye-slash"></i>';
+      }
+    }
+
+    const copyBtn = e.target.closest('.btn-copy-pass');
+    if (copyBtn) {
+      const targetId = copyBtn.getAttribute('data-target');
+      const input = document.getElementById(targetId);
+      if (input && input.value) {
+        navigator.clipboard.writeText(input.value).then(() => {
+          const origHtml = copyBtn.innerHTML;
+          copyBtn.innerHTML = '<i class="fa fa-check text-success"></i>';
+          setTimeout(() => { copyBtn.innerHTML = origHtml; }, 2000);
+          if (typeof toastr !== 'undefined') toastr.info('Password copied to clipboard');
+        });
+      }
+    }
+  });
 });
 </script>
 @endsection

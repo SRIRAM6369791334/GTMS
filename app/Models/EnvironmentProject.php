@@ -33,6 +33,8 @@ class EnvironmentProject extends Model
         'contact_phone',
         'secondary_phone',
         'contact_email',
+        'parivesh_password',
+        'email_password',
         'public_hearing_date',
         'public_hearing_minutes_file',
         'status',
@@ -175,5 +177,72 @@ class EnvironmentProject extends Model
     public function activities()
     {
         return $this->morphMany(ActivityLog::class, 'loggable')->latest();
+    }
+
+    public function getTalukNameAttribute(): ?string
+    {
+        return $this->miningApplication?->taluk ?: ($this->leaseApplication?->taluk ?: $this->location);
+    }
+
+    public function getVillageNameAttribute(): ?string
+    {
+        return $this->miningApplication?->village ?: ($this->leaseApplication?->village ?: null);
+    }
+
+    public function getSurveyNumbersListAttribute(): ?string
+    {
+        if ($this->miningApplication && !empty($this->miningApplication->survey_numbers_text)) {
+            return $this->miningApplication->survey_numbers_text;
+        }
+        if ($this->leaseApplication && $this->leaseApplication->surveyNumbers && $this->leaseApplication->surveyNumbers->isNotEmpty()) {
+            return $this->leaseApplication->surveyNumbers->pluck('survey_number')->implode(', ');
+        }
+        return null;
+    }
+
+    public function getPrimaryMineralNameAttribute(): string
+    {
+        if ($this->miningApplication && $this->miningApplication->mineral) {
+            return $this->miningApplication->mineral->name;
+        }
+        if ($this->leaseApplication && $this->leaseApplication->mineral) {
+            return $this->leaseApplication->mineral->name;
+        }
+        return 'Rough Stone & Gravel';
+    }
+
+    public function getAreaExtentHaDisplayAttribute(): ?string
+    {
+        return $this->miningApplication?->area_extent_ha ?: ($this->leaseApplication?->area_extent_ha ?: null);
+    }
+
+    public function getAreaExtentAcresDisplayAttribute(): ?string
+    {
+        return $this->leaseApplication?->area_extent_acres ?: null;
+    }
+
+    public function getApprovedMiningPlanNoAttribute(): ?string
+    {
+        return $this->miningApplication?->approval_order_no;
+    }
+
+    public function getApprovedMiningPlanDateAttribute()
+    {
+        return $this->miningApplication?->approval_date;
+    }
+
+    public function getGoNumberAttribute(): ?string
+    {
+        return $this->leaseApplication?->go_number;
+    }
+
+    public function getGoDateAttribute()
+    {
+        return $this->leaseApplication?->go_date;
+    }
+
+    public function getLeaseTenureYearsAttribute(): int
+    {
+        return $this->miningApplication?->validity_years ?: ($this->leaseApplication?->lease_period_years ?: 5);
     }
 }

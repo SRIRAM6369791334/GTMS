@@ -1608,7 +1608,7 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
                                                 <div class="pr-client-phone">
                                                     <i class="bi bi-telephone text-primary"></i>{{ $app->customer?->mobile_num ?? 'N/A' }}
                                                     @if(!empty($app->customer?->secondary_mobile_num))
-                                                        <span class="badge bg-light text-secondary border font-monospace" style="font-size:0.65rem;" title="Alternate Mobile">Alt: {{ $app->customer->secondary_mobile_num }}</span>
+                                                        <span class="badge bg-light text-primary border font-monospace" style="font-size:0.65rem;" title="Alternate Mobile">Alt: {{ $app->customer->secondary_mobile_num }}</span>
                                                     @endif
                                                 </div>
                                             </div>
@@ -2237,7 +2237,7 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
                                                 File: <span class="text-primary fw-semibold">{{ $doc->file_name }}</span> &middot; 
                                                 Uploaded {{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y') : '' }}
                                             @else
-                                                <span class="text-danger">File not yet uploaded</span>
+                                                <span class="text-danger">PPT Documents t yet uploaded</span>
                                             @endif
                                         </div>
                                         @if($doc->review_note)

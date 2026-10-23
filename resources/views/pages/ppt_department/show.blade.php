@@ -171,14 +171,13 @@
                 1 => ['Documents', 'PARIVESH online uploading documents', 'fa-file-alt'],
                 2 => ['EDS & EDS Reply', 'EDS and EDS reply communications', 'fa-comments'],
                 3 => ['Demand Note', 'SPCB payment receipt and comments', 'fa-file-invoice-dollar'],
-                4 => ['File No', 'Schedule, PPT, Radius KML, NOC and CER', 'fa-folder-open'],
+                4 => ['PPT Documents ', 'Schedule, PPT, Radius KML, NOC and CER', 'fa-folder-open'],
                 5 => ['SEAC Agenda', 'SEAC committee agenda documents', 'fa-users'],
                 6 => ['SEAC Minutes', 'ADS and ADS reply if any', 'fa-clipboard-list'],
                 7 => ['ADS', 'ADS reply documents and PPT presentation', 'fa-file-alt'],
-                8 => ['CER Affidavit', 'Corporate Environment Responsibility affidavit', 'fa-balance-scale'],
-                9 => ['SEIAA Agenda', 'State Environmental Impact Assessment Agenda', 'fa-users'],
-                10 => ['SEIAA Minutes', 'Committee minutes and appraisal decision', 'fa-clipboard-check'],
-                11 => ['Environmental Clearance', 'Final EC Granted Order', 'fa-leaf']
+                8 => ['SEIAA Agenda', 'State Environmental Impact Assessment Agenda', 'fa-users'],
+                9 => ['SEIAA Minutes', 'Committee minutes and appraisal decision', 'fa-clipboard-check'],
+                10 => ['TOR Letter', 'Final EC Granted Order', 'fa-leaf']
               ];
             @endphp
 

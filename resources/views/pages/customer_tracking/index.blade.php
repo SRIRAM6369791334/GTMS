@@ -2362,7 +2362,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                                         @endif
                                                         @if(!empty($dossierData['is_company_unified']) && !empty($cRow['applicant_name']))
                                                             <div class="mt-1">
-                                                                <span class="badge bg-light text-secondary border py-0 px-2" style="font-size: 0.68rem;" title="Partner / Applicant in Company">
+                                                                <span class="badge bg-light text-primary border py-0 px-2" style="font-size: 0.68rem;" title="Partner / Applicant in Company">
                                                                     <i class="bi bi-person me-1"></i>{{ $cRow['applicant_name'] }}
                                                                 </span>
                                                             </div>
@@ -3641,7 +3641,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                                         <span class="badge" style="background: {{ $app['badge_color'] }};">{{ $app['module_label'] }}</span>
                                                         <strong class="fs-13 text-dark">{{ $app['app_no'] }}</strong>
                                                         @if(!empty($app['status']))
-                                                            <span class="badge bg-light text-secondary border">{{ $app['status'] }}</span>
+                                                            <span class="badge bg-light text-primary border">{{ $app['status'] }}</span>
                                                         @endif
                                                     </div>
                                                     <div class="fs-12 text-muted">

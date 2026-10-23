@@ -1073,6 +1073,413 @@ class EnvironmentClearanceTest extends TestCase
     }
 
     /**
+     * Test Category B1 ETA stage renders all 6 EIA folders and document checklist items
+     */
+    public function test_category_b1_eta_stage_renders_all_six_eia_folders_and_document_slots(): void
+    {
+        $this->actingAs($this->user);
+
+        $district = District::first() ?? District::create(['name' => 'Salem', 'status' => 1]);
+
+        $customer = Customer::create([
+            'customer_name' => 'ETA Test Customer',
+            'company_name'  => 'ETA Test Granite Works',
+            'mobile_num'    => '9876543290',
+            'email'         => 'eta@example.com',
+            'pan'           => 'ABCDE1234F',
+            'gstin'         => '33ABCDE1234F1Z5',
+            'status'        => 1,
+            'branch_id'     => 1,
+        ]);
+
+        $project = EnvironmentProject::create([
+            'project_code'  => 'ENV-B1-2026-TESTETA',
+            'customer_id'   => $customer->id,
+            'category'      => 'B1',
+            'sub_category'  => 'ETA',
+            'b1_stage'      => 'sc2_prep',
+            'project_name'  => 'ETA Quarry Project',
+            'district_id'   => $district->id,
+            'location'      => 'SF 500, Attur Taluk',
+            'contact_name'  => 'ETA Manager',
+            'contact_phone' => '9876543290',
+            'contact_email' => 'eta@example.com',
+            'status'        => 'draft',
+            'branch_id'     => 1,
+        ]);
+
+        $response = $this->get(route('eviron.show', $project->id));
+        $response->assertStatus(200);
+
+        // Assert all 6 ETA statutory folders are visible
+        $response->assertSee('Documents (ToR Letter)');
+        $response->assertSee('Baseline Study');
+        $response->assertSee('Draft (12 Chapters)');
+        $response->assertSee('TNPCB Draft Submission');
+        $response->assertSee('Final EIA Report');
+        $response->assertSee('Uploading File');
+
+        // Assert key EIA statutory checklist items
+        $response->assertSee('ToR Letter');
+        $response->assertSee('Air Quality Monitoring');
+        $response->assertSee('Water Quality Monitoring');
+        $response->assertSee('Public Hearing PPT');
+        $response->assertSee('Final EIA Report — 12 Chapters');
+
+        // Clean up
+        $project->documents()->forceDelete();
+        $project->forceDelete();
+        $customer->forceDelete();
+    }
+
+    /**
+     * Test Category B2 renders all 6 statutory folders including Site Photographs
+     */
+    public function test_category_b2_renders_all_six_statutory_folders(): void
+    {
+        $this->actingAs($this->user);
+
+        $district = District::first() ?? District::create(['name' => 'Salem', 'status' => 1]);
+
+        $customer = Customer::create([
+            'customer_name' => 'B2 Test Customer',
+            'company_name'  => 'B2 Minerals',
+            'mobile_num'    => '9876543291',
+            'status'        => 1,
+            'branch_id'     => 1,
+        ]);
+
+        $project = EnvironmentProject::create([
+            'project_code'  => 'ENV-B2-2026-TESTB2',
+            'customer_id'   => $customer->id,
+            'category'      => 'B2',
+            'project_name'  => 'B2 Rough Stone Quarry',
+            'district_id'   => $district->id,
+            'location'      => 'SF 200, Omalur Taluk',
+            'contact_name'  => 'B2 Manager',
+            'contact_phone' => '9876543291',
+            'status'        => 'draft',
+            'branch_id'     => 1,
+        ]);
+
+        $response = $this->get(route('eviron.show', $project->id));
+        $response->assertStatus(200);
+
+        // Assert all 6 B2 folders
+        $response->assertSee('Documents');
+        $response->assertSee('Site Photographs');
+        $response->assertSee('Report');
+        $response->assertSee('GIS &amp; Maps', false);
+        $response->assertSee('Signed Reports');
+        $response->assertSee('PARIVESH Acknowledgements');
+
+        // Assert statutory B2 checklist items
+        $response->assertSee('500m Radius Letter');
+        $response->assertSee('Approved Mining Plan Book');
+        $response->assertSee('DGPS Survey Photograph');
+        $response->assertSee('Fencing Photograph');
+        $response->assertSee('Form-1 Application');
+
+        // Clean up
+        $project->documents()->forceDelete();
+        $project->forceDelete();
+        $customer->forceDelete();
+    }
+
+    /**
+     * Test EC dossier renders full applicant and cadastral chapters matching viewapplication standards
+     */
+    public function test_ec_dossier_renders_full_applicant_and_cadastral_chapters(): void
+    {
+        $this->actingAs($this->user);
+
+        $district = District::first() ?? District::create(['name' => 'Salem', 'status' => 1]);
+
+        $customer = Customer::create([
+            'customer_name' => 'Profile Customer',
+            'company_name'  => 'Salem Granite Exports',
+            'mimas_no'      => 'TN-MMS-SLM-999',
+            'pan'           => 'ABCDE9999Z',
+            'gstin'         => '33ABCDE9999Z1Z8',
+            'mobile_num'    => '9876543292',
+            'email'         => 'exports@salemgranite.com',
+            'address'       => '123 Quarry Road, Salem',
+            'status'        => 1,
+            'branch_id'     => 1,
+        ]);
+
+        $project = EnvironmentProject::create([
+            'project_code'  => 'ENV-B1-2026-CHAPTERS',
+            'customer_id'   => $customer->id,
+            'category'      => 'B1',
+            'sub_category'  => 'TOR',
+            'b1_stage'      => 'sc1_prep',
+            'project_name'  => 'Salem Blue Metal Concession',
+            'district_id'   => $district->id,
+            'location'      => 'SF 301/1, Valapady Taluk',
+            'contact_name'  => 'Managing Partner',
+            'contact_phone' => '9876543292',
+            'contact_email' => 'exports@salemgranite.com',
+            'status'        => 'draft',
+            'branch_id'     => 1,
+        ]);
+
+        $response = $this->get(route('eviron.show', $project->id));
+        $response->assertStatus(200);
+
+        // Chapter I assertions
+        $response->assertSee('Statutory Applicant &amp; Legal Entity Profile', false);
+        $response->assertSee('Salem Granite Exports');
+        $response->assertSee('TN-MMS-SLM-999');
+        $response->assertSee('ABCDE9999Z');
+        $response->assertSee('33ABCDE9999Z1Z8');
+
+        // Chapter II assertions
+        $response->assertSee('Geo-Spatial Cadastral &amp; Concession Extent', false);
+        $response->assertSee($district->name);
+
+        // Chapter III assertions
+        $response->assertSee('Mineral Concession, Applicable Rules &amp; Mining Approvals', false);
+
+        // Chapter IV assertions
+        $response->assertSee('Upstream Concession Pedigree &amp; Departmental Linkages', false);
+
+        // In-modal previewer assertion
+        $response->assertSee('modalDocPreview');
+
+        // Clean up
+        $project->documents()->forceDelete();
+        $project->forceDelete();
+        $customer->forceDelete();
+    }
+
+    /**
+     * Test eviron create renders the 5-step wizard stepper and document upload slots in Step 3
+     */
+    public function test_eviron_create_renders_five_step_wizard_stepper(): void
+    {
+        $this->actingAs($this->user);
+
+        $response = $this->get(route('eviron.create'));
+        $response->assertStatus(200);
+
+        // 1. Stepper labels
+        $response->assertSee('eviron_stepper');
+        $response->assertSee('Category');
+        $response->assertSee('Applicant &amp; Site', false);
+        $response->assertSee('Documents');
+        $response->assertSee('Handling Team');
+        $response->assertSee('Payment &amp; Review', false);
+
+        // 2. All 5 step panes
+        $response->assertSee('pane_step_1');
+        $response->assertSee('pane_step_2');
+        $response->assertSee('pane_step_3');
+        $response->assertSee('pane_step_4');
+        $response->assertSee('pane_step_5');
+
+        // 3. Step 3 document checklist & upload inputs
+        $response->assertSee('Step 3 of 5');
+        $response->assertSee('Statutory Document Checklist &amp; Digital Plans', false);
+        $response->assertSee('step3-file-input');
+        $response->assertSee('OVERALL COMPLETION');
+    }
+
+    /**
+     * Test eviron store successfully attaches files uploaded in Step 3
+     */
+    public function test_eviron_store_saves_uploaded_documents_from_step_3(): void
+    {
+        $this->actingAs($this->user);
+
+        $district = District::first() ?? District::create(['name' => 'Salem', 'status' => 1]);
+        $field = \App\Models\DocumentField::where('folder_id', 16)->first();
+        $this->assertNotNull($field, 'Expected at least one document field in folder 16');
+
+        $fakeFile = UploadedFile::fake()->create('statutory_form_1.pdf', 500, 'application/pdf');
+
+        $uniq = uniqid();
+        $postData = [
+            'category'       => 'B2',
+            'client_name'    => 'Step 3 Upload Customer ' . $uniq,
+            'company_name'   => 'Step 3 Upload Enterprise',
+            'project_name'   => 'Step 3 Quarry Project ' . $uniq,
+            'district_id'    => $district->id,
+            'contact_phone'  => '9876543299',
+            'product_value'  => 50000,
+            'paid_amount'    => 25000,
+            'payment_status' => 'partial',
+            'documents'      => [
+                $field->id => $fakeFile,
+            ],
+        ];
+
+        $response = $this->post(route('eviron.store'), $postData);
+        $response->assertSessionHasNoErrors();
+
+        $project = EnvironmentProject::where('project_name', 'Step 3 Quarry Project ' . $uniq)->first();
+        $this->assertNotNull($project);
+
+        $doc = \App\Models\EnvironmentDocument::where('environment_project_id', $project->id)
+            ->where('document_field_id', $field->id)
+            ->first();
+
+        $this->assertNotNull($doc);
+        $this->assertEquals('uploaded', $doc->status);
+        $this->assertNotEmpty($doc->file_path);
+        $this->assertEquals('statutory_form_1.pdf', $doc->file_name);
+
+        // Clean up
+        $project->documents()->forceDelete();
+        $project->forceDelete();
+        if ($project->customer) $project->customer->forceDelete();
+    }
+
+    /**
+     * Test: Customer Unique ID Lookup autofills customer profile via API and in wizard
+     */
+    public function test_eviron_customer_unique_id_lookup_autofills_customer_profile(): void
+    {
+        $this->actingAs($this->user);
+
+        // Ensure customer with mimas exists
+        $customer = Customer::firstOrCreate(
+            ['mimas_no' => 'TN-MMS-CBE-002'],
+            [
+                'customer_name' => 'K. Selvamani',
+                'company_name' => 'Maruthi Blue Metals',
+                'mobile_num' => '9443288910',
+                'email' => 'selvam@maruthi.com',
+                'status' => 1,
+            ]
+        );
+
+        // Verify lookup-mimas endpoint returns status 1 and customer data
+        $response = $this->getJson('/customers/lookup-mimas/' . $customer->mimas_no);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 1,
+            'data' => [
+                'mimas_no' => 'TN-MMS-CBE-002',
+                'customer_name' => 'K. Selvamani',
+                'company_name' => 'Maruthi Blue Metals',
+                'mobile_num' => '9443288910',
+            ]
+        ]);
+
+        // Verify alternate EC customer-lookup endpoint works identically
+        $ecResponse = $this->getJson('/eviron/api/customer-lookup/' . $customer->mimas_no);
+        $ecResponse->assertStatus(200);
+        $ecResponse->assertJson([
+            'status' => 1,
+            'data' => [
+                'mimas_no' => 'TN-MMS-CBE-002',
+            ]
+        ]);
+
+        // Verify eviron/create renders localCustomerList and datalist with this customer
+        $createPage = $this->get('/eviron/create');
+        $createPage->assertStatus(200);
+        $createPage->assertSee('mimas_search_input');
+        $createPage->assertSee('btn_lookup_mimas');
+        $createPage->assertSee('localCustomerList');
+        $createPage->assertSee('TN-MMS-CBE-002');
+    }
+
+    /**
+     * Test: Parivesh password and Email password are saved as text and rendered across all three applications
+     */
+    public function test_parivesh_and_email_passwords_saved_and_rendered_across_three_applications(): void
+    {
+        $this->actingAs($this->user);
+
+        // 1. eviron/create renders both fields
+        $ecCreateView = $this->get('/eviron/create');
+        $ecCreateView->assertStatus(200);
+        $ecCreateView->assertSee('name="parivesh_password"', false);
+        $ecCreateView->assertSee('name="email_password"', false);
+
+        // 1b. eviron/store saves both passwords in plain text
+        $district = District::first() ?? District::create(['name' => 'Coimbatore', 'status' => 1]);
+        $uniq = uniqid();
+        $storeResp = $this->post('/eviron', [
+            'category'          => 'B2',
+            'client_name'       => 'Credentials Test Applicant ' . $uniq,
+            'company_name'      => 'Credentials Mining Corp',
+            'project_name'      => 'Password Quarry Project ' . $uniq,
+            'district_id'       => $district->id,
+            'location'          => 'Survey 44/1, Kinathukadavu',
+            'contact_phone'     => '9888877777',
+            'contact_email'     => 'creds_' . $uniq . '@example.com',
+            'parivesh_password' => 'Parivesh@Test1234',
+            'email_password'    => 'Email@Secret2026',
+        ]);
+        $storeResp->assertRedirect();
+
+        $savedProject = EnvironmentProject::where('project_name', 'Password Quarry Project ' . $uniq)->first();
+        $this->assertNotNull($savedProject);
+        $this->assertEquals('Parivesh@Test1234', $savedProject->parivesh_password);
+        $this->assertEquals('Email@Secret2026', $savedProject->email_password);
+
+        // 2. ppt-department/step/1 renders both fields
+        $pptStep1View = $this->get('/ppt-department/step/1');
+        $pptStep1View->assertStatus(200);
+        $pptStep1View->assertSee('name="parivesh_password"', false);
+        $pptStep1View->assertSee('name="email_password"', false);
+
+        // 2b. ppt-department saveStep preserves both passwords in draft
+        $pptSaveResp = $this->post('/ppt-department/step/1', [
+            'customer_id'       => $savedProject->customer_id,
+            'project_name'      => 'PPT Pres Project ' . $uniq,
+            'primary_phone'     => '9888877777',
+            'parivesh_password' => 'Parivesh@PptPass',
+            'email_password'    => 'Email@PptSecret',
+        ]);
+        $pptSaveResp->assertRedirect();
+        $pptDraft = session('ppt_wizard', []);
+        $this->assertEquals('Parivesh@PptPass', $pptDraft['parivesh_password']);
+        $this->assertEquals('Email@PptSecret', $pptDraft['email_password']);
+
+        // 3. ec-certificate/step/1 renders both fields
+        $ecCertStep1View = $this->get('/ec-certificate/step/1?project_id=' . $savedProject->id);
+        $ecCertStep1View->assertStatus(200);
+        $ecCertStep1View->assertSee('name="parivesh_password"', false);
+        $ecCertStep1View->assertSee('name="email_password"', false);
+
+        // 3b. ec-certificate saveStep preserves both passwords in draft
+        $ecCertSaveResp = $this->post('/ec-certificate/step/1', [
+            'environment_project_id' => $savedProject->id,
+            'ec_ref_no'              => 'SEIAA-TN/EC/TEST/' . $uniq,
+            'parivesh_app_no'        => 'SIA/TN/MIN/TEST/' . $uniq,
+            'applicant_name'         => 'Credentials Mining Corp',
+            'primary_phone'          => '9888877777',
+            'issue_date'             => date('Y-m-d'),
+            'validity_years'         => 5,
+            'communication_type'     => 'Grant',
+            'parivesh_password'      => 'Parivesh@EcCertPass',
+            'email_password'         => 'Email@EcCertPass',
+        ]);
+        $ecCertSaveResp->assertRedirect();
+        $ecDraft = session('ec_wizard', []);
+        $this->assertEquals('Parivesh@EcCertPass', $ecDraft['step1']['parivesh_password']);
+        $this->assertEquals('Email@EcCertPass', $ecDraft['step1']['email_password']);
+
+        // 4. EC to PPT Promotion clones passwords
+        $promoteResp = $this->postJson("/eviron/{$savedProject->id}/submit-b2-ppt");
+        $promoteResp->assertStatus(200);
+        $clonedPpt = \App\Models\PptApplication::where('environment_project_id', $savedProject->id)->first();
+        $this->assertNotNull($clonedPpt);
+        $this->assertEquals('Parivesh@Test1234', $clonedPpt->parivesh_password);
+        $this->assertEquals('Email@Secret2026', $clonedPpt->email_password);
+
+        // Clean up
+        $clonedPpt->forceDelete();
+        $savedProject->documents()->forceDelete();
+        $savedProject->forceDelete();
+        if ($savedProject->customer) $savedProject->customer->forceDelete();
+    }
+
+    /**
      * Test Compliance: Codebase contains zero Tamil Unicode characters
      */
     public function test_codebase_contains_zero_tamil_characters(): void

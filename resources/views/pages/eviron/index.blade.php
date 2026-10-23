@@ -261,7 +261,7 @@
           <h5 class="card-title mb-0 fw-bold" style="color:#0F1E4D; font-family:'Sora',sans-serif;">
             All Environment Clearance Applications
           </h5>
-          <small class="text-muted">Master register of B1 (TOR &amp; ETA) and B2 clearances</small>
+          <small class="text-muted">Master register of B1 (TOR &amp; EIA) and B2 clearances</small>
         </div>
 
         <div class="d-flex flex-wrap align-items-center gap-2">

@@ -66,7 +66,7 @@
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="fw-bold text-dark" style="font-size: 0.88rem;">CSV File</span>
-                                        <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">UTF-8 BOM</span>
+                                        <span class="badge bg-light text-primary border" style="font-size: 0.65rem;">UTF-8 BOM</span>
                                     </div>
                                     <div class="text-muted small" style="font-size: 0.72rem;">Comma-separated table</div>
                                 </div>

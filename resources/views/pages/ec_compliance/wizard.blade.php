@@ -189,7 +189,7 @@ $labels = [
                 <select id="select_compliance_year" class="form-select" required>
                   @foreach($yearsList as $yItem)
                     <option value="{{ $yItem['start_year'] }}" {{ $startYear == $yItem['start_year'] ? 'selected' : '' }}>
-                      FY {{ $yItem['label'] }} ({{ $yItem['start_year'] }})
+                       {{ $yItem['start_year'] }}
                     </option>
                   @endforeach
                 </select>

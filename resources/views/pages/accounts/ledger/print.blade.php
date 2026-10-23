@@ -91,7 +91,63 @@
       }
     }
 
-    /* Header Banner Styling */
+    /* Letterhead Header Styling */
+    .gtms-letterhead {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #BA1B1F;
+      margin-bottom: 12px;
+      width: 100%;
+    }
+    .gtms-letterhead-logo {
+      flex: 0 0 100px;
+      max-width: 100px;
+      text-align: center;
+    }
+    .gtms-letterhead-logo img {
+      width: 100%;
+      height: auto;
+      max-height: 80px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    .gtms-letterhead-content {
+      flex: 1;
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+    }
+    .gtms-letterhead-title {
+      font-size: 21px;
+      font-weight: bold;
+      color: #BA1B1F;
+      letter-spacing: 0.5px;
+      margin: 0 0 2px 0;
+      line-height: 1.15;
+    }
+    .gtms-letterhead-accreditation {
+      font-size: 13px;
+      font-weight: bold;
+      color: #000000;
+      margin-bottom: 2px;
+      line-height: 1.25;
+    }
+    .gtms-letterhead-address {
+      font-size: 12px;
+      color: #000000;
+      line-height: 1.35;
+      margin-bottom: 2px;
+    }
+    .gtms-letterhead-contact {
+      font-size: 11.5px;
+      color: #000000;
+      line-height: 1.35;
+    }
+
+    /* Header Banner Styling Fallback */
     .header-banner {
       width: 100%;
       margin-bottom: 8px;
@@ -228,10 +284,25 @@
 
   <!-- A4 Printable Sheet -->
   <div class="sheet">
-    <!-- Header Banner -->
-    <div class="header-banner">
-      <img src="{{ asset('images/invoices/gtms_pi_banner.png') }}" alt="GTMS Banner" onerror="this.style.display='none'">
-    </div>
+    <!-- Header Letterhead -->
+    <header class="gtms-letterhead">
+      <div class="gtms-letterhead-logo">
+        <img src="{{ asset('assets/images/gtms_logo.png') }}" alt="GTMS Logo">
+      </div>
+      <div class="gtms-letterhead-content">
+        <div class="gtms-letterhead-title">GEO TECHNICAL MINING SOLUTIONS</div>
+        <div class="gtms-letterhead-accreditation">(A NABET Accredited &amp; ISO Certified)</div>
+        <div class="gtms-letterhead-address">
+          No: 2/548/D, Thadangam, Thokkampatti (post),<br>
+          Dharmapuri-636705. Tamil Nadu.
+        </div>
+        <div class="gtms-letterhead-contact">
+          <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
+          <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
+          <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
+        </div>
+      </div>
+    </header>
 
     <!-- Title Bar -->
     <div class="statement-title-wrap">
@@ -378,7 +449,7 @@
         <td style="width: 50%;">
           <div style="font-size: 8pt; color: #555; line-height: 1.3;">
             <strong>Verification Note:</strong><br>
-            This statement of account reflects verified quotations and official money receipts issued up to {{ $statementDate }}. For any discrepancies or reconciliation requests, please contact accounts@gtmsmining.com within 7 working days.
+            This statement of account reflects verified quotations and official money receipts issued up to {{ $statementDate }}. For any discrepancies or reconciliation requests, please contact info.gtmsdpi@gmail.com within 7 working days.
           </div>
           <div style="margin-top: 30px;">
             <div style="border-top: 1px dotted #000; width: 180px; text-align: center; padding-top: 4px; font-weight: bold;">

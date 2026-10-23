@@ -135,7 +135,7 @@
                   <td>
                     <div class="fw-semibold text-dark">{{ $survey->customer?->company_name ?: ($survey->customer?->customer_name ?: 'N/A') }}</div>
                     @if($survey->customer?->mimas_no)
-                      <small class="badge bg-light text-secondary border font-monospace">{{ $survey->customer->mimas_no }}</small>
+                      <small class="badge bg-light text-primary border font-monospace">{{ $survey->customer->mimas_no }}</small>
                     @endif
                   </td>
                   <td>

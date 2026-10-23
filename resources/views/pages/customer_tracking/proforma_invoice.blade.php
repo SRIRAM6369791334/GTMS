@@ -604,6 +604,7 @@
               Dharmapuri-636705. Tamil Nadu.
             </div>
             <div class="gtms-letterhead-contact">
+              <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
               <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
               <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
             </div>
@@ -618,6 +619,9 @@
             <div class="pi-text-red">{{ $customer->company_name ?: $customer->customer_name }},</div>
             <div class="pi-text-red">{{ $customer->address ?: ($customer->area ?: 'Concession Site') }},</div>
             <div class="pi-text-red">{{ $districtName }}, Tamil Nadu.</div>
+            @if($customer->gstin)
+              <div class="pi-text-red" style="font-weight: bold; margin-top: 2px;">GSTIN: {{ $customer->gstin }}</div>
+            @endif
           </div>
           <table class="pi-invoice-meta-table">
             <tr>
@@ -781,6 +785,7 @@
               Dharmapuri-636705. Tamil Nadu.
             </div>
             <div class="gtms-letterhead-contact">
+              <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
               <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
               <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
             </div>
@@ -795,6 +800,9 @@
             <div class="pi-text-red">{{ $customer->company_name ?: $customer->customer_name }},</div>
             <div class="pi-text-red">{{ $customer->address ?: ($customer->area ?: 'Concession Site') }},</div>
             <div class="pi-text-red">{{ $districtName }}, Tamil Nadu.</div>
+            @if($customer->gstin)
+              <div class="pi-text-red" style="font-weight: bold; margin-top: 2px;">GSTIN: {{ $customer->gstin }}</div>
+            @endif
           </div>
           <table class="pi-invoice-meta-table">
             <tr>
@@ -899,6 +907,7 @@
               Dharmapuri-636705. Tamil Nadu.
             </div>
             <div class="gtms-letterhead-contact">
+              <div><strong>GSTIN:</strong> 33AAQFG5164R1ZN &nbsp;|&nbsp; <strong>PAN:</strong> AAQFG5164R</div>
               <div><strong>Mob:</strong> +91 9790462882, 7010076633</div>
               <div><strong>E-mail:</strong> info.gtmsdpi@gmail.com, &nbsp;<strong>Website:</strong> www.gtmsind.com</div>
             </div>

@@ -633,7 +633,7 @@
                                     </a>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-secondary border">${inst.payment_mode}</span>
+                                    <span class="badge bg-light text-primary border">${inst.payment_mode}</span>
                                     ${inst.reference_number ? `<br><small class="text-muted font-monospace" style="font-size:0.68rem;">Ref: ${inst.reference_number}</small>` : ''}
                                 </td>
                                 <td class="text-end fw-bold text-success">₹ ${formatInr(inst.amount_paid)}</td>

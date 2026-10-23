@@ -200,6 +200,33 @@
                     <i class="fa fa-comment-dots text-warning me-1"></i><strong>Note:</strong> {{ $certificate->status_notes }}
                   </div>
                 @endif
+                @if(!empty($certificate->parivesh_password) || !empty($certificate->email_password) || !empty($certificate->environmentProject?->parivesh_password) || !empty($certificate->environmentProject?->email_password))
+                  <div class="mt-3 pt-3 border-top">
+                    <div class="small fw-bold text-navy mb-1"><i class="fa fa-shield-alt text-primary me-1"></i> Portal Credentials</div>
+                    @php
+                      $cParivesh = $certificate->parivesh_password ?: ($certificate->environmentProject?->parivesh_password ?? null);
+                      $cEmail = $certificate->email_password ?: ($certificate->environmentProject?->email_password ?? null);
+                    @endphp
+                    @if($cParivesh)
+                      <div class="d-flex align-items-center justify-content-between py-1 border-bottom small">
+                        <span class="text-muted"><i class="fa fa-key me-1"></i> Parivesh Pass:</span>
+                        <span>
+                          <code class="text-primary fw-bold">{{ $cParivesh }}</code>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1 btn-copy-val" data-copy-text="{{ $cParivesh }}" title="Copy"><i class="fa fa-copy"></i></button>
+                        </span>
+                      </div>
+                    @endif
+                    @if($cEmail)
+                      <div class="d-flex align-items-center justify-content-between py-1 small">
+                        <span class="text-muted"><i class="fa fa-lock me-1"></i> Email Pass:</span>
+                        <span>
+                          <code class="text-primary fw-bold">{{ $cEmail }}</code>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1 btn-copy-val" data-copy-text="{{ $cEmail }}" title="Copy"><i class="fa fa-copy"></i></button>
+                        </span>
+                      </div>
+                    @endif
+                  </div>
+                @endif
               </div>
               <a href="{{ route('eviron.show', $certificate->environmentProject->id) }}" class="btn btn-navy btn-sm w-100 mt-2" style="background:#0F1E4D; color:#fff;">
                 <i class="fa fa-external-link-alt me-1"></i> Open Project Folders
