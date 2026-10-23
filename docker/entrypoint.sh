@@ -37,6 +37,12 @@ if [ "$PUID" != "$CURRENT_UID" ] || [ "$PGID" != "$CURRENT_GID" ]; then
     echo "Identity aligned successfully: $(id www-data 2>/dev/null || echo "UID $PUID, GID $PGID")"
 fi
 
+# Ensure Nginx runs as www-data and permissions are synchronized
+if [ -f /etc/nginx/nginx.conf ]; then
+    sed -i 's/user nginx;/user www-data;/' /etc/nginx/nginx.conf 2>/dev/null || true
+    sed -i 's/user nobody;/user www-data;/' /etc/nginx/nginx.conf 2>/dev/null || true
+fi
+
 # Load custom php.ini if target directory exists
 if [ -f /var/www/html/docker/php.ini ] && [ -d /usr/local/etc/php/conf.d ]; then
     cp /var/www/html/docker/php.ini /usr/local/etc/php/conf.d/99-gtms.ini
@@ -52,15 +58,19 @@ mkdir -p /var/www/html/storage/framework/cache/data \
          /var/www/html/public/uploads \
          /var/lib/nginx/tmp/client_body \
          /tmp/php_uploads \
-         /var/www/html/bootstrap/cache
+         /var/www/html/bootstrap/cache \
+         /var/log/nginx \
+         /var/log/supervisor
 
 # Apply ownership to runtime and staging folders
 chown -R www-data:www-data \
     /var/www/html/storage \
     /var/www/html/public/uploads \
     /var/www/html/bootstrap/cache \
-    /var/lib/nginx/tmp \
-    /tmp/php_uploads 2>/dev/null || true
+    /var/lib/nginx \
+    /tmp/php_uploads \
+    /var/log/nginx \
+    /var/log/supervisor 2>/dev/null || true
 
 # Purge compiled blade views and bootstrap cache files from persistent storage volume
 # This prevents stale compiled templates from lingering across code deployments
@@ -76,10 +86,16 @@ chmod -R 775 \
     /var/lib/nginx/tmp \
     /tmp/php_uploads 2>/dev/null || true
 
-# Generate app key if missing
+# Validate APP_KEY (Do not allow hardcoded fallback; fail in production if empty)
 if [ -z "$APP_KEY" ]; then
-    echo "Warning: APP_KEY is empty. Generating key..."
-    php artisan key:generate --force
+    if [ "$APP_ENV" = "production" ]; then
+        echo "ERROR: APP_KEY is empty in production environment."
+        echo "Please set APP_KEY in your NAS environment (.env file)."
+        exit 1
+    else
+        echo "Warning: APP_KEY is empty. Generating development key..."
+        php artisan key:generate --force
+    fi
 fi
 
 # Create storage symlink if it doesn't exist

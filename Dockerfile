@@ -51,6 +51,12 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-enable redis \
     && apk del $PHPIZE_DEPS linux-headers
 
+# Configure Nginx worker user to match PHP-FPM www-data
+RUN sed -i 's/user nginx;/user www-data;/' /etc/nginx/nginx.conf 2>/dev/null || true \
+    && sed -i 's/user nobody;/user www-data;/' /etc/nginx/nginx.conf 2>/dev/null || true \
+    && mkdir -p /var/lib/nginx/tmp /var/log/nginx /var/log/supervisor \
+    && chown -R www-data:www-data /var/lib/nginx /var/log/nginx
+
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

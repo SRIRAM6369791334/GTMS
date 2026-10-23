@@ -1,99 +1,110 @@
-name: Deploy GTMS to Local Docker
+name: GTMS CI/CD - Build, Test & GHCR Publish
 
 on:
   push:
     branches:
       - main
 
+# Least privilege: default to none, explicitly granted per job
+permissions: {}
+
 jobs:
-  deploy:
-    name: Docker Deployment (${{ matrix.target }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: "Primary-PC"
-            runner: [self-hosted, Windows]
-          - target: "Secondary-PC"
-            runner: [self-hosted, Windows]
+  # ============================================================================
+  # JOB 1: Validation & Automated Testing
+  # ============================================================================
+  validate-and-test:
+    name: Validate & Test Codebase
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        # actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 1
 
-      - name: Validate Docker Availability
+      - name: Validate Composer Configuration
+        run: composer validate --strict
+
+      - name: Setup PHP 8.2 Runtime
+        # shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@d52fc211a0436f8839a587b3b5b8efddab4744ea
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, mysql, pdo_mysql, gd, zip
+          coverage: none
+
+      - name: Setup Node.js 20 & Compile Frontend Assets
+        # actions/setup-node@v4.2.0
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Frontend Dependencies & Build Assets
         run: |
-          docker --version
-          docker compose version
+          npm ci
+          npm run build
 
-      - name: Deploy Containers with Docker Compose
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Lint PHP Files (Syntax Validation)
         run: |
-          docker compose up -d --build
+          echo "Linting PHP codebase syntax..."
+          find app config routes tests -type f -name "*.php" -exec php -l {} +
 
-      - name: Verify Service Health
-        shell: powershell
+      - name: Verify Laravel Configuration & Route Registration
         run: |
-          $maxRetries = 15
-          $retry = 0
-          $success = $false
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+          php artisan route:list
 
-          Write-Host "Checking application health at http://localhost:8000/up..."
+      - name: Run Unit Tests
+        run: php artisan test --testsuite=Unit
 
-          while ($retry -lt $maxRetries) {
-              try {
-                  $response = Invoke-WebRequest -Uri "http://localhost:8000/up" -UseBasicParsing -TimeoutSec 5
-                  if ($response.StatusCode -eq 200) {
-                      Write-Host "Application is HEALTHY (HTTP 200)!"
-                      $success = $true
-                      break
-                  }
-              } catch {
-                  Write-Host "Waiting for service to be healthy... ($($retry + 1)/$maxRetries)"
-                  Start-Sleep -Seconds 3
-                  $retry++
-              }
-          }
+  # ============================================================================
+  # JOB 2: Build & Publish Container Image to GitHub Container Registry (GHCR)
+  # ============================================================================
+  build-and-publish:
+    name: Build & Publish GHCR Image
+    needs: validate-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-          if (-not $success) {
-              Write-Error "Deployment failed health check at http://localhost:8000/up"
-              exit 1
-          }
+    steps:
+      - name: Checkout Code
+        # actions/checkout@v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 1
 
-      - name: Automated Database Backup (Before Migration)
-        shell: powershell
-        run: |
-          $backupDir = "database/backups"
-          if (-not (Test-Path $backupDir)) {
-              New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
-          }
-          $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-          $backupFile = "$backupDir/gtms_backup_$timestamp.sql"
-          Write-Host "Creating safety backup of gtms_data database to $backupFile..."
-          
-          # Run mysqldump inside MySQL container safely
-          cmd /c "docker compose exec -T db mysqldump -u root -proot_secret gtms_data > $backupFile"
-          
-          if (Test-Path $backupFile) {
-              $size = (Get-Item $backupFile).Length
-              Write-Host "Database backup successfully created! Size: $size bytes"
-          } else {
-              Write-Warning "Could not verify backup file creation, continuing with deployment."
-          }
+      - name: Set up Docker Buildx
+        # docker/setup-buildx-action@v3.10.0
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
 
-      - name: Run Safe Database Migrations & Initial Seeding
-        run: |
-          docker compose exec -T app php artisan migrate --force
-          docker compose exec -T app php artisan tinker --execute="if (\Illuminate\Support\Facades\DB::table('users')->count() === 0) { \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]); echo 'Initial seed completed successfully.' . PHP_EOL; } else { echo 'Database already seeded, skipping.' . PHP_EOL; }"
+      - name: Authenticate with GitHub Container Registry (GHCR)
+        # docker/login-action@v3.3.0
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Clear Blade View & Bootstrap Caches
-        run: |
-          docker compose exec -T app php artisan optimize:clear
-
-      - name: Deployment Summary
-        run: |
-          docker compose ps
-
-
+      - name: Build and Push Docker Image
+        # docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/sriram6369791334/gtms:main
+            ghcr.io/sriram6369791334/gtms:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

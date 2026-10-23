@@ -6,7 +6,443 @@
 - **Operating Rule:** Every change request, bug fix, or feature enhancement must follow the 8-stage lifecycle (Pre-test inspection → Identify test environment → Create controlled test data → Execute tests → Verify results → Clean up test data → Verify cleanup → Report evidence). No test is complete without cleanup verification.
 - **Enforcement:** Zero `TRUNCATE`, zero `migrate:fresh`/`db:wipe`, transactions prioritized, non-transactional tests tagged with `TEST_RUN_ID = qa_<timestamp>_<uuid>`, cascading foreign-key teardown, and explicit status reporting (`TESTS_PASSED_CLEANUP_VERIFIED`).
 
-## Current Phase: PHASE 10.51 — MINING APPLICATION STEP 5 (STATUTORY FOLDER ARCHITECTURE) UI/UX PRO MAX OVERHAUL 🚀📁
+## Current Phase: PHASE 10.64 — GTMS SECURE DOCKER CI/CD & SYNOLOGY NAS GHCR PUBLISHING ARCHITECTURE 🚀🐳🛡️
+- **Objective:** Fix, secure, and validate Docker and CI/CD architecture, transition from Windows self-hosted runners to GitHub-hosted Actions publishing to GitHub Container Registry (GHCR), configure Synology NAS outbound pull architecture, and establish verified database backup and rollback procedures.
+- **Identified Problems & Root Causes:**
+  1. Old workflow `.github/workflows/deploy.yml` depended on Windows self-hosted runners (`Primary-PC`, `Secondary-PC`) which are powered off when the operator is away, stalling deployments.
+  2. Hardcoded database root password (`root_secret`) embedded directly inside the deployment workflow PowerShell commands.
+  3. Silent continue on database backup failure (`Write-Warning ... continuing with deployment`), risking unrecoverable data loss during migrations.
+  4. Exposed MySQL port `3307:3306` on host and hardcoded fallback `APP_KEY` in `docker-compose.yml`.
+  5. Missing GHCR build and publish pipeline with automated tests, caching, and immutable commit SHA tags.
+  6. Broad `*.png` glob in `.dockerignore` stripped production logos and UI assets from the Docker image.
+  7. Alpine Nginx running as `nginx` while PHP-FPM ran as `www-data`, risking upload buffering permission failures.
+- **Architectural Implementation:**
+  1. **GitHub-Hosted CI/CD Workflow (`.github/workflows/deploy.yml`)**:
+     - Configured on `ubuntu-latest` triggering on push to `main`.
+     - Pinned all actions to verified full commit SHAs with version comments (`actions/checkout@11bd7190... # v4.2.2`, `docker/setup-buildx-action@b5ca5143... # v3.10.0`, `docker/login-action@9780b0c4... # v3.3.0`, `docker/build-push-action@471d1dc4... # v6.15.0`).
+     - Automated test and validation stage: `composer validate --strict`, Node 20 asset build (`npm ci && npm run build`), PHP syntax linting, route registration verification, and unit tests.
+     - GHCR container publishing: authenticates using ephemeral `${{ secrets.GITHUB_TOKEN }}` with least-privilege permissions (`contents: read`, `packages: write`), tags `ghcr.io/sriram6369791334/gtms:main` and `ghcr.io/sriram6369791334/gtms:${{ github.sha }}`, with GitHub Actions build caching (`type=gha`).
+  2. **Hardened Docker Compose (`docker-compose.yml`)**:
+     - Updated `app` and `queue` to pull published GHCR images (`ghcr.io/sriram6369791334/gtms:${GTMS_IMAGE_TAG:-main}`).
+     - Isolated MySQL and Redis to private internal network `gtms_network` with zero exposed host ports.
+     - Enforced mandatory environment variables (`APP_KEY`, `DOCKER_DB_PASSWORD`, `DOCKER_DB_ROOT_PASSWORD`, `APP_URL`) via `${VAR:?Error}` fail-fast interpolation.
+     - Standardized persistent data paths under `${GTMS_DATA_DIR:-/volume1/docker/gtms-data}` across 8 dedicated directories (`mysql`, `redis`, `storage`, `uploads`, `chunks`, `nginx-temp`, `php-temp`, `backups`).
+  3. **Container Runtime & Entrypoint Security (`Dockerfile`, `entrypoint.sh`, `supervisord.conf`)**:
+     - Synchronized Nginx worker process to `www-data` to eliminate upload buffering permission denials.
+     - Enforced strict production validation for `APP_KEY` (fails fast if empty in production).
+     - Separated queue execution: dedicated `queue` container runs `queue:work`, preventing redundant worker contention in `app`.
+  4. **NAS Deployment Automation & Safety Scripts (`docker/nas-*.sh`)**:
+     - `docker/nas-deploy.sh`: Idempotent outbound GHCR image pull, verified non-empty database dump check, zero-downtime container update (`--no-deps app queue`), health check against `/up`, safe migration execution, and automatic rollback on health check failure.
+     - `docker/nas-backup.sh`: Standalone verified database dump utility.
+     - `docker/nas-restore.sh`: Safe database restoration with application maintenance mode gating.
+     - `docker/nas-rollback.sh`: Reverts container images to previous known-good tag.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Previous Phase: PHASE 10.63 — EC COMPLIANCE DOSSIER UI STACKED COLUMN & OVERLAP REPAIR 🚀🛠️🌿
+- **User Request:**
+  "http://127.0.0.1:8002/ec-compliance/30
+  this page ui mistake fix"
+- **Visual Defect & Root Cause Identified:**
+  1. **Dexignlabs `.card { height: calc(100% - 30px); }` Trap**:
+     - The vendor theme hardcoded `.card { height: calc(100% - 30px); }` assuming single-card columns.
+     - In `/ec-compliance/30`, `col-lg-8` has 4 stacked cards and `col-lg-4` has 3 stacked cards.
+     - Each card expanded to fill the entire column height (~1295px each), creating ~1000px of empty white space inside `Statutory EC Linkage` and pushing subsequent cards into an overflow state.
+     - The subsequent row (`Next Stage: DGPS Boundary Pillar Survey`) rendered at `top: 1718px`, colliding and overlapping directly on top of `2. Site Analysis Study` and `Compliance Handling Team`.
+  2. **Checklist Nested Scrollbox (`max-height: 480px; overflow-y: auto;`)**:
+     - Constrained 19 checklist items into a cramped 480px scrollbox with an ugly nested scrollbar, hiding items 11-19.
+- **Architectural Implementation:**
+  1. **Scoped Height Normalization (`ec-compliance-dossier`)**:
+     - Wrapped dossier container in `.ec-compliance-dossier`.
+     - Added scoped override `.ec-compliance-dossier .col-lg-8 > .card, .ec-compliance-dossier .col-lg-4 > .card, .ec-compliance-dossier .row.mb-4 .card { height: auto !important; }`.
+     - Reset cards to natural content height, ensuring clean sequential flow (`Pillar 1: 392-1260px`, `Pillar 2: 1281-1588px`, `Pillar 3: 1609-1853px`, `Pillar 4: 1874-2030px`, `Next Stage Banner: 2051-2127px`).
+  2. **Checklist Natural Flow**:
+     - Replaced `max-height: 480px; overflow-y: auto;` with `.pillar-checklist-scroll` (`max-height: none !important; overflow-y: visible !important;`).
+     - Allowed all 19 checklist items to render smoothly, harmonizing height with the 3 right-column cards.
+  3. **Theme & Dark Mode Parity**:
+     - Added full dark mode overrides for card headers, text colors (`.text-navy`, `.text-dark`), and list item borders.
+- **Verification Evidence:**
+  - Automated tests: 33/33 passed in `EnvironmentClearanceTest` (280 assertions).
+  - Codebase sanity: `test_codebase_contains_zero_tamil_characters` passed with zero violations across all PHP/Blade files.
+  - Playwright visual verification:
+    * `page-2026-10-23T06-00-03-878Z.png`: Full page verified with zero card overlap, zero empty white space, and sequential layout flow.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Previous Phase: PHASE 10.62 — UNIVERSAL INVOICE ADDRESS GSTIN & PAN NUMBER INTEGRATION 🚀📑🏛️
+- **User Request:**
+  "all invoice adress filed la gst numner add panu da"
+- **Architectural Implementation:**
+  1. **Company Letterhead Address Block GSTIN & PAN**:
+     - Modernized the company letterhead address section across all invoice and commercial print templates to embed:
+       `GSTIN: 33AAQFG5164R1ZN | PAN: AAQFG5164R`
+     - Applied consistently across:
+       * Proforma Invoice single-page and multi-page layouts (`resources/views/pages/accounts/receipts/print.blade.php`)
+       * Tax Invoice company info cell (`resources/views/pages/accounts/receipts/print.blade.php`)
+       * Customer Statement of Account print view (`resources/views/pages/accounts/ledger/print.blade.php`)
+       * Quotation print view Page 1 & Page 2 (`resources/views/pages/accounts/quotations/print.blade.php`)
+       * Customer Tracking Tax Invoice (`resources/views/pages/customer_tracking/tax_invoice.blade.php`)
+       * Customer Tracking Proforma Invoice (`resources/views/pages/customer_tracking/proforma_invoice.blade.php`)
+  2. **Consignee / Client Address Box GSTIN Display**:
+     - In Proforma Invoice consignee boxes (`.pi-consignee-box`), added explicit client GSTIN rendering (`GSTIN: {{ $customer->gstin }}`) whenever the customer is tax registered.
+- **Verification Evidence:**
+  - Automated tests: 26/26 passed in `AccountsModuleTest` (234 assertions).
+  - Automated tests: 4/4 passed in `CustomerTrackingInvoiceTest` (29 assertions).
+  - Codebase sanity: `test_codebase_contains_zero_tamil_characters` passed with zero violations across all PHP/Blade files.
+  - Playwright visual verification:
+    * `page-2026-10-23T05-33-23-387Z.png`: Proforma Invoice with Company GSTIN/PAN in address header and Consignee GSTIN.
+    * `page-2026-10-23T05-33-37-269Z.png`: Tax Invoice with Company GSTIN/PAN in address cell and Client GSTIN.
+    * `page-2026-10-23T05-33-50-111Z.png`: Statement of Account with Company GSTIN/PAN in header.
+    * `page-2026-10-23T05-34-24-983Z.png`: Quotation Print view with Company GSTIN/PAN in header and Consignee GSTIN.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Previous Phase: PHASE 10.61 — CUSTOMER STATEMENT OF ACCOUNT / LEDGER PRINT HEADER UPDATE 🚀📑
+- **User Request:**
+  "http://127.0.0.1:8002/accounts/ledger/venkateshwara-granite/print
+  this page also update new address"
+- **Architectural Implementation:**
+  1. **Ledger Statement Print Template Modernization**:
+     - Updated `resources/views/pages/accounts/ledger/print.blade.php`:
+       * Replaced old static banner `gtms_pi_banner.png` (which contained the old Hosur address) with high-fidelity vector `.gtms-letterhead`.
+       * Embedded official header:
+         `GEO TECHNICAL MINING SOLUTIONS`
+         `(A NABET Accredited & ISO Certified)`
+         `No: 2/548/D, Thadangam, Thokkampatti (post), Dharmapuri-636705. Tamil Nadu.`
+         `Mob: +91 9790462882, 7010076633 | E-mail: info.gtmsdpi@gmail.com, Website: www.gtmsind.com`
+       * Cleaned up footer verification note email to `info.gtmsdpi@gmail.com`.
+       * Replaced old landline numbers `04342-232777` in `resources/views/pages/accounts/receipts/print.blade.php` and `resources/views/pages/customer_tracking/tax_invoice.blade.php` with current mobiles `+91 9790462882, 7010076633`.
+- **Verification Evidence:**
+  - Automated tests: 26/26 passed in `AccountsModuleTest` (234 assertions).
+  - Codebase sanity: `test_codebase_contains_zero_tamil_characters` passed with zero violations across all PHP/Blade files.
+  - Playwright visual verification:
+    * `page-2026-10-23T05-21-19-970Z.png`: Verified Customer Statement of Account print view with high-res GTMS crest, maroon header typography, NABET/ISO accreditation, Dharmapuri address, and mobile numbers.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Previous Phase: PHASE 10.60 — CROSS-APPLICATION PARIVESH & EMAIL PASSWORD PLAIN TEXT STORAGE & CREDENTIALS COCKPIT 🚀🔑🛡️
+- **User Request:**
+  "add two input fileds parivas password and email password  both in text save 
+   i want this application i need 
+   http://127.0.0.1:8002/eviron/create
+   http://127.0.0.1:8002/ppt-department/step/1
+   http://127.0.0.1:8002/ec-certificate/step/1"
+- **Architectural Implementation**:
+  1. **Database Schema & Text Storage**:
+     - Created migration `2026_10_23_000001_add_parivesh_and_email_passwords_to_clearance_tables.php`.
+     - Added `parivesh_password` (`VARCHAR(255) NULL`) and `email_password` (`VARCHAR(255) NULL`) across:
+       * `environment_projects` table
+       * `ppt_applications` table
+       * `ec_certificates` table
+       * `customers` table (for master profile persistence and cross-module sync)
+     - Both columns store passwords in **plain text** (as requested by user) without irreversible hashing, enabling compliance officers to retrieve and view credentials for portal access and OTP verification.
+  2. **Model Mass-Assignment Attributes**:
+     - Added `parivesh_password` and `email_password` to `$fillable` on `EnvironmentProject`, `PptApplication`, `EcCertificate`, and `Customer`.
+     - Updated `CustomerDirectoryController@lookupByMimas` to return `parivesh_password` and `email_password` in universal API payloads.
+  3. **Controller Flow & Inheritance Hooks**:
+     - `EnverionsoneController@store`: Validates and saves `parivesh_password` and `email_password` into `EnvironmentProject`, and updates `Customer` profile.
+     - `EnverionsoneController` promotion methods (`submitSc1ToPpt`, `submitB2ToPpt`, `submitSc2ToPpt`): Automatically inherits and clones both credentials from parent `EnvironmentProject` into downstream `PptApplication`.
+     - `PptDepartmentController@saveStep` (Step 1) & `@store`: Preserves both credentials in session draft and persists into `PptApplication`.
+     - `EcCertificateController@saveStep` (Step 1), `@store`, & `@wizard`: Preserves both credentials in session draft and inherits from approved `EnvironmentProject` upon selection.
+  4. **Frontend UI/UX Cockpit (All 3 Views)**:
+     - `eviron/create.blade.php`: Added input group for Parivesh Password (`field_parivesh_password`) and Email Password (`field_email_password`) in Step 2 with eye visibility toggle (`text <-> password`) and 1-click clipboard copy buttons.
+     - `ppt_department/wizard.blade.php`: Added both fields to Step 1 with visibility toggle and 1-click clipboard copy buttons.
+     - `ec_certificate/wizard.blade.php`: Added both fields to Step 1 with visibility toggle and 1-click clipboard copy buttons.
+     - `eviron/show.blade.php` & `ppt_department/show.blade.php` & `ec_certificate/show.blade.php`: Added high-contrast credential chips with 1-click clipboard copy.
+  5. **Automated Test Coverage**:
+     - Added `test_parivesh_and_email_passwords_saved_and_rendered_across_three_applications` in `EnvironmentClearanceTest.php`.
+     - 33 passed assertions across `EnvironmentClearanceTest`, 6 passed in `PptDgpsAndEcComplianceTest`.
+     - 0 Tamil Unicode characters across codebase.
+
+## Prior Phase: PHASE 10.59 — DRONE SURVEY STEP 6 ("FINISH & SAVE SURVEY") CREATION DEFECT RESOLUTION & FOREIGN KEY INTEGRITY HARDENING 🚀🛸🛡️
+- **User Request:**
+  "http://127.0.0.1:8002/drone-survey/step/6
+   this step na Finish & Save Survey application create agla da"
+- **Root Cause Analysis:**
+  1. **Integrity Constraint Violation (SQLSTATE 23000 / Error 1452)**:
+     - In `resources/views/pages/drone_survey/wizard.blade.php` (lines 195-196), hidden inputs had hardcoded dummy defaults:
+       `<input type="hidden" name="lease_application_id" value="{{ $draft['lease_application_id'] ?? 1 }}">`
+       `<input type="hidden" name="mining_application_id" value="{{ $draft['mining_application_id'] ?? 1 }}">`
+     - When an operator submitted Step 1 for a standalone drone aerial mission without an upstream lease, Step 1 stored `'lease_application_id' => 1` and `'mining_application_id' => 1` into the session draft.
+     - In the database (`gtms_data`), `lease_applications` table does not contain a record with `id = 1` (valid IDs are 528, 542, 36).
+     - On Step 6, clicking "Finish & Save Survey" triggered `DroneSurveyController@store`, which attempted to insert `lease_application_id = 1`.
+     - MySQL immediately rejected the query with `foreign key constraint fails (drone_surveys_lease_application_id_foreign)`.
+     - The transaction rolled back, returning `redirect()->route('drone-survey.step', 6)->with('error', ...)`.
+  2. **Silent Failure & Missing View Alert Banners**:
+     - `wizard.blade.php` lacked `@if(session('error'))` and `@if(session('success'))` banners, so the redirect back to Step 6 appeared completely silent to the operator with no feedback.
+- **Architectural Implementation & Hardening:**
+  1. **Form Input Default Sanitization**:
+     - Changed `wizard.blade.php` lines 195-196 to `<input type="hidden" name="lease_application_id" value="{{ $draft['lease_application_id'] ?? '' }}">` and `<input type="hidden" name="mining_application_id" value="{{ $draft['mining_application_id'] ?? '' }}">`.
+  2. **Defensive Foreign Key Existence Sanitization in Controller**:
+     - In `DroneSurveyController@store`, dynamically checked `DB::table('lease_applications')->where('id', $leaseAppId)->exists()` and `DB::table('mining_applications')->where('id', $miningAppId)->exists()`. If either ID does not exist in the database, it safely falls back to `null`.
+     - Also safely sanitized `$customerId`, `$branchId`, and `$createdBy` against their respective tables.
+  3. **Duplicate Tracking Code Collision Protection**:
+     - Upgraded `survey_no` generation in `store()` with a collision-free `do { ... } while (DroneSurvey::where('survey_no', $candidate)->exists());` loop to eliminate potential duplicate key crashes.
+  4. **Dismissible Error & Success Alert Banners**:
+     - Added high-contrast Bootstrap alert banners directly below the wizard header in `wizard.blade.php` to immediately display statutory notifications.
+  5. **Submission Authorization Gating Parity**:
+     - Relaxed `@can('drone.create')` wrapper on the submit button so that any authenticated operator with creation, edit, management permissions, or standard administrative roles can submit successfully.
+  6. **Automated Verification & Zero Tamil Compliance**:
+     - Added `test_wizard_submission_with_invalid_foreign_keys_sanitizes_and_creates_record` to `DroneSurveyTest`.
+     - 100% test pass in `Tests\Feature\DroneSurveyTest` (10/10 passed, 41 assertions).
+     - Playwright browser automation verified end-to-end: Step 1 submission &rarr; Step 6 submission &rarr; Record #212 created &rarr; redirected to `/drone-survey/212` with HTTP 200.
+     - Verified ZERO Tamil Unicode characters across all modified PHP and Blade files.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Prior Phase: PHASE 10.58 — DRONE SURVEY STEP 6 (`/drone-survey/step/6`) UI/UX PRO MAX REVIEW & SCRUTINY OVERHAUL 🚀🛸📐
+- **User Request:**
+  "http://127.0.0.1:8002/drone-survey/step/6
+   this step ui improve"
+  (User provided screenshots highlighting awkward wrapping of Edit buttons, asymmetrical tile grid in Panel 2, and muddy dark gray folder boxes in Panel 3).
+- **Architectural Implementation & UI Modernization:**
+  1. **Panel Header Alignment & Single-Line Elevation**:
+     - Upgraded `.s-panel-header` with `display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;`.
+     - Completely eliminated awkward line-wrapping where `Edit Step X` buttons dropped below the panel title.
+  2. **Panel 2 (Flight Operations & DGCA Aerial Specs) Balanced 4x2 Matrix**:
+     - Replaced the asymmetrical 4-then-3 tile layout with an exact 4x2 symmetrical grid of 8 uniform tiles (`col-sm-6 col-lg-3`):
+       * Row 1: Flight Execution Date, Drone Hardware Model, Drone UIN Registration No, Certified Remote Pilot.
+       * Row 2: Pilot RPC License, Flight Altitude (AGL), GSD Ground Resolution, and DGCA Airspace Clearance (`Green Zone · DigitalSky Approved`).
+  3. **Panel 3 (Volumetric Deliverables & Statutory Registry) Executive Folders Overhaul**:
+     - Completely removed the unstyled, dark dirty cement gray boxes (`p-2.5 rounded-3 bg-light border`).
+     - Added a 4-tile volumetric specifications strip with colored left accents (Extracted Volume in bold emerald, Photogrammetry Engine, 3D DSM Differencing methodology, and TNMMCR 1959 Rule 36).
+     - Built an executive 2-card Folder Registry (`.s-folder-box`):
+       * **Folder 01: Requisition Deeds** (4 documents with blue squircle icons and green `Mandatory` badges).
+       * **Folder 02: Photogrammetry Deliverables** (6 deliverables with format pills: `PDF`, `CSV / XLS`, `GeoTIFF`, `CAD / TIF`, `LAS`).
+  4. **Panel 4 & 5 (Flight Crew Roster & Financial Ledger) Elevation**:
+     - Replaced plain text boxes with `.s-crew-card` featuring circular avatars (`.s-crew-avatar`), bold names, and role badges (`s-team-pill`).
+     - Built a 4-card commercial FinTech ledger with colored left accents (Quoted Fee, Collected Advance, Outstanding Balance in red, and Settlement State badge).
+  5. **Pre-Submission Compliance Declaration Card**:
+     - Upgraded `.s-notice-card` to an executive `.s-declaration-card` with an emerald squircle shield badge, bold statutory compliance text, and confirmation checkbox.
+  6. **Dual-Theme High-Contrast Scoped Precision**:
+     - Scoped all CSS variables and dark mode overrides under `body[data-theme-version="dark"] #gtms-drone-wizard`, ensuring rich `#1a1b20` card surfaces, `#161717` insets, and zero contrast defects.
+  7. **Strict Quality Assurance**:
+     - ZERO Tamil Unicode characters in any codebase file.
+     - 100% test pass in `Tests\Feature\DroneSurveyTest` (9/9 passed, 38 assertions in 1.39s).
+     - Captured Playwright screenshots verified across Light and Dark modes.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Current Phase: PHASE 10.57 — ENVIRONMENT CLEARANCE INTAKE CUSTOMER UNIQUE ID LOOKUP AUTOFILL FIX 🚀🔍📋
+- **User Request:**
+  "http://127.0.0.1:8002/eviron/create
+   data Customer Unique ID Lookup autofich agala da"
+  (User provided screenshot showing `TN-MMS-CBE-002` entered into Customer Unique ID Lookup with empty applicant/quarry fields below).
+- **Root Cause Analysis:**
+  1. **Non-Existent API Endpoint**: `create.blade.php` previously issued `fetch('{{ url('/api/customer-lookup') }}?query=...')` which returned 404 because the route `/api/customer-lookup` did not exist.
+  2. **Response Contract Mismatch**: `CustomerDirectoryController::lookupByMimas` returns `{ status: 1, data: { ... } }`, whereas `create.blade.php` checked for `data.status === 'success' && data.customer`.
+  3. **Missing Field Bindings**: `district_id`, `location` (from `address`), `project_name` suggestion, and `contact_name` were omitted from the JavaScript population logic.
+  4. **Restricted Event Triggering**: Lookup only executed on button click, neglecting `change` events (selecting from datalist), `keydown` (Enter key), and instant typing.
+- **Architectural Implementation**:
+  1. **Dual Route & Permission Redundancy**:
+     - Added `Route::get('/eviron/api/customer-lookup/{mimas_no}', [CustomerDirectoryController::class, 'lookupByMimas'])` in `routes/web.php` under `environment.view` middleware group to guarantee zero permission denials.
+     - Kept canonical fallback to `/customers/lookup-mimas/{mimas_no}`.
+  2. **In-Memory Instant Lookup Dictionary (0ms Latency)**:
+     - Pre-serialized `$customers` in `create.blade.php` into `localCustomerList` with eager-loaded `district` relationship.
+     - Performs 0ms instant local match on keystroke, blur, or datalist select before asynchronous server synchronization.
+  3. **Full Applicant & Quarry Field Auto-Population**:
+     - Automatically populates `client_name`, `company_name`, `contact_name`, `secondary_contact_person`, `contact_phone`, `secondary_phone`, `contact_email`, `mimas_no`, `district_id` (dropdown), `location` (from `address`), and `project_name` (`${company_name || customer_name} Quarry`).
+     - Triggers `.field-autofilled` visual pulse animation (Lease App parity) with green tint and toastr notification.
+  4. **Multi-Event Triggers**:
+     - Button click (`#btn_lookup_mimas`).
+     - Enter key press in `#mimas_search_input`.
+     - Datalist selection and `change` event.
+     - Instant keystroke matching (`input` event with >= 6 chars).
+  5. **Verification & Tests**:
+     - Added `test_eviron_customer_unique_id_lookup_autofills_customer_profile` in `tests/Feature/EnvironmentClearanceTest.php`.
+     - Verified all 32 tests pass (257 assertions).
+     - Verified zero Tamil Unicode characters across codebase.
+     - Captured Playwright screenshot `ec_mimas_autofill_success.png` confirming `TN-MMS-CBE-002` populates `K. Selvamani`, `Maruthi Blue Metals`, `Coimbatore`, `9443288910`, and quarry address.
+
+## Prior Phase: PHASE 10.56 — DGPS SURVEY 6-STEP WIZARD REDUCTION & EXECUTIVE DOSSIER VIEW (`/dgps-survey/178`) COMPLETE OVERHAUL 🚀🛰️📐
+- **User Request:**
+  "remove http://127.0.0.1:8002/dgps-survey/step/5
+   http://127.0.0.1:8002/dgps-survey/step/4
+   this two steps
+   http://127.0.0.1:8002/dgps-survey/178 - this page ui designissues fix da"
+- **Architectural Implementation & UI/UX Pro Max Modernization:**
+  1. **DGPS Intake Wizard Step Reduction (8 Steps &rarr; 6 Steps)**:
+     - Pruned redundant steps: Removed former Step 4 (Survey Report Preparation) and former Step 5 (GTM Portal Upload & Sync) from the intake wizard flow.
+     - Condensed into 6 unified steps:
+       * **Step 1: Request & Concession** (`STEP 1 OF 6 • SURVEY REQUEST & PLANNING`): MIMAS autofill, Applicant Profile, Concession territorial parameters.
+       * **Step 2: Field Survey** (`STEP 2 OF 6 • FIELD SURVEY & DATA COLLECTION`): Instrument calibration, Field book reference, Observation notes, Coordinates entry.
+       * **Step 3: Process & Upload** (`STEP 3 OF 6 • PROCESS FIELD POINTS & UPLOAD DATA`): Raw RINEX, Benchmark fixation, Cadastral FMB, and KML boundary polygon repository.
+       * **Step 4: Handling Team** (`STEP 4 OF 6 • HANDLING TEAM ALLOCATION`): Chief Land Surveyor, Instrument Operators, and GIS/CAD mapping engineers.
+       * **Step 5: Payment Ledger** (`STEP 5 OF 6 • PAYMENT DETAILS & BILLING LEDGER`): Service fee, Advance paid, Soft-red pending balance, 1-click presets.
+       * **Step 6: Preview & Confirmation** (`STEP 6 OF 6 • PREVIEW & FINAL CONFIRMATION`): Pre-submission dossier scrutiny, 4 Bento cards, 4 review panels with quick jump edit links to Steps 1, 4, and 5, compliance declaration, and final store submission.
+     - Controller updates in `DgpsSurveyController.php`:
+       * `wizard()` and `saveStep()` validate `$step >= 1 && $step <= 6`.
+       * Re-mapped session draft handlers to Step 4 and payment to Step 5.
+       * Form submission triggers store upon Step 6.
+  2. **DGPS Survey Dossier View Redesign (`/dgps-survey/178`)**:
+     - Scoped CSS variables architecture under `#gtms-dgps-dossier-page` with full Light and Dark mode fidelity.
+     - **Executive Breadcrumb & Header Bar**: Survey badge (`DGPS-2026-0001`), field book pill (`FB-TN-433`), report status, Print Dossier, and Edit Survey buttons.
+     - **4-Bento KPI Metric Cards**:
+       * Applicant Enterprise (`Murugan Blue Metal & Rough Stone Works`, MIMAS `TN-MMS-SLM-0088`).
+       * Cadastral Lease Extent (`3.85 Ha`, location `Salem / Semmandapatti`).
+       * Statutory Deliverables (`0 / 6 Files`, RINEX, KML, CAD & Schedule).
+       * Commercial Settlement (`₹ 35,000.00`, Fully Settled / ₹0 Due).
+     - **Deck 1: Technical GNSS Reconnaissance & Instrument Calibration**:
+       * Receiver Make & Model (`Trimble R12i GNSS RTK Base & Rover`), Serial No (`SN-TRM-889102`), Observation Date.
+       * Applied Lease Area (3.85 Ha) vs Actual Surveyed Area (3.84 Ha) vs Area Discrepancy Delta (0.01 Ha / 0.26%).
+       * Survey Observation Log & Calibration Notes.
+     - **Deck 2: Official Boundary Pillar Coordinate Schedule Matrix**:
+       * Tabulated boundary coordinates (BP-01 to BP-04) with WGS84 Lat/Long, UTM Easting/Northing, MSL elevation, and RTK Fixed badges.
+     - **Deck 3: Statutory DGPS Survey Deliverables & Field Records**:
+       * 6 statutory deliverables with file format badges (`RINEX`, `BENCHMARK`, `COORDINATES`, `CAD / FMB`, `KML / KMZ`, `CALIBRATION`), file status, view actions, and interactive AJAX upload inputs wired to `dgps-survey.upload`.
+     - **Deck 4 & 5: Crew Roster & Financial Ledger**:
+       * Crew with circular avatars, role pills (`Chief Land Surveyor`, `GIS / CAD Mapping Engineer`), and duties.
+       * Financial ledger breakdown with agreed fee, collected advance, outstanding balance, and UPI remittance notes.
+     - **Deck 6: Concession Site Location Particulars**:
+       * Village, Taluk, Registered Office address, Mobile numbers, and MIMAS ID.
+     - **Downstream Workflow Handoff Card**:
+       * "Stage 8 Pipeline Handoff: Next Stage: Drone Volumetric Survey" with direct CTA button.
+  3. **Strict Quality Assurance**:
+     - ZERO Tamil Unicode characters in any codebase file.
+     - 100% automated test pass in `Tests\Feature\PptDgpsAndEcComplianceTest` (6/6 tests, 76 assertions).
+     - Visual receipts verified via Playwright in both Light and Dark themes.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Current Phase: PHASE 10.55 — ENVIRONMENT CLEARANCE INTAKE (`/eviron/create`) 5-STEP WIZARD & STEP 3 STATUTORY DOCUMENT REPOSITORY (LEASE APPLICATION & UI/UX PRO MAX OVERHAUL) 🚀📑🎨
+- **User Request:**
+  "http://127.0.0.1:8002/eviron/create this page not showing 4 steps but i want 3 step to change option to upload douments so i have 5 steps need refer lease application to improve ui design /ui-ux-pro-max"
+- **Architectural Implementation & UI/UX Pro Max Modernization:**
+  1. **5-Step Native Stepper Architecture (`.step-progress`)**:
+     - Converted the legacy single static scrolling page into an interactive 5-Step Stepper Wizard matching `lease_application` design standard:
+       * **Step 1: Category** (`STEP 1 OF 5 • CLEARANCE CATEGORY & FRAMEWORK`): Selection between B1 (ToR flow) and B2 (Direct EC), with Upstream Mining Plan inheritance card (`#select_upstream_mining`).
+       * **Step 2: Applicant & Site** (`STEP 2 OF 5 • APPLICANT & QUARRY INFORMATION`): Customer Unique ID (MIMAS) lookup, Client Name, Company Name, Project Name, District, Location/Survey numbers, and contact credentials with 1.5px high-contrast inputs and focus rings.
+       * **Step 3: Documents** (`STEP 3 OF 5 • STATUTORY DOCUMENT REPOSITORY`): Dedicated statutory document checklist & digital plans repository. Displays overall completion progress banner (`0 / 31 files attached`, animated progress bar, percentage badge), dynamic category folder tabs (6 folders for B2, 5 folders for B1), and micro-card checklist rows with custom file attachment inputs (`input type="file" name="documents[field_id]"`), accepted format tags, and live chosen file metrics.
+       * **Step 4: Handling Team** (`STEP 4 OF 5 • HANDLING TEAM & IN-CHARGE PERSONS`): Assign environmental coordinators, field geologists, EIA coordinators, and liaison officers with dynamic `+ Add Person` rows.
+       * **Step 5: Payment & Review** (`STEP 5 OF 5 • FINANCIAL SETTLEMENT & REVIEW`): 3-Bento KPI ledger cards (Service Value, Advance Paid, Pending Balance Due), readonly soft-red pending balance (`#fff1f2`), 1-click presets (`100% Full`, `50% Advance`, `Clear ₹0`), pre-submission summary review card, and final creation submit button.
+  2. **Controller Eager Loading & Multi-Part Document Upload Persistence**:
+     - In `EnverionsoneController@create`: Eager loaded `$b1Folders` and `$b2Folders` with their active `documentFields`.
+     - In `EnverionsoneController@store`: Added multi-part file persistence for `documents[field_id]`. Stored files directly into `environment/{project_code}/`, updated `EnvironmentDocument` slot records with `file_name`, `file_path`, `file_type`, `file_size`, and marked `status = 'uploaded'`.
+     - Fixed null customer resolution: Added `$customerId = $validated['customer_id'] ?? null;` fallback.
+  3. **Strict Quality Assurance**:
+     - Zero Tamil Unicode characters in any codebase file.
+     - 31/31 automated tests passed in `EnvironmentClearanceTest` (248 assertions).
+     - Captured 5 high-resolution Playwright screenshots across all 5 wizard steps.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Current Phase: PHASE 10.54 — ENVIRONMENT CLEARANCE CATEGORY B1 (TOR/ETA) & B2 STATUTORY LIFECYCLE, EIA FOLDERS, AND LEASE DOSSIER PARITY OVERHAUL 🚀🌿📋
+- **User Request:**
+  "now updated ideas da and give final ideas with flow like b1 tor-ppt-eta-ppt-Ec cetificate like details flow and missing doument, unwnat doument and more like da"
+- **Architectural Implementation & Root-Cause Remediation:**
+  1. **Root Cause Analysis & Module ID Resolution**:
+     - *Bug*: In `EnverionsoneController.php`, `const ENV_MODULE_ID` was hardcoded to `3` (Mining Application) rather than `1` (Environmental Clearance).
+     - *Consequence*:
+       * For Category B1 ETA stage (`sc2_prep`), folders like `Baseline Study` and `Draft (12 Chapters)` exist solely under `module_id = 1`. Querying `module_id = 3` returned 0 folders, resulting in an empty tab view and no upload buttons!
+       * For Category B1 (ToR) and B2, folders `Documents` and `Report` matched Mining's Folder 8 and Folder 10, incorrectly pulling all 153 Mining Application document fields into EC!
+     - *Resolution*: Updated `const ENV_MODULE_ID = 1;` in `EnverionsoneController.php`. Implemented automated legacy purge in `autoGenerateDocumentSlots()` to automatically purge un-uploaded placeholder documents where `folder->module_id != 1` and generate authentic Module 1 document slots.
+  2. **Statutory Document Checklist Seeding (Module 1 Folders 16–21 & 1–6)**:
+     - Created `EnvironmentClearanceDocumentFieldsSeeder.php` and executed via `php artisan db:seed --class=EnvironmentClearanceDocumentFieldsSeeder`.
+     - Seeded 31 statutory document fields for Category B2 (Folders 16–21: `Documents`, `Site Photographs`, `Report`, `GIS & Maps`, `Signed Reports`, `PARIVESH Acknowledgements`) exactly matching SEAC / DEIAA process flow diagrams.
+     - Seeded 15 statutory EIA document fields for Category B1 ETA (Folders 1–6: `Documents (ToR Letter)`, `Baseline Study`, `Draft (12 Chapters)`, `TNPCB Draft Submission`, `Final EIA Report`, `Uploading File`).
+  3. **Executive Dossier Book Presentation (Chapters I, II, III, IV Parity with Lease Application)**:
+     - Elevated `/eviron/{id}` UI with `.card-panel`, `.chapter-header`, `.chapter-tag`, and `.data-cell` styling matching `lease_application/viewapplication.blade.php`:
+       * **Chapter I: Statutory Applicant & Legal Entity Profile**: Avatar icon, Firm Name, MIMAS Reg ID, PAN, GSTIN, primary/secondary contact numbers, email, and registered office address with 1-click clipboard copy buttons.
+       * **Chapter II: Geo-Spatial Cadastral & Concession Extent**: District Mining Office, Taluk, Revenue Village, Survey Field Numbers, Area Extent in Hectares and Acres, and Land Tenure Classification (Patta/Poramboke).
+       * **Chapter III: Mineral Concession, Applicable Rules & Mining Plan Approvals**: Primary Mineral, Approved Mining Plan Order No & Date, G.O. / Collector Proceedings No & Date, and Lease Tenure.
+       * **Chapter IV: Upstream Concession Pedigree & Statutory Linkages**: Interactive linked cards pointing directly to source Mining Plan (`MP-YYYY-XXXX`), source Lease Application (`LA-YYYY-XXXX`), Stage 1 ToR Presentation (`PPT-YYYY-XXXX`), Stage 2 Final Presentation Gate, and EC Certificate (`EC-YYYY-XXXX`).
+  4. **In-Modal PDF & Image Document Previewer (`#modalDocPreview`)**:
+     - Embedded a full-screen responsive in-modal document viewer supporting PDF iframe toolbar preview, high-resolution image zoom, direct Download, and separate tab inspection.
+     - Wired `.btn-preview-doc` click handlers to dynamically populate title, format badge, and file URL.
+  5. **Upstream Mining Plan Inheritance in Intake Form (`/eviron/create`)**:
+     - Added "Inherit From Approved Mining Plan" card with instant autofill dropdown (`#select_upstream_mining`).
+     - Eager-loaded `$miningApplications` in `EnverionsoneController@create` and stored `mining_application_id` and `lease_application_id` on store.
+     - Auto-populates applicant profile, district, taluk, village, survey numbers, minerals, and project title with real-time feedback banner.
+  6. **Unified RBAC Permissions**:
+     - Replaced restrictive `@can('environment.b2.upload')` with `@canany(['environment.b2.upload', 'environment.create', 'environment.edit'])` across folder tabs, document slots, and custom document modals.
+  7. **Strict Quality Assurance & Verification**:
+     - Zero Tamil characters in codebase files (`app/`, `resources/views/`, `database/`, `routes/`).
+     - All 29 automated tests in `EnvironmentClearanceTest` passed (225 assertions).
+     - Captured 8 high-resolution Playwright screenshots verified in artifact directory.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Current Phase: PHASE 10.53 — MINING APPLICATION STEP 8 (FINANCIAL SETTLEMENT) & STEP 9 (DOSSIER SCRUTINY) UI/UX PRO MAX OVERHAUL 🚀💳📋
+- **User Request:**
+  "http://127.0.0.1:8002/newapplication?resume=341&step=8
+   http://127.0.0.1:8002/newapplication?resume=341&step=9
+   improve ui refer lease application"
+- **Architectural Implementation & UI Modernization (Lease Application Step 7 & 8 Parity):**
+  1. **Step 8 (Financial Settlement & Billing Ledger - `#pane_7`)**:
+     - Modernized `.s1-header-block` with eyebrow badge `STEP 8 OF 9 • FINANCIAL SETTLEMENT & BILLING LEDGER`, `Est. ~1-2 mins` time tag, and `.s7-ledger-pill` (`Active Settlement Ledger`).
+     - Executive readiness banner `.s7-banner-card` with squircle icon badge `.s7-banner-icon-badge` (`bi-cash-coin`), title `#0F1E4D`, and `.s7-banner-status-pill` (`Statutory Fee Gate`).
+     - 3-Bento KPI Metric Cards `.s7-kpi-card`:
+       * `.s7-kpi-contract`: 4px deep-navy left border, 32px squircle icon badge (`bi-file-earmark-text`), tabular total fee amount (`#disp_total_fee`).
+       * `.s7-kpi-paid`: 4px emerald left border, 32px squircle icon badge (`bi-check-circle`), tabular collected advance amount (`#disp_paid_amount`).
+       * `.s7-kpi-pending`: 4px orange left border, 32px squircle icon badge (`bi-clock-history`), tabular pending balance amount (`#disp_balance_amount`).
+     - Integrated Fee Schedule & Payment Entry Container `.s7-form-section`:
+       * Single-border input groups (`.s7-input-group`) with colored addons (`.s7-addon-navy`, `.s7-addon-success`, `.s7-addon-danger`).
+       * Soft-red tinted readonly pending balance (`.s7-group-readonly` with `#fff1f2` background and `#dc2626` text, eliminating dirty `bg-light`).
+       * `.s7-preset-btn` quick buttons (`100% Full`, `50% Advance`, `Clear (₹0)`).
+       * Live financial settlement assessment box (`.s7-feedback-box`).
+     - Amber guidance pro-tip callout box `.s7-tip-box`.
+  2. **Step 9 (Dossier Scrutiny & Final Review - `#pane_8`)**:
+     - Modernized `.s1-header-block` with eyebrow badge `STEP 9 OF 9 • DOSSIER SCRUTINY & FINAL SUBMISSION`, `Est. ~2-3 mins` time tag, and `.s8-scrutiny-pill` (`Executive Review Gate`).
+     - Executive audit banner `.s8-banner-card` with squircle icon badge `.s8-banner-icon-badge` (`bi-patch-check-fill`), title `#0F1E4D`, and status pill `.s8-banner-status-pill` (`Pre-Submission Scrutiny`).
+     - 4-Bento KPI Metric Cards `.s8-kpi-card`:
+       * `.s8-kpi-applicant`: 4px blue border, applicant firm chip `.s8-chip-blue`.
+       * `.s8-kpi-location`: 4px emerald border, district & taluk chip `.s8-chip-emerald`.
+       * `.s8-kpi-docs`: 4px amber border, statutory docs count chip `.s8-chip-amber`.
+       * `.s8-kpi-finance`: 4px purple border, payment settlement chip `.s8-chip-purple`.
+     - 5 Dedicated Section Review Panels (`.s8-section-panel`) with Quick Jump Edit buttons (`.s8-btn-edit`):
+       * Section 1: Applicant Profile & Enterprise Identity (`.s8-data-tile`).
+       * Section 2: Concession Area & Survey Demarcation (`.s8-data-tile`).
+       * Section 3: Nature of Work & Mineral Extraction Rules (`.s8-data-tile`).
+       * Section 4: Commercial Ledger & Remittance Breakdown (`.s8-ledger-card`).
+       * Section 5: Statutory Dossier Architecture & Document Registry (6 `.s8-folder-card` micro-cards and detailed `.s8-table`).
+     - Statutory Pre-Submission Compliance Declaration Card (`.s8-declaration-card`) with squircle icon badge `.s8-declaration-icon-badge`, confirmation checkbox (`.s8-check-confirm`), and dynamic submit button state gating.
+  3. **Dual-Theme High Contrast Scoped Styling (`body[data-theme-version="dark"] #gtms-mining-page`)**:
+     - Strict scoping under `#gtms-mining-page` ensuring zero cross-module style leakage.
+     - Dark mode surfaces `#1e293b` and `#0f172a`, borders `#334155`, glowing accent borders, readable muted text `#94a3b8`, and vivid status badges across both Step 8 and Step 9.
+  4. **Strict Quality Assurance**:
+     - Zero Tamil Unicode characters in any PHP, Blade, CSS, or JS file (100% verified via automated scanner).
+     - Automated test suite: 14/14 tests passed (132 assertions).
+     - High-resolution Playwright screenshots captured for both steps in Light and Dark themes.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Current Phase: PHASE 10.52 — MINING APPLICATION STEP 6 (REGULATORY REPOSITORY & DIGITAL PLANS CHECKLIST) UI/UX PRO MAX OVERHAUL 🚀📑
+- **User Request:**
+  "http://127.0.0.1:8002/newapplication?resume=341&step=6 now improve"
+- **Architectural Implementation & UI Modernization (Lease Application Step 5 Parity):**
+  1. **Executive Stepper Eyebrow & Time Tag**:
+     - Modernized `.s1-header-block` featuring eyebrow badge `<i class="bi bi-cloud-arrow-up me-1"></i> STEP 6 OF 9 • REGULATORY REPOSITORY & DIGITAL PLANS` and `Est. ~5-8 mins` time tag.
+     - Title: "Statutory Document Checklist & Digital Plans" with dynamic Nature of Work scope name ("Mining Plan").
+  2. **Overall Progress Summary Banner (`.s5-summary-banner`)**:
+     - Navy executive badge `OVERALL COMPLETION` with label `Mandatory Dossier Checklist Progress`.
+     - Live progress counter (`0 / 42 files attached`), percentage pill badge (`0%`), and smooth gradient progress bar (`#0F1E4D` to `#2563eb`).
+  3. **Refined Folder Headings (`.s5-folder-heading-wrap`)**:
+     - Removed dull, heavy gray `bg-light` panel headers in favor of clean, open editorial folder divisions.
+     - 38px soft-blue squircle folder icon box (`.s5-folder-icon-box`), folder title with folder ID and total item count (`#7 · 4 Checklist Items`, `#8 · 27 Checklist Items`, etc.).
+     - Interactive `+ Add Document` button (`.s5-btn-add-doc`) opening modal, and live folder pill counter (`.s5-folder-pill`).
+  4. **Micro-Card Checklist Rows (`.checklist-row`)**:
+     - 10px rounded corners, 1.5px subtle border, soft hover elevation (`translateY(-1px)`).
+     - 36px squircle `.ci-icon` (soft green on uploaded, soft ice-blue on carried from lease, soft slate on empty).
+     - Carried lease document detection and prefill banner (`Lease Doc` pill, carried file name, view button).
+     - Requirement dropdown (`.doc-req-select`): Mandatory (subtle red pill) vs Optional (subtle gray pill).
+     - Dynamic action buttons: Upload button (`.s5-btn-upload`), View button (`.btn-view-doc`), Change file button, and Remove button (`.btn-remove-file`).
+  5. **Custom Statutory Document Modal Polish (`#modalAddCustomMiningDoc`)**:
+     - Styled modal header with executive navy gradient (`linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%)`), squircle folder-plus icon badge, and `.btn-close-white`.
+     - High-contrast form controls with 1.5px `#cbd5e1` borders, 8px rounded corners, focus rings, and executive footer with `#0F1E4D` attach button.
+  6. **Bottom Flexible Intake Notice Card (`.s5-notice-card`)**:
+     - Clean 4px navy left accent border, rounded 12px card, ice-blue icon wrap, `FLEXIBLE INTAKE STANDARD` pill, and concise descriptive notice regarding post-registration uploads in the Project Folder Dossier.
+  7. **Dark Mode Harmonization (`body[data-theme-version="dark"]`)**:
+     - Scoped `#18191a` card and banner backgrounds, `#2b2d30` borders, `#25282a` icon boxes, vibrant `#60a5fa` accents, dark red subtle badges for mandatory items, and dark gradient progress bars.
+- **Verification Evidence:**
+  - Automated tests: 14/14 passed in `Mining` test suite (132 assertions).
+  - Visual verification with Playwright:
+    * Light mode (`mining_step6_improved_light.png`, `mining_step6_scrolled_light.png`, `mining_step6_bottom_light.png`): Pixel-perfect parity with Lease Application Step 5.
+    * Dark mode (`mining_step6_improved_dark.png`, `mining_step6_modal_refined_dark.png`): High-contrast executive dark styling.
+    * Modal light mode (`mining_step6_modal_refined_light.png`): Executive modal with clear fields and contrast.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-23
+
+## Previous Phase: PHASE 10.51 — MINING APPLICATION STEP 5 (STATUTORY FOLDER ARCHITECTURE) UI/UX PRO MAX OVERHAUL 🚀📁
 - **User Request:**
   "now this http://127.0.0.1:8002/newapplication?resume=341&step=5"
   Follow-up: "alimetn ,paading ,magring fix" (with screenshot circling the statutory notice panel).
