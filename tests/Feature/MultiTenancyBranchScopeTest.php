@@ -82,7 +82,7 @@ class MultiTenancyBranchScopeTest extends TestCase
             'pan' => 'ALFPA' . rand(1000, 9999) . 'Z',
             'aadhaar_no' => '9840-' . rand(1000, 9999) . '-' . rand(1000, 9999),
             'slug' => 'alpha-minerals-' . rand(1000, 9999),
-            'status' => 'active',
+            'status' => 1,
         ]);
 
         $this->district = District::first() ?: District::create([

@@ -203,21 +203,32 @@ $(document).ready(function() {
         var id = $(this).data('id');
         var name = $(this).data('name');
         var email = $(this).data('email');
+        var userCode = $(this).data('user-code');
         var role = $(this).data('role');
         var branch = $(this).data('branch');
         var status = $(this).data('status');
         var image = $(this).data('image');
         var mobile = $(this).data('mobile');
+        var isSelf = $(this).data('is-self') == '1';
 
         $('#editid').val(id);
         $('#editname').val(name);
         $('#editemail').val(email);
+        $('#edituser_code').val(userCode || '');
         $('#editrole').val(role).trigger('change');
         $('#editbranch').val(branch).trigger('change');
         $('#editstatus').val(status !== undefined ? status : 1).trigger('change');
         $('#editmobile_num').val(mobile);
         $('#editpassword').val('');
         $('#editimage').val('');
+
+        if (isSelf) {
+            $('#editrole').css('pointer-events', 'none').css('background-color', '#e2e8f0').attr('tabindex', '-1');
+            $('#self_role_warning').removeClass('d-none');
+        } else {
+            $('#editrole').css('pointer-events', '').css('background-color', '').removeAttr('tabindex');
+            $('#self_role_warning').addClass('d-none');
+        }
 
         if (image && image !== 'undefined' && image !== 'null') {
             $('#profileImage').attr('src', '/uploads/users/' + image);

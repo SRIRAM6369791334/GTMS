@@ -11,8 +11,24 @@ class RolesController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->withCount('users')->orderBy('id', 'asc')->get();
-        $allPermissions = Permission::orderBy('name')->get();
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
+        if ($isSuperAdmin) {
+            $roles = Role::with('permissions')->withCount('users')->orderBy('id', 'asc')->get();
+            $allPermissions = Permission::orderBy('name')->get();
+        } else {
+            // Non-superadmin: ONLY see roles created by this user!
+            $roles = Role::with('permissions')
+                ->withCount('users')
+                ->where('created_by', $currentUser ? $currentUser->id : 0)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            // Non-superadmin: only show permissions possessed by the current user
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $allPermissions = Permission::whereIn('name', $userPerms)->orderBy('name')->get();
+        }
 
         // Group permissions by prefix/module (e.g. 'users.create' => 'users')
         $modules = [
@@ -58,7 +74,8 @@ class RolesController extends Controller
             'totalPermissions',
             'systemRolesCount',
             'customRolesCount',
-            'totalAssignedUsers'
+            'totalAssignedUsers',
+            'isSuperAdmin'
         ));
     }
 
@@ -70,9 +87,35 @@ class RolesController extends Controller
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
+        if (!$isSuperAdmin) {
+            // Reserved names safeguard
+            if (in_array(strtolower(trim($request->name)), ['admin', 'super admin', 'superadmin'])) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'Reserved role names cannot be created.',
+                ], 403);
+            }
+
+            // Subsetting safeguard: cannot grant permissions you do not possess
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $requestedPerms = $request->permissions ?? [];
+            $unauthorizedPerms = array_diff($requestedPerms, $userPerms);
+
+            if (!empty($unauthorizedPerms)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot grant permissions that you do not possess.',
+                ], 403);
+            }
+        }
+
         $role = Role::create([
             'name' => $request->name,
             'guard_name' => 'web',
+            'created_by' => auth()->id(),
         ]);
 
         if ($request->filled('permissions')) {
@@ -91,7 +134,25 @@ class RolesController extends Controller
 
     public function getPermissions($id)
     {
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
         $role = Role::with('permissions')->findOrFail($id);
+
+        if (!$isSuperAdmin && in_array($role->name, ['Admin', 'Super Admin'])) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Access denied to system administrator role definitions.',
+            ], 403);
+        }
+
+        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Access denied to roles created by other administrators.',
+            ], 403);
+        }
+
         return response()->json([
             'status' => 1,
             'role' => $role,
@@ -108,10 +169,20 @@ class RolesController extends Controller
             'permissions.*' => 'string|exists:permissions,name',
         ]);
 
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
         $role = Role::findOrFail($request->id);
 
         // Safeguard Admin and Super Admin from unauthorized rename or total permission wipe
         if ($role->name === 'Admin' || $role->name === 'Super Admin') {
+            if (!$isSuperAdmin) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You do not have permission to modify an Administrator role.',
+                ], 403);
+            }
+
             if ($request->name !== $role->name) {
                 return response()->json([
                     'status' => 0,
@@ -129,6 +200,34 @@ class RolesController extends Controller
                 'message' => 'Administrator role permissions preserved with full system access.',
                 'data' => $role
             ]);
+        }
+
+        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to modify roles created by other administrators.',
+            ], 403);
+        }
+
+        if (!$isSuperAdmin) {
+            if (in_array(strtolower(trim($request->name)), ['admin', 'super admin', 'superadmin']) && $request->name !== $role->name) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'Reserved role names cannot be used.',
+                ], 403);
+            }
+
+            // Subsetting safeguard: cannot grant permissions you do not possess
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $requestedPerms = $request->permissions ?? [];
+            $unauthorizedPerms = array_diff($requestedPerms, $userPerms);
+
+            if (!empty($unauthorizedPerms)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot grant permissions that you do not possess.',
+                ], 403);
+            }
         }
 
         $role->name = $request->name;
@@ -156,12 +255,33 @@ class RolesController extends Controller
             'id' => 'required|exists:roles,id',
         ]);
 
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
         $role = Role::findOrFail($request->id);
         if ($role->name === 'Admin' || $role->name === 'Super Admin') {
             return response()->json([
                 'status' => 0,
                 'message' => 'Default Administrator role cannot be deleted.',
             ]);
+        }
+
+        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to delete roles created by other administrators.',
+            ], 403);
+        }
+
+        if (!$isSuperAdmin) {
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $rolePerms = $role->permissions->pluck('name')->toArray();
+            if (!empty(array_diff($rolePerms, $userPerms))) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You do not have permission to delete a role with higher privileges.',
+                ], 403);
+            }
         }
 
         // Check if any users are assigned to this role

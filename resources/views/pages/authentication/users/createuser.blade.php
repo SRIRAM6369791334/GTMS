@@ -194,6 +194,19 @@ body[data-theme-version="dark"] .usr-modal-header {
                         <span class="text-danger email_error error-text fs-12 mt-1 d-block"></span>
                     </div>
 
+                    <!-- User ID / Personnel Code -->
+                    <div class="col-md-6">
+                        <label class="usr-form-label">
+                            <span>User ID / Personnel Code</span>
+                            <small class="text-muted fw-normal">(Optional)</small>
+                        </label>
+                        <div class="usr-input-group">
+                            <span class="usr-input-icon"><i class="fa fa-id-badge"></i></span>
+                            <input type="text" class="form-control text-uppercase" name="user_code" id="add_user_code" placeholder="e.g. LUK_001 or EMP-01">
+                        </div>
+                        <span class="text-danger user_code_error error-text fs-12 mt-1 d-block"></span>
+                    </div>
+
                     <!-- Role -->
                     <div class="col-md-6">
                         <label class="usr-form-label">Assigned Role <span class="text-danger">*</span></label>
@@ -215,9 +228,11 @@ body[data-theme-version="dark"] .usr-modal-header {
                         <div class="usr-input-group">
                             <span class="usr-input-icon"><i class="fa fa-building"></i></span>
                             <select class="form-select form-control" name="branch_id" required>
-                                <option value="">Select Branch Office</option>
+                                @if($branch->count() > 1)
+                                    <option value="">Select Branch Office</option>
+                                @endif
                                 @foreach ($branch as $branches)
-                                    <option value="{{ $branches->id }}">{{ $branches->branch_name }}</option>
+                                    <option value="{{ $branches->id }}" {{ $branch->count() === 1 ? 'selected' : '' }}>{{ $branches->branch_name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -306,6 +321,16 @@ body[data-theme-version="dark"] .usr-modal-header {
                         <span class="text-danger edit_email_error error-text fs-12 mt-1 d-block"></span>
                     </div>
 
+                    <!-- User ID / Personnel Code -->
+                    <div class="col-md-6">
+                        <label class="usr-form-label">User ID / Personnel Code</label>
+                        <div class="usr-input-group">
+                            <span class="usr-input-icon"><i class="fa fa-id-badge"></i></span>
+                            <input type="text" class="form-control text-uppercase" name="user_code" id="edituser_code" placeholder="e.g. LUK_001">
+                        </div>
+                        <span class="text-danger edit_user_code_error error-text fs-12 mt-1 d-block"></span>
+                    </div>
+
                     <!-- Role -->
                     <div class="col-md-6">
                         <label class="usr-form-label">Assigned Role <span class="text-danger">*</span></label>
@@ -318,6 +343,7 @@ body[data-theme-version="dark"] .usr-modal-header {
                                 @endforeach
                             </select>
                         </div>
+                        <div id="self_role_warning" class="text-warning fs-12 mt-1 d-none"><i class="fa fa-lock me-1"></i> Your own security role is locked. Contact an Administrator to modify.</div>
                         <span class="text-danger edit_role_id_error error-text fs-12 mt-1 d-block"></span>
                     </div>
 
@@ -327,9 +353,11 @@ body[data-theme-version="dark"] .usr-modal-header {
                         <div class="usr-input-group">
                             <span class="usr-input-icon"><i class="fa fa-building"></i></span>
                             <select class="form-select form-control" name="branch_id" id="editbranch" required>
-                                <option value="">Select Branch</option>
+                                @if($branch->count() > 1)
+                                    <option value="">Select Branch</option>
+                                @endif
                                 @foreach ($branch as $branches)
-                                    <option value="{{ $branches->id }}">{{ $branches->branch_name }}</option>
+                                    <option value="{{ $branches->id }}" {{ $branch->count() === 1 ? 'selected' : '' }}>{{ $branches->branch_name }}</option>
                                 @endforeach
                             </select>
                         </div>

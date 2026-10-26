@@ -12,10 +12,42 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with(['role', 'roles', 'branch'])->get();
-        $role = Role::with('permissions')->get();
-        $branch = Branch::where('status', 1)->get();
-        return view('pages.authentication.users.index', compact('users', 'role', 'branch'));
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
+        if ($isSuperAdmin) {
+            $users = User::with(['role', 'roles', 'branch'])->get();
+            $role = Role::with('permissions')->get();
+            $branch = Branch::where('status', 1)->get();
+        } else {
+            // Non-superadmin:
+            // 1. Directory: only show users created by this user AND their own profile
+            $users = User::with(['role', 'roles', 'branch'])
+                ->where(function ($q) use ($currentUser) {
+                    $q->where('id', $currentUser ? $currentUser->id : 0)
+                      ->orWhere('user_id', $currentUser ? $currentUser->id : 0);
+                })
+                ->get();
+
+            // 2. Roles: only show roles created by this user that are subsets of their permissions
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $role = Role::with('permissions')
+                ->where('created_by', $currentUser ? $currentUser->id : 0)
+                ->whereNotIn('name', ['Super Admin', 'Admin'])
+                ->get()
+                ->filter(function ($r) use ($userPerms) {
+                    $rolePerms = $r->permissions->pluck('name')->toArray();
+                    return empty(array_diff($rolePerms, $userPerms));
+                })
+                ->values();
+
+            // 3. Branch: non-superadmin can only assign personnel to their own assigned branch
+            $branch = Branch::where('status', 1)
+                ->where('id', $currentUser ? $currentUser->branch_id : 0)
+                ->get();
+        }
+
+        return view('pages.authentication.users.index', compact('users', 'role', 'branch', 'isSuperAdmin'));
     }
 
     public function store(Request $request)
@@ -23,15 +55,60 @@ class UserController extends Controller
         $request->validate([
             'name'       => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email',
+            'user_code'  => 'nullable|string|max:50|unique:users,user_code',
             'password'   => 'required|min:6',
             'role_id'    => 'required|exists:roles,id',
             'branch_id'  => 'required|exists:branches,id',
             'mobile_num' => 'nullable|digits_between:10,15',
             'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
+            'user_code.unique'          => 'This User ID / Personnel Code is already registered to another user.',
             'branch_id.required'        => 'Please select a branch / department.',
             'mobile_num.digits_between' => 'Phone number must be between 10 and 15 digits.',
         ]);
+
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
+        $targetRole = Role::with('permissions')->findOrFail($request->role_id);
+
+        // Security Check 1: Non-superadmin cannot assign Super Admin or Admin roles
+        if (!$isSuperAdmin) {
+            if (in_array($targetRole->name, ['Super Admin', 'Admin'])) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You do not have permission to assign an Administrator role.',
+                ], 403);
+            }
+
+            // Security Check 2: Non-superadmin can only assign roles created by their own account
+            if ($targetRole->created_by != ($currentUser ? $currentUser->id : 0)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You can only assign roles created by your own account.',
+                ], 403);
+            }
+
+            // Security Check 3: Non-superadmin cannot assign a role with permissions exceeding their own
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $rolePerms = $targetRole->permissions->pluck('name')->toArray();
+            $unauthorizedPerms = array_diff($rolePerms, $userPerms);
+
+            if (!empty($unauthorizedPerms)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot assign a role containing permissions you do not possess.',
+                ], 403);
+            }
+
+            // Security Check 4: Non-superadmin can only assign personnel to their own branch
+            if ($request->branch_id != ($currentUser ? $currentUser->branch_id : 0)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You can only assign personnel to your own branch office.',
+                ], 403);
+            }
+        }
 
         $user = new User();
         $user->name = trim($request->name);
@@ -39,6 +116,7 @@ class UserController extends Controller
         $user->password = bcrypt($request->password);
         $user->role_id = $request->role_id;
         $user->branch_id = $request->branch_id;
+        $user->user_id = auth()->id();
         $user->status = $request->input('status', 1);
         $user->remember_token = Str::random(10);
         $user->mobile_num = trim($request->mobile_num ?? '');
@@ -59,8 +137,12 @@ class UserController extends Controller
         // Save first to get auto-increment ID
         $user->save();
 
-        // Generate User ID (LUK_001, LUK_002, ...)
-        $user->user_code = 'LUK_' . str_pad($user->id, 3, '0', STR_PAD_LEFT);
+        // Assign User ID (manual user_code if provided, else auto-generate LUK_001, ...)
+        if ($request->filled('user_code')) {
+            $user->user_code = trim($request->user_code);
+        } else {
+            $user->user_code = 'LUK_' . str_pad($user->id, 3, '0', STR_PAD_LEFT);
+        }
         $user->save();
 
         // Sync Spatie Role
@@ -84,6 +166,7 @@ class UserController extends Controller
             'id'         => 'required|exists:users,id',
             'name'       => 'required|string|max:255',
             'email'      => 'required|email|unique:users,email,' . $request->id,
+            'user_code'  => 'nullable|string|max:50|unique:users,user_code,' . $request->id,
             'password'   => 'nullable|min:6',
             'role_id'    => 'required|exists:roles,id',
             'branch_id'  => 'required|exists:branches,id',
@@ -91,13 +174,84 @@ class UserController extends Controller
             'status'     => 'nullable|in:0,1',
             'image'      => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ], [
+            'user_code.unique'          => 'This User ID / Personnel Code is already registered to another user.',
             'branch_id.required'        => 'Please select a branch / department.',
             'mobile_num.digits_between' => 'Phone number must be between 10 and 15 digits.',
         ]);
 
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
         $user = User::findOrFail($request->id);
+
+        // Security Check 1: Non-superadmin cannot modify a Super Admin or Admin account
+        if (!$isSuperAdmin && ($user->hasRole('Super Admin') || $user->hasRole('Admin'))) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to modify an Administrator account.',
+            ], 403);
+        }
+
+        // Security Check 2: Non-superadmin can only modify users created by themselves or their own account
+        if (!$isSuperAdmin && $user->id != ($currentUser ? $currentUser->id : 0) && $user->user_id != ($currentUser ? $currentUser->id : 0)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to modify users created by other administrators.',
+            ], 403);
+        }
+
+        // Security Check 3: Self-Escalation Lock (Users cannot modify their own security role)
+        if ($currentUser && $currentUser->id == $user->id) {
+            if ($request->role_id != $user->role_id) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot modify your own security role. Please contact a Super Administrator.',
+                ], 403);
+            }
+        }
+
+        // Security Check 4: Role assignment validation for non-superadmin
+        $targetRole = Role::with('permissions')->findOrFail($request->role_id);
+        if (!$isSuperAdmin) {
+            if (in_array($targetRole->name, ['Super Admin', 'Admin'])) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You do not have permission to assign an Administrator role.',
+                ], 403);
+            }
+
+            if ($targetRole->created_by != ($currentUser ? $currentUser->id : 0)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You can only assign roles created by your own account.',
+                ], 403);
+            }
+
+            $userPerms = $currentUser ? $currentUser->getAllPermissions()->pluck('name')->toArray() : [];
+            $rolePerms = $targetRole->permissions->pluck('name')->toArray();
+            $unauthorizedPerms = array_diff($rolePerms, $userPerms);
+
+            if (!empty($unauthorizedPerms)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot assign a role containing permissions you do not possess.',
+                ], 403);
+            }
+
+            // Security Check 5: Non-superadmin cannot transfer users to another branch
+            if ($request->branch_id != ($currentUser ? $currentUser->branch_id : 0)) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'You cannot transfer personnel to another branch office.',
+                ], 403);
+            }
+        }
+
         $user->name = trim($request->name);
         $user->email = trim($request->email);
+        if ($request->filled('user_code')) {
+            $user->user_code = trim($request->user_code);
+        }
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
             $user->show_password = $request->password;
@@ -147,6 +301,9 @@ class UserController extends Controller
             'id' => 'required|exists:users,id',
         ]);
 
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && ($currentUser->hasRole('Super Admin') || $currentUser->hasRole('Admin'));
+
         $user = User::findOrFail($request->id);
 
         if (auth()->id() == $user->id) {
@@ -161,6 +318,22 @@ class UserController extends Controller
             return response()->json([
                 'status' => 0,
                 'message' => 'The last Admin account cannot be deleted.',
+            ]);
+        }
+
+        // Security Check 1: Non-superadmin cannot delete a Super Admin or Admin account
+        if (!$isSuperAdmin && ($user->hasRole('Super Admin') || $user->hasRole('Admin'))) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to delete an Administrator account.',
+            ]);
+        }
+
+        // Security Check 2: Non-superadmin can only delete users created by themselves
+        if (!$isSuperAdmin && $user->user_id != ($currentUser ? $currentUser->id : 0)) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'You do not have permission to delete users created by other administrators.',
             ]);
         }
 

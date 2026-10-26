@@ -6,7 +6,210 @@
 - **Operating Rule:** Every change request, bug fix, or feature enhancement must follow the 8-stage lifecycle (Pre-test inspection → Identify test environment → Create controlled test data → Execute tests → Verify results → Clean up test data → Verify cleanup → Report evidence). No test is complete without cleanup verification.
 - **Enforcement:** Zero `TRUNCATE`, zero `migrate:fresh`/`db:wipe`, transactions prioritized, non-transactional tests tagged with `TEST_RUN_ID = qa_<timestamp>_<uuid>`, cascading foreign-key teardown, and explicit status reporting (`TESTS_PASSED_CLEANUP_VERIFIED`).
 
-## Current Phase: PHASE 10.64 — GTMS SECURE DOCKER CI/CD & SYNOLOGY NAS GHCR PUBLISHING ARCHITECTURE 🚀🐳🛡️
+## Current Phase: PHASE 10.72 — CUSTOMER MULTI-TENANT BRANCH ISOLATION & WORKFLOW SCOPING 🚀🏢🛡️
+- **User Request:**
+  "only fix Step 1 Customer Isolation customers அட்டவணையில் branch_id சேர்ப்பதற்கான மைக்ரேஷன் உருவாக்கி, Customer மாடலுக்கு BelongsToBranch ஸ்கோப் இணைத்தல். (இதன் மூலம் பிற கிளை கஸ்டமர்கள் டிராக்டவுனில் தெரிய மாட்டார்கள்)."
+- **Vulnerabilities Identified & Mitigated**:
+  1. **Global Customer Leakage Across Branches**: The `customers` table lacked a `branch_id` foreign key. Non-superadmin users (e.g., in branch "Demo") saw all customers across the entire enterprise in `/customers` and in workflow customer dropdowns (Lease step1, Mining newApplication, Drone survey, DGPS survey, etc.).
+  2. **Direct Customer Dossier Access Exposure**: Non-superadmin could load or edit customers belonging to other branches via direct slug or ID lookup.
+- **Enterprise Multi-Tenant Architecture Implemented**:
+  1. **Database Schema Migration (`2026_10_26_133500_add_branch_id_to_customers_table.php`)**:
+     - Added `branch_id` foreign key (`nullable()->constrained('branches')->nullOnDelete()`) after `created_by` in `customers`.
+     - Automatically backfilled existing customers from their creator user's `branch_id`, with fallback to `Head Office` (ID: 1).
+  2. **Model Integration (`Customer.php`)**:
+     - Attached `BelongsToBranch` trait (`App\Models\Traits\BelongsToBranch`) and registered global `BranchScope`.
+     - Added `branch_id` to `$fillable`.
+     - `Customer` now automatically belongs to `Branch` via `branch()` relationship.
+  3. **Controller & Workflow Scoping (`CustomerDirectoryController.php`)**:
+     - `store()` automatically persists `$data['branch_id'] = Auth::user()?->branch_id ?? 1;` and `$data['user_id'] = Auth::id();`.
+     - `index()`, `show()`, `update()`, and `destroy()` automatically respect `BranchScope`:
+       - Super Admin / Admin: Sees all customers across all branches (100% unrestricted global oversight).
+       - Non-Super Admin: Strictly sees only customers created in or assigned to their own branch (`customers.branch_id == auth()->user()->branch_id`). Foreign customers return 404.
+  4. **Universal Dropdown Protection**:
+     - All statutory workflow dropdowns querying `Customer::all()` or `Customer::get()` (Lease Application step1, Mining newApplication, Drone Survey, DGPS Survey, PPT Department, EC Compliance) automatically inherit `BranchScope`, rendering foreign customers invisible.
+- **Verification Evidence**:
+  - `Tests\Feature\PrivilegeEscalationSecurityTest.php`: **14 / 14 tests PASS** (48 assertions in 3.66s), including:
+    - `test_non_superadmin_customer_directory_only_shows_own_branch_customers`
+    - `test_customer_in_other_branch_hidden_from_workflow_dropdowns_and_direct_lookup`
+  - `Tests\Feature\CustomerDirectoryCrudTest.php`: **11 / 11 tests PASS** (80 assertions in 1.78s).
+  - `Tests\Feature\MultiTenancyBranchScopeTest.php`: **12 / 12 tests PASS** (56 assertions in 1.50s).
+  - `Tests\Feature\UserManagementAndAuthTest.php`: **19 / 19 tests PASS** (126 assertions in 3.17s).
+  - Zero Tamil characters test: **3 / 3 PASS** across all codebase files.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.71 — BRANCH / DEPARTMENT MULTI-TENANT ISOLATION ON /user 🚀🏢🛡️
+- **User Request:**
+  "why anthor user branck show aguthu da" (with screenshot showing Head Office in Add Personnel modal Branch dropdown for Demo Lease)
+- **Vulnerabilities Identified & Mitigated**:
+  1. **Cross-Branch User Assignment Flaw**: In `UserController@index`, `$branch = Branch::where('status', 1)->get()` was executed globally without checking the current user's branch. A non-superadmin in branch "Demo" saw "Head Office" and other branches in the dropdown and could assign users outside their own branch.
+  2. **Missing Backend Branch Enforcement**: `UserController@store` and `@update` accepted any valid branch ID in `branches,id` without verifying whether the authenticated user had authority over that branch.
+- **Enterprise RBAC Architecture Implemented**:
+  1. **Branch Scoping (`UserController@index`)**:
+     - Super Admin / Admin: Sees ALL active branches across the system.
+     - Non-Super Admin: Strictly scoped to ONLY their own assigned branch (`Branch::where('status', 1)->where('id', auth()->user()->branch_id)->get()`).
+  2. **Auto-Selection in UI (`createuser.blade.php`)**:
+     - When only 1 branch is available (the user's own branch), the dropdown automatically pre-selects their branch without showing prompt or foreign branches.
+  3. **Backend Branch Validation Guard (`UserController@store` & `@update`)**:
+     - Non-superadmins cannot assign users to another branch or transfer personnel between branches (`$request->branch_id != auth()->user()->branch_id` returns 403 Forbidden).
+- **Verification Evidence**:
+  - `Tests\Feature\PrivilegeEscalationSecurityTest.php`: 12 / 12 tests PASS (39 assertions in 2.91s), including `test_non_superadmin_cannot_view_or_assign_other_branches`.
+  - `Tests\Feature\UserManagementAndAuthTest.php`: 19 / 19 tests PASS (126 assertions in 2.87s).
+  - Zero Tamil characters test: PASS across all codebase files.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.70 — USER DIRECTORY SCOPING & CREATOR ISOLATION ON /user 🚀🛡️
+- **User Request:**
+  "http://127.0.0.1:8002/user this page also check da"
+- **Vulnerabilities Identified & Mitigated on /user**:
+  1. **Global User Visibility**: Previously, `UserController@index` fetched all users via `User::all()`. Non-superadmins (like `lease@gmail.com`) could see Super Admin accounts, other departmental users, and their colleagues.
+  2. **Untracked Creator ID**: When creating users in `UserController@store`, `$user->user_id` was left `null` instead of recording `auth()->id()`.
+  3. **Role Dropdown Bleed in User Modal**: Non-superadmin users saw roles created by other administrators in the Add User role selector.
+- **Enterprise RBAC Architecture Implemented**:
+  1. **User Directory Scoping (`UserController@index`)**:
+     - Super Admin / Admin: Sees ALL users across all departments and branches.
+     - Non-Super Admin: Strictly sees ONLY their own user profile (`id == auth()->id()`) AND subordinate users that they personally created (`user_id == auth()->id()`).
+  2. **Subordinate Role Selection Scoping**:
+     - Role dropdown in Add/Edit User modals for non-superadmins only lists roles created by their own account (`where('created_by', auth()->id())`).
+  3. **Creator Attribution & Management Guard (`UserController@store`, `@update`, `@destroy`)**:
+     - Automatically sets `$user->user_id = auth()->id()` on user creation.
+     - Non-superadmins can only modify or delete users created by their own account (`$user->user_id == auth()->id()`). Any attempt to alter another administrator's users returns 403 Forbidden.
+- **Verification Evidence**:
+  - `Tests\Feature\PrivilegeEscalationSecurityTest.php`: 11 / 11 tests PASS (35 assertions in 1.98s).
+  - `Tests\Feature\UserManagementAndAuthTest.php`: 19 / 19 tests PASS (126 assertions in 2.43s).
+  - Zero Tamil characters test: PASS across all codebase files.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.69 — ENTERPRISE RBAC PRIVILEGE ESCALATION LOCKOUT & ROLE CREATOR ISOLATION 🚀🛡️
+- **User Request:**
+  1. "now role and permitions la na oru big issue da..." (Privilege escalation via role creation and user dropdown)
+  2. "http://127.0.0.1:8002/roles i use this login createials da lease@gmail.com admin123 but why show other user create pana role view agauthu da"
+- **Vulnerabilities Identified & Mitigated**:
+  1. **Privilege Escalation via Role Creation (`RolesController`)**: Non-superadmins saw all 78 system permissions in the modal and could grant permissions they themselves did not possess (e.g. `accounts.*`).
+  2. **Privilege Escalation via User Creation/Edit (`UserController`)**: In the User creation/edit modals, the role dropdown showed `Super Admin` and `Admin` to all users.
+  3. **Self-Escalation & Administrator Tampering**: A user editing their own account could modify their own `role_id`, and non-superadmins could edit or delete `Super Admin`/`Admin` accounts.
+  4. **Cross-Tenant Role Visibility Flaw (`RolesController@index`)**: Previously, `RolesController@index` fetched all roles globally (`Role::all()`), causing lower managers (like `lease@gmail.com`) to see roles created by Super Admin (`Admin`, `Super Admin`, `Staff`, `Officer`, `Lease`).
+- **Enterprise RBAC Architecture Implemented**:
+  1. **Database Schema Extension**: Added `created_by` foreign key column to the `roles` table (`2026_10_26_124411_add_created_by_to_roles_table.php`), backfilled existing system roles to Super Admin (ID: 1).
+  2. **Role Creator Scoping (`RolesController@index`)**:
+     - Super Admin / Admin: Sees ALL roles across the entire enterprise.
+     - Non-Super Admin: Strictly sees ONLY roles created by their own account (`where('created_by', auth()->id())`). Roles created by other users or Super Admin are completely invisible.
+  3. **Role Management Isolation (`RolesController@update`, `@destroy`, `@getPermissions`)**:
+     - Non-superadmins can only modify or delete roles they created (`$role->created_by === auth()->id()`). Any attempt to alter another administrator's role returns 403 Forbidden.
+  4. **Permission Subsetting & Dropdown Scoping**:
+     - Non-superadmins only see their own permissions in the permission picker grid.
+     - Non-superadmins cannot assign `Super Admin` / `Admin` or roles exceeding their own permission scope.
+     - Self-role modification is blocked in both UI and backend controller.
+- **Verification Evidence**:
+  - `Tests\Feature\PrivilegeEscalationSecurityTest.php`: 10 / 10 tests PASS (25 assertions in 1.76s).
+  - `Tests\Feature\UserManagementAndAuthTest.php`: 19 / 19 tests PASS (126 assertions in 2.52s).
+  - Zero Tamil characters test: PASS across all code and view files.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.68 — PUBLIC & STORAGE APPLICATION UPLOAD DATA REMOVAL & ZERO-ORPHAN PURGE 🚀📁🛡️
+- **User Request:**
+  "nice now remove that related public folter datas like file,videos,pdf C:\xampp\htdocs\GTMS\gtms\public"
+- **Objective:**
+  Safely purge all uploaded application artifacts (PDFs, MP4 videos, DOCX/PPTX reports, ZIPs, KML maps, and test audit screenshots) from `public/uploads/`, `storage/app/public/`, and `public/screenshots/`, reclaiming disk space while strictly preserving application UI assets (CSS, JS, logos, brand backgrounds, icons, vendor files).
+- **Execution & Storage Reclaimed:**
+  1. **Purged Files Breakdown (1,495 Files / 3.98 GB Reclaimed)**:
+     - 1,055 PDF documents (`.pdf`)
+     - 92 MP4 drone/field survey videos (`.mp4`)
+     - 109 Statutory Word reports (`.docx`)
+     - 62 Compressed archives (`.zip`)
+     - 56 Boundary polygon maps (`.kml`)
+     - 55 Presentation files (`.pptx`)
+     - 4 CSV boundary files (`.csv`)
+     - 61 Old test/audit screenshots (`.png`)
+  2. **Directories Reset & Preserved for Fresh Uploads**:
+     - Reset and verified empty upload buckets: `public/uploads/dgps`, `drone`, `ec_certificates`, `lease_applications`, `lease_documents`, `mining`, `thumbnails`, `users`, `invoice_seals`, `storage/app/public/environment`, `storage/app/public/uploads/drone`.
+  3. **Core Application Assets 100% Protected**:
+     - `public/css/`, `public/js/`, `public/images/` (`gtmslogo.png`, `background.png`, invoice templates), `public/build/`, and `public/vendor/` remain completely intact.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.67 — CONTROLLED APPLICATION AND DETAIL RECORDS DATABASE CLEANUP & ZERO-DOWNTIME RESET 🚀🧹🛡️
+- **User Request:**
+  "remove DB table all application and more like details first explin what you understant then once i am approved then only start da" -> "proceed"
+- **Objective:**
+  Safely and atomically purge all application records and associated child/detail entries across all GTMS modules (Lease, Mining, Environment B1/B2, EC Certificates, EC Compliance, PPT Department, DGPS Survey, Drone Survey, Customer tracking, Quotations, Receipts, Handlers, Payments, Chunked uploads, Activity logs, Notifications) while strictly preserving 100% of master configuration tables, authentication records, and system schema.
+- **Architectural Implementation:**
+  1. **Atomic Transactional Teardown**:
+     - Executed child-first cascading `DELETE` statements inside a single atomic database transaction.
+     - Temporarily disabled foreign key constraints (`SET FOREIGN_KEY_CHECKS=0`) to prevent deadlocks and constraint blocking, then re-enabled immediately upon commit.
+  2. **Purged Application & Detail Tables (0 Records Remaining)**:
+     - Lease: `lease_applications` (4), `lease_documents` (43), `lease_survey_numbers` (2), `lease_application_minerals` (9), `mimas_credentials` (4).
+     - Mining: `mining_applications` (8), `mining_documents` (53), `mining_application_minerals` (8), `mining_boundary_points` (0), `mining_production_schedules` (0).
+     - Environment: `environment_projects` (9), `environment_documents` (959), `environmental_projects` (0), `environmental_documents` (0), `environmental_activities` (0).
+     - EC & Compliance: `ec_compliances` (2), `ec_compliance_documents` (0), `ec_certificates` (2).
+     - PPT & Surveys: `ppt_applications` (11), `ppt_documents` (0), `ppt_agendas` (0), `dgps_surveys` (2), `dgps_points` (0), `dgps_documents` (0), `drone_surveys` (4), `drone_documents` (1).
+     - Accounts & Uploads: `quotations` (6), `quotation_items` (36), `payment_receipts` (2), `chunked_uploads` (27), `chunked_upload_parts` (416).
+     - Cross-Module Details: `application_handlers` (39), `application_payments` (23), `activity_logs` (56), `notifications` (6).
+     - Customer Profiles: `customers` (6).
+  3. **Master Data & System Integrity Guaranteed (100% Preserved)**:
+     - `users` (6 records), `roles` (6), `permissions` (78), `branches` (2), `districts` (38), `minerals` (8), `nature_of_works` (8), `applicant_types` (5), `plan_types` (4), `folders` (41), `document_fields` (296), `bank_accounts` (3), `lease_categories` (11).
+  4. **Verification Evidence**:
+     - Automated verification query confirmed all 40 application & detail tables have exactly 0 records.
+     - Playwright empty state regression test passed: 13 / 13 key platform routes returned clean HTTP 200 responses with polished empty state UI.
+     - PHPUnit test suite confirmed zero Tamil characters in codebase.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.66 — SHOW, VIEW, STEP & WIZARD PAGES UI AUDIT, PLAYWRIGHT VERIFICATION & REFERENCE HARMONIZATION 🚀📑🛡️
+- **User Request:**
+  "na ena sona da you only index file aa matun ui improve panirukara reming page vanum,show,view,steps lkie page da"
+- **Objective:**
+  Audit and modernize every remaining non-index page across the entire GTMS platform—specifically detail dossiers (`show.blade.php`, `customer_show.blade.php`), wizard workflows (`wizard.blade.php`, `createstep*.blade.php`), document registries (`subcat1.blade.php`, `subcat2.blade.php`), and create/edit forms (`create.blade.php`, `edit.blade.php`)—to strictly match the approved visual benchmark of the Lease Application Golden Reference (`/application` and `/viewapplication`), while preserving 100% of existing labels, routes, and business behavior.
+- **Architectural Implementation:**
+  1. **Lookup Card Token Harmonization (`.s1-lookup-card`)**:
+     - Extended the Lease Application Customer Unique ID lookup card system across all wizard workflows: `ppt_department/wizard.blade.php`, `ec_compliance/wizard.blade.php`, `enviro_b2/wizard.blade.php`, `ec_certificate/wizard.blade.php`, `drone_survey/wizard.blade.php`, and `eviron/create.blade.php`.
+     - Replaced legacy inline dashed blue borders with clean `.s1-lookup-card`, `.s1-lookup-label`, `.s1-lookup-badge`, `.s1-lookup-desc`, and `.s1-btn-fetch` tokens.
+  2. **Document Register Action Standardization**:
+     - Modernized table action buttons across `enviro_b1/subcat1.blade.php` (TOR), `enviro_b1/subcat2.blade.php` (EIA), and `enviro_b2/show.blade.php` (B2 Project Dossier) to `.table-action-group` and `.btn-action-icon`.
+  3. **Customer 360 Dossier Resilience (`customer_show.blade.php`)**:
+     - Discovered and resolved an HTTP 500 error where land survey extents in multi-part format (e.g. TN land record `"14.20.20"` Hectare.Are.SqMeter notation) caused a `TypeError` in PHP 8's strict `number_format()`.
+     - Added `is_numeric` protective guards, restoring full stability and clean rendering on both desktop and mobile viewports.
+  4. **Universal Modal & SweetAlert Engine Integration**:
+     - Bound all Master data and Authentication modal views (`createcat.blade.php`, `createunit.blade.php`, `createproduct.blade.php`, `createproductstock.blade.php`, `creatbranch.blade.php`, `createrole.blade.php`, `createuser.blade.php`) to modern 16px radius geometry, subtle `#E2E8F0` borders, `#0F1E4D` navy gradient action buttons, and elevated shadows.
+- **Verification Evidence:**
+  - `tests/e2e/capture_detail_and_wizard_pages.mjs`: **44 / 44 passed** with HTTP 200 across Desktop (1440x900) and Mobile (390x844).
+  - Preloader Detachment verified: zero transparent overlay or spinner blocking across all screenshots.
+  - Codebase sanity test: zero Tamil characters verified (`Tests\Feature\DocumentRequirementToggleTest`, `Tests\Feature\EnvironmentClearanceTest`, `Tests\Feature\MiningPlanTransitionTest`).
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-24
+
+## Previous Phase: PHASE 10.65 — FULL APPLICATION UI AUDIT, PLAYWRIGHT VERIFICATION & LEASE REFERENCE ALIGNMENT 🚀🎨🛡️
+- **User Request:**
+  "same like all page da /goal evey bage complete pana next page movepanu da"
+- **Objective:**
+  Audit every single module and route across `routes/web.php` in the GTMS enterprise portal, modernizing all non-lease pages to the approved visual quality of the Lease Application Golden Reference (`/application` and `/viewapplication`), verifying zero preloader overlay bugs, preserving 100% of existing labels and functionality, and confirming with Playwright end-to-end visual tests.
+- **Architectural Implementation:**
+  1. **Global GTMS Design Tokens & Modal/Alert Engine (`resources/views/layouts/app.blade.php`)**:
+     - Introduced `.btn-navy` and `.btn-app-primary` gradient styles matching the approved Lease Application primary action standard.
+     - Implemented `.table-action-group` single-row flex container (`white-space: nowrap`, `gap: 6px`) and `.btn-action-icon` (32x32px squircle geometry, `border-radius: 8px`) for View, Edit, Delete, and Download actions across all data tables.
+     - Elevated modals (`border-radius: 16px`, soft border `#E2E8F0`, padded header with `#0F172A` title).
+     - Standardized SweetAlert2 dialogs (`border-radius: 16px`, brand confirm/cancel button colors `#DC2626` / `#0F1E4D`).
+  2. **Master Data Module Standardization**:
+     - Modernized Category, Unit, Product, and Product Stock index pages (`resources/views/pages/master/*`), eliminating legacy `.btn-info` and raw `.btn-xs.sharp` buttons.
+     - Synchronized dynamic AJAX row insertion in `public/js/ajax/category.js` and `public/js/ajax/product.js` to output `.table-action-group` and `.btn-action-icon`.
+  3. **Survey & Statutory Department Standardization**:
+     - Modernized DGPS Land Survey (`resources/views/pages/dgps_survey/index.blade.php`), Drone Volumetric Survey (`resources/views/pages/drone_survey/index.blade.php`), PPT Department (`resources/views/pages/ppt_department/index.blade.php`), and EC Compliance Register (`resources/views/pages/ec_compliance/index.blade.php`).
+     - Upgraded action buttons from legacy `btn-group btn-group-sm` to unified squircle `.table-action-group` and `.btn-action-icon`.
+  4. **Preloader Detachment & High-Fidelity Playwright Automation**:
+     - Implemented explicit `#preloader` removal and `#main-wrapper` show triggers in Playwright tests, eliminating empty 7-8 KB spinner captures.
+     - Captured and verified 108 baseline screenshots and 108 final screenshots across 27 routes and 4 viewports (Desktop 1440x900, Laptop 1366x768, Tablet 768x1024, Mobile 390x844).
+     - Verified all 27 GET routes returned HTTP 200 with zero visual or layout regressions (`tests/e2e/verify_all_web_routes.mjs`).
+- **Verification Evidence:**
+  - Playwright route test: 27 / 27 routes passed with HTTP 200.
+  - Playwright visual regression test: 108 / 108 screenshots verified with 0 preloader overlay bugs.
+  - Codebase sanity test: zero Tamil characters in application source code verified (`Tests\Feature\DocumentRequirementToggleTest`, `Tests\Feature\EnvironmentClearanceTest`, `Tests\Feature\MiningPlanTransitionTest`).
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-24
+
+## Previous Phase: PHASE 10.64 — GTMS SECURE DOCKER CI/CD & SYNOLOGY NAS GHCR PUBLISHING ARCHITECTURE 🚀🐳🛡️
 - **Objective:** Fix, secure, and validate Docker and CI/CD architecture, transition from Windows self-hosted runners to GitHub-hosted Actions publishing to GitHub Container Registry (GHCR), configure Synology NAS outbound pull architecture, and establish verified database backup and rollback procedures.
 - **Identified Problems & Root Causes:**
   1. Old workflow `.github/workflows/deploy.yml` depended on Windows self-hosted runners (`Primary-PC`, `Secondary-PC`) which are powered off when the operator is away, stalling deployments.

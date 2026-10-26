@@ -22,10 +22,9 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="card-title mb-0">Product Stock</h4>
                             @can('product.create')
-                             <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
-                                    data-bs-toggle="modal" data-bs-target=".bd-product-modal-lg"><i
-                                        class="fa fa-plus color-info"></i>
-                                </span>Add Product</button>
+                            <button type="button" class="btn btn-navy" data-bs-toggle="modal" data-bs-target=".bd-product-modal-lg">
+                                <i class="fa fa-plus me-1"></i> Add Product
+                            </button>
                             @endcan
                         </div>
                         <div class="card-body">
@@ -54,12 +53,11 @@
                                                 <td>{{ $item->available_stock }}</td>
                                                 <td>{{ $item->sale_stock }}</td>
                                                 <td>
-                                                    <div class="d-flex">
+                                                    <div class="table-action-group">
                                                         @can('product.edit')
-                                                        <a href="#" class="btn btn-primary shadow btn-xs sharp me-1"><i
+                                                        <a href="#" class="btn-action-icon btn-action-edit" title="Edit"><i
                                                                 class="fas fa-pencil-alt"></i></a>
                                                         @endcan
-                                                      
                                                     </div>
                                                 </td>
 

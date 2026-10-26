@@ -46,21 +46,21 @@ $labels = [
             <div class="wc-sub">Link the statutory EC clearance project, define the compliance monitoring period and submission due date.</div>
 
             {{-- CUSTOMER UNIQUE ID LOOKUP CARD --}}
-            <div class="card p-3 mb-3" style="background:#f0f7ff; border:2px dashed #93c5fd; border-radius:14px;">
+            <div class="s1-lookup-card mb-3.5 p-3">
               <div class="d-flex align-items-center justify-content-between mb-2">
-                <label class="form-label fw-bold mb-0 text-primary" style="font-size:0.92rem;">
-                  <i class="fa fa-fingerprint me-1"></i> Customer Unique ID Lookup
+                <label class="s1-lookup-label fw-bold mb-0" for="mimas_search_input">
+                  <i class="fa fa-fingerprint me-1.5"></i> Customer Unique ID Lookup
                 </label>
-                <span class="badge bg-primary text-white"><i class="fa fa-bolt me-1"></i> Instant Autofill</span>
+                <span class="badge s1-lookup-badge"><i class="fa fa-bolt me-1"></i> Instant Autofill</span>
               </div>
-              <p class="text-muted small mb-2">Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.</p>
+              <p class="s1-lookup-desc mt-2 mb-2.5">Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.</p>
               
-              <div class="input-group">
-                <span class="input-group-text bg-white border-primary"><i class="fa fa-search text-primary"></i></span>
-                <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold border-primary" 
+              <div class="input-group s1-input-group s1-lookup-input-group">
+                <span class="input-group-text s1-addon s1-lookup-addon"><i class="fa fa-search"></i></span>
+                <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold s1-input s1-lookup-field" 
                        placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off">
-                <button class="btn btn-primary px-3 fw-bold" type="button" id="btn_lookup_mimas">
-                  <i class="fa fa-sync-alt me-1"></i> Fetch Details
+                <button class="btn s1-btn-fetch px-3 fw-bold" type="button" id="btn_lookup_mimas">
+                  <i class="fa fa-sync-alt me-1.5"></i> Fetch Details
                 </button>
               </div>
               

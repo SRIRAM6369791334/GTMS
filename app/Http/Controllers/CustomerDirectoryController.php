@@ -114,6 +114,8 @@ class CustomerDirectoryController extends Controller
             $data['gstin'] = null;
         }
         $data['created_by'] = Auth::id();
+        $data['user_id']    = Auth::id();
+        $data['branch_id']  = Auth::user()?->branch_id ?? 1;
 
         // If a previously soft-deleted customer exists with this MIMAS or Aadhaar, restore and update
         $trashedCustomer = Customer::onlyTrashed()

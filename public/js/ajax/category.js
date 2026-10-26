@@ -32,12 +32,14 @@ $(document).ready(function() {
                     response.data.cat_code,
                     response.data.cat_name,
 
-                    '<button type="button" class="btn btn-primary editcategoryBtn shadow btn-xs sharp me-1" data-id="' + response.data.id + '" data-code="' + response.data.cat_code + '" data-name="' + response.data.cat_name + '">' +
-                        '<i class="fa fa-pencil"></i>' +
-                    '</button> ' +
-                    '<button type="button" class="btn btn-danger deletecategoryBtn shadow btn-xs sharp me-1" data-id="' + response.data.id + '">' +
-                        '<i class="fa fa-trash"></i>' +
-                    '</button>'
+                    '<div class="table-action-group">' +
+                        '<button type="button" class="btn-action-icon btn-action-edit editcategoryBtn" data-id="' + response.data.id + '" data-code="' + response.data.cat_code + '" data-name="' + response.data.cat_name + '" title="Edit">' +
+                            '<i class="fa fa-pencil"></i>' +
+                        '</button> ' +
+                        '<button type="button" class="btn-action-icon btn-action-delete deletecategoryBtn" data-id="' + response.data.id + '" title="Delete">' +
+                            '<i class="fa fa-trash"></i>' +
+                        '</button>' +
+                    '</div>'
                 ]).draw(false);
 
                 $('#cateadd')[0].reset();
@@ -93,12 +95,14 @@ $(document).ready(function() {
                     row.data()[0],
                     response.data.cat_code,
                     response.data.cat_name,
-                    '<button type="button" class="btn btn-primary editcategoryBtn shadow btn-xs sharp me-1" data-id="' + response.data.id + '" data-code="' + response.data.cat_code + '" data-name="' + response.data.cat_name + '">' +
-                        '<i class="fa fa-pencil"></i>' +
-                    '</button> ' +
-                    '<button type="button" class="btn btn-danger deletecategoryBtn shadow btn-xs sharp me-1" data-id="' + response.data.id + '">' +
-                        '<i class="fa fa-trash"></i>' +
-                    '</button>'
+                    '<div class="table-action-group">' +
+                        '<button type="button" class="btn-action-icon btn-action-edit editcategoryBtn" data-id="' + response.data.id + '" data-code="' + response.data.cat_code + '" data-name="' + response.data.cat_name + '" title="Edit">' +
+                            '<i class="fa fa-pencil"></i>' +
+                        '</button> ' +
+                        '<button type="button" class="btn-action-icon btn-action-delete deletecategoryBtn" data-id="' + response.data.id + '" title="Delete">' +
+                            '<i class="fa fa-trash"></i>' +
+                        '</button>' +
+                    '</div>'
                 ]).draw(false);
 
                 $('#catedit')[0].reset();
@@ -121,11 +125,11 @@ $(document).ready(function() {
 
     Swal.fire({
         title: 'Are you sure?',
-        text: "You won't be able to recover this role!",
+        text: "You won't be able to recover this category!",
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#0F1E4D',
         confirmButtonText: 'Yes, Delete it!',
         cancelButtonText: 'Cancel'
     }).then((result) => {

@@ -204,8 +204,8 @@
                     @endif
                   </td>
                   <td class="text-end pe-3">
-                    <div class="btn-group btn-group-sm">
-                      <button type="button" class="btn btn-outline-warning"
+                    <div class="table-action-group">
+                      <button type="button" class="btn-action-icon btn-action-edit btn-update-status"
                               data-bs-toggle="modal"
                               data-bs-target="#modalCompIndexUpdateStatus"
                               data-action="{{ route('ec-compliance.status', $comp->id) }}"
@@ -216,10 +216,10 @@
                               title="Change Status">
                         <i class="bi bi-tag"></i>
                       </button>
-                      <a href="{{ route('ec-compliance.show', $comp->id) }}" class="btn btn-outline-primary" title="View Compliance Dossier">
-                        <i class="bi bi-eye"></i> View
+                      <a href="{{ route('ec-compliance.show', $comp->id) }}" class="btn-action-icon btn-action-view" title="View Compliance Dossier">
+                        <i class="bi bi-eye"></i>
                       </a>
-                      <a href="{{ route('ec-compliance.step', ['step' => 1, 'resume' => $comp->id]) }}" class="btn btn-outline-secondary" title="Edit / Resume Filing">
+                      <a href="{{ route('ec-compliance.step', ['step' => 1, 'resume' => $comp->id]) }}" class="btn-action-icon btn-action-download" title="Edit / Resume Filing">
                         <i class="bi bi-pencil"></i>
                       </a>
                     </div>

@@ -90,16 +90,16 @@ $stepTitles = [
         <!-- ========================================================= -->
         @if($step === 1)
           <!-- CUSTOMER UNIQUE ID / MIMAS LOOKUP CARD -->
-          <div class="s-lookup-card mb-3.5 p-3">
+          <div class="s1-lookup-card mb-4">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
-              <label class="s-lookup-label fw-bold mb-0" for="mimas_search_input">
+              <label class="s1-lookup-label fw-bold mb-0" for="mimas_search_input">
                 <i class="bi bi-fingerprint me-1.5"></i> Customer Unique ID Lookup
               </label>
-              <span class="badge s-lookup-badge">
+              <span class="badge s1-lookup-badge">
                 <i class="bi bi-lightning-charge-fill me-1"></i> Instant Autofill
               </span>
             </div>
-            <p class="s-lookup-desc mt-2 mb-2.5">
+            <p class="s1-lookup-desc mt-2 mb-2.5">
               Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.
             </p>
 
@@ -107,7 +107,7 @@ $stepTitles = [
               <span class="input-group-text s-addon s-lookup-addon"><i class="bi bi-search"></i></span>
               <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold s-input s-lookup-field" 
                      placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off">
-              <button class="btn s-btn-fetch px-3 fw-bold" type="button" id="btn_lookup_mimas">
+              <button class="btn s1-btn-fetch px-3 fw-bold" type="button" id="btn_lookup_mimas">
                 <i class="bi bi-arrow-repeat me-1.5"></i> Fetch Details
               </button>
             </div>

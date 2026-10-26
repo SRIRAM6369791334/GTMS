@@ -113,18 +113,20 @@
                                 </td>
                                 <td>{{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : '—' }}</td>
                                 <td class="text-end">
-                                    @can('environment.b2.upload')
-                                    <button class="btn btn-xs btn-outline-primary" data-bs-toggle="modal" data-bs-target="#b1UploadModal{{ $doc->id }}" title="Upload Document">
-                                        <i class="fa fa-upload"></i>
-                                    </button>
-                                    @endcan
-                                    @can('environment.b2.review')
-                                    @if($doc->file_path)
-                                    <button class="btn btn-xs btn-outline-success" data-bs-toggle="modal" data-bs-target="#b1ReviewModal{{ $doc->id }}" title="Review Document">
-                                        <i class="fa fa-check"></i>
-                                    </button>
-                                    @endif
-                                    @endcan
+                                    <div class="table-action-group">
+                                        @can('environment.b2.upload')
+                                        <button type="button" class="btn-action-icon btn-action-download" data-bs-toggle="modal" data-bs-target="#b1UploadModal{{ $doc->id }}" title="Upload Document">
+                                            <i class="fa fa-upload"></i>
+                                        </button>
+                                        @endcan
+                                        @can('environment.b2.review')
+                                        @if($doc->file_path)
+                                        <button type="button" class="btn-action-icon btn-action-view" data-bs-toggle="modal" data-bs-target="#b1ReviewModal{{ $doc->id }}" title="Review Document">
+                                            <i class="fa fa-check"></i>
+                                        </button>
+                                        @endif
+                                        @endcan
+                                    </div>
                                 </td>
                             </tr>
 

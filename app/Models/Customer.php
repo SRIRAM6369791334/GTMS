@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\BelongsToBranch;
 
 use Illuminate\Support\Str;
 
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, BelongsToBranch;
 
     protected $fillable = [
         'customer_name',
@@ -37,6 +38,7 @@ class Customer extends Model
         'status',
         'user_id',
         'created_by',
+        'branch_id',
     ];
 
     protected $casts = [

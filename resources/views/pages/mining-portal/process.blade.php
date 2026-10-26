@@ -2111,7 +2111,7 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
                         <form method="POST" action="{{ route('mining.application.stage', $application->id) }}">
                             @csrf
                             <input type="hidden" name="stage" value="6.4">
-                            <button type="submit" class="btn btn-info text-white fw-semibold"><i class="bi bi-cloud-upload me-1"></i>Final MIMAS Upload &amp; Reports (Stage 6.4)</button>
+                            <button type="submit" class="btn btn-navy text-white fw-semibold"><i class="bi bi-cloud-upload me-1"></i>Final MIMAS Upload &amp; Reports (Stage 6.4)</button>
                         </form>
                         @can('mining.edit')
                             @if(!$linkedEnv)

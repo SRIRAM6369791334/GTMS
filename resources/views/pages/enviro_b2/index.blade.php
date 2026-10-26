@@ -11,8 +11,8 @@
     </div>
     <div class="col-lg-6 text-end">
       @can('environment.b2.create')
-      <a href="{{ route('environment-b2.step', 1) }}" class="btn btn-rounded btn-info">
-        <span class="btn-icon-start text-info"><i class="fa fa-plus color-info"></i></span>New B2 Application
+      <a href="{{ route('environment-b2.step', 1) }}" class="btn btn-navy">
+        <span class="btn-icon-start text-primary"><i class="fa fa-plus"></i></span>New B2 Application
       </a>
       @endcan
     </div>
@@ -119,7 +119,11 @@
                   </td>
                   <td>{{ $app->created_at ? $app->created_at->format('d M Y') : '—' }}</td>
                   <td>
-                    <a href="{{ route('environment-b2.show', $app) }}" class="btn btn-sm btn-primary">View Project</a>
+                    <div class="table-action-group">
+                      <a href="{{ route('environment-b2.show', $app) }}" class="btn-action-icon btn-action-view" title="View Project">
+                        <i class="fa fa-eye"></i>
+                      </a>
+                    </div>
                   </td>
                 </tr>
                 @empty

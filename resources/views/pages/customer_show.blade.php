@@ -979,7 +979,7 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                 <div>
                                     <div class="kpi-metric-label">Pithead Stock</div>
                                     <h3 class="kpi-metric-value mb-0 mt-1">
-                                        {{ number_format($currentStockpileCbm, 0) }}
+                                        {{ number_format((float)($currentStockpileCbm ?? 0), 0) }}
                                         <span class="fs-6 fw-normal text-muted">CBM</span>
                                     </h3>
                                 </div>
@@ -1103,7 +1103,7 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                                     @endif
                                                 </td>
                                                 <td>{{ $lease->village ?? '-' }}, {{ $lease->taluk ?? '-' }}</td>
-                                                <td class="fw-bold font-monospace" style="color: var(--dos-text-primary);">{{ number_format($lease->area_extent_ha, 2) }} Ha</td>
+                                                <td class="fw-bold font-monospace" style="color: var(--dos-text-primary);">{{ is_numeric($lease->area_extent_ha) ? number_format((float)$lease->area_extent_ha, 2) : ($lease->area_extent_ha ?? '-') }} Ha</td>
                                                 <td>
                                                     @forelse($lease->surveyNumbers as $sNo)
                                                         <span class="code-badge me-1 mb-1 d-inline-block">{{ $sNo->survey_no }}</span>
@@ -1534,11 +1534,11 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                                 <tr>
                                                     <td><span class="font-monospace fw-bold text-primary">{{ $dgps->survey_no }}</span></td>
                                                     <td>{{ $dgps->field_book_no ?? '-' }}</td>
-                                                    <td>{{ number_format($dgps->lease_area_ha, 2) }} Ha</td>
-                                                    <td class="fw-bold text-success">{{ number_format($dgps->surveyed_area_ha, 2) }} Ha</td>
+                                                    <td>{{ is_numeric($dgps->lease_area_ha) ? number_format((float)$dgps->lease_area_ha, 2) : ($dgps->lease_area_ha ?? '-') }} Ha</td>
+                                                    <td class="fw-bold text-success">{{ is_numeric($dgps->surveyed_area_ha) ? number_format((float)$dgps->surveyed_area_ha, 2) : ($dgps->surveyed_area_ha ?? '-') }} Ha</td>
                                                     <td>
                                                         <span class="badge bg-{{ $dgps->area_discrepancy_ha > 0 ? 'danger' : 'light' }} text-{{ $dgps->area_discrepancy_ha > 0 ? 'white' : 'dark' }} border">
-                                                            {{ number_format($dgps->area_discrepancy_ha, 2) }} Ha
+                                                            {{ is_numeric($dgps->area_discrepancy_ha) ? number_format((float)$dgps->area_discrepancy_ha, 2) : ($dgps->area_discrepancy_ha ?? '-') }} Ha
                                                         </span>
                                                     </td>
                                                     <td><span class="code-badge">{{ $dgps->points->count() }} GCPs</span></td>
@@ -1589,7 +1589,7 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                                     </td>
                                                     <td>{{ $drone->altitude_meters ? $drone->altitude_meters . 'm' : '-' }} ({{ $drone->gsd_cm_px ? $drone->gsd_cm_px . ' cm' : '-' }})</td>
                                                     <td>
-                                                        <span class="fw-bold text-primary fs-6 font-monospace">{{ number_format($drone->extracted_volume_cbm, 2) }}</span>
+                                                        <span class="fw-bold text-primary fs-6 font-monospace">{{ is_numeric($drone->extracted_volume_cbm) ? number_format((float)$drone->extracted_volume_cbm, 2) : ($drone->extracted_volume_cbm ?? '-') }}</span>
                                                         <span class="text-muted small">CBM</span>
                                                     </td>
                                                     <td><span class="status-blip-badge active"><span class="status-blip-dot dot-active"></span>{{ ucfirst($drone->survey_status) }}</span></td>
@@ -1631,15 +1631,15 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                         </div>
                                         <div class="col-md-3 border-end" style="border-color: var(--dos-border) !important;">
                                             <span class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: .68rem;">Pithead Stock</span>
-                                            <h4 class="fw-bold text-success mb-0 font-monospace">{{ number_format($stockpile->current_stock_cbm, 2) }} <span class="fs-6 fw-normal text-muted">CBM</span></h4>
+                                            <h4 class="fw-bold text-success mb-0 font-monospace">{{ is_numeric($stockpile->current_stock_cbm) ? number_format((float)$stockpile->current_stock_cbm, 2) : ($stockpile->current_stock_cbm ?? '0.00') }} <span class="fs-6 fw-normal text-muted">CBM</span></h4>
                                         </div>
                                         <div class="col-md-3 border-end" style="border-color: var(--dos-border) !important;">
                                             <span class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: .68rem;">Permitted Annual Quota</span>
-                                            <h5 class="fw-bold mb-0 font-monospace" style="color: var(--dos-text-primary);">{{ number_format($stockpile->annual_permitted_quota, 2) }} <span class="fs-6 fw-normal text-muted">CBM</span></h5>
+                                            <h5 class="fw-bold mb-0 font-monospace" style="color: var(--dos-text-primary);">{{ is_numeric($stockpile->annual_permitted_quota) ? number_format((float)$stockpile->annual_permitted_quota, 2) : ($stockpile->annual_permitted_quota ?? '0.00') }} <span class="fs-6 fw-normal text-muted">CBM</span></h5>
                                         </div>
                                         <div class="col-md-3">
                                             <span class="text-muted text-uppercase fw-bold d-block mb-1" style="font-size: .68rem;">Total Dispatched</span>
-                                            <h5 class="fw-bold text-info mb-0 font-monospace">{{ number_format($stockpile->total_dispatched_cbm, 2) }} <span class="fs-6 fw-normal text-muted">CBM</span></h5>
+                                            <h5 class="fw-bold text-info mb-0 font-monospace">{{ is_numeric($stockpile->total_dispatched_cbm) ? number_format((float)$stockpile->total_dispatched_cbm, 2) : ($stockpile->total_dispatched_cbm ?? '0.00') }} <span class="fs-6 fw-normal text-muted">CBM</span></h5>
                                         </div>
                                     </div>
                                 </div>
@@ -1669,8 +1669,8 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                                 </td>
                                                 <td style="color: var(--dos-text-primary);">{{ $dispatch->driver_name ?? '-' }}</td>
                                                 <td style="color: var(--dos-text-primary);">{{ $dispatch->destination ?? '-' }}</td>
-                                                <td class="fw-bold text-primary font-monospace">{{ number_format($dispatch->quantity, 2) }}</td>
-                                                <td class="fw-bold text-success font-monospace">₹ {{ number_format($dispatch->seigniorage_fee_inr, 2) }}</td>
+                                                <td class="fw-bold text-primary font-monospace">{{ is_numeric($dispatch->quantity) ? number_format((float)$dispatch->quantity, 2) : ($dispatch->quantity ?? '-') }}</td>
+                                                <td class="fw-bold text-success font-monospace">₹ {{ is_numeric($dispatch->seigniorage_fee_inr) ? number_format((float)$dispatch->seigniorage_fee_inr, 2) : ($dispatch->seigniorage_fee_inr ?? '0.00') }}</td>
                                                 <td><span class="status-blip-badge active"><span class="status-blip-dot dot-active"></span>{{ ucfirst($dispatch->status) }}</span></td>
                                             </tr>
                                             @empty

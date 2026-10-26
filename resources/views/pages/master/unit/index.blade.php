@@ -24,10 +24,9 @@
                             <h4 class="card-title mb-0">Units</h4>
 
                             @can('unit.create')
-                            <button class="btn btn-rounded btn-info"><span class="btn-icon-start text-info"
-                                    data-bs-toggle="modal" data-bs-target=".bd-unit-modal-lg"><i
-                                        class="fa fa-plus color-info"></i>
-                                </span>Add Units</button>
+                            <button type="button" class="btn btn-navy" data-bs-toggle="modal" data-bs-target=".bd-unit-modal-lg">
+                                <i class="fa fa-plus me-1"></i> Add Units
+                            </button>
                             @endcan
 
                         </div>
@@ -49,21 +48,24 @@
 
                                                 <td>{{ $unit->units }}</td>
                                                 <td>
-                                                    @can('unit.edit')
-                                                    <button type="button" class="btn btn-primary editunitBtn shadow btn-xs sharp me-1"  data-bs-toggle="modal" data-bs-target=".bd-editunit-modal-lg"
-                                                        data-id="{{ $unit->id }}"
+                                                    <div class="table-action-group">
+                                                        @can('unit.edit')
+                                                        <button type="button" class="btn-action-icon btn-action-edit editunitBtn" data-bs-toggle="modal" data-bs-target=".bd-editunit-modal-lg"
+                                                            data-id="{{ $unit->id }}"
+                                                            data-name="{{ $unit->units }}"
+                                                            title="Edit">
+                                                            <i class="fa fa-pencil"></i>
+                                                        </button>
+                                                        @endcan
 
-                                                        data-name="{{ $unit->units }}">
-                                                        <i class="fa fa-pencil"></i>
-                                                    </button>
-                                                    @endcan
-
-                                                    @can('unit.delete')
-                                                    <button type="button" class="btn btn-danger deleteunitBtn shadow btn-xs sharp me-1"
-                                                        data-id="{{ $unit->id }}">
-                                                        <i class="fa fa-trash"></i>
-                                                    </button>
-                                                    @endcan
+                                                        @can('unit.delete')
+                                                        <button type="button" class="btn-action-icon btn-action-delete deleteunitBtn"
+                                                            data-id="{{ $unit->id }}"
+                                                            title="Delete">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                        @endcan
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @endforeach

@@ -307,6 +307,39 @@ class UserManagementAndAuthTest extends TestCase
     }
 
     /**
+     * Requirement: User provisioning accepts manual custom user_code and enforces uniqueness
+     */
+    public function test_user_provisioning_accepts_manual_custom_user_code(): void
+    {
+        $customCode = 'EMP_' . rand(1000, 9999);
+        $email = 'manual_code_' . uniqid() . '@gtms.com';
+        $payload = [
+            'name' => 'Manual Code User',
+            'email' => $email,
+            'user_code' => $customCode,
+            'password' => 'securePass123',
+            'role_id' => $this->staffRole->id,
+            'branch_id' => $this->branch->id,
+            'mobile_num' => '9840999888',
+            'status' => 1,
+        ];
+
+        $response = $this->actingAs($this->adminUser)->postJson('/useradd', $payload);
+        $response->assertStatus(200);
+
+        $createdUser = User::where('email', $email)->first();
+        $this->assertNotNull($createdUser);
+        $this->assertEquals($customCode, $createdUser->user_code);
+
+        // Attempt duplicate custom code: rejected with 422
+        $dupEmail = 'dup_' . uniqid() . '@gtms.com';
+        $dupPayload = array_merge($payload, ['email' => $dupEmail]);
+        $dupResponse = $this->actingAs($this->adminUser)->postJson('/useradd', $dupPayload);
+        $dupResponse->assertStatus(422);
+        $dupResponse->assertJsonValidationErrors(['user_code']);
+    }
+
+    /**
      * Requirement R3.8: Dual role synchronization on user creation (users.role_id and Spatie model_has_roles)
      */
     public function test_dual_role_synchronization_on_creation(): void

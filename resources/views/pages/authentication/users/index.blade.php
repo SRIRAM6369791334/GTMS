@@ -1040,28 +1040,43 @@ body[data-theme-version="dark"] .dataTables_paginate .paginate_button.current {
                                 </td>
                                 <td style="text-align: right;">
                                     <div class="usr-action-dock">
+                                        @php
+                                            $targetIsAdmin = $user->hasRole('Super Admin') || $user->hasRole('Admin');
+                                            $canManageTarget = ($isSuperAdmin ?? false) || !$targetIsAdmin;
+                                        @endphp
+
                                         @can('users.edit')
+                                        @if($canManageTarget)
                                         <button type="button" class="usr-action-btn btn-edit edituserBtn"
                                             title="Edit User"
                                             data-id="{{ $user->id }}"
                                             data-name="{{ $user->name }}"
                                             data-email="{{ $user->email }}"
+                                            data-user-code="{{ $user->user_code }}"
                                             data-role="{{ $user->role_id }}"
                                             data-branch="{{ $user->branch_id }}"
                                             data-status="{{ $user->status }}"
                                             data-image="{{ $user->image }}"
-                                            data-mobile="{{ $user->mobile_num }}">
+                                            data-mobile="{{ $user->mobile_num }}"
+                                            data-is-self="{{ $user->id === auth()->id() ? '1' : '0' }}">
                                             <i class="fa fa-pencil-alt"></i>
                                         </button>
+                                        @else
+                                        <span class="usr-action-btn opacity-50" title="Administrator account protected" style="cursor: not-allowed; background: var(--usr-surface-subtle);">
+                                            <i class="fa fa-lock text-muted"></i>
+                                        </span>
+                                        @endif
                                         @endcan
 
                                         @can('users.delete')
                                         @if($user->id !== auth()->id() && !($user->hasRole('Admin') && $users->where('role_id', $user->role_id)->count() <= 1))
+                                            @if($canManageTarget)
                                             <button type="button" class="usr-action-btn btn-delete deleteuserBtn"
                                                 title="Delete User"
                                                 data-id="{{ $user->id }}">
                                                 <i class="fa fa-trash-alt"></i>
                                             </button>
+                                            @endif
                                         @endif
                                         @endcan
                                     </div>

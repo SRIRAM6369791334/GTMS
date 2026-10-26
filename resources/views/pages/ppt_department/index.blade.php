@@ -218,8 +218,8 @@
                     @endif
                   </td>
                   <td class="text-end pe-3">
-                    <div class="btn-group btn-group-sm">
-                      <button type="button" class="btn btn-outline-warning"
+                    <div class="table-action-group">
+                      <button type="button" class="btn-action-icon btn-action-edit btn-update-status"
                               data-bs-toggle="modal"
                               data-bs-target="#modalPptIndexUpdateStatus"
                               data-action="{{ route('ppt-department.status', $app->id) }}"
@@ -230,10 +230,10 @@
                               title="Change Status">
                         <i class="bi bi-tag"></i>
                       </button>
-                      <a href="{{ route('ppt-department.show', $app->id) }}" class="btn btn-outline-primary" title="View Dossier">
-                        <i class="bi bi-eye"></i> View
+                      <a href="{{ route('ppt-department.show', $app->id) }}" class="btn-action-icon btn-action-view" title="View Dossier">
+                        <i class="bi bi-eye"></i>
                       </a>
-                      <a href="{{ route('ppt-department.step', ['step' => 1, 'resume' => $app->id]) }}" class="btn btn-outline-secondary" title="Resume / Edit Application">
+                      <a href="{{ route('ppt-department.step', ['step' => 1, 'resume' => $app->id]) }}" class="btn-action-icon btn-action-download" title="Resume / Edit Application">
                         <i class="bi bi-pencil"></i>
                       </a>
                     </div>

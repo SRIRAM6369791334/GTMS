@@ -46,7 +46,8 @@ $('#productadd').on('submit', function(e) {
     response.data.category.cat_name,
 
 
-    '<a href="#" class="btn btn-primary shadow btn-xs sharp me-1 editProductBtn" ' +
+    '<div class="table-action-group">' +
+    '<a href="#" class="btn-action-icon btn-action-edit editProductBtn" ' +
     'data-id="' + response.data.id + '" ' +
     'data-branch="' + response.data.branch_id + '" ' +
     'data-cat="' + response.data.cat_id + '" ' +
@@ -58,14 +59,14 @@ $('#productadd').on('submit', function(e) {
     'data-qty="' + response.data.qty + '" ' +
     'data-discount-1="' + response.data.discount_1 + '" ' +
     'data-discount-2="' + response.data.discount_2 + '" ' +
-    'data-discount-3="' + response.data.discount_3 + '">' +
+    'data-discount-3="' + response.data.discount_3 + '" title="Edit">' +
     '<i class="fas fa-pencil-alt"></i>' +
     '</a> ' +
-
-    '<a href="#" class="btn btn-danger shadow btn-xs sharp deleteProductBtn" ' +
-    'data-id="' + response.data.id + '">' +
+    '<a href="#" class="btn-action-icon btn-action-delete deleteProductBtn" ' +
+    'data-id="' + response.data.id + '" title="Delete">' +
     '<i class="fa fa-trash"></i>' +
-    '</a>'
+    '</a>' +
+    '</div>'
 ]).draw(false);
 
                 $('#productadd')[0].reset();

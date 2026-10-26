@@ -37,4 +37,8 @@ quotation_*.png
 .env.docker
 .env.local
 
+# Playwright
+/playwright-report/
+/test-results/
+/artifacts
 

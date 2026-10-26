@@ -1,0 +1,437 @@
+{
+  "auditResults": [
+    {
+      "name": "dashboard",
+      "path": "/dashboard",
+      "title": "Dashboard",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\dashboard_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\dashboard_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\dashboard_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\dashboard_mobile.png"
+      }
+    },
+    {
+      "name": "lease_application",
+      "path": "/application",
+      "title": "Lease Applications",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\lease_application_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\lease_application_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\lease_application_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\lease_application_mobile.png"
+      }
+    },
+    {
+      "name": "customer_directory",
+      "path": "/customers",
+      "title": "Customer Directory",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\customer_directory_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\customer_directory_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\customer_directory_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\customer_directory_mobile.png"
+      }
+    },
+    {
+      "name": "customer_tracking",
+      "path": "/customer-tracking",
+      "title": "Customer Tracking",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\customer_tracking_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\customer_tracking_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\customer_tracking_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\customer_tracking_mobile.png"
+      }
+    },
+    {
+      "name": "mining_plan",
+      "path": "/miningplan",
+      "title": "Mining Plan",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\mining_plan_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\mining_plan_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\mining_plan_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\mining_plan_mobile.png"
+      }
+    },
+    {
+      "name": "mining_project_folder",
+      "path": "/projectfolder",
+      "title": "Project Folder",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\mining_project_folder_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\mining_project_folder_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\mining_project_folder_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\mining_project_folder_mobile.png"
+      }
+    },
+    {
+      "name": "environmental_clearance",
+      "path": "/eviron",
+      "title": "Environment Clearance",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\environmental_clearance_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\environmental_clearance_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\environmental_clearance_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\environmental_clearance_mobile.png"
+      }
+    },
+    {
+      "name": "ec_certificate",
+      "path": "/ec-certificate",
+      "title": "EC Certificate",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\ec_certificate_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\ec_certificate_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\ec_certificate_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\ec_certificate_mobile.png"
+      }
+    },
+    {
+      "name": "ec_compliance",
+      "path": "/ec-compliance",
+      "title": "EC Compliance",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\ec_compliance_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\ec_compliance_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\ec_compliance_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\ec_compliance_mobile.png"
+      }
+    },
+    {
+      "name": "dgps_survey",
+      "path": "/dgps-survey",
+      "title": "DGPS Survey",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\dgps_survey_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\dgps_survey_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\dgps_survey_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\dgps_survey_mobile.png"
+      }
+    },
+    {
+      "name": "drone_survey",
+      "path": "/drone-survey",
+      "title": "Drone Survey",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\drone_survey_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\drone_survey_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\drone_survey_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\drone_survey_mobile.png"
+      }
+    },
+    {
+      "name": "ppt_department",
+      "path": "/ppt-department",
+      "title": "PPT Department",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\ppt_department_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\ppt_department_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\ppt_department_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\ppt_department_mobile.png"
+      }
+    },
+    {
+      "name": "accounts_quotations",
+      "path": "/accounts/quotations",
+      "title": "Quotations",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\accounts_quotations_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\accounts_quotations_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\accounts_quotations_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\accounts_quotations_mobile.png"
+      }
+    },
+    {
+      "name": "accounts_receipts",
+      "path": "/accounts/receipts",
+      "title": "Money Receipts",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\accounts_receipts_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\accounts_receipts_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\accounts_receipts_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\accounts_receipts_mobile.png"
+      }
+    },
+    {
+      "name": "accounts_ledger",
+      "path": "/accounts/ledger",
+      "title": "Customer Ledger",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\accounts_ledger_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\accounts_ledger_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\accounts_ledger_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\accounts_ledger_mobile.png"
+      }
+    },
+    {
+      "name": "accounts_reports",
+      "path": "/accounts/reports",
+      "title": "Financial Reports",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\accounts_reports_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\accounts_reports_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\accounts_reports_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\accounts_reports_mobile.png"
+      }
+    },
+    {
+      "name": "roles",
+      "path": "/roles",
+      "title": "Roles Management",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\roles_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\roles_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\roles_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\roles_mobile.png"
+      }
+    },
+    {
+      "name": "users",
+      "path": "/user",
+      "title": "User Management",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\users_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\users_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\users_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\users_mobile.png"
+      }
+    },
+    {
+      "name": "branch",
+      "path": "/branch",
+      "title": "Branch Management",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\branch_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\branch_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\branch_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\branch_mobile.png"
+      }
+    },
+    {
+      "name": "category",
+      "path": "/category",
+      "title": "Category Master",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\category_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\category_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\category_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\category_mobile.png"
+      }
+    },
+    {
+      "name": "unit",
+      "path": "/unit",
+      "title": "Unit Master",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\unit_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\unit_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\unit_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\unit_mobile.png"
+      }
+    },
+    {
+      "name": "product",
+      "path": "/product",
+      "title": "Product Master",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\product_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\product_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\product_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\product_mobile.png"
+      }
+    },
+    {
+      "name": "productstock",
+      "path": "/productstock",
+      "title": "Product Stock",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\productstock_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\productstock_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\productstock_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\productstock_mobile.png"
+      }
+    },
+    {
+      "name": "notifications",
+      "path": "/notifications",
+      "title": "Notifications",
+      "status": 200,
+      "horizontalOverflow": {
+        "desktop": false,
+        "laptop": false,
+        "tablet": false,
+        "mobile": false
+      },
+      "screenshots": {
+        "desktop": "tests\\e2e\\screenshots\\baseline\\notifications_desktop.png",
+        "laptop": "tests\\e2e\\screenshots\\baseline\\notifications_laptop.png",
+        "tablet": "tests\\e2e\\screenshots\\baseline\\notifications_tablet.png",
+        "mobile": "tests\\e2e\\screenshots\\baseline\\notifications_mobile.png"
+      }
+    }
+  ],
+  "consoleErrors": []
+}

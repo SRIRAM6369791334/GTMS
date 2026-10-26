@@ -201,14 +201,14 @@
                     <span class="text-muted small">{{ $survey->updated_at ? $survey->updated_at->format('d M Y') : '—' }}</span>
                   </td>
                   <td class="text-end pe-3">
-                    <div class="btn-group btn-group-sm">
+                    <div class="table-action-group">
                       @can('drone.view')
-                      <a href="{{ route('drone-survey.show', $survey->id) }}" class="btn btn-outline-primary" title="View Dossier">
-                        <i class="bi bi-eye"></i> View
+                      <a href="{{ route('drone-survey.show', $survey->id) }}" class="btn-action-icon btn-action-view" title="View Dossier">
+                        <i class="bi bi-eye"></i>
                       </a>
                       @endcan
                       @can('drone.edit')
-                      <a href="{{ route('drone-survey.step', ['step' => 1, 'resume' => $survey->id]) }}" class="btn btn-outline-secondary" title="Resume / Edit Survey">
+                      <a href="{{ route('drone-survey.step', ['step' => 1, 'resume' => $survey->id]) }}" class="btn-action-icon btn-action-edit" title="Resume / Edit Survey">
                         <i class="bi bi-pencil"></i>
                       </a>
                       @endcan

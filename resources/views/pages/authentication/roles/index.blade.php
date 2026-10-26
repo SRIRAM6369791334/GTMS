@@ -964,12 +964,18 @@ body[data-theme-version="dark"] .role-avatar-squircle {
                                         <td class="text-end">
                                             <div class="role-action-dock">
                                                 @can('roles.edit')
+                                                @if(($isSuperAdmin ?? false) || !$isCore)
                                                 <button type="button" class="dock-btn dock-edit editBtn" 
                                                     data-id="{{ $role->id }}" 
                                                     data-name="{{ $role->name }}"
                                                     title="Edit Role & Permissions">
                                                     <i class="fa fa-pencil"></i>
                                                 </button>
+                                                @else
+                                                <span class="dock-btn opacity-50" title="System Administrator role protected" style="cursor: not-allowed;">
+                                                    <i class="fa fa-lock text-muted"></i>
+                                                </span>
+                                                @endif
                                                 @endcan
 
                                                 @can('roles.delete')

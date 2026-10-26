@@ -181,11 +181,11 @@
                     @endif
                   </td>
                   <td class="text-end pe-3">
-                    <div class="btn-group btn-group-sm">
-                      <a href="{{ route('dgps-survey.show', $survey->id) }}" class="btn btn-outline-primary" title="View Dossier">
-                        <i class="bi bi-eye"></i> View
+                    <div class="table-action-group">
+                      <a href="{{ route('dgps-survey.show', $survey->id) }}" class="btn-action-icon btn-action-view" title="View Dossier">
+                        <i class="bi bi-eye"></i>
                       </a>
-                      <a href="{{ route('dgps-survey.step', ['step' => 1, 'resume' => $survey->id]) }}" class="btn btn-outline-secondary" title="Resume / Edit Survey">
+                      <a href="{{ route('dgps-survey.step', ['step' => 1, 'resume' => $survey->id]) }}" class="btn-action-icon btn-action-edit" title="Resume / Edit Survey">
                         <i class="bi bi-pencil"></i>
                       </a>
                     </div>
