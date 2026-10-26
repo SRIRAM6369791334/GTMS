@@ -116,6 +116,14 @@ if [ "$DB_CONNECTION" = "mysql" ] && [ -n "$DB_HOST" ]; then
         sleep 2
     done
     echo "Database check completed."
+
+    # Execute safe incremental database migrations from web container on startup
+    if [ "$1" = "/usr/bin/supervisord" ] || [ -z "$1" ]; then
+        echo "Running safe incremental database migrations..."
+        php artisan migrate --force || true
+        echo "Clearing optimization cache..."
+        php artisan optimize:clear || true
+    fi
 fi
 
 # Execute main process passed to entrypoint (supervisord or artisan queue)

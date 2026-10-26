@@ -30,6 +30,17 @@ use App\Http\Controllers\ChunkUploadController;
 use App\Http\Controllers\NotificationController;
 
 
+// Public Health & Version Status Endpoint
+Route::get('/system/version', function () {
+    return response()->json([
+        'app' => config('app.name', 'GTMS'),
+        'status' => 'online',
+        'timestamp' => now()->toIso8601String(),
+        'php' => PHP_VERSION,
+        'laravel' => app()->version(),
+    ]);
+})->name('system.version');
+
 // Guest Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');

@@ -149,6 +149,25 @@ services:
       retries: 5
       start_period: 15s
 
+  # ============================================================================
+  # Continuous Deployment Watchdog (Watchtower)
+  # Automatically monitors GHCR for new images and updates app & queue with zero downtime
+  # ============================================================================
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: gtms_watchtower
+    restart: unless-stopped
+    command: ["gtms_app", "gtms_queue"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_REVIVE_STOPPED=false
+    networks:
+      - gtms_network
+
 networks:
   gtms_network:
     driver: bridge
