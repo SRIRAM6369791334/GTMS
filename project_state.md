@@ -6,7 +6,31 @@
 - **Operating Rule:** Every change request, bug fix, or feature enhancement must follow the 8-stage lifecycle (Pre-test inspection → Identify test environment → Create controlled test data → Execute tests → Verify results → Clean up test data → Verify cleanup → Report evidence). No test is complete without cleanup verification.
 - **Enforcement:** Zero `TRUNCATE`, zero `migrate:fresh`/`db:wipe`, transactions prioritized, non-transactional tests tagged with `TEST_RUN_ID = qa_<timestamp>_<uuid>`, cascading foreign-key teardown, and explicit status reporting (`TESTS_PASSED_CLEANUP_VERIFIED`).
 
-## Current Phase: PHASE 10.72 — CUSTOMER MULTI-TENANT BRANCH ISOLATION & WORKFLOW SCOPING 🚀🏢🛡️
+## Current Phase: PHASE 10.73 — MANUAL USER ID / PERSONNEL CODE INPUT & UNIQUENESS VALIDATION ON /user 🚀👤🛡️
+- **User Request:**
+  "now user create panurathu la some change need aa http://127.0.0.1:8002/user ... add user id manuvaly create able da" (with screenshot circling LUK_001, LUK_002, LUK_003, etc.)
+- **Objective:**
+  Allow administrators to manually specify a custom User ID / Personnel Code (`user_code` such as `EMP-101`, `LUK_999`, `ADM-01`) during personnel creation and editing, while automatically preserving the auto-generated fallback (`LUK_` + 3-digit padded ID) when left blank, with database uniqueness validation and AJAX error handling.
+- **Implementation:**
+  1. **Backend Controller Hardening (`UserController.php`)**:
+     - `store()`: Added `'user_code' => 'nullable|string|max:50|unique:users,user_code'` validation.
+     - When `$request->filled('user_code')`, trims and persists `$user->user_code`.
+     - When empty, auto-generates `'LUK_' . str_pad($user->id, 3, '0', STR_PAD_LEFT)`.
+     - `update()`: Added `'user_code' => 'nullable|string|max:50|unique:users,user_code,' . $request->id` validation and persists custom edits.
+  2. **View Modals (`createuser.blade.php`)**:
+     - Added `User ID / Personnel Code` text input (`name="user_code"`, `text-uppercase`, placeholder `e.g. LUK_001 or EMP-01`) with `<i class="fa fa-id-badge"></i>` icon in Add User modal.
+     - Added corresponding edit field in Edit User modal (`#edituser_code`).
+  3. **Table & Dynamic AJAX Scripting (`index.blade.php` & `user.js`)**:
+     - Added `data-user-code="{{ $user->user_code }}"` to `.edituserBtn` in table rows.
+     - Updated `user.js` to populate `#edituser_code` on edit button click.
+- **Verification Evidence**:
+  - `Tests\Feature\UserManagementAndAuthTest.php`: **20 / 20 tests PASS** (132 assertions in 16.31s), including new test `test_user_provisioning_accepts_manual_custom_user_code`.
+  - `Tests\Feature\PrivilegeEscalationSecurityTest.php`: **14 / 14 tests PASS** (48 assertions in 13.35s).
+  - Zero Tamil characters test: **3 / 3 PASS** across codebase.
+- **Protocol Status:** `TESTS_PASSED_CLEANUP_VERIFIED`
+- **Last Updated:** 2026-10-26
+
+## Previous Phase: PHASE 10.72 — CUSTOMER MULTI-TENANT BRANCH ISOLATION & WORKFLOW SCOPING 🚀🏢🛡️
 - **User Request:**
   "only fix Step 1 Customer Isolation customers அட்டவணையில் branch_id சேர்ப்பதற்கான மைக்ரேஷன் உருவாக்கி, Customer மாடலுக்கு BelongsToBranch ஸ்கோப் இணைத்தல். (இதன் மூலம் பிற கிளை கஸ்டமர்கள் டிராக்டவுனில் தெரிய மாட்டார்கள்)."
 - **Vulnerabilities Identified & Mitigated**:
