@@ -807,4 +807,27 @@ class Step5FileUploadAndZipModalTest extends TestCase
         }
         $chunkedUpload->delete();
     }
+
+    /**
+     * Test GTMS Universal Open With modal and dispatcher script are rendered across pages.
+     */
+    public function test_gtms_universal_open_with_modal_and_js_rendered(): void
+    {
+        session([
+            'lease_draft' => [
+                'customer_id' => $this->customer->id,
+                'application_no' => 'LA-OPENWITH-' . rand(1000, 9999),
+                'district_id' => $this->district->id,
+                'current_step' => 4,
+            ]
+        ]);
+
+        $response = $this->get(route('step5'));
+
+        $response->assertStatus(200);
+        $response->assertSee('gtmsOpenWithModal', false);
+        $response->assertSee('gtmsOpenWithOptionsList', false);
+        $response->assertSee('gtmsOpenWithDirectDownload', false);
+        $response->assertSee('gtms-open-with.js', false);
+    }
 }

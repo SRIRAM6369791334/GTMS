@@ -522,6 +522,9 @@
             Footer end
         ***********************************-->
 
+        <!-- GTMS Universal Open With Modal -->
+        @include('layouts.partials.open_with_modal')
+
         <!--**********************************
            Support ticket button start
         ***********************************-->
@@ -621,6 +624,9 @@
         });
     </script>
 
+
+    <!-- GTMS Intelligent Open With Dispatcher -->
+    <script src="/js/gtms-open-with.js?v=1"></script>
 
  @yield('scripts')
  @stack('scripts')
