@@ -36,7 +36,8 @@ Route::get('/system/version', function () {
     return response()->json([
         'app' => config('app.name', 'GTMS'),
         'status' => 'online',
-        'build' => 'v1.0.1-cicd-verified',
+        'watchtower_auto_deploy' => 'ACTIVE_AND_VERIFIED',
+        'build' => 'v1.0.2-auto-deployed-by-watchtower',
         'timestamp' => now()->toIso8601String(),
         'php' => PHP_VERSION,
         'laravel' => app()->version(),
