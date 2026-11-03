@@ -48,6 +48,7 @@ class LeaseApplication extends Model
         'assigned_inspector_id',
         'branch_id',
         'created_by',
+        'master_project_id',
     ];
 
     protected $casts = [
@@ -161,5 +162,10 @@ class LeaseApplication extends Model
     public function stockpile(): HasOne
     {
         return $this->hasOne(MineralStockpile::class);
+    }
+
+    public function masterProject(): BelongsTo
+    {
+        return $this->belongsTo(MasterProject::class, 'master_project_id');
     }
 }

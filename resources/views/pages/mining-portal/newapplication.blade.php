@@ -1178,12 +1178,24 @@
                                                                             <option value="optional" {{ !$field->required ? 'selected' : '' }}>Optional</option>
                                                                         </select>
 
+                                                                        @php
+                                                                            $mPath = strtolower($matchedDoc->file_path ?? '');
+                                                                            $isZipMatched = str_ends_with($mPath, '.zip') || str_ends_with($mPath, '.rar') || str_ends_with($mPath, '.7z');
+                                                                            $mUrl = $hasDoc ? asset($matchedDoc->file_path) : '';
+                                                                            $mName = $matchedDoc->file_name ?? basename($matchedDoc->file_path ?? '');
+                                                                        @endphp
                                                                         @if($hasDoc)
-                                                                            <span class="badge s5-badge-attached" id="badge_field_{{ $field->id }}">
-                                                                                <i class="bi bi-check-lg me-1"></i>Attached
+                                                                            <span class="badge {{ $isZipMatched ? 'bg-warning text-dark' : 's5-badge-attached' }}" id="badge_field_{{ $field->id }}">
+                                                                                <i class="bi {{ $isZipMatched ? 'bi-file-earmark-zip-fill' : 'bi-check-lg' }} me-1"></i>{{ $isZipMatched ? 'ZIP Attached' : 'Attached' }}
                                                                             </span>
-                                                                            <a href="{{ asset($matchedDoc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-info s5-btn-action btn-view-doc" title="View attached document">
-                                                                                <i class="bi bi-eye"></i>
+                                                                            <a href="{{ $mUrl }}" target="_blank" class="btn btn-sm btn-outline-info s5-btn-action btn-view-doc btn-view-item" 
+                                                                               title="{{ $isZipMatched ? 'Inspect / View ZIP archive' : 'View attached document' }}"
+                                                                               data-file-url="{{ $mUrl }}"
+                                                                               data-file-name="{{ $mName }}"
+                                                                               data-file-size=""
+                                                                               data-doc-name="{{ $field->name }}"
+                                                                               data-is-zip="{{ $isZipMatched ? '1' : '0' }}">
+                                                                                <i class="bi {{ $isZipMatched ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
                                                                             </a>
                                                                             <button type="button" class="btn btn-sm btn-outline-secondary s5-btn-action btn-trigger-upload" data-field-id="{{ $field->id }}" title="Change file">
                                                                                 <i class="bi bi-arrow-repeat"></i>
@@ -1196,7 +1208,7 @@
                                                                         <button type="button" class="btn btn-sm btn-outline-danger s5-btn-action btn-remove-file d-none" data-field-id="{{ $field->id }}" title="Remove attachment">
                                                                             <i class="bi bi-trash3"></i>
                                                                         </button>
-                                                                        <input type="file" name="doc_files[{{ $field->id }}]" id="file_field_{{ $field->id }}" class="doc-file-input d-none" data-field-id="{{ $field->id }}" data-field-name="{{ $field->name }}" data-has-existing="{{ $hasDoc ? '1' : '0' }}" accept=".pdf,.png,.jpg,.jpeg,.kml,.xml,.dwg,.doc,.docx">
+                                                                        <input type="file" name="doc_files[{{ $field->id }}]" id="file_field_{{ $field->id }}" class="doc-file-input d-none" data-field-id="{{ $field->id }}" data-field-name="{{ $field->name }}" data-has-existing="{{ $hasDoc ? '1' : '0' }}" accept=".pdf,.png,.jpg,.jpeg,.kml,.kmz,.zip,.rar,.7z,.doc,.docx,.dwg,.dxf,.txt,.rtf,.odt,.ods,.odp,.xls,.xlsx,.csv,.ppt,.pptx,.webp,.tif,.tiff,.geojson,.gpx,.bmp">
                                                                     </div>
                                                                 </div>
                                                             @endforeach
@@ -6281,6 +6293,33 @@ function initMiningWizard() {
         });
     }
 
+    // Drag & Drop for Checklist Rows
+    $(document).on('dragover', '.checklist-row', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('row-dragover');
+    });
+    $(document).on('dragleave', '.checklist-row', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('row-dragover');
+    });
+    $(document).on('drop', '.checklist-row', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('row-dragover');
+        var files = e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
+        if (files && files.length > 0) {
+            var fileInp = this.querySelector('.doc-file-input');
+            if (fileInp) {
+                var dt = new DataTransfer();
+                dt.items.add(files[0]);
+                fileInp.files = dt.files;
+                $(fileInp).trigger('change');
+            }
+        }
+    });
+
     $(document).on('click', '.btn-trigger-upload', function(e) {
         e.preventDefault();
         var fieldId = $(this).data('field-id');
@@ -6294,26 +6333,37 @@ function initMiningWizard() {
 
         if (this.files && this.files[0]) {
             var file = this.files[0];
+            var fNameLower = file.name.toLowerCase();
+            var isZip = fNameLower.endsWith('.zip') || fNameLower.endsWith('.rar') || fNameLower.endsWith('.7z');
             this.setAttribute('data-has-existing', '1');
             row.classList.add('up');
             var iconBox = row.querySelector('.ci-icon');
             if (iconBox) {
-                iconBox.removeAttribute('style');
-                iconBox.innerHTML = '<i class="bi bi-check2-circle ci-status-icon"></i>';
+                if (isZip) {
+                    iconBox.style.background = '#fef3c7';
+                    iconBox.style.color = '#d97706';
+                    iconBox.innerHTML = '<i class="bi bi-file-earmark-zip-fill text-warning ci-status-icon"></i>';
+                } else {
+                    iconBox.removeAttribute('style');
+                    iconBox.innerHTML = '<i class="bi bi-check2-circle ci-status-icon"></i>';
+                }
             }
             var meta = document.getElementById('meta_field_' + fieldId);
             if (meta) {
-                meta.innerHTML = '<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ' + escapeHtml(file.name) + '</span> &middot; ' + formatFileSize(file.size);
+                var zipPrefix = isZip ? '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP</span>' : '';
+                meta.innerHTML = zipPrefix + '<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ' + escapeHtml(file.name) + '</span> &middot; ' + formatFileSize(file.size);
             }
             var badge = document.getElementById('badge_field_' + fieldId);
+            var badgeClass = isZip ? 'badge bg-warning text-dark' : 'badge s5-badge-attached';
+            var badgeContent = isZip ? '<i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP Attached' : '<i class="bi bi-check-lg me-1"></i>Attached';
             if (badge) {
-                badge.className = 'badge s5-badge-attached';
-                badge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Attached';
+                badge.className = badgeClass;
+                badge.innerHTML = badgeContent;
             } else {
                 badge = document.createElement('span');
                 badge.id = 'badge_field_' + fieldId;
-                badge.className = 'badge s5-badge-attached';
-                badge.innerHTML = '<i class="bi bi-check-lg me-1"></i>Attached';
+                badge.className = badgeClass;
+                badge.innerHTML = badgeContent;
                 var actionCol = row.querySelector('.ms-2.flex-shrink-0');
                 if (actionCol) {
                     var btnUpload = actionCol.querySelector('.btn-trigger-upload');
@@ -6329,14 +6379,19 @@ function initMiningWizard() {
                 var blobUrl = URL.createObjectURL(file);
                 if (!viewLink) {
                     viewLink = document.createElement('a');
-                    viewLink.className = 'btn btn-sm btn-outline-info s5-btn-action btn-view-doc me-1';
+                    viewLink.className = 'btn btn-sm btn-outline-info s5-btn-action btn-view-doc btn-view-item me-1';
                     viewLink.target = '_blank';
                     viewLink.rel = 'noopener noreferrer';
-                    viewLink.title = 'View attached document';
-                    viewLink.innerHTML = '<i class="bi bi-eye"></i>';
+                    viewLink.title = isZip ? 'Inspect / View ZIP archive' : 'View attached document';
+                    viewLink.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip' : 'bi-eye') + '"></i>';
                     btn.parentNode.insertBefore(viewLink, btn);
                 }
                 viewLink.href = blobUrl;
+                viewLink.setAttribute('data-file-url', blobUrl);
+                viewLink.setAttribute('data-file-name', file.name);
+                viewLink.setAttribute('data-file-size', formatFileSize(file.size));
+                viewLink.setAttribute('data-doc-name', $(this).data('field-name') || 'Document');
+                viewLink.setAttribute('data-is-zip', isZip ? '1' : '0');
             }
             var removeBtn = row.querySelector('.btn-remove-file');
             if (removeBtn) {
@@ -6345,6 +6400,22 @@ function initMiningWizard() {
             }
         }
         updateUploadProgress();
+    });
+
+    $(document).on('click', '.btn-view-doc, .btn-view-item', function(e) {
+        if (typeof window.GtmsOpenWith !== 'undefined') {
+            var url = $(this).data('file-url') || $(this).attr('href');
+            if (url && url !== '#') {
+                e.preventDefault();
+                window.GtmsOpenWith.open({
+                    url: url,
+                    name: $(this).data('file-name') || $(this).closest('.checklist-row').find('.ci-name').text().trim(),
+                    size: $(this).data('file-size') || '',
+                    docName: $(this).data('doc-name') || $(this).closest('.checklist-row').find('.ci-name').text().trim(),
+                    isZip: $(this).data('is-zip') === 1 || $(this).data('is-zip') === '1'
+                });
+            }
+        }
     });
 
     $(document).on('click', '.btn-remove-file', function(e) {

@@ -51,6 +51,8 @@ class MiningApplication extends Model
         'payment_status',
         'branch_id',
         'created_by',
+        'status_notes',
+        'master_project_id',
     ];
 
     protected $casts = [
@@ -164,5 +166,10 @@ class MiningApplication extends Model
     public function environmentProjects(): HasMany
     {
         return $this->hasMany(EnvironmentProject::class);
+    }
+
+    public function masterProject(): BelongsTo
+    {
+        return $this->belongsTo(MasterProject::class, 'master_project_id');
     }
 }

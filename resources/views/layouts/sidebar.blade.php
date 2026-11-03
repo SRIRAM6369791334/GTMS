@@ -386,6 +386,20 @@
                     @endif
                 </a>
             </li> -->
+
+            <li class="{{ request()->routeIs('master-pipeline.*') ? 'mm-active' : '' }}">
+                <a href="{{ route('master-pipeline.index') }}" aria-expanded="false" class="{{ request()->routeIs('master-pipeline.*') ? 'mm-active' : '' }}">
+                    <i class="fas fa-project-diagram"></i>
+                    <span class="nav-text">Master Pipeline</span>
+                    @php
+                        $pipelineCorrectionCount = \App\Models\MasterProject::returnedForCorrection()->count();
+                    @endphp
+                    @if($pipelineCorrectionCount > 0)
+                        <span class="badge badge-xs badge-danger ms-auto" style="font-size: 0.65rem; padding: 2px 7px; border-radius: 9999px; background-color: #ef4444;">{{ $pipelineCorrectionCount }}</span>
+                    @endif
+                </a>
+            </li>
+
             @canany(['branch.view', 'roles.view', 'users.view'])
             <li><a class="has-arrow " href="javascript:void()" aria-expanded="false">
                     <i class="fas fa-user"></i>

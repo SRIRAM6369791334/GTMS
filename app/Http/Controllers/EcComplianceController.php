@@ -162,9 +162,13 @@ class EcComplianceController extends Controller
             '3. EC- Compliance Report (Point-by-Point Condition-Wise Status)',
         ];
 
+        $uploadedDocs = session('ec_compliance_wizard.uploaded_docs', $draft['uploaded_docs'] ?? []);
+        $draft['uploaded_docs'] = $uploadedDocs;
+
         return view('pages.ec_compliance.wizard', compact(
             'step',
             'draft',
+            'uploadedDocs',
             'customers',
             'districts',
             'minerals',
@@ -360,6 +364,23 @@ class EcComplianceController extends Controller
                 ]);
             }
 
+            // Migrate wizard documents from session draft into permanent records
+            $uploadedDocs = session('ec_compliance_wizard.uploaded_docs', []);
+            if (!empty($uploadedDocs)) {
+                foreach ($uploadedDocs as $uDoc) {
+                    EcComplianceDocument::create([
+                        'ec_compliance_id' => $compliance->id,
+                        'folder_category'  => $uDoc['folder_category'] ?? 'documents',
+                        'document_name'    => $uDoc['document_name'] ?? $uDoc['file_name'],
+                        'file_name'        => $uDoc['file_name'],
+                        'file_path'        => $uDoc['file_path'],
+                        'file_type'        => pathinfo($uDoc['file_name'], PATHINFO_EXTENSION),
+                        'file_size'        => $uDoc['file_size_bytes'] ?? null,
+                        'status'           => 'uploaded',
+                    ]);
+                }
+            }
+
             DB::commit();
             session()->forget('ec_compliance_wizard');
 
@@ -382,19 +403,70 @@ class EcComplianceController extends Controller
     }
 
     /**
-     * Upload Document via AJAX (Direct File or Chunked Upload Token)
+     * Upload Document via AJAX (Direct File or Chunked Upload Token) with safe unlinking and session draft.
      */
     public function uploadDocument(Request $request)
     {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
+
         $request->validate([
-            'file'            => 'required_without:upload_token|nullable|file|max:52428800',
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
             'upload_token'    => 'required_without:file|nullable|string',
             'compliance_id'   => 'nullable|integer',
+            'doc_id'          => 'nullable|integer',
+            'doc_item'        => 'nullable',
             'folder_category' => 'nullable|string',
             'document_name'   => 'nullable|string|max:255',
         ]);
 
         $complianceId = $request->input('compliance_id');
+        $docId = $request->input('doc_id');
+        $rawDocItem = $request->input('doc_item') ?? $docId;
+        $docNameInput = $request->input('document_name');
+        $folderCat = $request->input('folder_category', 'documents');
+
+        $existingDoc = null;
+        $oldFilePath = null;
+        if ($docId) {
+            $existingDoc = EcComplianceDocument::find($docId);
+            $oldFilePath = $existingDoc?->file_path;
+        } elseif ($complianceId) {
+            $q = EcComplianceDocument::where('ec_compliance_id', $complianceId);
+            if ($docNameInput) {
+                $q->where(function ($sq) use ($docNameInput) {
+                    $sq->where('document_name', $docNameInput)
+                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                });
+            }
+            $existingDoc = $q->first();
+            $oldFilePath = $existingDoc?->file_path;
+        }
+
+        $sessionDocs = session('ec_compliance_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem ?? ($docNameInput ?? 'doc_0');
+        if (!$oldFilePath && isset($sessionDocs[$docItemKey]['file_path'])) {
+            $oldFilePath = $sessionDocs[$docItemKey]['file_path'];
+        }
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
@@ -408,26 +480,47 @@ class EcComplianceController extends Controller
                 $filePath = $upload->file_path;
             }
 
-            $fileName = $upload->original_name ?? $upload->file_name;
-            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
-            $fileSize = $upload->total_size;
-            $folderCat = $request->input('folder_category', $upload->metadata['folder_category'] ?? 'documents');
-            $docName = $request->input('document_name') ?: ($upload->metadata['document_name'] ?? $fileName);
+            // Unlink old file if different
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+                if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+                if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+            }
 
-            $docId = null;
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fileSize = $upload->total_size;
+            $docName = $docNameInput ?: ($upload->metadata['document_name'] ?? $fileName);
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+            $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
             if ($complianceId) {
-                $doc = EcComplianceDocument::create([
-                    'ec_compliance_id' => $complianceId,
-                    'folder_category'  => $folderCat,
-                    'document_name'    => $docName,
-                    'file_name'        => $fileName,
-                    'file_path'        => $filePath,
-                    'file_type'        => $fileType,
-                    'file_size'        => $fileSize,
-                    'status'           => 'uploaded',
-                    'uploaded_by'      => Auth::id() ?? 1,
-                ]);
-                $docId = $doc->id;
+                if ($existingDoc) {
+                    $existingDoc->update([
+                        'folder_category' => $folderCat,
+                        'document_name'   => $docName,
+                        'file_name'       => $fileName,
+                        'file_path'       => $filePath,
+                        'file_type'       => $ext,
+                        'file_size'       => $fileSize,
+                        'status'          => 'uploaded',
+                        'uploaded_by'     => Auth::id() ?? 1,
+                    ]);
+                    $docId = $existingDoc->id;
+                } else {
+                    $doc = EcComplianceDocument::create([
+                        'ec_compliance_id' => $complianceId,
+                        'folder_category'  => $folderCat,
+                        'document_name'    => $docName,
+                        'file_name'        => $fileName,
+                        'file_path'        => $filePath,
+                        'file_type'        => $ext,
+                        'file_size'        => $fileSize,
+                        'status'           => 'uploaded',
+                        'uploaded_by'      => Auth::id() ?? 1,
+                    ]);
+                    $docId = $doc->id;
+                }
 
                 $upload->update([
                     'target_module' => 'compliance',
@@ -436,45 +529,179 @@ class EcComplianceController extends Controller
                 ]);
             }
 
+            $sessionDocs[$docItemKey] = [
+                'doc_item'        => $docItemKey,
+                'doc_id'          => $docId,
+                'folder_category' => $folderCat,
+                'document_name'   => $docName,
+                'file_name'       => $fileName,
+                'file_path'       => $filePath,
+                'file_url'        => asset($filePath),
+                'file_size'       => $formattedSize,
+                'file_size_bytes' => $fileSize,
+                'is_zip'          => $isZip,
+                'uploaded_at'     => now()->format('d M Y, h:i A'),
+            ];
+            session(['ec_compliance_wizard.uploaded_docs' => $sessionDocs]);
+
             return response()->json([
+                'status'       => 1,
                 'success'      => true,
+                'message'      => "'{$docName}' uploaded successfully.",
                 'doc_id'       => $docId,
+                'doc_item'     => $docItemKey,
+                'folder_category' => $folderCat,
                 'upload_token' => $upload->upload_token,
                 'file_name'    => $fileName,
+                'file_path'    => $filePath,
                 'file_url'     => asset($filePath),
-                'file_size'    => round($fileSize / 1024) . ' KB',
+                'file_size'    => $formattedSize,
+                'size_bytes'   => $fileSize,
+                'is_zip'       => $isZip,
                 'status'       => 'uploaded',
             ]);
         }
 
         // Direct multipart file upload
         $file = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('uploads/compliance', $fileName, 'public');
+        $origName = $file->getClientOriginalName();
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
+        $filePath = $file->storeAs('uploads/compliance', $safeName, 'public');
 
-        $docId = null;
+        // Unlink old file if different
+        if ($oldFilePath && $oldFilePath !== $filePath) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        $fileSize = $file->getSize();
+        $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+        $ext = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+        $docName = $docNameInput ?: $origName;
+
         if ($complianceId) {
-            $doc = EcComplianceDocument::create([
-                'ec_compliance_id' => $complianceId,
-                'folder_category'  => $request->input('folder_category', 'documents'),
-                'document_name'    => $request->input('document_name') ?: $file->getClientOriginalName(),
-                'file_name'        => $file->getClientOriginalName(),
-                'file_path'        => $filePath,
-                'file_type'        => $file->getClientOriginalExtension(),
-                'file_size'        => $file->getSize(),
-                'status'           => 'uploaded',
-                'uploaded_by'      => Auth::id() ?? 1,
-            ]);
-            $docId = $doc->id;
+            if ($existingDoc) {
+                $existingDoc->update([
+                    'folder_category' => $folderCat,
+                    'document_name'   => $docName,
+                    'file_name'       => $origName,
+                    'file_path'       => $filePath,
+                    'file_type'       => $ext,
+                    'file_size'       => $fileSize,
+                    'status'          => 'uploaded',
+                    'uploaded_by'     => Auth::id() ?? 1,
+                ]);
+                $docId = $existingDoc->id;
+            } else {
+                $doc = EcComplianceDocument::create([
+                    'ec_compliance_id' => $complianceId,
+                    'folder_category'  => $folderCat,
+                    'document_name'    => $docName,
+                    'file_name'        => $origName,
+                    'file_path'        => $filePath,
+                    'file_type'        => $ext,
+                    'file_size'        => $fileSize,
+                    'status'           => 'uploaded',
+                    'uploaded_by'      => Auth::id() ?? 1,
+                ]);
+                $docId = $doc->id;
+            }
+        }
+
+        $sessionDocs[$docItemKey] = [
+            'doc_item'        => $docItemKey,
+            'doc_id'          => $docId,
+            'folder_category' => $folderCat,
+            'document_name'   => $docName,
+            'file_name'       => $origName,
+            'file_path'       => $filePath,
+            'file_url'        => asset('storage/' . $filePath),
+            'file_size'       => $formattedSize,
+            'file_size_bytes' => $fileSize,
+            'is_zip'          => $isZip,
+            'uploaded_at'     => now()->format('d M Y, h:i A'),
+        ];
+        session(['ec_compliance_wizard.uploaded_docs' => $sessionDocs]);
+
+        return response()->json([
+            'status'       => 1,
+            'success'      => true,
+            'message'      => "'{$docName}' uploaded successfully.",
+            'doc_id'       => $docId,
+            'doc_item'     => $docItemKey,
+            'folder_category' => $folderCat,
+            'file_name'    => $origName,
+            'file_path'    => $filePath,
+            'file_url'     => asset('storage/' . $filePath),
+            'file_size'    => $formattedSize,
+            'size_bytes'   => $fileSize,
+            'is_zip'       => $isZip,
+            'doc_status'   => 'uploaded',
+        ]);
+    }
+
+    /**
+     * Remove an uploaded document for EC Compliance.
+     */
+    public function removeDocument(Request $request)
+    {
+        $request->validate([
+            'compliance_id'   => 'nullable|integer',
+            'doc_id'          => 'nullable|integer',
+            'doc_item'        => 'nullable',
+            'document_name'   => 'nullable|string',
+            'folder_category' => 'nullable|string',
+        ]);
+
+        $complianceId = $request->input('compliance_id');
+        $docId = $request->input('doc_id');
+        $docItem = $request->input('doc_item') ?? $docId ?? $request->input('document_name');
+        $docNameInput = $request->input('document_name');
+
+        $dbDoc = null;
+        if ($docId) {
+            $dbDoc = EcComplianceDocument::find($docId);
+        } elseif ($complianceId) {
+            $q = EcComplianceDocument::where('ec_compliance_id', $complianceId);
+            if ($docNameInput) {
+                $q->where(function ($sq) use ($docNameInput) {
+                    $sq->where('document_name', $docNameInput)
+                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                });
+            }
+            $dbDoc = $q->first();
+        }
+
+        if ($dbDoc) {
+            $filePath = $dbDoc->file_path;
+            if ($filePath) {
+                if (file_exists(public_path($filePath))) @unlink(public_path($filePath));
+                if (file_exists(public_path('storage/' . $filePath))) @unlink(public_path('storage/' . $filePath));
+                if (file_exists(storage_path('app/public/' . $filePath))) @unlink(storage_path('app/public/' . $filePath));
+            }
+            $dbDoc->delete();
+        }
+
+        $sessionDocs = session('ec_compliance_wizard.uploaded_docs', []);
+        if ($docItem !== null && isset($sessionDocs[$docItem])) {
+            $sessionPath = $sessionDocs[$docItem]['file_path'] ?? null;
+            if ($sessionPath) {
+                if (file_exists(public_path($sessionPath))) @unlink(public_path($sessionPath));
+                if (file_exists(public_path('storage/' . $sessionPath))) @unlink(public_path('storage/' . $sessionPath));
+                if (file_exists(storage_path('app/public/' . $sessionPath))) @unlink(storage_path('app/public/' . $sessionPath));
+            }
+            unset($sessionDocs[$docItem]);
+            session(['ec_compliance_wizard.uploaded_docs' => $sessionDocs]);
         }
 
         return response()->json([
-            'success'   => true,
-            'doc_id'    => $docId,
-            'file_name' => $file->getClientOriginalName(),
-            'file_url'  => asset('storage/' . $filePath),
-            'file_size' => round($file->getSize() / 1024) . ' KB',
-            'status'    => 'uploaded',
+            'status'   => 1,
+            'success'  => true,
+            'message'  => 'Document removed successfully.',
+            'doc_id'   => $dbDoc?->id ?? $docId,
+            'doc_item' => $docItem,
         ]);
     }
 

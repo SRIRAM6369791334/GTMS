@@ -474,6 +474,12 @@ body[data-theme-version="dark"] .doc-filter-pill.active {
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
 }
 
+.doc-card-item.row-dragover {
+    background-color: #ecfdf5 !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
+
 /* Document Squircle Icons */
 .doc-icon-squircle {
     width: 38px;
@@ -865,14 +871,24 @@ body[data-theme-version="dark"] .doc-btn-view:hover {
                                             default => 'pending',
                                         };
                                     @endphp
+                                    @php
+                                        $lowerPath = strtolower($doc->file_path ?? ($doc->file_name ?? ''));
+                                        $isZip = str_ends_with($lowerPath, '.zip') || str_ends_with($lowerPath, '.rar') || str_ends_with($lowerPath, '.7z');
+                                        $docUrl = $doc->file_path ? asset($doc->file_path) : '';
+                                        $formattedSize = ($doc->file_size ?? 0) > 0 ? (round($doc->file_size / 1024, 1) . ' KB') : '';
+                                    @endphp
                                     <div class="doc-card-item {{ $itemClass }}" 
-                                         data-doc-name="{{ strtolower($doc->document_name) }}"
+                                         data-doc-id="{{ $doc->id }}"
+                                         data-app-id="{{ $application->id }}"
+                                         data-doc-name="{{ $doc->document_name }}"
                                          data-doc-file="{{ strtolower($doc->file_name ?? '') }}"
                                          data-filter-status="{{ $filterTag }}">
                                         
                                         <div class="d-flex align-items-center gap-3 min-w-0">
-                                            <div class="doc-icon-squircle">
-                                                @if($dStatus === 'validated' || $dStatus === 'approved')
+                                            <div class="doc-icon-squircle" style="{{ $isZip ? 'background:#fef3c7; color:#d97706;' : '' }}">
+                                                @if($isZip)
+                                                    <i class="bi bi-file-earmark-zip-fill text-warning"></i>
+                                                @elseif($dStatus === 'validated' || $dStatus === 'approved')
                                                     <i class="bi bi-check-circle-fill"></i>
                                                 @elseif($dStatus === 'uploaded')
                                                     <i class="bi bi-file-earmark-check-fill"></i>
@@ -887,8 +903,11 @@ body[data-theme-version="dark"] .doc-btn-view:hover {
                                                 <div class="fw-bold small text-dark text-truncate">{{ $doc->document_name }}</div>
                                                 <div class="text-muted" style="font-size:11.5px;">
                                                     @if($doc->file_name)
+                                                        @if($isZip)
+                                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0 me-1" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP</span>
+                                                        @endif
                                                         <span class="text-primary fw-semibold">{{ $doc->file_name }}</span> &middot; 
-                                                        <span>{{ round(($doc->file_size ?? 0) / 1024, 1) }} KB</span> &middot; 
+                                                        <span>{{ $formattedSize ?: 'N/A' }}</span> &middot; 
                                                         <span>Uploaded {{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : '' }}</span>
                                                     @else
                                                         <span class="text-muted"><i class="bi bi-clock me-1"></i>File upload pending</span>
@@ -921,22 +940,39 @@ body[data-theme-version="dark"] .doc-btn-view:hover {
                                                 </span>
                                             @endif
 
-                                            <!-- Upload Form -->
+                                            @if($doc->file_path)
+                                                <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 btn-view-item" 
+                                                        style="font-size:11px;" 
+                                                        data-file-url="{{ $docUrl }}" 
+                                                        data-file-name="{{ $doc->file_name ?: $doc->document_name }}" 
+                                                        data-file-size="{{ $formattedSize }}" 
+                                                        data-doc-name="{{ $doc->document_name }}" 
+                                                        data-is-zip="{{ $isZip ? '1' : '0' }}" 
+                                                        title="{{ $isZip ? 'Inspect / View ZIP archive' : 'View Document' }}">
+                                                    <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i> View
+                                                </button>
+                                            @endif
+
+                                            <!-- Upload / Re-upload form wrapper -->
                                             <form method="POST" action="{{ route('mining.document.upload') }}" enctype="multipart/form-data" class="d-inline-flex align-items-center form-mining-upload m-0">
                                                 @csrf
                                                 <input type="hidden" name="mining_application_id" value="{{ $application->id }}">
                                                 <input type="hidden" name="document_id" value="{{ $doc->id }}">
-                                                <label class="doc-btn-upload mb-0 btn-upload-label" title="Choose and upload file">
-                                                    <i class="bi bi-upload"></i>
+                                                <label class="doc-btn-upload mb-0 btn-upload-label" title="{{ $doc->file_name ? 'Re-upload file' : 'Choose and upload file' }}" style="cursor:pointer;">
+                                                    <i class="bi {{ $doc->file_name ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
                                                     <span class="upload-text">{{ $doc->file_name ? 'Re-upload' : 'Upload' }}</span>
-                                                    <input type="file" name="file" class="d-none input-mining-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.kml,.kmz,.zip,.dwg,.dxf">
+                                                    <input type="file" name="file" class="d-none input-mining-file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.kml,.kmz,.zip,.dwg,.dxf,.rar,.7z">
                                                 </label>
                                             </form>
 
                                             @if($doc->file_path)
-                                                <a href="{{ asset($doc->file_path) }}" target="_blank" class="doc-btn-view" title="View uploaded file">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-mining-doc-remove" 
+                                                        data-doc-id="{{ $doc->id }}" 
+                                                        data-app-id="{{ $application->id }}" 
+                                                        data-doc-name="{{ $doc->document_name }}" 
+                                                        title="Remove document" style="font-size:11px;">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
                                             @endif
                                         </div>
                                     </div>
@@ -994,33 +1030,142 @@ $(document).ready(function() {
     });
 
     // -------------------------------------------------------------
-    // File upload handler with size verification
+    // Drag & Drop for Document Cards
     // -------------------------------------------------------------
-    $(document).on('change', '.input-mining-file', function() {
-        var file = this.files[0];
-        if (!file) return;
+    $('.doc-card-item').on('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).addClass('row-dragover');
+    }).on('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('row-dragover');
+    }).on('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $(this).removeClass('row-dragover');
+        var files = e.originalEvent.dataTransfer ? e.originalEvent.dataTransfer.files : null;
+        if (files && files.length > 0) {
+            uploadMiningDocFile($(this), files[0]);
+        }
+    });
 
+    // -------------------------------------------------------------
+    // Reactive AJAX File upload handler with size verification
+    // -------------------------------------------------------------
+    function uploadMiningDocFile($item, file) {
+        if (!file || !$item.length) return;
         var maxSize = 25 * 1024 * 1024; // 25MB
         if (file.size > maxSize) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'File Too Large',
-                    text: 'The selected file size is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.',
-                    confirmButtonColor: '#0F1E4D'
-                });
-            } else {
-                alert('The selected file size is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.');
-            }
-            $(this).val('');
+            alert('The selected file size is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.');
             return;
         }
 
-        var form = $(this).closest('form');
-        var label = form.find('.btn-upload-label');
-        label.addClass('disabled').css('pointer-events', 'none');
-        label.find('.upload-text').html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...');
-        form.submit();
+        var docId = $item.data('doc-id');
+        var appId = $item.data('app-id');
+        var docName = $item.data('doc-name') || '';
+
+        var $label = $item.find('.btn-upload-label');
+        var origText = $label.find('.upload-text').text();
+        $label.addClass('disabled').css('pointer-events', 'none');
+        $label.find('.upload-text').html('<span class="spinner-border spinner-border-sm me-1" role="status"></span>Uploading...');
+
+        var formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('mining_application_id', appId);
+        formData.append('document_id', docId);
+        formData.append('doc_name', docName);
+        formData.append('file', file);
+
+        fetch('{{ route("mining.document.upload") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.status === 1 || res.success) {
+                window.location.reload();
+            } else {
+                alert(res.message || 'File upload failed');
+                $label.removeClass('disabled').css('pointer-events', '');
+                $label.find('.upload-text').text(origText);
+            }
+        })
+        .catch(function(err) {
+            console.error(err);
+            alert('Network error while uploading file.');
+            $label.removeClass('disabled').css('pointer-events', '');
+            $label.find('.upload-text').text(origText);
+        });
+    }
+
+    $(document).on('change', '.input-mining-file', function() {
+        var file = this.files[0];
+        if (!file) return;
+        var $item = $(this).closest('.doc-card-item');
+        uploadMiningDocFile($item, file);
+    });
+
+    // -------------------------------------------------------------
+    // AJAX Removal handler with unlinking
+    // -------------------------------------------------------------
+    $(document).on('click', '.btn-mining-doc-remove', function() {
+        var $btn = $(this);
+        var docId = $btn.data('doc-id');
+        var appId = $btn.data('app-id');
+        var docName = $btn.data('doc-name') || 'this document';
+
+        if (!confirm('Are you sure you want to remove "' + docName + '"?')) return;
+
+        $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i>');
+
+        var formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('mining_application_id', appId);
+        formData.append('document_id', docId);
+
+        fetch('{{ route("mining.document.remove") }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.status === 1 || res.success) {
+                window.location.reload();
+            } else {
+                alert(res.message || 'Failed to remove document.');
+                $btn.prop('disabled', false).html('<i class="bi bi-trash3"></i>');
+            }
+        })
+        .catch(function(err) {
+            console.error(err);
+            alert('Network error while removing document.');
+            $btn.prop('disabled', false).html('<i class="bi bi-trash3"></i>');
+        });
+    });
+
+    // -------------------------------------------------------------
+    // GtmsOpenWith viewer trigger
+    // -------------------------------------------------------------
+    $(document).on('click', '.btn-view-item', function(e) {
+        if (typeof window.GtmsOpenWith !== 'undefined') {
+            e.preventDefault();
+            window.GtmsOpenWith.open({
+                url: $(this).data('file-url'),
+                name: $(this).data('file-name'),
+                size: $(this).data('file-size'),
+                docName: $(this).data('doc-name'),
+                isZip: $(this).data('is-zip') === 1 || $(this).data('is-zip') === '1'
+            });
+        }
     });
 });
 </script>

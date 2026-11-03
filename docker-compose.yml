@@ -165,6 +165,8 @@ services:
       - WATCHTOWER_POLL_INTERVAL=300
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_REVIVE_STOPPED=false
+      - REPO_USER=${GHCR_USERNAME:-sriram6369791334}
+      - REPO_PASS=${GHCR_TOKEN:-}
     networks:
       - gtms_network
 

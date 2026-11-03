@@ -278,14 +278,33 @@ $labels = [
 
             <div class="folder-checklist-box" id="comp_checklist_container" style="max-height: 480px; overflow-y: auto;">
               @foreach($docs19 as $dIdx => $dItem)
-                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-comp-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+                @php
+                  $matchDoc = collect($uploadedDocs ?? [])->first(function($d) use ($dItem) {
+                    return ($d['document_name'] ?? '') === $dItem['name'];
+                  });
+                  $isZip = $matchDoc && (!empty($matchDoc['is_zip']) || str_ends_with(strtolower($matchDoc['file_name'] ?? ''), '.zip'));
+                @endphp
+                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom {{ $matchDoc ? 'up' : '' }}"
+                     data-comp-row="{{ $dIdx }}"
+                     data-doc-name="{{ $dItem['name'] }}"
+                     data-category="checklist"
+                     data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                   <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
-                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
-                      <i class="bi bi-file-earmark"></i>
+                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:34px; height:34px; background:{{ $matchDoc ? ($isZip ? '#fef3c7' : '#dcfce7') : '#f1f5f9' }}; color:{{ $matchDoc ? ($isZip ? '#d97706' : '#15803d') : '#64748b' }};">
+                      <i class="bi {{ $matchDoc ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : 'bi-file-earmark' }}"></i>
                     </div>
                     <div class="text-truncate">
                       <div class="ci-name fw-semibold small text-dark text-truncate">{{ $dItem['name'] }}</div>
-                      <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
+                      <div class="ci-meta text-muted" style="font-size:11px;">
+                        @if($matchDoc)
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }} fw-semibold">
+                            <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $matchDoc['file_name'] }}
+                          </span> &middot; {{ $matchDoc['file_size'] ?? 'Attached' }}
+                        @else
+                          {{ $dItem['meta'] }} &middot; Not uploaded
+                        @endif
+                      </div>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
@@ -294,9 +313,26 @@ $labels = [
                       <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
                       <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
                     </select>
-                    <input type="file" class="d-none comp-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.jpg,.jpeg,.png,.zip">
-                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-comp-item" style="font-size:.72rem;">
-                      <i class="bi bi-upload me-1"></i>Upload
+
+                    <a href="{{ $matchDoc['file_url'] ?? '#' }}"
+                       class="btn btn-sm btn-outline-info py-1 px-2 btn-view-item btn-view-comp-item {{ $matchDoc ? '' : 'd-none' }}"
+                       style="font-size:.72rem;"
+                       data-file-url="{{ $matchDoc['file_url'] ?? '' }}"
+                       data-file-name="{{ $matchDoc['file_name'] ?? '' }}"
+                       data-file-size="{{ $matchDoc['file_size'] ?? '' }}"
+                       data-doc-name="{{ $dItem['name'] }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Document">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                    <input type="file" class="d-none comp-file-input row-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip">
+                    <button type="button" class="btn btn-sm {{ $matchDoc ? 'btn-outline-secondary' : 'btn-outline-navy' }} py-1 px-2 btn-upload-item btn-upload-comp-item" style="font-size:.72rem;">
+                      <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-upload' }} me-1"></i><span>{{ $matchDoc ? 'Change' : 'Upload' }}</span>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item btn-remove-comp-item {{ $matchDoc ? '' : 'd-none' }}" style="font-size:.72rem;" title="Remove Document">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </div>
@@ -330,21 +366,56 @@ $labels = [
 
             <div class="folder-checklist-box" id="lab_checklist_container">
               @foreach($labTests as $lIdx => $lItem)
-                <div class="checklist-row py-3 d-flex align-items-center justify-content-between border-bottom" data-lab-row="{{ $lIdx }}">
+                @php
+                  $matchDoc = collect($uploadedDocs ?? [])->first(function($d) use ($lItem) {
+                    return ($d['document_name'] ?? '') === $lItem['name'];
+                  });
+                  $isZip = $matchDoc && (!empty($matchDoc['is_zip']) || str_ends_with(strtolower($matchDoc['file_name'] ?? ''), '.zip'));
+                @endphp
+                <div class="checklist-row py-3 d-flex align-items-center justify-content-between border-bottom {{ $matchDoc ? 'up' : '' }}"
+                     data-lab-row="{{ $lIdx }}"
+                     data-doc-name="{{ $lItem['name'] }}"
+                     data-category="site_analysis">
                   <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
-                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px; background:#fef3c7; color:#d97706;">
-                      <i class="bi {{ $lItem['icon'] }} fs-5"></i>
+                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:40px; height:40px; background:{{ $matchDoc ? ($isZip ? '#fef3c7' : '#dcfce7') : '#fef3c7' }}; color:{{ $matchDoc ? ($isZip ? '#d97706' : '#15803d') : '#d97706' }};">
+                      <i class="bi {{ $matchDoc ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : $lItem['icon'] }} fs-5"></i>
                     </div>
                     <div class="text-truncate">
                       <div class="ci-name fw-bold text-navy text-truncate">{{ $lItem['name'] }}</div>
-                      <div class="ci-meta text-muted small">{{ $lItem['meta'] }} &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span></div>
+                      <div class="ci-meta text-muted small">
+                        @if($matchDoc)
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }} fw-semibold">
+                            <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $matchDoc['file_name'] }}
+                          </span> &middot; {{ $matchDoc['file_size'] ?? 'Attached' }} &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>
+                        @else
+                          {{ $lItem['meta'] }} &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>
+                        @endif
+                      </div>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
                     <span class="badge-status mandatory">Mandatory</span>
-                    <input type="file" class="d-none lab-file-input" data-row-idx="{{ $lIdx }}" accept=".pdf">
-                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-3 btn-upload-lab-item">
-                      <i class="bi bi-upload me-1"></i>Upload Report PDF
+
+                    <a href="{{ $matchDoc['file_url'] ?? '#' }}"
+                       class="btn btn-sm btn-outline-info py-1 px-3 btn-view-item btn-view-lab-item {{ $matchDoc ? '' : 'd-none' }}"
+                       style="font-size:.72rem;"
+                       data-file-url="{{ $matchDoc['file_url'] ?? '' }}"
+                       data-file-name="{{ $matchDoc['file_name'] ?? '' }}"
+                       data-file-size="{{ $matchDoc['file_size'] ?? '' }}"
+                       data-doc-name="{{ $lItem['name'] }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Report">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                    <input type="file" class="d-none lab-file-input row-file-input" data-row-idx="{{ $lIdx }}" accept=".pdf,.doc,.docx,.zip">
+                    <button type="button" class="btn btn-sm {{ $matchDoc ? 'btn-outline-secondary' : 'btn-outline-navy' }} py-1 px-3 btn-upload-item btn-upload-lab-item">
+                      <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-upload' }} me-1"></i><span>{{ $matchDoc ? 'Change' : 'Upload Report PDF' }}</span>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item btn-remove-lab-item {{ $matchDoc ? '' : 'd-none' }}" style="font-size:.72rem;" title="Remove Report">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </div>
@@ -370,21 +441,56 @@ $labels = [
 
             <div class="folder-checklist-box" id="report_checklist_container">
               @foreach($reportSections as $rIdx => $rItem)
-                <div class="checklist-row py-3 d-flex align-items-center justify-content-between border-bottom" data-report-row="{{ $rIdx }}">
+                @php
+                  $matchDoc = collect($uploadedDocs ?? [])->first(function($d) use ($rItem) {
+                    return ($d['document_name'] ?? '') === $rItem['name'];
+                  });
+                  $isZip = $matchDoc && (!empty($matchDoc['is_zip']) || str_ends_with(strtolower($matchDoc['file_name'] ?? ''), '.zip'));
+                @endphp
+                <div class="checklist-row py-3 d-flex align-items-center justify-content-between border-bottom {{ $matchDoc ? 'up' : '' }}"
+                     data-report-row="{{ $rIdx }}"
+                     data-doc-name="{{ $rItem['name'] }}"
+                     data-category="report_preparation">
                   <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
-                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px; background:#eff6ff; color:#0284c7;">
-                      <i class="bi {{ $rItem['icon'] }} fs-5"></i>
+                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:40px; height:40px; background:{{ $matchDoc ? ($isZip ? '#fef3c7' : '#dcfce7') : '#eff6ff' }}; color:{{ $matchDoc ? ($isZip ? '#d97706' : '#15803d') : '#0284c7' }};">
+                      <i class="bi {{ $matchDoc ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : $rItem['icon'] }} fs-5"></i>
                     </div>
                     <div class="text-truncate">
                       <div class="ci-name fw-bold text-navy text-truncate">{{ $rItem['name'] }}</div>
-                      <div class="ci-meta text-muted small">{{ $rItem['meta'] }}</div>
+                      <div class="ci-meta text-muted small">
+                        @if($matchDoc)
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }} fw-semibold">
+                            <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $matchDoc['file_name'] }}
+                          </span> &middot; {{ $matchDoc['file_size'] ?? 'Attached' }}
+                        @else
+                          {{ $rItem['meta'] }}
+                        @endif
+                      </div>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
                     <span class="badge-status mandatory">Mandatory</span>
-                    <input type="file" class="d-none report-file-input" data-row-idx="{{ $rIdx }}" accept=".pdf,.doc,.docx">
-                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-3 btn-upload-report-item">
-                      <i class="bi bi-upload me-1"></i>Upload Document
+
+                    <a href="{{ $matchDoc['file_url'] ?? '#' }}"
+                       class="btn btn-sm btn-outline-info py-1 px-3 btn-view-item btn-view-report-item {{ $matchDoc ? '' : 'd-none' }}"
+                       style="font-size:.72rem;"
+                       data-file-url="{{ $matchDoc['file_url'] ?? '' }}"
+                       data-file-name="{{ $matchDoc['file_name'] ?? '' }}"
+                       data-file-size="{{ $matchDoc['file_size'] ?? '' }}"
+                       data-doc-name="{{ $rItem['name'] }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Document">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                    <input type="file" class="d-none report-file-input row-file-input" data-row-idx="{{ $rIdx }}" accept=".pdf,.doc,.docx,.zip">
+                    <button type="button" class="btn btn-sm {{ $matchDoc ? 'btn-outline-secondary' : 'btn-outline-navy' }} py-1 px-3 btn-upload-item btn-upload-report-item">
+                      <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-upload' }} me-1"></i><span>{{ $matchDoc ? 'Change' : 'Upload Document' }}</span>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item btn-remove-report-item {{ $matchDoc ? '' : 'd-none' }}" style="font-size:.72rem;" title="Remove Document">
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </div>
@@ -410,18 +516,39 @@ $labels = [
                 </div>
                 <div class="col-md-12">
                   <label class="form-label fw-bold text-navy">Attach Official Parivesh Acknowledgement Receipt (PDF) *</label>
-                  <div class="p-3 bg-white rounded border d-flex align-items-center justify-content-between action-slot" id="parivesh_receipt_slot">
-                    <div class="d-flex align-items-center gap-2">
-                      <i class="bi bi-file-earmark-pdf fs-3 text-danger"></i>
-                      <div>
-                        <div class="fw-bold text-dark receipt-title">PARIVESH_Acknowledgement_Receipt_2026.pdf</div>
-                        <small class="text-muted receipt-meta">Official MoEFCC acknowledgement receipt with barcoded timestamp</small>
+                  @php
+                    $matchReceipt = collect($uploadedDocs ?? [])->first(function($d) {
+                      return ($d['folder_category'] ?? '') === 'parivesh' || ($d['document_name'] ?? '') === 'Parivesh Acknowledgement Receipt';
+                    });
+                  @endphp
+                  <div class="p-3 bg-white rounded border d-flex align-items-center justify-content-between action-slot {{ $matchReceipt ? 'up' : '' }}"
+                       id="parivesh_receipt_slot"
+                       data-doc-name="Parivesh Acknowledgement Receipt"
+                       data-category="parivesh">
+                    <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
+                      <i class="bi bi-file-earmark-pdf fs-3 text-danger flex-shrink-0"></i>
+                      <div class="text-truncate">
+                        <div class="fw-bold text-dark receipt-title text-truncate">{{ $matchReceipt['file_name'] ?? 'PARIVESH_Acknowledgement_Receipt_2026.pdf' }}</div>
+                        <small class="text-muted receipt-meta">{{ $matchReceipt ? ('Attached: ' . ($matchReceipt['file_size'] ?? '')) : 'Official MoEFCC acknowledgement receipt with barcoded timestamp' }}</small>
                       </div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                      <a href="{{ $matchReceipt['file_url'] ?? '#' }}"
+                         class="btn btn-sm btn-outline-info px-3 btn-view-item btn-view-receipt {{ $matchReceipt ? '' : 'd-none' }}"
+                         data-file-url="{{ $matchReceipt['file_url'] ?? '' }}"
+                         data-file-name="{{ $matchReceipt['file_name'] ?? '' }}"
+                         data-file-size="{{ $matchReceipt['file_size'] ?? '' }}"
+                         data-doc-name="Parivesh Acknowledgement Receipt"
+                         data-is-zip="0"
+                         title="View Receipt">
+                        <i class="bi bi-eye"></i> View Receipt
+                      </a>
                       <input type="file" class="d-none" id="parivesh_receipt_file" accept=".pdf">
-                      <button type="button" class="btn btn-sm btn-outline-success px-3" id="btn_upload_parivesh_receipt">
-                        <i class="bi bi-upload me-1"></i>Attach Receipt PDF
+                      <button type="button" class="btn btn-sm {{ $matchReceipt ? 'btn-outline-secondary' : 'btn-outline-success' }} px-3" id="btn_upload_parivesh_receipt">
+                        <i class="bi {{ $matchReceipt ? 'bi-arrow-repeat' : 'bi-upload' }} me-1"></i><span>{{ $matchReceipt ? 'Change Receipt' : 'Attach Receipt PDF' }}</span>
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger px-2 btn-remove-receipt {{ $matchReceipt ? '' : 'd-none' }}" id="btn_remove_parivesh_receipt" title="Remove Receipt">
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </div>
@@ -656,75 +783,276 @@ $labels = [
   </div>
 </div>
 
+<style>
+.checklist-row.row-dragover, #parivesh_receipt_slot.row-dragover {
+  background-color: #f0fdf4 !important;
+  outline: 2px dashed #16a34a !important;
+  outline-offset: -2px;
+}
+</style>
 {{-- JAVASCRIPT FOR DYNAMIC DOCUMENTS, HANDLERS & REAL-TIME PAYMENT MATH --}}
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Step 2 Documents Upload & View
-  document.addEventListener('click', function(e) {
-    const uploadBtn = e.target.closest('.btn-upload-comp-item');
+  const CSRF_TOKEN = '{{ csrf_token() }}';
+  const UPLOAD_URL = '{{ route("ec-compliance.upload") }}';
+  const REMOVE_URL = '{{ route("ec-compliance.remove") }}';
+
+  function uploadEcFile(row, file, category, docName) {
+    const uploadBtn = row.querySelector('.btn-upload-item, .btn-upload-comp-item, .btn-upload-lab-item, .btn-upload-report-item, #btn_upload_parivesh_receipt');
+    const origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
     if (uploadBtn) {
-      const row = uploadBtn.closest('.checklist-row');
-      const input = row.querySelector('.comp-file-input');
-      if (input) input.click();
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Uploading...';
     }
-  });
 
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('comp-file-input')) {
-      const input = e.target;
-      const row = input.closest('.checklist-row');
-      if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('file', file);
+    formData.append('document_name', docName);
+    formData.append('folder_category', category);
+
+    fetch(UPLOAD_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Upload failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.className = uploadBtn.className.replace('btn-outline-navy', 'btn-outline-secondary').replace('btn-outline-success', 'btn-outline-secondary');
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i><span>Change</span>';
+      }
+
+      if (data.status === 1 || data.success) {
         row.classList.add('up');
+        const isZip = data.is_zip || (data.file_name && data.file_name.toLowerCase().endsWith('.zip'));
 
+        // Update icon
         const iconDiv = row.querySelector('.ci-icon');
         if (iconDiv) {
-          iconDiv.style.background = '#dcfce7';
-          iconDiv.style.color = '#15803d';
-          iconDiv.innerHTML = '<i class="bi bi-check-lg"></i>';
+          iconDiv.style.background = isZip ? '#fef3c7' : '#dcfce7';
+          iconDiv.style.color = isZip ? '#d97706' : '#15803d';
+          iconDiv.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') + (row.hasAttribute('data-lab-row') || row.hasAttribute('data-report-row') ? ' fs-5' : '') + '"></i>';
         }
 
+        // Update meta / receipt title
         const metaDiv = row.querySelector('.ci-meta');
         if (metaDiv) {
-          const sizeKb = Math.round(file.size / 1024);
-          metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${file.name}</span> &middot; ${sizeKb} KB`;
+          const sizeStr = data.file_size ? ' &middot; ' + data.file_size : '';
+          const extraBadge = row.hasAttribute('data-lab-row') ? ' &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>' : '';
+          metaDiv.innerHTML = '<span class="' + (isZip ? 'text-warning-emphasis' : 'text-success') + ' fw-semibold"><i class="bi ' + (isZip ? 'bi-file-earmark-zip' : 'bi-paperclip') + '"></i> ' + (data.file_name || docName) + '</span>' + sizeStr + extraBadge;
         }
 
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          const statusBadge = slot.querySelector('.badge-status');
-          if (statusBadge) {
-            statusBadge.className = 'badge-status uploaded';
-            statusBadge.textContent = 'Uploaded';
-          }
+        const receiptTitle = row.querySelector('.receipt-title');
+        if (receiptTitle) receiptTitle.textContent = data.file_name || docName;
+        const receiptMeta = row.querySelector('.receipt-meta');
+        if (receiptMeta) receiptMeta.textContent = 'Attached: ' + (data.file_size || '');
 
-          let viewBtn = slot.querySelector('.btn-view-comp-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2 btn-view-comp-item me-1';
-            viewBtn.style.fontSize = '.72rem';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.title = 'View document in separate page';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-comp-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
+        // Update status badge
+        const statusBadge = row.querySelector('.badge-status');
+        if (statusBadge && !statusBadge.classList.contains('mandatory')) {
+          statusBadge.className = 'badge-status uploaded';
+          statusBadge.textContent = 'Uploaded';
+        }
 
-          const btnUpload = slot.querySelector('.btn-upload-comp-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-comp-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
+        // Update View button
+        let viewBtn = row.querySelector('.btn-view-item, .btn-view-comp-item, .btn-view-lab-item, .btn-view-report-item, .btn-view-receipt');
+        if (viewBtn) {
+          viewBtn.classList.remove('d-none');
+          viewBtn.href = data.file_url || '#';
+          viewBtn.setAttribute('data-file-url', data.file_url || '');
+          viewBtn.setAttribute('data-file-name', data.file_name || docName);
+          viewBtn.setAttribute('data-file-size', data.file_size || '');
+          viewBtn.setAttribute('data-doc-name', docName);
+          viewBtn.setAttribute('data-is-zip', isZip ? '1' : '0');
+        }
+
+        // Show Remove button
+        const removeBtn = row.querySelector('.btn-remove-item, .btn-remove-comp-item, .btn-remove-lab-item, .btn-remove-report-item, .btn-remove-receipt, #btn_remove_parivesh_receipt');
+        if (removeBtn) {
+          removeBtn.classList.remove('d-none');
         }
 
         updateCompDocProgress();
+        updateLabDocProgress();
+
+        if (window.toastr) {
+          toastr.success('Document "' + (data.file_name || docName) + '" uploaded successfully!');
+        }
+      } else {
+        alert(data.message || 'Upload failed.');
       }
+    })
+    .catch(function(err) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
+      }
+      alert('Upload error: ' + err.message);
+    });
+  }
+
+  function removeEcFile(row, category, docName) {
+    if (!confirm('Are you sure you want to remove this attached file?')) return;
+
+    const removeBtn = row.querySelector('.btn-remove-item, .btn-remove-comp-item, .btn-remove-lab-item, .btn-remove-report-item, .btn-remove-receipt, #btn_remove_parivesh_receipt');
+    const origBtnHtml = removeBtn ? removeBtn.innerHTML : '';
+    if (removeBtn) {
+      removeBtn.disabled = true;
+      removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
     }
-  });
+
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('document_name', docName);
+    formData.append('folder_category', category);
+
+    fetch(REMOVE_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Remove failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+        removeBtn.classList.add('d-none');
+      }
+
+      if (data.status === 1 || data.success) {
+        row.classList.remove('up');
+
+        // Reset file input
+        const fileInput = row.querySelector('.comp-file-input, .lab-file-input, .report-file-input, #parivesh_receipt_file');
+        if (fileInput) fileInput.value = '';
+
+        // Reset icon
+        const iconDiv = row.querySelector('.ci-icon');
+        if (iconDiv) {
+          iconDiv.style.background = '';
+          iconDiv.style.color = '';
+          const defIcon = row.hasAttribute('data-lab-row') ? 'bi-flask' : (row.hasAttribute('data-report-row') ? 'bi-file-earmark-text' : 'bi-file-earmark');
+          iconDiv.innerHTML = '<i class="bi ' + defIcon + (row.hasAttribute('data-lab-row') || row.hasAttribute('data-report-row') ? ' fs-5' : '') + '"></i>';
+        }
+
+        // Reset meta
+        const metaDiv = row.querySelector('.ci-meta');
+        if (metaDiv) {
+          const extraBadge = row.hasAttribute('data-lab-row') ? ' &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>' : '';
+          metaDiv.innerHTML = 'Not uploaded' + extraBadge;
+        }
+
+        const receiptTitle = row.querySelector('.receipt-title');
+        if (receiptTitle) receiptTitle.textContent = 'PARIVESH_Acknowledgement_Receipt_2026.pdf';
+        const receiptMeta = row.querySelector('.receipt-meta');
+        if (receiptMeta) receiptMeta.textContent = 'Official MoEFCC acknowledgement receipt with barcoded timestamp';
+
+        // Hide View button
+        const viewBtn = row.querySelector('.btn-view-item, .btn-view-comp-item, .btn-view-lab-item, .btn-view-report-item, .btn-view-receipt');
+        if (viewBtn) {
+          viewBtn.classList.add('d-none');
+          viewBtn.href = '#';
+        }
+
+        // Reset upload button
+        const uploadBtn = row.querySelector('.btn-upload-item, .btn-upload-comp-item, .btn-upload-lab-item, .btn-upload-report-item, #btn_upload_parivesh_receipt');
+        if (uploadBtn) {
+          uploadBtn.innerHTML = '<i class="bi bi-upload me-1"></i><span>' + (row.id === 'parivesh_receipt_slot' ? 'Attach Receipt PDF' : (row.hasAttribute('data-lab-row') ? 'Upload Report PDF' : (row.hasAttribute('data-report-row') ? 'Upload Document' : 'Upload'))) + '</span>';
+        }
+
+        updateCompDocProgress();
+        updateLabDocProgress();
+
+        if (window.toastr) {
+          toastr.success('Document "' + docName + '" removed successfully.');
+        }
+      } else {
+        alert(data.message || 'Remove failed.');
+      }
+    })
+    .catch(function(err) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+      }
+      alert('Remove error: ' + err.message);
+    });
+  }
+
+  function attachWizardRowEvents(row) {
+    const fileInput = row.querySelector('.comp-file-input, .lab-file-input, .report-file-input, #parivesh_receipt_file');
+    const uploadBtn = row.querySelector('.btn-upload-item, .btn-upload-comp-item, .btn-upload-lab-item, .btn-upload-report-item, #btn_upload_parivesh_receipt');
+    const removeBtn = row.querySelector('.btn-remove-item, .btn-remove-comp-item, .btn-remove-lab-item, .btn-remove-report-item, .btn-remove-receipt, #btn_remove_parivesh_receipt');
+    const category = row.getAttribute('data-category') || 'checklist';
+    const docName = row.getAttribute('data-doc-name') || row.querySelector('.ci-name')?.textContent.trim() || 'Document';
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          uploadEcFile(row, this.files[0], category, docName);
+        }
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        removeEcFile(row, category, docName);
+      });
+    }
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.add('row-dragover');
+      }, false);
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('row-dragover');
+      }, false);
+    });
+
+    row.addEventListener('drop', function(e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        uploadEcFile(row, dt.files[0], category, docName);
+      }
+    });
+  }
+
+  document.querySelectorAll('.checklist-row, #parivesh_receipt_slot').forEach(attachWizardRowEvents);
 
   function updateCompDocProgress() {
     const total = document.querySelectorAll('#comp_checklist_container .checklist-row').length;
@@ -734,6 +1062,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (counter) counter.textContent = `${uploaded} / ${total} uploaded`;
     if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
   }
+
+  function updateLabDocProgress() {
+    const total = document.querySelectorAll('#lab_checklist_container .checklist-row').length;
+    const uploaded = document.querySelectorAll('#lab_checklist_container .checklist-row.up').length;
+    const counter = document.getElementById('lab_doc_counter');
+    const bar = document.getElementById('lab_progress_bar');
+    if (counter) counter.textContent = `${uploaded} / ${total} reports`;
+    if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
+  }
+
+  updateCompDocProgress();
+  updateLabDocProgress();
 
   // Step 2 Add Document Custom Button
   const btnAddCompDoc = document.getElementById('btn_add_comp_doc');
@@ -746,6 +1086,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
       row.setAttribute('data-mandatory', '0');
+      row.setAttribute('data-doc-name', docName.trim());
+      row.setAttribute('data-category', 'checklist');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -765,13 +1107,20 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="mandatory">Mandatory</option>
             <option value="optional" selected>Optional</option>
           </select>
-          <input type="file" class="d-none comp-file-input" accept=".pdf,.jpg,.jpeg,.png,.zip">
-          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-comp-item" style="font-size:.72rem;">
-            <i class="bi bi-upload me-1"></i>Upload
+          <a href="#" class="btn btn-sm btn-outline-info py-1 px-2 btn-view-item btn-view-comp-item d-none" style="font-size:.72rem;" title="View Document">
+            <i class="bi bi-eye"></i> View
+          </a>
+          <input type="file" class="d-none comp-file-input row-file-input" accept=".pdf,.jpg,.jpeg,.png,.zip">
+          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-item btn-upload-comp-item" style="font-size:.72rem;">
+            <i class="bi bi-upload me-1"></i><span>Upload</span>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item btn-remove-comp-item d-none" style="font-size:.72rem;" title="Remove Document">
+            <i class="bi bi-trash"></i>
           </button>
         </div>
       `;
       container.appendChild(row);
+      attachWizardRowEvents(row);
       updateCompDocProgress();
       bindCompDocReqListeners();
     });
@@ -811,126 +1160,6 @@ document.addEventListener('DOMContentLoaded', function() {
       if (missingMandatory.length > 0) {
         e.preventDefault();
         alert('Please upload all mandatory documents before continuing:\n- ' + missingMandatory.join('\n- '));
-      }
-    });
-  }
-
-  // Step 3 Lab Upload & View handlers
-  document.addEventListener('click', function(e) {
-    const uploadBtn = e.target.closest('.btn-upload-lab-item');
-    if (uploadBtn) {
-      const row = uploadBtn.closest('.checklist-row');
-      const input = row.querySelector('.lab-file-input');
-      if (input) input.click();
-    }
-  });
-
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('lab-file-input')) {
-      const input = e.target;
-      const row = input.closest('.checklist-row');
-      if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
-        row.classList.add('up');
-
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          let viewBtn = slot.querySelector('.btn-view-lab-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-3 btn-view-lab-item me-1';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-lab-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
-
-          const btnUpload = slot.querySelector('.btn-upload-lab-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-lab-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
-        }
-
-        const total = document.querySelectorAll('#lab_checklist_container .checklist-row').length;
-        const uploaded = document.querySelectorAll('#lab_checklist_container .checklist-row.up').length;
-        const counter = document.getElementById('lab_doc_counter');
-        const bar = document.getElementById('lab_progress_bar');
-        if (counter) counter.textContent = `${uploaded} / ${total} reports`;
-        if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
-      }
-    }
-  });
-
-  // Step 4 Report Upload & View handlers
-  document.addEventListener('click', function(e) {
-    const uploadBtn = e.target.closest('.btn-upload-report-item');
-    if (uploadBtn) {
-      const row = uploadBtn.closest('.checklist-row');
-      const input = row.querySelector('.report-file-input');
-      if (input) input.click();
-    }
-  });
-
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('report-file-input')) {
-      const input = e.target;
-      const row = input.closest('.checklist-row');
-      if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
-        row.classList.add('up');
-
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          let viewBtn = slot.querySelector('.btn-view-report-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-3 btn-view-report-item me-1';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-report-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
-
-          const btnUpload = slot.querySelector('.btn-upload-report-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-report-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
-        }
-      }
-    }
-  });
-
-  // Step 5 Parivesh Receipt Upload & View
-  const btnUploadReceipt = document.getElementById('btn_upload_parivesh_receipt');
-  const fileReceipt = document.getElementById('parivesh_receipt_file');
-  if (btnUploadReceipt && fileReceipt) {
-    btnUploadReceipt.addEventListener('click', () => fileReceipt.click());
-    fileReceipt.addEventListener('change', function() {
-      if (fileReceipt.files && fileReceipt.files[0]) {
-        const file = fileReceipt.files[0];
-        const blobUrl = URL.createObjectURL(file);
-        const slot = document.getElementById('parivesh_receipt_slot');
-        if (slot) {
-          let viewBtn = slot.querySelector('.btn-view-receipt');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info px-3 btn-view-receipt me-1';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View Receipt';
-            slot.querySelector('div:last-child').insertBefore(viewBtn, btnUploadReceipt);
-          }
-          viewBtn.href = blobUrl;
-          btnUploadReceipt.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-        }
       }
     });
   }

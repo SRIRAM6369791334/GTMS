@@ -146,7 +146,7 @@ class RolesController extends Controller
             ], 403);
         }
 
-        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+        if (!$isSuperAdmin && !empty($role->created_by) && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
             return response()->json([
                 'status'  => 0,
                 'message' => 'Access denied to roles created by other administrators.',
@@ -202,7 +202,7 @@ class RolesController extends Controller
             ]);
         }
 
-        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+        if (!$isSuperAdmin && !empty($role->created_by) && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
             return response()->json([
                 'status'  => 0,
                 'message' => 'You do not have permission to modify roles created by other administrators.',
@@ -266,7 +266,7 @@ class RolesController extends Controller
             ]);
         }
 
-        if (!$isSuperAdmin && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
+        if (!$isSuperAdmin && !empty($role->created_by) && $role->created_by != ($currentUser ? $currentUser->id : 0)) {
             return response()->json([
                 'status'  => 0,
                 'message' => 'You do not have permission to delete roles created by other administrators.',

@@ -408,14 +408,19 @@ $labels = ['Request','Field Survey','Process & Upload','Handling Team','Payment'
                       <span class="s5-summary-label">Mandatory Survey Deliverables</span>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                      <span class="s5-counter-text" id="dgps_doc_counter">0 / 6 uploaded</span>
+                      @php
+                        $uploadedDocs = $uploadedDocs ?? session('dgps_wizard.uploaded_docs', []);
+                        $initUploadedCount = count($uploadedDocs);
+                        $initPct = min(100, round(($initUploadedCount / 6) * 100));
+                      @endphp
+                      <span class="s5-counter-text" id="dgps_doc_counter">{{ $initUploadedCount }} / 6 uploaded</span>
                       <span class="s5-counter-sub text-muted">&bull; WGS84 UTM Zone 44N</span>
                     </div>
                   </div>
                 </div>
                 <div class="text-end" style="min-width: 180px;">
                   <div class="progress s5-summary-progress mb-1">
-                    <div class="progress-bar s5-summary-bar" id="dgps_progress_bar" role="progressbar" style="width: 0%;"></div>
+                    <div class="progress-bar s5-summary-bar" id="dgps_progress_bar" role="progressbar" style="width: {{ $initPct }}%;"></div>
                   </div>
                   <small class="text-muted" style="font-size:11px;">Automated Dossier Sync</small>
                 </div>
@@ -452,17 +457,42 @@ $labels = ['Request','Field Survey','Process & Upload','Handling Team','Payment'
                 @endphp
 
                 @foreach($dgpsDocs as $dIdx => $dItem)
-                  <div class="checklist-row p-3 mb-2 d-flex align-items-center justify-content-between" data-dgps-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+                  @php
+                    $docKey = 'doc_' . $dIdx;
+                    $up = $uploadedDocs[$docKey] ?? ($uploadedDocs[$dItem['name']] ?? null);
+                    $isUp = !empty($up);
+                    $upFileName = $up['file_name'] ?? '';
+                    $upFileUrl = $up['file_url'] ?? '';
+                    $upFileSize = $up['file_size'] ?? '';
+                    $upIsZip = !empty($up['is_zip']);
+                    $docId = $up['doc_id'] ?? '';
+                  @endphp
+                  <div class="checklist-row p-3 mb-2 d-flex align-items-center justify-content-between {{ $isUp ? 'up' : '' }}"
+                       data-dgps-row="{{ $dIdx }}"
+                       data-doc-item="{{ $docKey }}"
+                       data-doc-name="{{ $dItem['name'] }}"
+                       data-folder-id="1"
+                       data-doc-id="{{ $docId }}"
+                       data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                     <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
-                      <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0">
-                        <i class="bi bi-file-earmark-text"></i>
+                      <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; {{ $isUp ? 'background:#dcfce7; color:#15803d;' : 'background:#f1f5f9; color:#64748b;' }}">
+                        <i class="bi {{ $isUp ? 'bi-check-lg' : 'bi-file-earmark-text' }}"></i>
                       </div>
                       <div class="text-truncate">
                         <div class="d-flex align-items-center gap-2 mb-1">
                           <span class="ci-name fw-bold text-dark text-truncate" style="font-size:13.5px;">{{ $dItem['name'] }}</span>
                           <span class="badge bg-light text-muted border" style="font-size:10.5px;">{{ $dItem['type'] }}</span>
                         </div>
-                        <div class="ci-meta text-muted" style="font-size:11.5px;">{{ $dItem['meta'] }} &bull; <span class="text-secondary">Not uploaded</span></div>
+                        <div class="ci-meta text-muted" style="font-size:11.5px;">
+                          @if($isUp)
+                            <span class="badge {{ $upIsZip ? 'bg-warning text-dark' : 'bg-success' }} d-inline-flex align-items-center gap-1 status-badge">
+                              <i class="bi {{ $upIsZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill' }}"></i>
+                              <span class="badge-text">{{ $upFileName }} ({{ $upFileSize }})</span>
+                            </span>
+                          @else
+                            {{ $dItem['meta'] }} &bull; <span class="text-secondary status-badge-pending">Not uploaded</span>
+                          @endif
+                        </div>
                       </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
@@ -471,10 +501,28 @@ $labels = ['Request','Field Survey','Process & Upload','Handling Team','Payment'
                         <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
                         <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
                       </select>
-                      <input type="file" class="d-none dgps-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat">
-                      <button type="button" class="btn btn-sm s5-btn-upload btn-upload-dgps-item">
-                        <i class="bi bi-upload me-1"></i>Upload
-                      </button>
+                      <input type="file" class="d-none dgps-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat,.zip,.rar">
+                      <div class="btn-group btn-group-sm action-trio">
+                        <a href="{{ $upFileUrl ?: '#' }}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-primary btn-view-item btn-view-dgps-item"
+                           style="{{ $isUp ? '' : 'display:none;' }}"
+                           data-file-url="{{ $upFileUrl }}"
+                           data-file-name="{{ $upFileName }}"
+                           data-file-size="{{ $upFileSize }}"
+                           data-doc-name="{{ $dItem['name'] }}"
+                           data-is-zip="{{ $upIsZip ? '1' : '0' }}"
+                           title="View Document">
+                          <i class="bi bi-eye"></i> View
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item btn-upload-dgps-item" title="{{ $isUp ? 'Re-upload file' : 'Upload file' }}">
+                          <i class="bi {{ $isUp ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                          <span class="btn-upload-text">{{ $isUp ? 'Re-upload' : 'Upload' }}</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-dgps-item" style="{{ $isUp ? '' : 'display:none;' }}" title="Remove file">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 @endforeach
@@ -1135,85 +1183,287 @@ document.addEventListener('DOMContentLoaded', function() {
     recalcDgpsPayment();
   };
 
-  // DGPS Step 3: Upload & View handlers
-  document.addEventListener('click', function(e) {
-    const uploadBtn = e.target.closest('.btn-upload-dgps-item');
+  // DGPS Step 3: Real AJAX Upload, Remove, and Drag-and-Drop
+  var DGPS_UPLOAD_URL = '{{ route('dgps-survey.upload') }}';
+  var DGPS_REMOVE_URL = '{{ route('dgps-survey.remove') }}';
+  var CSRF_TOKEN = '{{ csrf_token() }}';
+
+  function updateDgpsDocProgress() {
+    var total = document.querySelectorAll('#dgps_checklist_container .checklist-row').length || 6;
+    var uploaded = document.querySelectorAll('#dgps_checklist_container .checklist-row.up').length;
+    var pct = Math.round((uploaded / total) * 100);
+    var counter = document.getElementById('dgps_doc_counter');
+    var bar = document.getElementById('dgps_progress_bar');
+    if (counter) counter.textContent = uploaded + ' / ' + total + ' uploaded';
+    if (bar) bar.style.width = pct + '%';
+  }
+
+  function uploadDgpsRowFile(row, file) {
+    if (!file) return;
+
+    var docItem = row.getAttribute('data-doc-item') || ('doc_' + (row.getAttribute('data-dgps-row') || '0'));
+    var docName = row.getAttribute('data-doc-name');
+    var folderId = row.getAttribute('data-folder-id') || '1';
+    var docId = row.getAttribute('data-doc-id') || '';
+
+    var uploadBtn = row.querySelector('.btn-upload-dgps-item');
+    var origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
     if (uploadBtn) {
-      const row = uploadBtn.closest('.checklist-row');
-      const input = row.querySelector('.dgps-file-input');
-      if (input) input.click();
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
     }
-  });
 
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('dgps-file-input')) {
-      const input = e.target;
-      const row = input.closest('.checklist-row');
-      if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
+    var formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('doc_item', docItem);
+    formData.append('document_name', docName);
+    formData.append('folder_id', folderId);
+    if (docId) formData.append('doc_id', docId);
+    formData.append('file', file);
+
+    fetch(DGPS_UPLOAD_URL, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Upload failed with status ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.title = 'Re-upload file';
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> <span class="btn-upload-text">Re-upload</span>';
+      }
+
+      if (data.status === 1 || data.success) {
         row.classList.add('up');
+        row.setAttribute('data-doc-id', data.doc_id || '');
 
-        const iconDiv = row.querySelector('.ci-icon');
+        // Update avatar
+        var iconDiv = row.querySelector('.ci-icon');
         if (iconDiv) {
           iconDiv.style.background = '#dcfce7';
           iconDiv.style.color = '#15803d';
           iconDiv.innerHTML = '<i class="bi bi-check-lg"></i>';
         }
 
-        const metaDiv = row.querySelector('.ci-meta');
+        // Update meta badge
+        var metaDiv = row.querySelector('.ci-meta');
         if (metaDiv) {
-          const sizeKb = Math.round(file.size / 1024);
-          metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${file.name}</span> &middot; ${sizeKb} KB &bull; <span class="badge bg-success-subtle text-success">Uploaded</span>`;
+          var isZip = data.is_zip;
+          var badgeClass = isZip ? 'bg-warning text-dark' : 'bg-success';
+          var badgeIcon = isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill';
+          var sizeStr = data.file_size ? ' (' + data.file_size + ')' : '';
+          metaDiv.innerHTML = '<span class="badge ' + badgeClass + ' d-inline-flex align-items-center gap-1 status-badge">' +
+            '<i class="bi ' + badgeIcon + '"></i> ' +
+            '<span class="badge-text">' + (data.file_name || 'Attached') + sizeStr + '</span>' +
+          '</span>';
         }
 
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          let viewBtn = slot.querySelector('.btn-view-dgps-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2 btn-view-dgps-item me-1';
-            viewBtn.style.fontSize = '.72rem';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.title = 'View document in separate page';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-dgps-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
+        // Update View button
+        var viewBtn = row.querySelector('.btn-view-dgps-item');
+        if (viewBtn) {
+          viewBtn.href = data.file_url || '#';
+          viewBtn.setAttribute('data-file-url', data.file_url || '');
+          viewBtn.setAttribute('data-file-name', data.file_name || '');
+          viewBtn.setAttribute('data-file-size', data.file_size || '');
+          viewBtn.setAttribute('data-doc-name', docName);
+          viewBtn.setAttribute('data-is-zip', data.is_zip ? '1' : '0');
+          viewBtn.style.display = '';
+        }
 
-          const btnUpload = slot.querySelector('.btn-upload-dgps-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-dgps-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
+        // Show Remove button
+        var removeBtn = row.querySelector('.btn-remove-dgps-item');
+        if (removeBtn) {
+          removeBtn.style.display = '';
         }
 
         updateDgpsDocProgress();
-      }
-    }
-  });
 
-  function updateDgpsDocProgress() {
-    const total = document.querySelectorAll('#dgps_checklist_container .checklist-row').length;
-    const uploaded = document.querySelectorAll('#dgps_checklist_container .checklist-row.up').length;
-    const counter = document.getElementById('dgps_doc_counter');
-    const bar = document.getElementById('dgps_progress_bar');
-    if (counter) counter.textContent = `${uploaded} / ${total} uploaded`;
-    if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
+        if (window.toastr) {
+          toastr.success('Document "' + (data.file_name || docName) + '" uploaded successfully!');
+        }
+      } else {
+        alert(data.message || 'Upload failed.');
+      }
+    })
+    .catch(function(err) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
+      }
+      alert('Upload error: ' + err.message);
+    });
   }
 
+  function removeDgpsRowDocument(row) {
+    if (!confirm('Are you sure you want to remove this uploaded document?')) {
+      return;
+    }
+
+    var docItem = row.getAttribute('data-doc-item') || ('doc_' + (row.getAttribute('data-dgps-row') || '0'));
+    var docName = row.getAttribute('data-doc-name');
+    var docId = row.getAttribute('data-doc-id') || '';
+
+    var removeBtn = row.querySelector('.btn-remove-dgps-item');
+    if (removeBtn) {
+      removeBtn.disabled = true;
+      removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    }
+
+    var formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('doc_item', docItem);
+    formData.append('document_name', docName);
+    if (docId) formData.append('doc_id', docId);
+
+    fetch(DGPS_REMOVE_URL, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Remove failed with status ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+      }
+
+      if (data.status === 1 || data.success) {
+        row.classList.remove('up');
+        row.setAttribute('data-doc-id', '');
+
+        // Reset avatar
+        var iconDiv = row.querySelector('.ci-icon');
+        if (iconDiv) {
+          iconDiv.style.background = '#f1f5f9';
+          iconDiv.style.color = '#64748b';
+          iconDiv.innerHTML = '<i class="bi bi-file-earmark-text"></i>';
+        }
+
+        // Reset meta
+        var metaDiv = row.querySelector('.ci-meta');
+        if (metaDiv) {
+          metaDiv.innerHTML = 'Official survey deliverable &bull; <span class="text-secondary status-badge-pending">Not uploaded</span>';
+        }
+
+        // Hide View button
+        var viewBtn = row.querySelector('.btn-view-dgps-item');
+        if (viewBtn) {
+          viewBtn.style.display = 'none';
+          viewBtn.href = '#';
+          viewBtn.setAttribute('data-file-url', '');
+        }
+
+        // Reset Upload button
+        var uploadBtn = row.querySelector('.btn-upload-dgps-item');
+        if (uploadBtn) {
+          uploadBtn.title = 'Upload file';
+          uploadBtn.innerHTML = '<i class="bi bi-upload"></i> <span class="btn-upload-text">Upload</span>';
+        }
+
+        // Hide Remove button
+        if (removeBtn) {
+          removeBtn.style.display = 'none';
+        }
+
+        // Clear hidden input
+        var fileInput = row.querySelector('.dgps-file-input');
+        if (fileInput) fileInput.value = '';
+
+        updateDgpsDocProgress();
+
+        if (window.toastr) {
+          toastr.info('Document removed.');
+        }
+      } else {
+        alert(data.message || 'Remove failed.');
+      }
+    })
+    .catch(function(err) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+      }
+      alert('Remove error: ' + err.message);
+    });
+  }
+
+  function attachDgpsRowHandlers(row) {
+    var fileInput = row.querySelector('.dgps-file-input');
+    var uploadBtn = row.querySelector('.btn-upload-dgps-item');
+    var removeBtn = row.querySelector('.btn-remove-dgps-item');
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.onclick = function(e) {
+        e.preventDefault();
+        fileInput.click();
+      };
+    }
+
+    if (fileInput) {
+      fileInput.onchange = function() {
+        if (this.files && this.files[0]) {
+          uploadDgpsRowFile(row, this.files[0]);
+        }
+      };
+    }
+
+    if (removeBtn) {
+      removeBtn.onclick = function(e) {
+        e.preventDefault();
+        removeDgpsRowDocument(row);
+      };
+    }
+
+    // Drag & Drop
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.add('row-dragover');
+    });
+
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('row-dragover');
+    });
+
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('row-dragover');
+      var files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        uploadDgpsRowFile(row, files[0]);
+      }
+    });
+  }
+
+  document.querySelectorAll('#dgps_checklist_container .checklist-row').forEach(function(row) {
+    attachDgpsRowHandlers(row);
+  });
+
   // DGPS Step 3: Add Custom Document button
-  const btnAddDgpsDoc = document.getElementById('btn_add_dgps_doc');
+  var btnAddDgpsDoc = document.getElementById('btn_add_dgps_doc');
   if (btnAddDgpsDoc) {
     btnAddDgpsDoc.addEventListener('click', function() {
-      const docName = prompt('Enter DGPS Survey Document Name:');
+      var docName = prompt('Enter DGPS Survey Document Name:');
       if (!docName || !docName.trim()) return;
-      const container = document.getElementById('dgps_checklist_container');
-      const count = container.querySelectorAll('.checklist-row').length + 1;
-      const row = document.createElement('div');
+      var container = document.getElementById('dgps_checklist_container');
+      var count = container.querySelectorAll('.checklist-row').length + 1;
+      var docItemKey = 'doc_custom_' + Date.now();
+      var row = document.createElement('div');
       row.className = 'checklist-row p-3 mb-2 d-flex align-items-center justify-content-between';
+      row.setAttribute('data-dgps-row', count - 1);
+      row.setAttribute('data-doc-item', docItemKey);
+      row.setAttribute('data-doc-name', count + '. ' + docName.trim());
+      row.setAttribute('data-folder-id', '1');
       row.setAttribute('data-mandatory', '0');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
@@ -1225,7 +1475,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <span class="badge bg-light text-primary border" style="font-size:10px;">Custom</span>
               <span class="ci-name fw-bold text-dark text-truncate" style="font-size:13.5px;">${count}. ${docName.trim()}</span>
             </div>
-            <div class="ci-meta text-muted" style="font-size:11.5px;">Custom survey attachment &bull; Not uploaded</div>
+            <div class="ci-meta text-muted" style="font-size:11.5px;">Custom survey attachment &bull; <span class="text-secondary status-badge-pending">Not uploaded</span></div>
           </div>
         </div>
         <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
@@ -1234,13 +1484,22 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="mandatory">Mandatory</option>
             <option value="optional" selected>Optional</option>
           </select>
-          <input type="file" class="d-none dgps-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat">
-          <button type="button" class="btn btn-sm s5-btn-upload btn-upload-dgps-item">
-            <i class="bi bi-upload me-1"></i>Upload
-          </button>
+          <input type="file" class="d-none dgps-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.dwg,.txt,.dat,.zip,.rar">
+          <div class="btn-group btn-group-sm action-trio">
+            <a href="#" target="_blank" class="btn btn-sm btn-outline-primary btn-view-item btn-view-dgps-item" style="display:none;" title="View Document">
+              <i class="bi bi-eye"></i> View
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item btn-upload-dgps-item" title="Upload file">
+              <i class="bi bi-upload"></i> <span class="btn-upload-text">Upload</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-dgps-item" style="display:none;" title="Remove file">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </div>
       `;
       container.appendChild(row);
+      attachDgpsRowHandlers(row);
       updateDgpsDocProgress();
       bindDgpsDocReqListeners();
     });
@@ -1249,8 +1508,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function bindDgpsDocReqListeners() {
     document.querySelectorAll('#dgps_checklist_container .doc-req-select').forEach(function(sel) {
       sel.onchange = function() {
-        const row = this.closest('.checklist-row');
-        const isMandatory = this.value === 'mandatory';
+        var row = this.closest('.checklist-row');
+        var isMandatory = this.value === 'mandatory';
         if (row) {
           row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
         }
@@ -2142,6 +2401,11 @@ document.addEventListener('DOMContentLoaded', function() {
 #gtms-dgps-wizard-page .checklist-row.up {
   border-color: #86efac;
   background: #f0fdf4;
+}
+#gtms-dgps-wizard-page .checklist-row.row-dragover {
+  background: #e0f2fe !important;
+  outline: 2px dashed #0284c7 !important;
+  outline-offset: -2px;
 }
 #gtms-dgps-wizard-page .ci-icon {
   width: 38px;

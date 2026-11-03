@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
 
 class EcCertificateController extends Controller
 {
@@ -545,5 +547,193 @@ class EcCertificateController extends Controller
         ]);
 
         return redirect()->back()->with('success', "Status updated to '{$cleanStatus}' successfully.");
+    }
+
+    /**
+     * Upload Document via AJAX (Direct File or Chunked Upload Token) with safe unlinking.
+     */
+    public function uploadDocument(Request $request)
+    {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
+
+        $request->validate([
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
+            'upload_token'           => 'required_without:file|nullable|string',
+            'certificate_id'         => 'nullable|integer',
+            'id'                     => 'nullable|integer',
+            'environment_project_id' => 'nullable|integer',
+            'project_id'             => 'nullable|integer',
+            'doc_item'               => 'nullable',
+            'document_name'          => 'nullable|string|max:255',
+        ]);
+
+        $certId = $request->input('certificate_id') ?: $request->input('id');
+        $cert = $certId ? EcCertificate::find($certId) : null;
+
+        $draft = session('ec_wizard', []);
+        $projId = $request->input('environment_project_id')
+            ?: ($request->input('project_id')
+            ?: ($cert?->environment_project_id
+            ?: ($draft['step1']['environment_project_id'] ?? 1)));
+
+        $proj = EnvironmentProject::find($projId);
+        $projCode = preg_replace('/[^a-zA-Z0-9_-]/', '_', (string) ($proj?->project_code ?: 'ENV-GENERAL'));
+        $projCode = trim($projCode, '_') ?: 'ENV-GENERAL';
+
+        $subDir = 'uploads/ec_certificates/' . $projCode;
+        $destPath = public_path($subDir);
+        File::ensureDirectoryExists($destPath, 0755, true);
+
+        $oldFilePath = $cert?->certificate_file ?: ($draft['step2']['file_path'] ?? null);
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $refId = $certId ?? ($upload->reference_id ?? $projId);
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'ec_certificates', $refId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            // Unlink old file if different
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+                if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+                if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fileSize = $upload->total_size;
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+            $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+            if ($cert) {
+                $cert->update(['certificate_file' => $filePath]);
+            }
+
+            $draft['step2'] = [
+                'file_path'   => $filePath,
+                'file_name'   => $fileName,
+                'file_size'   => $fileSize,
+                'uploaded_at' => now()->toDateTimeString(),
+            ];
+            session(['ec_wizard' => $draft, 'ec_certificate_wizard.step2' => $draft['step2']]);
+
+            return response()->json([
+                'status'    => 1,
+                'success'   => true,
+                'message'   => $fileName . ' uploaded & attached successfully',
+                'file_name' => $fileName,
+                'file_path' => $filePath,
+                'file_url'  => asset($filePath),
+                'file_size' => $formattedSize,
+                'is_zip'    => $isZip,
+                'doc_item'  => $request->input('doc_item', 'certificate'),
+                'cert_id'   => $cert?->id,
+            ]);
+        }
+
+        // Direct File Upload
+        $file = $request->file('file');
+        $origName = substr($file->getClientOriginalName(), 0, 255);
+        $fileSize = $file->getSize();
+        $ext = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+        $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+        $safeName = 'EC_' . time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
+        $file->move($destPath, $safeName);
+        $relPath = $subDir . '/' . $safeName;
+
+        // Unlink old file if different
+        if ($oldFilePath && $oldFilePath !== $relPath) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        if ($cert) {
+            $cert->update(['certificate_file' => $relPath]);
+        }
+
+        $draft['step2'] = [
+            'file_path'   => $relPath,
+            'file_name'   => $origName,
+            'file_size'   => $fileSize,
+            'uploaded_at' => now()->toDateTimeString(),
+        ];
+        session(['ec_wizard' => $draft, 'ec_certificate_wizard.step2' => $draft['step2']]);
+
+        return response()->json([
+            'status'    => 1,
+            'success'   => true,
+            'message'   => $origName . ' uploaded & attached successfully',
+            'file_name' => $origName,
+            'file_path' => $relPath,
+            'file_url'  => asset($relPath),
+            'file_size' => $formattedSize,
+            'is_zip'    => $isZip,
+            'doc_item'  => $request->input('doc_item', 'certificate'),
+            'cert_id'   => $cert?->id,
+        ]);
+    }
+
+    /**
+     * Remove EC Certificate file via AJAX with safe unlinking.
+     */
+    public function removeDocument(Request $request)
+    {
+        $certId = $request->input('certificate_id') ?: $request->input('id');
+        $cert = $certId ? EcCertificate::find($certId) : null;
+
+        $draft = session('ec_wizard', []);
+        $targetPath = $cert?->certificate_file ?: ($draft['step2']['file_path'] ?? null);
+
+        if ($targetPath) {
+            if (file_exists(public_path($targetPath))) @unlink(public_path($targetPath));
+            if (file_exists(public_path('storage/' . $targetPath))) @unlink(public_path('storage/' . $targetPath));
+            if (file_exists(storage_path('app/public/' . $targetPath))) @unlink(storage_path('app/public/' . $targetPath));
+        }
+
+        if ($cert) {
+            $cert->update(['certificate_file' => null]);
+        }
+
+        if (isset($draft['step2'])) {
+            unset($draft['step2']);
+            session(['ec_wizard' => $draft]);
+        }
+        session()->forget('ec_certificate_wizard.step2');
+
+        return response()->json([
+            'status'   => 1,
+            'success'  => true,
+            'message'  => 'EC Certificate document removed successfully.',
+            'doc_item' => $request->input('doc_item', 'certificate'),
+        ]);
     }
 }

@@ -20,6 +20,9 @@ use App\Models\ApplicationPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
 
 class MiningController extends Controller
 {
@@ -810,7 +813,7 @@ class MiningController extends Controller
      */
     public function Document(Request $request)
     {
-        $appId = $request->query('id');
+        $appId = $request->query('id') ?: ($request->route('id') ?: null);
         $folderId = $request->query('folder');
 
         if (!$appId) {
@@ -864,42 +867,330 @@ class MiningController extends Controller
     }
 
     /**
-     * Upload single document file against checklist item
+     * Upload single document file against checklist item (AJAX & Form supported) with safe unlinking.
      */
     public function uploadDocument(Request $request)
     {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
+
         $request->validate([
-            'mining_application_id' => 'required|exists:mining_applications,id',
-            'document_id' => 'required|exists:mining_documents,id',
-            'file' => 'required|file|max:25600|mimes:pdf,doc,docx,jpg,jpeg,png,kml,kmz,zip,dwg,dxf',
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
+            'upload_token'          => 'required_without:file|nullable|string',
+            'mining_application_id' => 'nullable|integer',
+            'application_id'        => 'nullable|integer',
+            'document_id'           => 'nullable|integer',
+            'doc_id'                => 'nullable|integer',
+            'field_id'              => 'nullable|integer',
+            'document_field_id'     => 'nullable|integer',
+            'folder_id'             => 'nullable|integer',
+            'document_name'         => 'nullable|string|max:255',
+            'doc_item'              => 'nullable',
         ]);
 
-        $doc = MiningDocument::findOrFail($request->document_id);
-        $app = MiningApplication::findOrFail($request->mining_application_id);
+        $appId = $request->input('mining_application_id') ?: $request->input('application_id');
+        $docId = $request->input('document_id') ?: $request->input('doc_id');
+        $fieldId = $request->input('field_id') ?: $request->input('document_field_id');
+        $folderId = $request->input('folder_id');
+        $docNameInput = $request->input('document_name');
+        $rawDocItem = $request->input('doc_item') ?? ($fieldId ?? $docId);
 
-        $file = $request->file('file');
-        $origName = $file->getClientOriginalName();
-        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
-        $subDir = 'uploads/mining/' . $app->application_no;
-        $destPath = public_path($subDir);
-
-        if (!file_exists($destPath)) {
-            mkdir($destPath, 0777, true);
+        $doc = null;
+        if ($docId) {
+            $doc = MiningDocument::find($docId);
+        } elseif ($appId && $fieldId) {
+            $doc = MiningDocument::where('mining_application_id', $appId)
+                ->where('document_field_id', $fieldId)
+                ->first();
+        } elseif ($appId && $docNameInput) {
+            $doc = MiningDocument::where('mining_application_id', $appId)
+                ->where(function ($q) use ($docNameInput) {
+                    $q->where('document_name', $docNameInput)
+                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                })
+                ->first();
         }
 
+        $app = null;
+        if ($appId) {
+            $app = MiningApplication::find($appId);
+        } elseif ($doc && $doc->mining_application_id) {
+            $app = MiningApplication::find($doc->mining_application_id);
+            $appId = $app?->id;
+        }
+
+        $appNo = $app ? $app->application_no : 'DRAFT_' . time();
+        $subDir = 'uploads/mining/' . $appNo;
+        $destPath = public_path($subDir);
+        File::ensureDirectoryExists($destPath, 0777, true);
+
+        $oldFilePath = $doc?->file_path;
+        $sessionDocs = session('mining_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem !== null && $rawDocItem !== '' ? (string)$rawDocItem : ($docNameInput ?? ('field_' . $fieldId));
+        if (!$oldFilePath && isset($sessionDocs[$docItemKey]['file_path'])) {
+            $oldFilePath = $sessionDocs[$docItemKey]['file_path'];
+        }
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $appId = $appId ?? $upload->reference_id;
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'mining', $appId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            // Unlink old file if different
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+                if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+                if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fileSize = $upload->total_size;
+            $docName = $docNameInput ?: ($doc?->document_name ?: ($upload->metadata['document_name'] ?? $fileName));
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+            $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+            if ($doc) {
+                $doc->update([
+                    'file_name'   => $fileName,
+                    'file_path'   => $filePath,
+                    'file_type'   => $ext,
+                    'file_size'   => $fileSize,
+                    'status'      => 'uploaded',
+                    'uploaded_by' => Auth::id() ?? 1,
+                    'uploaded_at' => now(),
+                ]);
+            } elseif ($app) {
+                $doc = MiningDocument::create([
+                    'mining_application_id' => $app->id,
+                    'folder_id'             => $folderId ?? 1,
+                    'document_field_id'     => $fieldId,
+                    'document_name'         => $docName,
+                    'file_name'             => $fileName,
+                    'file_path'             => $filePath,
+                    'file_type'             => $ext,
+                    'file_size'             => $fileSize,
+                    'status'                => 'uploaded',
+                    'uploaded_by'           => Auth::id() ?? 1,
+                    'uploaded_at'           => now(),
+                ]);
+            }
+
+            $sessionDocs[$docItemKey] = [
+                'doc_item'        => $docItemKey,
+                'doc_id'          => $doc?->id,
+                'field_id'        => $fieldId,
+                'folder_id'       => $folderId,
+                'document_name'   => $docName,
+                'file_name'       => $fileName,
+                'file_path'       => $filePath,
+                'file_url'        => asset($filePath),
+                'file_size'       => $formattedSize,
+                'file_size_bytes' => $fileSize,
+                'is_zip'          => $isZip,
+                'uploaded_at'     => now()->toDateTimeString(),
+            ];
+            session(['mining_wizard.uploaded_docs' => $sessionDocs]);
+
+            if ($request->filled('_form_redirect')) {
+                return back()->with('success', 'Document "' . $docName . '" uploaded successfully!');
+            }
+
+            return response()->json([
+                'status'        => 1,
+                'success'       => true,
+                'message'       => $fileName . ' uploaded & saved successfully',
+                'doc_id'        => $doc?->id,
+                'doc_item'      => $docItemKey,
+                'field_id'      => $fieldId,
+                'folder_id'     => $folderId,
+                'document_name' => $docName,
+                'file_name'     => $fileName,
+                'file_path'     => $filePath,
+                'file_url'      => asset($filePath),
+                'file_size'     => $formattedSize,
+                'is_zip'        => $isZip,
+            ]);
+        }
+
+        // Direct File Upload
+        $file = $request->file('file');
+        $origName = substr($file->getClientOriginalName(), 0, 255);
+        $fileSize = $file->getSize();
+        $ext = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+        $docName = $docNameInput ?: ($doc?->document_name ?: $origName);
+        $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
         $file->move($destPath, $safeName);
+        $relPath = $subDir . '/' . $safeName;
 
-        $doc->update([
-            'file_name' => $origName,
-            'file_path' => $subDir . '/' . $safeName,
-            'file_type' => $file->getClientOriginalExtension(),
-            'file_size' => filesize($destPath . '/' . $safeName),
-            'status' => 'uploaded',
-            'uploaded_by' => Auth::id(),
-            'uploaded_at' => now(),
+        // Unlink old file if different
+        if ($oldFilePath && $oldFilePath !== $relPath) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        if ($doc) {
+            $doc->update([
+                'file_name'   => $origName,
+                'file_path'   => $relPath,
+                'file_type'   => $ext,
+                'file_size'   => $fileSize,
+                'status'      => 'uploaded',
+                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_at' => now(),
+            ]);
+        } elseif ($app) {
+            $doc = MiningDocument::create([
+                'mining_application_id' => $app->id,
+                'folder_id'             => $folderId ?? 1,
+                'document_field_id'     => $fieldId,
+                'document_name'         => $docName,
+                'file_name'             => $origName,
+                'file_path'             => $relPath,
+                'file_type'             => $ext,
+                'file_size'             => $fileSize,
+                'status'                => 'uploaded',
+                'uploaded_by'           => Auth::id() ?? 1,
+                'uploaded_at'           => now(),
+            ]);
+        }
+
+        $sessionDocs[$docItemKey] = [
+            'doc_item'        => $docItemKey,
+            'doc_id'          => $doc?->id,
+            'field_id'        => $fieldId,
+            'folder_id'       => $folderId,
+            'document_name'   => $docName,
+            'file_name'       => $origName,
+            'file_path'       => $relPath,
+            'file_url'        => asset($relPath),
+            'file_size'       => $formattedSize,
+            'file_size_bytes' => $fileSize,
+            'is_zip'          => $isZip,
+            'uploaded_at'     => now()->toDateTimeString(),
+        ];
+        session(['mining_wizard.uploaded_docs' => $sessionDocs]);
+
+        if ($request->filled('_form_redirect')) {
+            return back()->with('success', 'Document "' . $docName . '" uploaded successfully!');
+        }
+
+        return response()->json([
+            'status'        => 1,
+            'success'       => true,
+            'message'       => $origName . ' uploaded & saved successfully',
+            'doc_id'        => $doc?->id,
+            'doc_item'      => $docItemKey,
+            'field_id'      => $fieldId,
+            'folder_id'     => $folderId,
+            'document_name' => $docName,
+            'file_name'     => $origName,
+            'file_path'     => $relPath,
+            'file_url'      => asset($relPath),
+            'file_size'     => $formattedSize,
+            'is_zip'        => $isZip,
         ]);
+    }
 
-        return back()->with('success', 'Document "' . $doc->document_name . '" uploaded successfully!');
+    /**
+     * Remove single document file (AJAX & Form supported) with safe unlinking.
+     */
+    public function removeDocument(Request $request)
+    {
+        $appId = $request->input('mining_application_id') ?: $request->input('application_id');
+        $docId = $request->input('document_id') ?: $request->input('doc_id');
+        $fieldId = $request->input('field_id') ?: $request->input('document_field_id');
+        $docNameInput = $request->input('document_name');
+        $rawDocItem = $request->input('doc_item') ?? ($fieldId ?? $docId);
+
+        $doc = null;
+        if ($docId) {
+            $doc = MiningDocument::find($docId);
+        } elseif ($appId && $fieldId) {
+            $doc = MiningDocument::where('mining_application_id', $appId)
+                ->where('document_field_id', $fieldId)
+                ->first();
+        } elseif ($appId && $docNameInput) {
+            $doc = MiningDocument::where('mining_application_id', $appId)
+                ->where('document_name', $docNameInput)
+                ->first();
+        }
+
+        if ($doc) {
+            $path = $doc->file_path;
+            if ($path) {
+                if (file_exists(public_path($path))) @unlink(public_path($path));
+                if (file_exists(public_path('storage/' . $path))) @unlink(public_path('storage/' . $path));
+                if (file_exists(storage_path('app/public/' . $path))) @unlink(storage_path('app/public/' . $path));
+            }
+
+            $doc->update([
+                'file_name'   => null,
+                'file_path'   => null,
+                'file_type'   => null,
+                'file_size'   => null,
+                'status'      => 'pending',
+                'uploaded_by' => null,
+                'uploaded_at' => null,
+            ]);
+        }
+
+        // Clean session draft
+        $sessionDocs = session('mining_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem !== null && $rawDocItem !== '' ? (string)$rawDocItem : ($docNameInput ?? ('field_' . $fieldId));
+        if (isset($sessionDocs[$docItemKey])) {
+            $draftPath = $sessionDocs[$docItemKey]['file_path'] ?? null;
+            if ($draftPath) {
+                if (file_exists(public_path($draftPath))) @unlink(public_path($draftPath));
+                if (file_exists(public_path('storage/' . $draftPath))) @unlink(public_path('storage/' . $draftPath));
+                if (file_exists(storage_path('app/public/' . $draftPath))) @unlink(storage_path('app/public/' . $draftPath));
+            }
+            unset($sessionDocs[$docItemKey]);
+            session(['mining_wizard.uploaded_docs' => $sessionDocs]);
+        }
+
+        if ($request->filled('_form_redirect')) {
+            return back()->with('success', 'Document removed successfully.');
+        }
+
+        return response()->json([
+            'status'   => 1,
+            'success'  => true,
+            'message'  => 'Document removed successfully.',
+            'doc_id'   => $doc?->id,
+            'doc_item' => $docItemKey,
+            'field_id' => $fieldId,
+        ]);
     }
 
     /**

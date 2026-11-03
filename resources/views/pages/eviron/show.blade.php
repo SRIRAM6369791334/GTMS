@@ -1200,6 +1200,10 @@ body[data-theme-version="dark"] .table-admin .doc-name {
                 @forelse($docs as $dIdx => $doc)
                 @php
                   $isMandatory = $doc->documentField ? (bool)$doc->documentField->required : false;
+                  $hasFile = !empty($doc->file_path);
+                  $isZip = $hasFile && (str_ends_with(strtolower($doc->file_path), '.zip') || str_ends_with(strtolower($doc->file_name ?? ''), '.zip'));
+                  $fileUrl = $hasFile ? asset('storage/' . $doc->file_path) : '';
+                  $fileSizeFormatted = $hasFile && $doc->file_size ? (is_numeric($doc->file_size) ? number_format($doc->file_size / 1024, 1) . ' KB' : $doc->file_size) : '';
                   $statusBadgeClass = match($doc->status) {
                     'approved'          => 'bg-success text-white',
                     'validated'         => 'bg-info text-white',
@@ -1208,7 +1212,13 @@ body[data-theme-version="dark"] .table-admin .doc-name {
                     default             => 'bg-secondary text-white',
                   };
                 @endphp
-                <tr class="enviro-doc-row" data-mandatory="{{ $isMandatory ? '1' : '0' }}">
+                <tr class="enviro-doc-row"
+                    data-mandatory="{{ $isMandatory ? '1' : '0' }}"
+                    data-doc-id="{{ $doc->id }}"
+                    data-project-id="{{ $project->id }}"
+                    data-doc-name="{{ $doc->document_name }}"
+                    data-upload-url="{{ route('eviron.documents.upload', [$project->id, $doc->id]) }}"
+                    data-remove-url="{{ route('eviron.documents.remove', [$project->id, $doc->id]) }}">
                   <td class="text-center text-muted small fw-bold">{{ $dIdx + 1 }}</td>
                   <td>
                     <span class="row-mod-dot" style="background:{{ $fPalette[0] }};"></span>
@@ -1218,6 +1228,10 @@ body[data-theme-version="dark"] .table-admin .doc-name {
                         <i class="fa fa-info-circle me-1"></i> {{ $doc->review_note }}
                       </div>
                     @endif
+                    <input type="file" class="row-file-input d-none"
+                           data-doc-id="{{ $doc->id }}"
+                           data-action="{{ route('eviron.documents.upload', [$project->id, $doc->id]) }}"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.kml,.zip">
                   </td>
                   <td class="text-center">
                     <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center mx-auto {{ $isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
@@ -1227,56 +1241,79 @@ body[data-theme-version="dark"] .table-admin .doc-name {
                       <option value="optional" {{ !$isMandatory ? 'selected' : '' }}>Optional</option>
                     </select>
                   </td>
-                  <td class="text-center">
-                    <span class="badge {{ $statusBadgeClass }}" style="font-size:0.75rem; font-weight:600; padding:0.35rem 0.65rem;">
+                  <td class="text-center col-status-cell">
+                    <span class="badge {{ $statusBadgeClass }} status-badge" style="font-size:0.75rem; font-weight:600; padding:0.35rem 0.65rem;">
                       {{ ucfirst(str_replace('_', ' ', $doc->status)) }}
                     </span>
                   </td>
-                  <td>
-                    @if($doc->file_path)
-                      <a href="{{ route('eviron.documents.download', $doc->id) }}" class="text-primary font-w600">
-                        <i class="fa fa-download me-1"></i> {{ Str::limit($doc->file_name ?: 'Download', 28) }}
-                      </a>
-                    @else
-                      <span class="text-muted small">— Not uploaded —</span>
-                    @endif
+                  <td class="col-file-cell">
+                    <div class="file-cell-wrapper">
+                      @if($hasFile)
+                        <div class="d-flex align-items-center gap-1">
+                          @if($isZip)
+                            <span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 doc-file-badge">
+                              <i class="fa fa-file-zipper"></i>
+                              <span class="file-name-text">{{ Str::limit($doc->file_name ?: 'Archive.zip', 24) }}</span>
+                              @if($fileSizeFormatted)<small class="opacity-75">({{ $fileSizeFormatted }})</small>@endif
+                            </span>
+                          @else
+                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1 py-1 px-2 doc-file-badge">
+                              <i class="fa fa-circle-check text-success"></i>
+                              <span class="file-name-text">{{ Str::limit($doc->file_name ?: 'Document', 24) }}</span>
+                              @if($fileSizeFormatted)<small class="text-muted">({{ $fileSizeFormatted }})</small>@endif
+                            </span>
+                          @endif
+                          <a href="{{ route('eviron.documents.download', $doc->id) }}" class="btn-action-icon ms-1 btn-download-file" title="Download File" style="background:#f8fafc; color:#3b82f6; border-color:#cbd5e1; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;">
+                            <i class="fa fa-download" style="font-size:0.75rem;"></i>
+                          </a>
+                        </div>
+                      @else
+                        <span class="text-muted small file-empty-placeholder">— Not uploaded —</span>
+                      @endif
+                    </div>
                   </td>
-                  <td class="small text-muted">
+                  <td class="small text-muted col-uploaded-at">
                     {{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : '—' }}
                   </td>
                   <td class="text-end">
                     <div class="table-action-group">
-                      {{-- In-Modal Preview Button & External Tab Link --}}
-                      @if($doc->file_path)
-                      <button type="button" class="btn-action-icon btn-preview-doc" style="background:#eff6ff; color:#0284c7; border-color:#bae6fd;"
-                         data-file-url="{{ asset('storage/' . $doc->file_path) }}"
+                      {{-- Unified View Button wired to GtmsOpenWith --}}
+                      <a href="{{ $fileUrl ?: '#' }}"
+                         class="btn-action-icon btn-view-item {{ $hasFile ? '' : 'd-none' }}"
+                         style="background:#eff6ff; color:#0284c7; border-color:#bae6fd;"
+                         data-file-url="{{ $fileUrl }}"
                          data-file-name="{{ $doc->file_name ?: $doc->document_name }}"
-                         data-file-ext="{{ strtolower(pathinfo($doc->file_path, PATHINFO_EXTENSION)) }}"
-                         title="Preview Document">
+                         data-file-size="{{ $fileSizeFormatted }}"
+                         data-doc-name="{{ $doc->document_name }}"
+                         data-is-zip="{{ $isZip ? '1' : '0' }}"
+                         title="View Document">
                         <i class="fa fa-eye"></i>
-                      </button>
-                      <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" rel="noopener noreferrer"
-                         class="btn-action-icon" style="background:#f8fafc; color:#64748b; border-color:#cbd5e1;"
-                         title="Open in separate tab">
-                        <i class="fa fa-external-link-alt"></i>
                       </a>
-                      @endif
 
-                      {{-- Upload Button (triggers shared modal) --}}
+                      {{-- Direct In-Place Re-upload / Upload Button --}}
                       @canany(['environment.b2.upload', 'environment.create', 'environment.edit'])
-                      <button type="button" class="btn-action-icon" style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"
-                              data-bs-toggle="modal" data-bs-target="#modalUploadDoc"
+                      <button type="button" class="btn-action-icon btn-upload-item"
+                              style="background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe;"
+                              title="{{ $hasFile ? 'Re-upload File' : 'Upload File' }}">
+                        <i class="fa {{ $hasFile ? 'fa-rotate' : 'fa-upload' }}"></i>
+                      </button>
+                      @endcanany
+
+                      {{-- Direct In-Place Remove Button --}}
+                      @canany(['environment.b2.upload', 'environment.create', 'environment.edit'])
+                      <button type="button" class="btn-action-icon btn-remove-item {{ $hasFile ? '' : 'd-none' }}"
+                              style="background:#fef2f2; color:#b91c1c; border-color:#fecaca;"
+                              data-remove-url="{{ route('eviron.documents.remove', [$project->id, $doc->id]) }}"
                               data-doc-name="{{ $doc->document_name }}"
-                              data-action="{{ route('eviron.documents.upload', [$project->id, $doc->id]) }}"
-                              title="Upload File">
-                        <i class="fa fa-upload"></i>
+                              title="Remove File">
+                        <i class="fa fa-trash"></i>
                       </button>
                       @endcanany
 
                       {{-- Review Button (triggers shared modal) --}}
                       @canany(['environment.b2.review', 'environment.edit'])
-                      @if($doc->file_path)
-                      <button type="button" class="btn-action-icon" style="background:#ecfdf5; color:#15803d; border-color:#86efac;"
+                      <button type="button" class="btn-action-icon btn-review-doc {{ $hasFile ? '' : 'd-none' }}"
+                              style="background:#ecfdf5; color:#15803d; border-color:#86efac;"
                               data-bs-toggle="modal" data-bs-target="#modalReviewDoc"
                               data-doc-name="{{ $doc->document_name }}"
                               data-review-note="{{ $doc->review_note }}"
@@ -1284,7 +1321,6 @@ body[data-theme-version="dark"] .table-admin .doc-name {
                               title="Review Document">
                         <i class="fa fa-check"></i>
                       </button>
-                      @endif
                       @endcanany
                     </div>
                   </td>
@@ -2143,6 +2179,261 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
+});
+</script>
+
+<style>
+.enviro-doc-row.row-dragover {
+  background-color: #f0fdf4 !important;
+  outline: 2px dashed #16a34a !important;
+  outline-offset: -2px;
+}
+</style>
+<script>
+// Step 5 Interactive AJAX Upload, Drag & Drop, and Removal for Environmental B1 Dossier
+document.addEventListener('DOMContentLoaded', function() {
+  const CSRF_TOKEN = '{{ csrf_token() }}';
+
+  document.querySelectorAll('.enviro-doc-row').forEach(function(row) {
+    const fileInput = row.querySelector('.row-file-input');
+    const uploadBtn = row.querySelector('.btn-upload-item');
+    const removeBtn = row.querySelector('.btn-remove-item');
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          uploadEnviroRowFile(row, this.files[0]);
+        }
+      });
+    }
+
+    // Drag and Drop
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.add('row-dragover');
+      }, false);
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('row-dragover');
+      }, false);
+    });
+
+    row.addEventListener('drop', function(e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        uploadEnviroRowFile(row, dt.files[0]);
+      }
+    });
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        removeEnviroRowDocument(row);
+      });
+    }
+  });
+
+  function uploadEnviroRowFile(row, file) {
+    const uploadUrl = row.getAttribute('data-upload-url');
+    const docName = row.getAttribute('data-doc-name') || 'Document';
+    const uploadBtn = row.querySelector('.btn-upload-item');
+    const origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
+
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    }
+
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('file', file);
+    formData.append('document_name', docName);
+
+    fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Upload failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fa fa-rotate"></i>';
+        uploadBtn.title = 'Re-upload File';
+      }
+
+      if (data.status === 1 || data.success) {
+        const isZip = data.is_zip || (data.file_name && data.file_name.toLowerCase().endsWith('.zip'));
+        const fileCell = row.querySelector('.col-file-cell .file-cell-wrapper');
+        const sizeStr = data.file_size ? '(' + data.file_size + ')' : '';
+
+        if (fileCell) {
+          const badgeHtml = isZip
+            ? '<span class="badge bg-warning text-dark d-inline-flex align-items-center gap-1 py-1 px-2 doc-file-badge"><i class="fa fa-file-zipper"></i> <span class="file-name-text">' + (data.file_name || 'Archive.zip') + '</span> <small class="opacity-75">' + sizeStr + '</small></span>'
+            : '<span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1 py-1 px-2 doc-file-badge"><i class="fa fa-circle-check text-success"></i> <span class="file-name-text">' + (data.file_name || 'Document') + '</span> <small class="text-muted">' + sizeStr + '</small></span>';
+          const downloadBtnHtml = data.doc_id ? '<a href="/eviron/documents/' + data.doc_id + '/download" class="btn-action-icon ms-1 btn-download-file" title="Download File" style="background:#f8fafc; color:#3b82f6; border-color:#cbd5e1; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none;"><i class="fa fa-download" style="font-size:0.75rem;"></i></a>' : '';
+          fileCell.innerHTML = '<div class="d-flex align-items-center gap-1">' + badgeHtml + downloadBtnHtml + '</div>';
+        }
+
+        // Status badge
+        const statusBadge = row.querySelector('.col-status-cell .status-badge');
+        if (statusBadge) {
+          statusBadge.className = 'badge bg-primary text-white status-badge';
+          statusBadge.textContent = 'Uploaded';
+        }
+
+        // Uploaded at
+        const uploadedAtCell = row.querySelector('.col-uploaded-at');
+        if (uploadedAtCell) {
+          uploadedAtCell.textContent = 'Just now';
+        }
+
+        // View button
+        const viewBtn = row.querySelector('.btn-view-item');
+        if (viewBtn) {
+          viewBtn.classList.remove('d-none');
+          viewBtn.href = data.file_url || '#';
+          viewBtn.setAttribute('data-file-url', data.file_url || '');
+          viewBtn.setAttribute('data-file-name', data.file_name || '');
+          viewBtn.setAttribute('data-file-size', data.file_size || '');
+          viewBtn.setAttribute('data-doc-name', docName);
+          viewBtn.setAttribute('data-is-zip', isZip ? '1' : '0');
+        }
+
+        // Remove button
+        const removeBtn = row.querySelector('.btn-remove-item');
+        if (removeBtn) {
+          removeBtn.classList.remove('d-none');
+        }
+
+        // Review button
+        const reviewBtn = row.querySelector('.btn-review-doc');
+        if (reviewBtn) {
+          reviewBtn.classList.remove('d-none');
+        }
+
+        if (window.toastr) {
+          toastr.success('Document "' + (data.file_name || docName) + '" uploaded successfully!');
+        }
+      } else {
+        alert(data.message || 'Upload failed.');
+      }
+    })
+    .catch(function(err) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
+      }
+      alert('Upload error: ' + err.message);
+    });
+  }
+
+  function removeEnviroRowDocument(row) {
+    if (!confirm('Are you sure you want to remove this attached document?')) {
+      return;
+    }
+
+    const removeUrl = row.getAttribute('data-remove-url');
+    const docName = row.getAttribute('data-doc-name') || 'Document';
+    const removeBtn = row.querySelector('.btn-remove-item');
+    const origBtnHtml = removeBtn ? removeBtn.innerHTML : '';
+
+    if (removeBtn) {
+      removeBtn.disabled = true;
+      removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    }
+
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+
+    fetch(removeUrl, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Remove failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+        removeBtn.classList.add('d-none');
+      }
+
+      if (data.status === 1 || data.success) {
+        const fileInput = row.querySelector('.row-file-input');
+        if (fileInput) fileInput.value = '';
+
+        const fileCell = row.querySelector('.col-file-cell .file-cell-wrapper');
+        if (fileCell) {
+          fileCell.innerHTML = '<span class="text-muted small file-empty-placeholder">— Not uploaded —</span>';
+        }
+
+        const statusBadge = row.querySelector('.col-status-cell .status-badge');
+        if (statusBadge) {
+          statusBadge.className = 'badge bg-secondary text-white status-badge';
+          statusBadge.textContent = 'Pending';
+        }
+
+        const uploadedAtCell = row.querySelector('.col-uploaded-at');
+        if (uploadedAtCell) {
+          uploadedAtCell.textContent = '—';
+        }
+
+        const uploadBtn = row.querySelector('.btn-upload-item');
+        if (uploadBtn) {
+          uploadBtn.innerHTML = '<i class="fa fa-upload"></i>';
+          uploadBtn.title = 'Upload File';
+        }
+
+        const viewBtn = row.querySelector('.btn-view-item');
+        if (viewBtn) viewBtn.classList.add('d-none');
+        const reviewBtn = row.querySelector('.btn-review-doc');
+        if (reviewBtn) reviewBtn.classList.add('d-none');
+
+        if (window.toastr) {
+          toastr.success('Document "' + docName + '" removed successfully.');
+        }
+      } else {
+        alert(data.message || 'Remove failed.');
+      }
+    })
+    .catch(function(err) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+      }
+      alert('Remove error: ' + err.message);
+    });
+  }
 });
 </script>
 @endsection

@@ -313,3 +313,89 @@ Compile a bidirectional Traceability and Test Plan Matrix linking:
 - [ ] Master Markdown documentation saved to `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.md` (or artifact directory).
 - [ ] Interactive standalone HTML specification dossier saved to `docs/GTMS_100_PERCENT_CODEBASE_FUNCTION_CATALOG.html` for executive inspection.
 - [ ] Exhaustive test matrix detailing exact positive and negative test datasets for every identified form and function.
+
+
+## 2026-10-27T07:05:35Z
+
+Implement Step 5 upload parity (per-row reactive AJAX upload, live filename/size badges, View/Re-upload/Remove action controls, automatic old-file cleanup on disk, Drag & Drop, and Open With integration) across all remaining GTMS modules.
+
+Working directory: c:/xampp/htdocs/GTMS/gtms
+Integrity mode: development
+Requested team: Full autonomous multi-agent swarm
+
+## Modules in Scope
+1. **Drone Survey:** `resources/views/pages/drone_survey/wizard.blade.php`, `show.blade.php`, and `DroneSurveyController.php`
+2. **DGPS Survey:** `resources/views/pages/dgps_survey/wizard.blade.php`, `show.blade.php`, and `DgpsSurveyController.php`
+3. **Environment Clearance (B1 & B2):** `resources/views/pages/enviro_b2/wizard.blade.php`, `eviron/show.blade.php`, `EnverionsoneController.php`, and `EnvironmentalB2Controller.php`
+4. **EC Compliance Monitoring:** `resources/views/pages/ec_compliance/wizard.blade.php`, `show.blade.php`, and `EcComplianceController.php`
+5. **PPT Department:** `resources/views/pages/ppt_department/wizard.blade.php`, `show.blade.php`, and `PptDepartmentController.php`
+6. **Mining Portal:** `resources/views/pages/mining-portal/document.blade.php`, `newapplication.blade.php`, and `MiningController.php`
+7. **EC Certificate:** `resources/views/pages/ec_certificate/wizard.blade.php`, `show.blade.php`, and `EcCertificateController.php`
+
+## Requirements
+
+### R1. Step 5 Reactive Upload Parity
+In each in-scope module:
+- Implement per-row AJAX upload inputs so files upload asynchronously without full-page reloads.
+- Display instant reactive visual feedback: green checkmarks (or gold ZIP badge), exact original filename, and human-readable file size (KB/MB).
+- Provide the unified trio of compact action buttons on uploaded rows:
+  - **View (👁️):** Triggers `GtmsOpenWith.open(...)` with application-specific choices (Desktop software, Browser, Web Viewer).
+  - **Re-upload (🔄):** Triggers a file picker to seamlessly replace the existing document, automatically unlinking/deleting the previous file on the server disk (`@unlink(public_path($oldFilePath))`).
+  - **Remove (🗑️):** Clears the record and file, resetting the slot to an empty state.
+- Enable interactive Drag & Drop on every document slot/row.
+
+### R2. Non-Destructive Integration & Architectural Consistency
+- Maintain complete backwards compatibility with existing database schemas, foreign keys, routes, role permissions, and business rules.
+- Maintain documentation integrity and conform to the established GTMS Blade & JavaScript architecture.
+
+## Acceptance Criteria
+
+### Automated Verification
+- [ ] All existing test suites pass with zero regressions (`php artisan test tests/Feature/Step5FileUploadAndZipModalTest.php`).
+- [ ] Regression smoke check verifies that views render without PHP or syntax errors.
+
+### Functional Verification
+- [ ] In each module, selecting or dropping a file successfully uploads and dynamically updates the row's metadata and button states.
+- [ ] Re-uploading a file replaces the file in storage and updates database timestamps/sizes.
+- [ ] Clicking View on uploaded documents invokes the GTMS Open With modal.
+
+
+## 2026-10-27T12:36:37Z
+
+Implement a Universal Master Application ID and Bidirectional Pipeline Workflow with Audit Trail across GTMS, connecting Lease, Survey, Mining, Environment, and PPT departments without mixing departmental data.
+
+Working directory: c:/xampp/htdocs/GTMS/gtms
+Integrity mode: development
+Requested team: Full autonomous multi-agent swarm
+
+## Requirements
+
+### R1. Universal Master Application ID & Non-Destructive Linking
+- Generate a unique, formatted Universal Master Application ID (e.g. `GTMS-YYYY-XXXX`) upon project initiation.
+- Link all department records (Lease, DGPS, Drone, Mining, Environment B1/B2, PPT) under this Master ID.
+- Maintain strict compartmentalization: each department preserves its own dedicated application numbers (`LA-`, `MP-`, `DS-`, `ENV-`), independent document vaults, and separated payment records so data is never cross-contaminated.
+
+### R2. Bidirectional Pipeline Flow & Revert for Correction
+- Implement forward stage transitions (Lease → DGPS/Drone Survey → Mining Plan → Environment Clearance → PPT Presentation) with automatic data auto-fill (customer info, village, taluk, survey numbers, extent).
+- Implement a "Return for Correction" feature allowing downstream departments (such as PPT or EC) to return a file to an upstream department (such as Mining or Lease) with a mandatory mistake description, priority flag, and real-time notification alerts.
+
+### R3. Comprehensive Movement Timeline & Audit Trail
+- Record every forward and reverse movement in a dedicated pipeline movement log:
+  - Timestamp (date & exact time)
+  - From Department & To Department
+  - Action Type (`Forward_Transfer`, `Returned_For_Correction`, `Resubmitted_Fix`)
+  - Reason / Remarks / Rectification Notes
+  - Officer User ID & Name
+- Build a visual 360° Master Project Timeline Dashboard displaying the complete chronological journey and highlight any bottlenecks.
+
+## Acceptance Criteria
+
+### Automated Verification
+- [ ] Database migrations and models for Master Projects and Pipeline Movements execute cleanly with zero database integrity violations.
+- [ ] Automated feature test suite verifies forward transitions, return-for-correction with remarks, and immutable timeline logging.
+- [ ] All existing 91 tests across GTMS continue to pass with 0 regressions.
+
+### Functional & UI Verification
+- [ ] A Master Project record can be created or auto-generated from a Lease Application.
+- [ ] Returning a project from PPT/EC back to Mining/Lease generates an audit record and moves the active stage backward with a visible alert.
+- [ ] The 360° Project Timeline screen displays the chronological audit history with color-coded status badges and officer remarks.

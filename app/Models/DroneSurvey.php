@@ -39,6 +39,8 @@ class DroneSurvey extends Model
         'payment_status',
         'branch_id',
         'created_by',
+        'common_id',
+        'master_project_id',
     ];
 
     protected $casts = [
@@ -85,5 +87,10 @@ class DroneSurvey extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(DroneDocument::class);
+    }
+
+    public function masterProject(): BelongsTo
+    {
+        return $this->belongsTo(MasterProject::class, 'master_project_id');
     }
 }

@@ -378,31 +378,209 @@ class EnverionsoneController extends Controller
     }
 
     /**
-     * Upload a document for an eviron project.
+     * Upload a document for an eviron project (supports direct file, replacement unlinking, and AJAX).
      */
-    public function uploadDocument(Request $request, int $id, int $document)
+    public function uploadDocument(Request $request, $id = null, $document = null)
     {
-        $request->validate(['file' => 'required|file|max:25600']);
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
 
-        $doc     = EnvironmentDocument::where('environment_project_id', $id)->findOrFail($document);
-        $project = EnvironmentProject::findOrFail($id);
-
-        $file     = $request->file('file');
-        $dir      = "environment/{$project->project_code}";
-        $filename = time() . '_' . $file->getClientOriginalName();
-        $path     = $file->storeAs($dir, $filename, 'public');
-
-        $doc->update([
-            'file_name'   => $file->getClientOriginalName(),
-            'file_path'   => $path,
-            'file_type'   => $file->extension(),
-            'file_size'   => $file->getSize(),
-            'status'      => 'uploaded',
-            'uploaded_by' => Auth::id(),
-            'uploaded_at' => now(),
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
+            'project_id'             => 'nullable',
+            'environment_project_id' => 'nullable',
+            'document_id'            => 'nullable',
+            'doc_id'                 => 'nullable',
+            'doc_item'               => 'nullable',
+            'folder_id'              => 'nullable|integer',
+            'document_name'          => 'nullable|string|max:255',
         ]);
 
-        return back()->with('success', "'{$doc->document_name}' uploaded successfully.");
+        $projectId = $id ?: ($request->input('project_id') ?: $request->input('environment_project_id'));
+        $docId = $document ?: ($request->input('doc_id') ?: ($request->input('document_id') ?: $request->input('doc_item')));
+        $docNameInput = $request->input('document_name');
+
+        $project = $projectId ? EnvironmentProject::find($projectId) : null;
+
+        $doc = null;
+        if ($docId && is_numeric($docId)) {
+            $doc = EnvironmentDocument::find($docId);
+        }
+        if (!$doc && $project && $docNameInput) {
+            $doc = EnvironmentDocument::where('environment_project_id', $project->id)
+                ->where(function ($q) use ($docNameInput) {
+                    $q->where('document_name', $docNameInput)
+                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                })->first();
+        }
+
+        if (!$doc && $project) {
+            $doc = EnvironmentDocument::create([
+                'environment_project_id' => $project->id,
+                'folder_id'              => $request->input('folder_id') ?: 1,
+                'document_field_id'      => null,
+                'document_name'          => $docNameInput ?: ($request->file('file') ? $request->file('file')->getClientOriginalName() : 'Document'),
+                'status'                 => 'pending',
+            ]);
+        }
+
+        $oldFilePath = $doc?->file_path;
+        $sessionDocs = session('enviro_b1_wizard.uploaded_docs', []);
+        $docItemKey = $request->input('doc_item') ?? ($doc?->id ?? ($docNameInput ?? 'doc_0'));
+        if (!$oldFilePath && isset($sessionDocs[$docItemKey]['file_path'])) {
+            $oldFilePath = $sessionDocs[$docItemKey]['file_path'];
+        }
+
+        $file     = $request->file('file');
+        $origName = $file->getClientOriginalName();
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
+        $projectCode = $project?->project_code ?: 'B1_General';
+        $dir      = "environment/{$projectCode}";
+        $path     = $file->storeAs($dir, $safeName, 'public');
+
+        // Unlink old file if different and exists
+        if ($oldFilePath && $oldFilePath !== $path) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        $fileSize = $file->getSize();
+        $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+        $ext = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+
+        if ($doc) {
+            $doc->update([
+                'file_name'   => substr($origName, 0, 255),
+                'file_path'   => $path,
+                'file_type'   => $ext,
+                'file_size'   => $fileSize,
+                'status'      => 'uploaded',
+                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_at' => now(),
+            ]);
+        }
+
+        $sessionDocs[$docItemKey] = [
+            'doc_item'        => $docItemKey,
+            'doc_id'          => $doc?->id,
+            'doc_name'        => $doc?->document_name ?? $origName,
+            'file_name'       => $origName,
+            'file_path'       => $path,
+            'file_url'        => asset('storage/' . $path),
+            'file_size'       => $formattedSize,
+            'file_size_bytes' => $fileSize,
+            'is_zip'          => $isZip,
+            'uploaded_at'     => now()->format('d M Y, h:i A'),
+        ];
+        session(['enviro_b1_wizard.uploaded_docs' => $sessionDocs]);
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson() || $request->is('enviro_b1/*') || $request->is('enviro-b1/*') || $request->is('eviron/documents/*')) {
+            return response()->json([
+                'status'       => 1,
+                'success'      => true,
+                'message'      => "'" . ($doc?->document_name ?? $origName) . "' uploaded successfully.",
+                'doc_id'       => $doc?->id,
+                'doc_item'     => $docItemKey,
+                'file_name'    => $origName,
+                'file_path'    => $path,
+                'file_url'     => asset('storage/' . $path),
+                'file_size'    => $formattedSize,
+                'size_bytes'   => $fileSize,
+                'is_zip'       => $isZip,
+            ]);
+        }
+
+        return back()->with('success', "'" . ($doc?->document_name ?? $origName) . "' uploaded successfully.");
+    }
+
+    /**
+     * Remove an uploaded document for an environment project.
+     */
+    public function removeDocument(Request $request, $id = null, $document = null)
+    {
+        $projectId = $id ?: ($request->input('project_id') ?: $request->input('environment_project_id'));
+        $docId = $document ?: ($request->input('doc_id') ?: ($request->input('document_id') ?: $request->input('doc_item')));
+        $docNameInput = $request->input('document_name');
+
+        $doc = null;
+        if ($docId && is_numeric($docId)) {
+            $doc = EnvironmentDocument::find($docId);
+        }
+        if (!$doc && $projectId && $docNameInput) {
+            $doc = EnvironmentDocument::where('environment_project_id', $projectId)
+                ->where(function ($q) use ($docNameInput) {
+                    $q->where('document_name', $docNameInput)
+                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                })->first();
+        }
+
+        if ($doc) {
+            $filePath = $doc->file_path;
+            if ($filePath) {
+                if (file_exists(public_path($filePath))) @unlink(public_path($filePath));
+                if (file_exists(public_path('storage/' . $filePath))) @unlink(public_path('storage/' . $filePath));
+                if (file_exists(storage_path('app/public/' . $filePath))) @unlink(storage_path('app/public/' . $filePath));
+            }
+
+            if ($doc->document_field_id) {
+                $doc->update([
+                    'file_name'   => null,
+                    'file_path'   => null,
+                    'file_type'   => null,
+                    'file_size'   => null,
+                    'status'      => 'pending',
+                    'uploaded_by' => null,
+                    'uploaded_at' => null,
+                ]);
+            } else {
+                $doc->delete();
+            }
+        }
+
+        $sessionDocs = session('enviro_b1_wizard.uploaded_docs', []);
+        $docItemKey = $request->input('doc_item') ?? $docId ?? $docNameInput;
+        if ($docItemKey && isset($sessionDocs[$docItemKey])) {
+            $sessionPath = $sessionDocs[$docItemKey]['file_path'] ?? null;
+            if ($sessionPath) {
+                if (file_exists(public_path($sessionPath))) @unlink(public_path($sessionPath));
+                if (file_exists(public_path('storage/' . $sessionPath))) @unlink(public_path('storage/' . $sessionPath));
+                if (file_exists(storage_path('app/public/' . $sessionPath))) @unlink(storage_path('app/public/' . $sessionPath));
+            }
+            unset($sessionDocs[$docItemKey]);
+            session(['enviro_b1_wizard.uploaded_docs' => $sessionDocs]);
+        }
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson() || $request->is('enviro_b1/*') || $request->is('enviro-b1/*') || $request->is('eviron/documents/*')) {
+            return response()->json([
+                'status'   => 1,
+                'success'  => true,
+                'message'  => 'Document removed successfully.',
+                'doc_id'   => $doc?->id ?? $docId,
+                'doc_item' => $docItemKey,
+            ]);
+        }
+
+        return back()->with('success', 'Document removed successfully.');
     }
 
     /**

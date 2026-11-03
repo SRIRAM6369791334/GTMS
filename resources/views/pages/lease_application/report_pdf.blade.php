@@ -947,7 +947,7 @@
         </div>
 
         <div class="grid-item">
-          <div class="label">Portal Security Password</div>
+          <div class="label">Portal Password</div>
           <div class="value font-mono" style="color: var(--tn-navy); letter-spacing: 0.5px;">
             {{ $mimas && !empty($mimas->password) ? $mimas->password : 'sriramsri@001' }}
           </div>

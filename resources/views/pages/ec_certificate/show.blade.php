@@ -31,6 +31,11 @@
   .ec-certificate-view-paper, .ec-certificate-view-paper * { visibility: visible; }
   .ec-certificate-view-paper { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
 }
+.ec-show-cert-card.row-dragover, .ec-show-dropzone.row-dragover {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+}
 </style>
 
 <div class="content-body default-height">
@@ -233,6 +238,78 @@
               </a>
             @else
               <div class="text-muted small">No direct environment project linked.</div>
+            @endif
+          </div>
+        </div>
+
+        {{-- Official Signed EC Certificate Dossier Card --}}
+        @php
+          $certFileExists = !empty($certificate->certificate_file);
+          $lowerCertPath = strtolower($certificate->certificate_file ?? '');
+          $isCertZip = str_ends_with($lowerCertPath, '.zip') || str_ends_with($lowerCertPath, '.rar') || str_ends_with($lowerCertPath, '.7z');
+          $certUrl = $certFileExists ? asset($certificate->certificate_file) : '';
+          $certFileName = basename($certificate->certificate_file ?? 'Certificate.pdf');
+        @endphp
+        <div class="card border-0 shadow-sm mb-4 ec-show-cert-card" id="ec_show_cert_card" data-cert-id="{{ $certificate->id }}" style="border-radius:12px;">
+          <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+            <h6 class="card-title mb-0 fw-bold" style="color:#0F1E4D;">
+              <i class="fa fa-file-contract text-primary me-2"></i> Official Signed Certificate Dossier
+            </h6>
+            @if($certFileExists)
+              <span class="badge {{ $isCertZip ? 'bg-warning text-dark' : 'bg-success-subtle text-success border border-success-subtle' }}">
+                <i class="bi {{ $isCertZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle' }} me-1"></i> {{ $isCertZip ? 'ZIP Archive' : 'Attached' }}
+              </span>
+            @else
+              <span class="badge bg-light text-muted border">Pending File</span>
+            @endif
+          </div>
+          <div class="card-body p-3">
+            <input type="file" class="d-none ec-show-file-input" accept=".pdf,.png,.jpg,.jpeg,.zip,.rar,.7z,.doc,.docx,.kml,.kmz,.dwg">
+
+            @if($certFileExists)
+              <div class="p-3 bg-light rounded d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-2.5 text-truncate">
+                  <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                       style="width:36px; height:36px; background:{{ $isCertZip ? '#fef3c7' : '#eff6ff' }}; color:{{ $isCertZip ? '#d97706' : '#2563eb' }};">
+                    <i class="bi {{ $isCertZip ? 'bi-file-earmark-zip-fill' : 'bi-file-earmark-pdf-fill' }}"></i>
+                  </div>
+                  <div class="text-truncate">
+                    <div class="fw-bold small text-dark text-truncate">{{ $certFileName }}</div>
+                    <div class="text-muted" style="font-size:11px;">
+                      @if($isCertZip)
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0 me-1" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP</span>
+                      @endif
+                      Official Signed Copy &bull; Verified
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-1 flex-shrink-0 ms-2">
+                  <button type="button" class="btn btn-sm btn-outline-info py-1 px-2 btn-view-item" 
+                          data-file-url="{{ $certUrl }}" 
+                          data-file-name="{{ $certFileName }}" 
+                          data-file-size="" 
+                          data-doc-name="Official Environmental Clearance Certificate" 
+                          data-is-zip="{{ $isCertZip ? '1' : '0' }}" 
+                          title="{{ $isCertZip ? 'Inspect / View ZIP archive' : 'View Document' }}">
+                    <i class="bi {{ $isCertZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i> View
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-ec-show-reupload" title="Change / Re-upload file">
+                    <i class="bi bi-arrow-repeat"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-ec-show-remove" title="Remove file">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                </div>
+              </div>
+            @else
+              <div class="p-3 border rounded text-center ec-show-dropzone" style="border-style:dashed !important; background:#f8fafc; border-color:#cbd5e1 !important; cursor:pointer;">
+                <i class="fa fa-cloud-arrow-up text-primary fa-2x mb-2"></i>
+                <div class="small fw-bold text-dark">Drag &amp; drop or click to upload signed certificate</div>
+                <div class="text-muted" style="font-size:11px;">PDF, ZIP, DOCX up to 25MB</div>
+                <button type="button" class="btn btn-sm btn-outline-navy mt-2 btn-ec-show-upload">
+                  <i class="bi bi-upload me-1"></i> Upload Certificate
+                </button>
+              </div>
             @endif
           </div>
         </div>
@@ -677,6 +754,151 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // EC Certificate Dossier Show: Upload, Drag & Drop, Re-upload, Remove, and View handlers
+  function uploadEcShowCertFile(file) {
+    if (!file) return;
+    const card = document.getElementById('ec_show_cert_card');
+    const certId = card ? card.dataset.certId : '{{ $certificate->id }}';
+
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('certificate_id', certId);
+    formData.append('document_type', 'certificate');
+    formData.append('file', file);
+
+    const btn = card ? card.querySelector('.btn-ec-show-upload, .btn-ec-show-reupload') : null;
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="spinner-border spinner-border-sm me-1"></i> Uploading...';
+    }
+
+    fetch('{{ route("ec-certificate.upload") }}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 1 || res.success) {
+        window.location.reload();
+      } else {
+        alert(res.message || 'Certificate upload failed');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-upload me-1"></i> Upload Certificate';
+        }
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Network error while uploading certificate.');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-upload me-1"></i> Upload Certificate';
+      }
+    });
+  }
+
+  // Drag & drop on dossier card & dropzone
+  const certCard = document.getElementById('ec_show_cert_card');
+  if (certCard) {
+    certCard.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('row-dragover');
+    });
+    certCard.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+    });
+    certCard.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadEcShowCertFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    // File input trigger
+    const certInput = certCard.querySelector('.ec-show-file-input');
+    certCard.addEventListener('click', function(e) {
+      if (e.target.closest('.btn-ec-show-upload, .btn-ec-show-reupload, .ec-show-dropzone')) {
+        if (certInput) certInput.click();
+      }
+    });
+
+    if (certInput) {
+      certInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          uploadEcShowCertFile(this.files[0]);
+        }
+      });
+    }
+
+    // Remove handler
+    const btnRemove = certCard.querySelector('.btn-ec-show-remove');
+    if (btnRemove) {
+      btnRemove.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to remove the certificate file?')) return;
+
+        btnRemove.disabled = true;
+        btnRemove.innerHTML = '<i class="spinner-border spinner-border-sm"></i>';
+
+        const formData = new FormData();
+        formData.append('_token', '{{ csrf_token() }}');
+        formData.append('certificate_id', '{{ $certificate->id }}');
+        formData.append('document_type', 'certificate');
+
+        fetch('{{ route("ec-certificate.remove") }}', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+        .then(r => r.json())
+        .then(res => {
+          if (res.status === 1 || res.success) {
+            window.location.reload();
+          } else {
+            alert(res.message || 'Failed to remove certificate file');
+            btnRemove.disabled = false;
+            btnRemove.innerHTML = '<i class="bi bi-trash3"></i>';
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Network error while removing certificate file');
+          btnRemove.disabled = false;
+          btnRemove.innerHTML = '<i class="bi bi-trash3"></i>';
+        });
+      });
+    }
+  }
+
+  // GtmsOpenWith viewer trigger
+  document.addEventListener('click', function(e) {
+    const viewBtn = e.target.closest('.btn-view-item');
+    if (viewBtn && typeof window.GtmsOpenWith !== 'undefined') {
+      e.preventDefault();
+      window.GtmsOpenWith.open({
+        url: viewBtn.dataset.fileUrl,
+        name: viewBtn.dataset.fileName,
+        size: viewBtn.dataset.fileSize,
+        docName: viewBtn.dataset.docName,
+        isZip: viewBtn.dataset.isZip === '1' || viewBtn.dataset.isZip === 1
+      });
+    }
+  });
 });
 </script>
 @endsection

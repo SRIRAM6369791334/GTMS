@@ -446,29 +446,81 @@ $stepTitles = [
             </div>
 
             @foreach($statutoryDocs as $dIdx => $dItem)
-              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+              @php
+                $upDoc = $uploadedDocs[$dIdx] ?? ($uploadedDocs['doc_' . $dIdx] ?? null);
+                $isUp = !empty($upDoc);
+                $fileName = $upDoc['file_name'] ?? '';
+                $fileSize = $upDoc['file_size'] ?? '';
+                $fileUrl = $upDoc['file_url'] ?? (isset($upDoc['file_path']) ? asset($upDoc['file_path']) : '');
+                $isZip = !empty($upDoc['is_zip']) || (str_ends_with(strtolower($fileName), '.zip') || str_ends_with(strtolower($fileName), '.rar') || str_ends_with(strtolower($fileName), '.7z'));
+              @endphp
+              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1 {{ $isUp ? 'up' : '' }}" 
+                   data-drone-row="{{ $dIdx }}" 
+                   data-doc-item="{{ $dIdx }}" 
+                   data-folder="1" 
+                   data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                 <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
-                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#eff6ff; color:#2563eb;">
-                    <i class="bi bi-file-earmark-text"></i>
+                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                       style="width:36px; height:36px; {{ $isUp ? ($isZip ? 'background:#fef3c7; color:#d97706;' : 'background:#dcfce7; color:#15803d;') : 'background:#eff6ff; color:#2563eb;' }}">
+                    @if($isUp)
+                      @if($isZip)
+                        <i class="bi bi-file-earmark-zip text-warning"></i>
+                      @else
+                        <i class="bi bi-check-lg" style="color:var(--green, #10b981);"></i>
+                      @endif
+                    @else
+                      <i class="bi bi-file-earmark-text"></i>
+                    @endif
                   </div>
                   <div class="text-truncate">
                     <div class="ci-name fw-semibold small text-dark text-truncate">
                       <span class="badge bg-light text-primary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
                       {{ $dItem['name'] }}
                     </div>
-                    <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
+                    <div class="ci-meta text-muted" style="font-size:11px;">
+                      @if($isUp)
+                        <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $fileName }}</span> &middot; {{ $fileSize }}
+                      @else
+                        {{ $dItem['meta'] }} &middot; Not uploaded
+                      @endif
+                    </div>
                   </div>
                 </div>
-                <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
+                <div class="d-flex align-items-center gap-1 ms-3 flex-shrink-0 action-slot">
                   <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
-                          name="drone_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                          name="drone_doc_req[{{ $dIdx }}]" data-doc-item="{{ $dIdx }}" style="font-size:0.75rem; width:100px; border-radius:6px;">
                     <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
                     <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
                   </select>
-                  <input type="file" class="d-none drone-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
-                  <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
-                    <i class="bi bi-upload me-1"></i>Upload
-                  </button>
+                  <input type="file" class="d-none drone-file-input row-file-input" data-row-idx="{{ $dIdx }}" data-doc-item="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf,.zip,.rar,.7z,.doc,.docx,.dwg,.mp4">
+                  @if($isUp)
+                    <span class="badge-status uploaded">Uploaded</span>
+                    <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" 
+                       class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-drone-item" 
+                       style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                       title="{{ $isZip ? 'Download / View ZIP Archive' : 'View Document' }}" 
+                       data-file-name="{{ $fileName }}" 
+                       data-file-size="{{ $fileSize }}" 
+                       data-doc-name="{{ $dItem['name'] }}" 
+                       data-is-zip="{{ $isZip ? '1' : '0' }}">
+                      <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item btn-upload-drone-item" 
+                            style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                            title="Change / Re-upload file">
+                      <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item" 
+                            style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                            data-doc-item="{{ $dIdx }}" 
+                            title="Remove this document">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  @else
+                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-item btn-upload-drone-item" style="font-size:.75rem;">
+                      <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                  @endif
                 </div>
               </div>
             @endforeach
@@ -487,30 +539,82 @@ $stepTitles = [
             </div>
 
             @foreach($deliverableDocs as $dIdxOffset => $dItem)
-              @php $dIdx = $dIdxOffset + 4; @endphp
-              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1" data-drone-row="{{ $dIdx }}" data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
+              @php 
+                $dIdx = $dIdxOffset + 4;
+                $upDoc = $uploadedDocs[$dIdx] ?? ($uploadedDocs['doc_' . $dIdx] ?? null);
+                $isUp = !empty($upDoc);
+                $fileName = $upDoc['file_name'] ?? '';
+                $fileSize = $upDoc['file_size'] ?? '';
+                $fileUrl = $upDoc['file_url'] ?? (isset($upDoc['file_path']) ? asset($upDoc['file_path']) : '');
+                $isZip = !empty($upDoc['is_zip']) || (str_ends_with(strtolower($fileName), '.zip') || str_ends_with(strtolower($fileName), '.rar') || str_ends_with(strtolower($fileName), '.7z'));
+              @endphp
+              <div class="checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1 {{ $isUp ? 'up' : '' }}" 
+                   data-drone-row="{{ $dIdx }}" 
+                   data-doc-item="{{ $dIdx }}" 
+                   data-folder="2" 
+                   data-mandatory="{{ $dItem['mandatory'] ? '1' : '0' }}">
                 <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
-                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#f1f5f9; color:#64748b;">
-                    <i class="bi bi-file-earmark-binary"></i>
+                  <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                       style="width:36px; height:36px; {{ $isUp ? ($isZip ? 'background:#fef3c7; color:#d97706;' : 'background:#dcfce7; color:#15803d;') : 'background:#f1f5f9; color:#64748b;' }}">
+                    @if($isUp)
+                      @if($isZip)
+                        <i class="bi bi-file-earmark-zip text-warning"></i>
+                      @else
+                        <i class="bi bi-check-lg" style="color:var(--green, #10b981);"></i>
+                      @endif
+                    @else
+                      <i class="bi bi-file-earmark-binary"></i>
+                    @endif
                   </div>
                   <div class="text-truncate">
                     <div class="ci-name fw-semibold small text-dark text-truncate">
                       <span class="badge bg-light text-primary border me-1" style="font-size:10px;">{{ $dItem['tag'] }}</span>
                       {{ $dItem['name'] }}
                     </div>
-                    <div class="ci-meta text-muted" style="font-size:11px;">{{ $dItem['meta'] }} &middot; Not uploaded</div>
+                    <div class="ci-meta text-muted" style="font-size:11px;">
+                      @if($isUp)
+                        <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $fileName }}</span> &middot; {{ $fileSize }}
+                      @else
+                        {{ $dItem['meta'] }} &middot; Not uploaded
+                      @endif
+                    </div>
                   </div>
                 </div>
-                <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
+                <div class="d-flex align-items-center gap-1 ms-3 flex-shrink-0 action-slot">
                   <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center {{ $dItem['mandatory'] ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
-                          name="drone_doc_req[{{ $dIdx }}]" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                          name="drone_doc_req[{{ $dIdx }}]" data-doc-item="{{ $dIdx }}" style="font-size:0.75rem; width:100px; border-radius:6px;">
                     <option value="mandatory" {{ $dItem['mandatory'] ? 'selected' : '' }}>Mandatory</option>
                     <option value="optional" {{ !$dItem['mandatory'] ? 'selected' : '' }}>Optional</option>
                   </select>
-                  <input type="file" class="d-none drone-file-input" data-row-idx="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
-                  <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
-                    <i class="bi bi-upload me-1"></i>Upload
-                  </button>
+                  <input type="file" class="d-none drone-file-input row-file-input" data-row-idx="{{ $dIdx }}" data-doc-item="{{ $dIdx }}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf,.zip,.rar,.7z,.doc,.docx,.dwg,.mp4">
+                  @if($isUp)
+                    <span class="badge-status uploaded">Uploaded</span>
+                    <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" 
+                       class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-drone-item" 
+                       style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                       title="{{ $isZip ? 'Download / View ZIP Archive' : 'View Document' }}" 
+                       data-file-name="{{ $fileName }}" 
+                       data-file-size="{{ $fileSize }}" 
+                       data-doc-name="{{ $dItem['name'] }}" 
+                       data-is-zip="{{ $isZip ? '1' : '0' }}">
+                      <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item btn-upload-drone-item" 
+                            style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                            title="Change / Re-upload file">
+                      <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item" 
+                            style="font-size:.78rem; height:26px; display:inline-flex; align-items:center; justify-content:center;" 
+                            data-doc-item="{{ $dIdx }}" 
+                            title="Remove this document">
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  @else
+                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-item btn-upload-drone-item" style="font-size:.75rem;">
+                      <i class="bi bi-upload me-1"></i>Upload
+                    </button>
+                  @endif
                 </div>
               </div>
             @endforeach
@@ -1371,83 +1475,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Step 3: Document Upload & View Handlers
-  document.addEventListener('click', function(e) {
-    const uploadBtn = e.target.closest('.btn-upload-drone-item');
-    if (uploadBtn) {
-      const row = uploadBtn.closest('.checklist-row');
-      const input = row.querySelector('.drone-file-input');
-      if (input) input.click();
-    }
-  });
-
-  document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('drone-file-input')) {
-      const input = e.target;
-      const row = input.closest('.checklist-row');
-      if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
-        row.classList.add('up');
-
-        const iconDiv = row.querySelector('.ci-icon');
-        if (iconDiv) {
-          iconDiv.style.background = '#dcfce7';
-          iconDiv.style.color = '#15803d';
-          iconDiv.innerHTML = '<i class="bi bi-check-lg"></i>';
-        }
-
-        const metaDiv = row.querySelector('.ci-meta');
-        if (metaDiv) {
-          const sizeKb = Math.round(file.size / 1024);
-          metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${file.name}</span> &middot; ${sizeKb} KB`;
-        }
-
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          let viewBtn = slot.querySelector('.btn-view-drone-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2.5 btn-view-drone-item me-1';
-            viewBtn.style.fontSize = '.75rem';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.title = 'View document';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-drone-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
-
-          const btnUpload = slot.querySelector('.btn-upload-drone-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2.5 btn-upload-drone-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
-        }
-
-        updateDroneDocProgress();
-
-        // Background server upload
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('document_name', row.querySelector('.ci-name')?.textContent.trim() || file.name);
-        formData.append('_token', '{{ csrf_token() }}');
-        fetch('{{ route('drone-survey.upload') }}', {
-          method: 'POST',
-          body: formData
-        }).then(r => r.json()).then(res => {
-          if (res.success && res.file_url) {
-            const liveView = row.querySelector('.btn-view-drone-item');
-            if (liveView) liveView.href = res.file_url;
-          }
-        }).catch(err => {
-          console.warn('Drone file server background upload warning:', err);
-        });
-      }
-    }
-  });
-
+  // Step 3: Document Upload & View Handlers (Step 5 Parity)
   function updateDroneDocProgress() {
     const total = document.querySelectorAll('#drone_checklist_container .checklist-row').length;
     const uploaded = document.querySelectorAll('#drone_checklist_container .checklist-row.up').length;
@@ -1457,6 +1485,332 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bar && total > 0) bar.style.width = `${Math.round((uploaded / total) * 100)}%`;
   }
 
+  function markRowUploaded(row, fileName, fileSize, fileUrl, isZip) {
+    row.classList.add('up');
+
+    // 1. Icon update
+    const iconDiv = row.querySelector('.ci-icon');
+    if (iconDiv) {
+      iconDiv.innerHTML = isZip 
+        ? '<i class="bi bi-file-earmark-zip text-warning"></i>' 
+        : '<i class="bi bi-check-lg" style="color:var(--green, #10b981);"></i>';
+      iconDiv.style.background = isZip ? '#fef3c7' : '#dcfce7';
+      iconDiv.style.color = isZip ? '#d97706' : '#15803d';
+    }
+
+    // 2. Metadata text update
+    const metaDiv = row.querySelector('.ci-meta');
+    if (metaDiv) {
+      metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${fileName}</span> &middot; ${fileSize}`;
+    }
+
+    // 3. Status badge & Action Trio
+    const slot = row.querySelector('.action-slot');
+    if (slot) {
+      let badge = slot.querySelector('.badge-status');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge-status uploaded';
+        badge.textContent = 'Uploaded';
+        const uploadBtn = slot.querySelector('.btn-upload-item, .btn-upload-drone-item');
+        slot.insertBefore(badge, uploadBtn);
+      }
+
+      // 4. View Button (caught by GtmsOpenWith)
+      let viewBtn = slot.querySelector('.btn-view-item, .btn-view-drone-item');
+      if (!viewBtn) {
+        viewBtn = document.createElement('a');
+        viewBtn.className = 'btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-drone-item';
+        viewBtn.style.fontSize = '.78rem';
+        viewBtn.style.height = '26px';
+        viewBtn.style.display = 'inline-flex';
+        viewBtn.style.alignItems = 'center';
+        viewBtn.style.justifyContent = 'center';
+        viewBtn.target = '_blank';
+        viewBtn.rel = 'noopener noreferrer';
+        const uploadBtn = slot.querySelector('.btn-upload-item, .btn-upload-drone-item');
+        slot.insertBefore(viewBtn, uploadBtn);
+      }
+      viewBtn.href = fileUrl;
+      viewBtn.title = isZip ? 'Download / View ZIP Archive' : 'View Document';
+      viewBtn.setAttribute('data-file-name', fileName);
+      viewBtn.setAttribute('data-file-size', fileSize);
+      viewBtn.setAttribute('data-doc-name', row.querySelector('.ci-name')?.textContent?.trim() || 'Drone Document');
+      viewBtn.setAttribute('data-is-zip', isZip ? '1' : '0');
+      viewBtn.innerHTML = isZip ? '<i class="bi bi-file-earmark-zip"></i>' : '<i class="bi bi-eye"></i>';
+
+      // 5. Change / Re-upload Button
+      const uploadBtn = slot.querySelector('.btn-upload-item, .btn-upload-drone-item');
+      if (uploadBtn) {
+        uploadBtn.className = 'btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item btn-upload-drone-item';
+        uploadBtn.style.fontSize = '.78rem';
+        uploadBtn.style.height = '26px';
+        uploadBtn.style.display = 'inline-flex';
+        uploadBtn.style.alignItems = 'center';
+        uploadBtn.style.justifyContent = 'center';
+        uploadBtn.title = 'Change / Re-upload file';
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+      }
+
+      // 6. Ensure exactly one Remove Button
+      const existingRemoveBtns = slot.querySelectorAll('.btn-remove-item');
+      for (let i = 1; i < existingRemoveBtns.length; i++) existingRemoveBtns[i].remove();
+      let removeBtn = existingRemoveBtns[0] || null;
+      if (!removeBtn) {
+        removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item';
+        removeBtn.style.fontSize = '.78rem';
+        removeBtn.style.height = '26px';
+        removeBtn.style.display = 'inline-flex';
+        removeBtn.style.alignItems = 'center';
+        removeBtn.style.justifyContent = 'center';
+        removeBtn.title = 'Remove this document';
+        removeBtn.setAttribute('data-doc-item', row.getAttribute('data-doc-item'));
+        removeBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+        slot.appendChild(removeBtn);
+      }
+    }
+
+    updateDroneDocProgress();
+  }
+
+  function markRowRemoved(row, isCustom) {
+    if (isCustom) {
+      row.style.transition = 'all 0.3s ease';
+      row.style.opacity = '0';
+      setTimeout(() => {
+        row.remove();
+        updateDroneDocProgress();
+      }, 300);
+      return;
+    }
+
+    row.classList.remove('up');
+
+    // Reset icon
+    const iconDiv = row.querySelector('.ci-icon');
+    if (iconDiv) {
+      iconDiv.innerHTML = '<i class="bi bi-file-earmark-text"></i>';
+      iconDiv.style.background = '#eff6ff';
+      iconDiv.style.color = '#2563eb';
+    }
+
+    // Reset metadata
+    const metaDiv = row.querySelector('.ci-meta');
+    if (metaDiv) {
+      metaDiv.innerHTML = 'Not uploaded';
+    }
+
+    // Remove badge, view button, and remove button
+    const badge = row.querySelector('.badge-status');
+    if (badge) badge.remove();
+
+    const viewBtn = row.querySelector('.btn-view-item, .btn-view-drone-item');
+    if (viewBtn) viewBtn.remove();
+
+    row.querySelectorAll('.btn-remove-item').forEach(b => b.remove());
+
+    // Restore Upload button
+    const uploadBtn = row.querySelector('.btn-upload-item, .btn-upload-drone-item');
+    if (uploadBtn) {
+      uploadBtn.className = 'btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-item btn-upload-drone-item';
+      uploadBtn.style.fontSize = '.75rem';
+      uploadBtn.style.height = '';
+      uploadBtn.title = 'Upload file';
+      uploadBtn.innerHTML = '<i class="bi bi-upload me-1"></i>Upload';
+    }
+
+    const fileInput = row.querySelector('.row-file-input, .drone-file-input');
+    if (fileInput) fileInput.value = '';
+
+    updateDroneDocProgress();
+  }
+
+  function uploadDroneFileToServer(row, file) {
+    if (!file) return;
+
+    const uploadBtn = row.querySelector('.btn-upload-item, .btn-upload-drone-item');
+    const originalHtml = uploadBtn ? uploadBtn.innerHTML : '';
+    if (uploadBtn) {
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>';
+      uploadBtn.disabled = true;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('doc_item', row.getAttribute('data-doc-item') || '');
+    formData.append('folder_id', row.getAttribute('data-folder') || '1');
+    formData.append('document_name', row.querySelector('.ci-name')?.textContent.trim() || file.name);
+    formData.append('_token', '{{ csrf_token() }}');
+
+    fetch('{{ route('drone-survey.upload') }}', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(res => {
+      if (!res.ok) {
+        return res.json().then(errData => { throw errData; });
+      }
+      return res.json();
+    })
+    .then(data => {
+      if (uploadBtn) uploadBtn.disabled = false;
+      if (data.status === 1 || data.success) {
+        markRowUploaded(row, data.file_name, data.file_size, data.file_url, data.is_zip);
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: data.file_name + ' uploaded successfully',
+            showConfirmButton: false,
+            timer: 2500
+          });
+        }
+      } else {
+        if (uploadBtn) uploadBtn.innerHTML = originalHtml;
+        alert(data.message || 'Upload failed');
+      }
+    })
+    .catch(err => {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalHtml;
+      }
+      let msg = 'Failed to upload document.';
+      if (err && err.errors && err.errors.file) {
+        msg = err.errors.file.join('\n');
+      } else if (err && err.message) {
+        msg = err.message;
+      }
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ icon: 'error', title: 'Upload Error', text: msg });
+      } else {
+        alert(msg);
+      }
+    });
+  }
+
+  function attachDroneRowDragAndDrop(row) {
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('row-dragover');
+    });
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadDroneFileToServer(this, e.dataTransfer.files[0]);
+      }
+    });
+  }
+
+  document.querySelectorAll('#drone_checklist_container .checklist-row').forEach(attachDroneRowDragAndDrop);
+
+  document.addEventListener('click', function(e) {
+    const uploadBtn = e.target.closest('.btn-upload-item, .btn-upload-drone-item');
+    if (uploadBtn && uploadBtn.closest('#gtms-drone-wizard')) {
+      const row = uploadBtn.closest('.checklist-row');
+      const input = row.querySelector('.drone-file-input, .row-file-input');
+      if (input) {
+        input.value = '';
+        input.click();
+      }
+    }
+
+    const removeBtn = e.target.closest('.btn-remove-item');
+    if (removeBtn && removeBtn.closest('#gtms-drone-wizard')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const row = removeBtn.closest('.checklist-row');
+      if (!row) return;
+
+      const docName = row.querySelector('.ci-name')?.textContent.trim() || 'Document';
+      const isCustom = row.hasAttribute('data-is-custom') && row.getAttribute('data-is-custom') === '1';
+
+      const executeRemoval = () => {
+        const formData = new FormData();
+        formData.append('doc_item', row.getAttribute('data-doc-item') || '');
+        formData.append('folder_id', row.getAttribute('data-folder') || '1');
+        formData.append('document_name', docName);
+        formData.append('_token', '{{ csrf_token() }}');
+
+        fetch('{{ route('drone-survey.remove') }}', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          },
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 1 || data.success) {
+            markRowRemoved(row, isCustom);
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'Document removed',
+                showConfirmButton: false,
+                timer: 2000
+              });
+            }
+          } else {
+            alert(data.message || 'Could not remove document');
+          }
+        })
+        .catch(err => {
+          console.error('Error removing document:', err);
+          alert('Server error while removing document');
+        });
+      };
+
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          title: 'Remove Document?',
+          text: 'Are you sure you want to remove ' + docName + '?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#64748b',
+          confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            executeRemoval();
+          }
+        });
+      } else {
+        if (confirm('Are you sure you want to remove ' + docName + '?')) {
+          executeRemoval();
+        }
+      }
+    }
+  });
+
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('drone-file-input') || e.target.classList.contains('row-file-input')) {
+      const input = e.target;
+      const row = input.closest('.checklist-row');
+      if (input.files && input.files[0] && row) {
+        uploadDroneFileToServer(row, input.files[0]);
+      }
+    }
+  });
+
   // Step 3: Add Custom Document button
   const btnAddDroneDoc = document.getElementById('btn_add_drone_doc');
   if (btnAddDroneDoc) {
@@ -1465,9 +1819,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!docName || !docName.trim()) return;
       const container = document.getElementById('drone_checklist_container');
       const count = container.querySelectorAll('.checklist-row').length + 1;
+      const customId = 'custom_' + Date.now();
       const row = document.createElement('div');
       row.className = 'checklist-row py-2.5 px-3 d-flex align-items-center justify-content-between border-bottom bg-white rounded-2 mb-1';
       row.setAttribute('data-mandatory', '0');
+      row.setAttribute('data-doc-item', customId);
+      row.setAttribute('data-folder', '2');
+      row.setAttribute('data-is-custom', '1');
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px; height:36px; background:#f1f5f9; color:#64748b;">
@@ -1481,19 +1839,25 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="ci-meta text-muted" style="font-size:11px;">Custom deliverable &middot; Not uploaded</div>
           </div>
         </div>
-        <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
+        <div class="d-flex align-items-center gap-1 ms-3 flex-shrink-0 action-slot">
           <select class="form-select form-select-sm doc-req-select py-1 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light"
-                  name="drone_custom_doc_req_${count}" style="font-size:0.75rem; width:110px; border-radius:6px;">
+                  name="drone_custom_doc_req_${count}" data-doc-item="${customId}" style="font-size:0.75rem; width:100px; border-radius:6px;">
             <option value="mandatory">Mandatory</option>
             <option value="optional" selected>Optional</option>
           </select>
-          <input type="file" class="d-none drone-file-input" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf">
-          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-drone-item" style="font-size:.75rem;">
+          <input type="file" class="d-none drone-file-input row-file-input" data-doc-item="${customId}" accept=".pdf,.csv,.xlsx,.kml,.kmz,.tif,.tiff,.jpg,.png,.las,.ply,.dxf,.zip,.rar,.7z,.doc,.docx,.dwg,.mp4">
+          <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2.5 btn-upload-item btn-upload-drone-item" style="font-size:.75rem;">
             <i class="bi bi-upload me-1"></i>Upload
           </button>
         </div>
       `;
       container.appendChild(row);
+      attachDroneRowDragAndDrop(row);
+      updateDroneDocProgress();
+    });
+  }
+
+  updateDroneDocProgress();
       updateDroneDocProgress();
       bindDroneDocReqListeners();
     });

@@ -249,6 +249,11 @@
   #gtms-dgps-dossier-page .deliverable-item:hover {
     background: var(--dossier-table-hover);
   }
+  #gtms-dgps-dossier-page .deliverable-item.row-dragover {
+    background: #e0f2fe !important;
+    outline: 2px dashed #0284c7 !important;
+    outline-offset: -2px;
+  }
 
   #gtms-dgps-dossier-page .doc-type-badge {
     font-size: 0.65rem;
@@ -407,7 +412,7 @@
               <i class="bi bi-folder-check"></i>
             </div>
           </div>
-          <div class="kpi-val">{{ $totalDocsCount }} / 6 Files</div>
+          <div class="kpi-val"><span id="dgps_show_kpi_count">{{ $totalDocsCount }}</span> / 6 Files</div>
           <div class="kpi-sub d-flex align-items-center gap-1">
             <i class="bi bi-check-all text-success"></i>
             <span>RINEX, KML, CAD &amp; Schedule</span>
@@ -583,7 +588,7 @@
               <i class="fa fa-satellite text-primary fs-5"></i>
               <h5 class="mb-0 fw-bold" style="color:var(--dossier-text-title); font-size:1rem;">6 Statutory DGPS Survey Deliverables</h5>
             </div>
-            <span class="badge bg-light text-navy border px-2 py-1" style="font-size:0.75rem;">
+            <span class="badge bg-light text-navy border px-2 py-1" id="dgps_show_badge_count" style="font-size:0.75rem;">
               {{ $totalDocsCount }} / 6 Attached
             </span>
           </div>
@@ -591,10 +596,28 @@
             @foreach($expectedDocs as $dName => $dMeta)
               @php
                 $matchDoc = $docs->firstWhere('document_name', $dName);
+                if (!$matchDoc) {
+                  $matchDoc = $docs->first(function($d) use ($dName) {
+                    return stripos($d->document_name, substr($dName, 3, 15)) !== false || stripos($dName, $d->document_name) !== false;
+                  });
+                }
+                $filePath = $matchDoc?->file_path;
+                $isPublic = $filePath ? str_starts_with($filePath, 'uploads/') : false;
+                $fileUrl = $filePath ? ($isPublic ? asset($filePath) : asset('storage/' . $filePath)) : '';
+                $origName = $filePath ? basename($filePath) : '';
+                $ext = $filePath ? strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) : '';
+                $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+                $docId = $matchDoc?->id ?? '';
               @endphp
-              <div class="deliverable-item">
+              <div class="deliverable-item {{ $matchDoc ? 'up' : '' }}"
+                   data-doc-name="{{ $dName }}"
+                   data-survey-id="{{ $survey->id }}"
+                   data-folder-id="1"
+                   data-doc-id="{{ $docId }}">
+                <input type="file" class="d-none dgps-row-file-input"
+                       accept="{{ $dMeta['ext'] }}">
                 <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate me-2">
-                  <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {{ $matchDoc ? 'bg-success text-white' : 'bg-light text-muted' }}" 
+                  <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {{ $matchDoc ? 'bg-success text-white' : 'bg-light text-muted' }}" 
                        style="width:36px; height:36px; border: 1px solid var(--dossier-card-border);">
                     <i class="bi {{ $matchDoc ? 'bi-check-lg' : 'bi-file-earmark-arrow-up' }}"></i>
                   </div>
@@ -603,27 +626,42 @@
                       <span class="doc-type-badge">{{ $dMeta['tag'] }}</span>
                       <strong class="text-truncate" style="color:var(--dossier-text-title); font-size:0.88rem;">{{ $dName }}</strong>
                     </div>
-                    <div class="text-muted text-truncate" style="font-size:0.78rem;">{{ $dMeta['sub'] }}</div>
+                    <div class="text-muted text-truncate ci-meta" style="font-size:0.78rem;">
+                      @if($matchDoc && $matchDoc->file_path)
+                        <span class="badge {{ $isZip ? 'bg-warning text-dark' : 'bg-success' }} d-inline-flex align-items-center gap-1 status-badge">
+                          <i class="bi {{ $isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill' }}"></i>
+                          <span class="badge-text">{{ $origName }}</span>
+                        </span>
+                      @else
+                        {{ $dMeta['sub'] }}
+                      @endif
+                    </div>
                   </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                  @if($matchDoc && $matchDoc->file_path)
-                    <a href="{{ asset('storage/' . $matchDoc->file_path) }}" target="_blank" rel="noopener noreferrer" 
-                       class="btn btn-sm btn-outline-info py-1 px-3" style="font-size:0.75rem;">
-                      <i class="bi bi-eye me-1"></i> View
+                <div class="d-flex align-items-center gap-2 flex-shrink-0 action-slot">
+                  <span class="badge bg-light text-muted border px-2 py-1 status-badge-pending" style="font-size:0.72rem; {{ $matchDoc ? 'display:none;' : '' }}">Pending</span>
+
+                  <div class="btn-group btn-group-sm action-trio">
+                    <a href="{{ $fileUrl ?: '#' }}" target="_blank" rel="noopener noreferrer" 
+                       class="btn btn-sm btn-outline-primary btn-view-item btn-view-dgps-item"
+                       style="{{ $matchDoc ? '' : 'display:none;' }}"
+                       data-file-url="{{ $fileUrl }}"
+                       data-file-name="{{ $origName }}"
+                       data-file-size=""
+                       data-doc-name="{{ $dName }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Document">
+                      <i class="bi bi-eye"></i> View
                     </a>
-                  @else
-                    <span class="badge bg-light text-primary border px-2 py-1" style="font-size:0.72rem;">Pending</span>
-                  @endif
-                  
-                  <label class="btn btn-sm btn-outline-secondary py-1 px-2 mb-0" style="font-size:0.75rem; cursor:pointer;" title="Upload or update this file">
-                    <i class="bi bi-upload me-1"></i>{{ $matchDoc ? 'Replace' : 'Upload' }}
-                    <input type="file" class="d-none dgps-upload-input" 
-                           data-survey-id="{{ $survey->id }}" 
-                           data-doc-name="{{ $dName }}" 
-                           accept="{{ $dMeta['ext'] }}">
-                  </label>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item btn-upload-dgps-item" title="{{ $matchDoc ? 'Re-upload file' : 'Upload file' }}">
+                      <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                      <span class="btn-upload-text">{{ $matchDoc ? 'Replace' : 'Upload' }}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-dgps-item" style="{{ $matchDoc ? '' : 'display:none;' }}" title="Remove file">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             @endforeach
@@ -787,51 +825,284 @@
   </div>
 </div>
 
-{{-- Interactive AJAX Upload Script for Statutory Deliverables --}}
+{{-- Interactive AJAX Upload & Remove Script for Statutory Deliverables --}}
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('.dgps-upload-input').forEach(function(input) {
-    input.addEventListener('change', function() {
-      if (!this.files || !this.files[0]) return;
-      
-      const file = this.files[0];
-      const surveyId = this.getAttribute('data-survey-id');
-      const docName = this.getAttribute('data-doc-name');
-      const label = this.closest('label');
-      const originalLabel = label.innerHTML;
-      
-      label.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Uploading...';
-      label.style.pointerEvents = 'none';
+  var CSRF_TOKEN = '{{ csrf_token() }}';
+  var UPLOAD_URL = '{{ route("dgps-survey.upload") }}';
+  var REMOVE_URL = '{{ route("dgps-survey.remove") }}';
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('survey_id', surveyId);
-      formData.append('document_name', docName);
-      formData.append('_token', '{{ csrf_token() }}');
+  function updateDgpsShowCounters() {
+    var rows = document.querySelectorAll('.deliverable-item');
+    var total = rows.length || 6;
+    var uploaded = 0;
+    rows.forEach(function(r) {
+      if (r.getAttribute('data-doc-id') || r.classList.contains('up')) {
+        uploaded++;
+      }
+    });
+    var kpiCount = document.getElementById('dgps_show_kpi_count');
+    var badgeCount = document.getElementById('dgps_show_badge_count');
+    if (kpiCount) kpiCount.textContent = uploaded;
+    if (badgeCount) badgeCount.textContent = uploaded + ' / ' + total + ' Attached';
+  }
 
-      fetch('{{ route("dgps-survey.upload") }}', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        },
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success' || data.success) {
-          window.location.reload();
-        } else {
-          alert('Upload completed. Refreshing page...');
-          window.location.reload();
+  function uploadDgpsShowFile(row, file) {
+    if (!file) return;
+
+    var surveyId = row.getAttribute('data-survey-id');
+    var docName = row.getAttribute('data-doc-name');
+    var folderId = row.getAttribute('data-folder-id') || '1';
+    var docId = row.getAttribute('data-doc-id') || '';
+
+    var uploadBtn = row.querySelector('.btn-upload-item');
+    var origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    }
+
+    var formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('survey_id', surveyId);
+    formData.append('document_name', docName);
+    formData.append('folder_id', folderId);
+    if (docId) formData.append('doc_id', docId);
+    formData.append('file', file);
+
+    fetch(UPLOAD_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Upload failed with status ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.title = 'Re-upload file';
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> <span class="btn-upload-text">Replace</span>';
+      }
+
+      if (data.status === 1 || data.status === 'success' || data.success) {
+        row.classList.add('up');
+        row.setAttribute('data-doc-id', data.doc_id || '');
+
+        // Avatar
+        var avatar = row.querySelector('.row-avatar');
+        if (avatar) {
+          avatar.className = 'row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-success text-white';
+          var icon = avatar.querySelector('i');
+          if (icon) icon.className = 'bi bi-check-lg';
         }
-      })
-      .catch(error => {
-        console.error('Upload error:', error);
-        alert('File uploaded successfully. Refreshing view...');
-        window.location.reload();
+
+        // Meta
+        var meta = row.querySelector('.ci-meta');
+        if (meta) {
+          var isZip = data.is_zip;
+          meta.innerHTML = '<span class="badge ' + (isZip ? 'bg-warning text-dark' : 'bg-success') + ' d-inline-flex align-items-center gap-1 status-badge">' +
+            '<i class="bi ' + (isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill') + '"></i> ' +
+            '<span class="badge-text">' + (data.file_name || 'Attached') + '</span>' +
+          '</span>';
+        }
+
+        // Pending badge hide
+        var pendingBadge = row.querySelector('.status-badge-pending');
+        if (pendingBadge) pendingBadge.style.display = 'none';
+
+        // View button
+        var viewBtn = row.querySelector('.btn-view-item');
+        if (viewBtn) {
+          viewBtn.href = data.file_url || '#';
+          viewBtn.setAttribute('data-file-url', data.file_url || '');
+          viewBtn.setAttribute('data-file-name', data.file_name || '');
+          viewBtn.setAttribute('data-file-size', data.file_size || '');
+          viewBtn.setAttribute('data-doc-name', docName);
+          viewBtn.setAttribute('data-is-zip', data.is_zip ? '1' : '0');
+          viewBtn.style.display = '';
+        }
+
+        // Remove button
+        var removeBtn = row.querySelector('.btn-remove-item');
+        if (removeBtn) {
+          removeBtn.style.display = '';
+        }
+
+        updateDgpsShowCounters();
+
+        if (window.toastr) {
+          toastr.success('Document "' + (data.file_name || docName) + '" uploaded successfully!');
+        }
+      } else {
+        alert(data.message || 'Upload failed.');
+      }
+    })
+    .catch(function(err) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
+      }
+      alert('Upload error: ' + err.message);
+    });
+  }
+
+  function removeDgpsShowDocument(row) {
+    if (!confirm('Are you sure you want to remove this attached survey document?')) {
+      return;
+    }
+
+    var surveyId = row.getAttribute('data-survey-id');
+    var docName = row.getAttribute('data-doc-name');
+    var docId = row.getAttribute('data-doc-id') || '';
+
+    var removeBtn = row.querySelector('.btn-remove-item');
+    if (removeBtn) {
+      removeBtn.disabled = true;
+      removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    }
+
+    var formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('survey_id', surveyId);
+    formData.append('document_name', docName);
+    if (docId) formData.append('doc_id', docId);
+
+    fetch(REMOVE_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Remove failed with status ' + res.status);
+      return res.json();
+    })
+    .then(function(data) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+      }
+
+      if (data.status === 1 || data.status === 'success' || data.success) {
+        row.classList.remove('up');
+        row.setAttribute('data-doc-id', '');
+
+        // Avatar
+        var avatar = row.querySelector('.row-avatar');
+        if (avatar) {
+          avatar.className = 'row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-light text-muted';
+          var icon = avatar.querySelector('i');
+          if (icon) icon.className = 'bi bi-file-earmark-arrow-up';
+        }
+
+        // Meta reset
+        var meta = row.querySelector('.ci-meta');
+        if (meta) {
+          meta.textContent = 'Official statutory survey deliverable';
+        }
+
+        // Show pending badge
+        var pendingBadge = row.querySelector('.status-badge-pending');
+        if (pendingBadge) pendingBadge.style.display = '';
+
+        // Hide View button
+        var viewBtn = row.querySelector('.btn-view-item');
+        if (viewBtn) {
+          viewBtn.style.display = 'none';
+          viewBtn.href = '#';
+          viewBtn.setAttribute('data-file-url', '');
+        }
+
+        // Reset Upload button
+        var uploadBtn = row.querySelector('.btn-upload-item');
+        if (uploadBtn) {
+          uploadBtn.title = 'Upload file';
+          uploadBtn.innerHTML = '<i class="bi bi-upload"></i> <span class="btn-upload-text">Upload</span>';
+        }
+
+        // Hide Remove button
+        if (removeBtn) {
+          removeBtn.style.display = 'none';
+        }
+
+        // Clear hidden input
+        var fileInput = row.querySelector('.dgps-row-file-input');
+        if (fileInput) fileInput.value = '';
+
+        updateDgpsShowCounters();
+
+        if (window.toastr) {
+          toastr.info('Document removed successfully.');
+        }
+      } else {
+        alert(data.message || 'Remove failed.');
+      }
+    })
+    .catch(function(err) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+      }
+      alert('Remove error: ' + err.message);
+    });
+  }
+
+  document.querySelectorAll('.deliverable-item').forEach(function(row) {
+    var fileInput = row.querySelector('.dgps-row-file-input');
+    var uploadBtn = row.querySelector('.btn-upload-item');
+    var removeBtn = row.querySelector('.btn-remove-item');
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
       });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+          uploadDgpsShowFile(row, this.files[0]);
+        }
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        removeDgpsShowDocument(row);
+      });
+    }
+
+    // Drag & Drop
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.add('row-dragover');
+    });
+
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('row-dragover');
+    });
+
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      row.classList.remove('row-dragover');
+      var files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        uploadDgpsShowFile(row, files[0]);
+      }
     });
   });
 });

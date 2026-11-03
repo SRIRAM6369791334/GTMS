@@ -45,6 +45,8 @@ class EnvironmentProject extends Model
         'payment_status',
         'branch_id',
         'created_by',
+        'common_id',
+        'master_project_id',
     ];
 
     /**
@@ -172,6 +174,11 @@ class EnvironmentProject extends Model
     public function pptStage2(): BelongsTo
     {
         return $this->belongsTo(PptApplication::class, 'ppt_stage_2_id');
+    }
+
+    public function masterProject(): BelongsTo
+    {
+        return $this->belongsTo(MasterProject::class, 'master_project_id');
     }
 
     public function activities()

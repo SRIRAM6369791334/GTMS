@@ -15,6 +15,9 @@ use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use App\Models\ChunkedUpload;
+use App\Services\ChunkedUploadService;
 
 class PptDepartmentController extends Controller
 {
@@ -255,6 +258,25 @@ class PptDepartmentController extends Controller
                 'notes'            => $request->input('payment_notes', $draft['payment_notes'] ?? 'Consultation and presentation fee settled'),
             ]);
 
+            // Migrate Session Uploaded Documents to Permanent PptDocument Records
+            $uploadedDocs = $draft['uploaded_docs'] ?? [];
+            if (!empty($uploadedDocs)) {
+                foreach ($uploadedDocs as $uDoc) {
+                    PptDocument::create([
+                        'ppt_application_id' => $ppt->id,
+                        'folder_id'          => $uDoc['folder_id'] ?? 1,
+                        'document_name'      => $uDoc['document_name'] ?? 'Presentation Document',
+                        'file_name'          => $uDoc['file_name'] ?? basename($uDoc['file_path']),
+                        'file_path'          => $uDoc['file_path'],
+                        'file_type'          => $uDoc['file_type'] ?? pathinfo($uDoc['file_path'], PATHINFO_EXTENSION),
+                        'file_size'          => $uDoc['file_size_bytes'] ?? ($uDoc['file_size'] ?? null),
+                        'status'             => 'uploaded',
+                        'uploaded_by'        => Auth::id() ?? 1,
+                        'uploaded_at'        => now(),
+                    ]);
+                }
+            }
+
             DB::commit();
             session()->forget('ppt_wizard');
 
@@ -276,42 +298,320 @@ class PptDepartmentController extends Controller
     }
 
     /**
-     * Upload Document via AJAX
+     * Upload Document via AJAX (Direct File or Chunked Upload Token) with safe unlinking and session draft.
      */
     public function uploadDocument(Request $request)
     {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
+
         $request->validate([
-            'file'           => 'required|file|max:25600',
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000',
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
+            'upload_token'   => 'required_without:file|nullable|string',
             'application_id' => 'nullable|integer',
+            'doc_id'         => 'nullable|integer',
+            'doc_item'       => 'nullable',
+            'field_id'       => 'nullable',
             'folder_id'      => 'nullable|integer',
-            'document_name'  => 'required|string|max:255',
+            'document_name'  => 'nullable|string|max:255',
+            'doc_name'       => 'nullable|string|max:255',
         ]);
 
-        $file = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('uploads/ppt', $fileName, 'public');
+        $appId = $request->input('application_id') ?: $request->input('ppt_id');
+        $docId = $request->input('doc_id');
+        $fieldId = $request->input('field_id');
+        $rawDocItem = $request->input('doc_item') ?? ($fieldId !== null ? $fieldId : $docId);
+        $folderId = $request->input('folder_id', 1);
+        $docNameInput = $request->input('document_name') ?: $request->input('doc_name');
 
-        $docId = null;
-        if ($appId = $request->input('application_id')) {
-            $doc = PptDocument::create([
-                'ppt_application_id' => $appId,
-                'folder_id'          => $request->input('folder_id', 1),
-                'document_name'      => $request->input('document_name'),
-                'file_name'          => $file->getClientOriginalName(),
-                'file_path'          => $filePath,
-                'file_type'          => $file->getClientOriginalExtension(),
-                'file_size'          => $file->getSize(),
-                'status'             => 'uploaded',
-            ]);
-            $docId = $doc->id;
+        $existingDoc = null;
+        $oldFilePath = null;
+        if ($docId) {
+            $existingDoc = PptDocument::find($docId);
+            $oldFilePath = $existingDoc?->file_path;
+        } elseif ($appId) {
+            $q = PptDocument::where('ppt_application_id', $appId);
+            if ($docNameInput) {
+                $q->where(function ($sq) use ($docNameInput) {
+                    $sq->where('document_name', $docNameInput)
+                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                });
+            } elseif ($folderId) {
+                $q->where('folder_id', $folderId);
+            }
+            $existingDoc = $q->first();
+            $oldFilePath = $existingDoc?->file_path;
         }
 
+        $sessionDocs = session('ppt_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem !== null && $rawDocItem !== '' ? (string)$rawDocItem : ($docNameInput ?? ('folder_' . $folderId));
+        if (!$oldFilePath && isset($sessionDocs[$docItemKey]['file_path'])) {
+            $oldFilePath = $sessionDocs[$docItemKey]['file_path'];
+        }
+
+        // Handle Chunked Upload Token
+        if ($request->filled('upload_token')) {
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $appId = $appId ?? $upload->reference_id;
+
+            if (!$upload->isAssembled()) {
+                $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'ppt', $appId);
+                $filePath = $assembly['file_path'];
+            } else {
+                $filePath = $upload->file_path;
+            }
+
+            // Unlink old file if different
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+                if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+                if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fileSize = $upload->total_size;
+            $docName = $docNameInput ?: ($upload->metadata['document_name'] ?? $fileName);
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+            $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+            if ($appId) {
+                if ($existingDoc) {
+                    $existingDoc->update([
+                        'folder_id'     => $folderId,
+                        'document_name' => $docName,
+                        'file_name'     => $fileName,
+                        'file_path'     => $filePath,
+                        'file_type'     => $ext,
+                        'file_size'     => $fileSize,
+                        'status'        => 'uploaded',
+                        'uploaded_by'   => Auth::id() ?? 1,
+                    ]);
+                    $docId = $existingDoc->id;
+                } else {
+                    $doc = PptDocument::create([
+                        'ppt_application_id' => $appId,
+                        'folder_id'          => $folderId,
+                        'document_name'      => $docName,
+                        'file_name'          => $fileName,
+                        'file_path'          => $filePath,
+                        'file_type'          => $ext,
+                        'file_size'          => $fileSize,
+                        'status'             => 'uploaded',
+                        'uploaded_by'        => Auth::id() ?? 1,
+                    ]);
+                    $docId = $doc->id;
+                }
+
+                $upload->update([
+                    'target_module' => 'ppt',
+                    'reference_id'  => $appId,
+                    'status'        => 'completed',
+                ]);
+            }
+
+            $itemData = [
+                'doc_item'        => $docItemKey,
+                'field_id'        => $fieldId !== null ? (string)$fieldId : (string)$docItemKey,
+                'doc_id'          => $docId,
+                'folder_id'       => $folderId,
+                'document_name'   => $docName,
+                'file_name'       => $fileName,
+                'file_path'       => $filePath,
+                'file_url'        => asset('storage/' . $filePath),
+                'file_size'       => $formattedSize,
+                'file_size_bytes' => $fileSize,
+                'is_zip'          => $isZip,
+                'uploaded_at'     => now()->toDateTimeString(),
+            ];
+            $sessionDocs[$docItemKey] = $itemData;
+            if ($fieldId !== null) {
+                $sessionDocs[(string)$fieldId] = $itemData;
+            }
+            session(['ppt_wizard.uploaded_docs' => $sessionDocs]);
+
+            return response()->json([
+                'status'        => 1,
+                'success'       => true,
+                'message'       => $fileName . ' uploaded & saved successfully',
+                'doc_id'        => $docId,
+                'doc_item'      => $docItemKey,
+                'field_id'      => $fieldId !== null ? (string)$fieldId : (string)$docItemKey,
+                'folder_id'     => $folderId,
+                'document_name' => $docName,
+                'file_name'     => $fileName,
+                'file_path'     => $filePath,
+                'file_url'      => asset('storage/' . $filePath),
+                'file_size'     => $formattedSize,
+                'is_zip'        => $isZip,
+            ]);
+        }
+
+        // Direct File Upload
+        $file = $request->file('file');
+        $origName = substr($file->getClientOriginalName(), 0, 255);
+        $fileSize = $file->getSize();
+        $ext = strtolower($file->getClientOriginalExtension());
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+        $docName = $docNameInput ?: $origName;
+        $formattedSize = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
+
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $origName);
+        $filePath = $file->storeAs('uploads/ppt', $safeName, 'public');
+
+        // Unlink old file if replacing
+        if ($oldFilePath && $oldFilePath !== $filePath) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        if ($appId) {
+            if ($existingDoc) {
+                $existingDoc->update([
+                    'folder_id'     => $folderId,
+                    'document_name' => $docName,
+                    'file_name'     => $origName,
+                    'file_path'     => $filePath,
+                    'file_type'     => $ext,
+                    'file_size'     => $fileSize,
+                    'status'        => 'uploaded',
+                    'uploaded_by'   => Auth::id() ?? 1,
+                ]);
+                $docId = $existingDoc->id;
+            } else {
+                $doc = PptDocument::create([
+                    'ppt_application_id' => $appId,
+                    'folder_id'          => $folderId,
+                    'document_name'      => $docName,
+                    'file_name'          => $origName,
+                    'file_path'          => $filePath,
+                    'file_type'          => $ext,
+                    'file_size'          => $fileSize,
+                    'status'             => 'uploaded',
+                    'uploaded_by'        => Auth::id() ?? 1,
+                ]);
+                $docId = $doc->id;
+            }
+        }
+
+        $itemData = [
+            'doc_item'        => $docItemKey,
+            'field_id'        => $fieldId !== null ? (string)$fieldId : (string)$docItemKey,
+            'doc_id'          => $docId,
+            'folder_id'       => $folderId,
+            'document_name'   => $docName,
+            'file_name'       => $origName,
+            'file_path'       => $filePath,
+            'file_url'        => asset('storage/' . $filePath),
+            'file_size'       => $formattedSize,
+            'file_size_bytes' => $fileSize,
+            'is_zip'          => $isZip,
+            'uploaded_at'     => now()->toDateTimeString(),
+        ];
+        $sessionDocs[$docItemKey] = $itemData;
+        if ($fieldId !== null) {
+            $sessionDocs[(string)$fieldId] = $itemData;
+        }
+        session(['ppt_wizard.uploaded_docs' => $sessionDocs]);
+
         return response()->json([
-            'success'   => true,
-            'doc_id'    => $docId,
-            'file_name' => $file->getClientOriginalName(),
-            'file_url'  => asset('storage/' . $filePath),
-            'file_size' => round($file->getSize() / 1024) . ' KB',
+            'status'        => 1,
+            'success'       => true,
+            'message'       => $origName . ' uploaded & saved successfully',
+            'doc_id'        => $docId,
+            'doc_item'      => $docItemKey,
+            'field_id'      => $fieldId !== null ? (string)$fieldId : (string)$docItemKey,
+            'folder_id'     => $folderId,
+            'document_name' => $docName,
+            'file_name'     => $origName,
+            'file_path'     => $filePath,
+            'file_url'      => asset('storage/' . $filePath),
+            'file_size'     => $formattedSize,
+            'is_zip'        => $isZip,
+        ]);
+    }
+
+    /**
+     * Remove Document via AJAX with safe disk unlinking and session draft update.
+     */
+    public function removeDocument(Request $request)
+    {
+        $docId = $request->input('doc_id');
+        $fieldId = $request->input('field_id');
+        $rawDocItem = $request->input('doc_item') ?? ($fieldId !== null ? $fieldId : $docId);
+        $appId = $request->input('application_id') ?: $request->input('ppt_id');
+        $folderId = $request->input('folder_id');
+        $docNameInput = $request->input('document_name') ?: $request->input('doc_name');
+
+        $doc = null;
+        if ($docId) {
+            $doc = PptDocument::find($docId);
+        } elseif ($appId) {
+            $q = PptDocument::where('ppt_application_id', $appId);
+            if ($docNameInput) {
+                $q->where('document_name', $docNameInput);
+            } elseif ($folderId) {
+                $q->where('folder_id', $folderId);
+            }
+            $doc = $q->first();
+        }
+
+        if ($doc) {
+            $path = $doc->file_path;
+            if ($path) {
+                if (file_exists(public_path($path))) @unlink(public_path($path));
+                if (file_exists(public_path('storage/' . $path))) @unlink(public_path('storage/' . $path));
+                if (file_exists(storage_path('app/public/' . $path))) @unlink(storage_path('app/public/' . $path));
+            }
+            $doc->delete();
+        }
+
+        // Clean session draft
+        $sessionDocs = session('ppt_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem !== null && $rawDocItem !== '' ? (string)$rawDocItem : ($docNameInput ?? ('folder_' . $folderId));
+        $draftPath = null;
+        if (isset($sessionDocs[$docItemKey])) {
+            $draftPath = $sessionDocs[$docItemKey]['file_path'] ?? null;
+            unset($sessionDocs[$docItemKey]);
+        }
+        if ($fieldId !== null && isset($sessionDocs[(string)$fieldId])) {
+            if (!$draftPath) $draftPath = $sessionDocs[(string)$fieldId]['file_path'] ?? null;
+            unset($sessionDocs[(string)$fieldId]);
+        }
+        if ($draftPath) {
+            if (file_exists(public_path($draftPath))) @unlink(public_path($draftPath));
+            if (file_exists(public_path('storage/' . $draftPath))) @unlink(public_path('storage/' . $draftPath));
+            if (file_exists(storage_path('app/public/' . $draftPath))) @unlink(storage_path('app/public/' . $draftPath));
+        }
+        session(['ppt_wizard.uploaded_docs' => $sessionDocs]);
+
+        return response()->json([
+            'status'   => 1,
+            'success'  => true,
+            'message'  => 'Document removed successfully.',
+            'doc_id'   => $docId,
+            'doc_item' => $docItemKey,
+            'field_id' => $fieldId !== null ? (string)$fieldId : (string)$docItemKey,
         ]);
     }
 

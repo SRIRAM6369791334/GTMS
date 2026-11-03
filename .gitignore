@@ -3,6 +3,8 @@
 .env
 .env.backup
 .env.production
+.env.docker
+.env.local
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -34,11 +36,18 @@ quotation_*.png
 *.bak
 *.sql
 /database/backups/
-.env.docker
-.env.local
+/scratch/
 
 # Playwright
 /playwright-report/
 /test-results/
 /artifacts
 
+# NAS Deployment (secrets & runtime state)
+gtms_deploy_key
+gtms_deploy_key.pub
+known_good_image.txt
+.previous_known_good_tag
+
+# Lessons learned & project state (auto-generated, not needed in repo)
+lessons_learned.md

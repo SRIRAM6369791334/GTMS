@@ -123,8 +123,9 @@ class DroneSurveyController extends Controller
         $customers = Customer::withTrashed()->orderBy('customer_name')->get();
         $districts = District::where('status', 1)->orderBy('name')->get();
         $leaseApplications = LeaseApplication::with('customer')->orderByDesc('id')->get();
+        $uploadedDocs = session('drone_wizard.uploaded_docs', $draft['uploaded_docs'] ?? []);
 
-        return view('pages.drone_survey.wizard', compact('step', 'draft', 'customers', 'districts', 'leaseApplications'));
+        return view('pages.drone_survey.wizard', compact('step', 'draft', 'customers', 'districts', 'leaseApplications', 'uploadedDocs'));
     }
 
     public function saveStep(int $step, Request $request)
@@ -330,6 +331,21 @@ class DroneSurveyController extends Controller
                 'notes'            => $draft['payment_notes'] ?? 'Drone Survey and Volumetric Processing Fee',
             ]);
 
+            // Migrate wizard documents to DB
+            $uploadedDocs = session('drone_wizard.uploaded_docs', $draft['uploaded_docs'] ?? []);
+            if (!empty($uploadedDocs)) {
+                foreach ($uploadedDocs as $uDoc) {
+                    DroneDocument::create([
+                        'drone_survey_id' => $survey->id,
+                        'folder_id'       => $uDoc['folder_id'] ?? 1,
+                        'document_name'   => $uDoc['doc_name'] ?? ($uDoc['document_name'] ?? $uDoc['file_name']),
+                        'file_path'       => $uDoc['file_path'],
+                        'file_size'       => $uDoc['file_size_bytes'] ?? ($uDoc['file_size'] ?? 0),
+                        'status'          => 'uploaded',
+                    ]);
+                }
+            }
+
             session()->forget('drone_wizard');
 
             DB::commit();
@@ -349,16 +365,67 @@ class DroneSurveyController extends Controller
      */
     public function uploadDocument(Request $request)
     {
+        $allowedExtensions = [
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp',
+            'zip', 'rar', '7z', 'tar', 'gz',
+            'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+            'kml', 'kmz', 'xml', 'dwg', 'dxf',
+            'mp4', 'webm', 'mkv', 'avi', 'mov',
+            'las', 'laz', 'tif', 'tiff', 'shp', 'dat', 'ply', 'rnx', 'obs'
+        ];
+
         $request->validate([
-            'file'            => 'required_without:upload_token|nullable|file|max:52428800',
+            'file' => [
+                'required_without:upload_token',
+                'nullable',
+                'file',
+                'max:524288000', // 500 MB
+                function ($attribute, $value, $fail) use ($allowedExtensions) {
+                    if ($value instanceof \Illuminate\Http\UploadedFile) {
+                        $ext = strtolower($value->getClientOriginalExtension());
+                        if (!in_array($ext, $allowedExtensions, true)) {
+                            $fail("The {$attribute} must be a file of type: " . implode(', ', $allowedExtensions));
+                        }
+                    }
+                }
+            ],
             'upload_token'    => 'required_without:file|nullable|string',
-            'drone_survey_id' => 'nullable|integer',
-            'survey_id'       => 'nullable|integer',
+            'drone_survey_id' => 'nullable',
+            'survey_id'       => 'nullable',
+            'doc_item'        => 'nullable',
+            'doc_id'          => 'nullable',
             'folder_id'       => 'nullable|integer',
             'document_name'   => 'nullable|string|max:255',
+            'is_mandatory'    => 'nullable',
         ]);
 
-        $surveyId = $request->input('drone_survey_id') ?? $request->input('survey_id');
+        $surveyId = $request->input('drone_survey_id') ?: $request->input('survey_id');
+        $rawDocItem = $request->input('doc_item') ?? $request->input('doc_id');
+        $docNameInput = $request->input('document_name');
+
+        // Resolve existing file path to safely delete old file on replacement/re-upload
+        $oldFilePath = null;
+        $existingDoc = null;
+        if ($request->filled('doc_id')) {
+            $existingDoc = DroneDocument::find($request->input('doc_id'));
+            $oldFilePath = $existingDoc?->file_path;
+        } elseif ($surveyId) {
+            $q = DroneDocument::where('drone_survey_id', $surveyId);
+            if ($docNameInput) {
+                $q->where(function ($sq) use ($docNameInput) {
+                    $sq->where('document_name', $docNameInput)
+                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                });
+            }
+            $existingDoc = $q->first();
+            $oldFilePath = $existingDoc?->file_path;
+        }
+
+        $sessionDocs = session('drone_wizard.uploaded_docs', []);
+        $docItemKey = $rawDocItem ?? ($docNameInput ?? 'doc_0');
+        if (!$oldFilePath && isset($sessionDocs[$docItemKey]['file_path'])) {
+            $oldFilePath = $sessionDocs[$docItemKey]['file_path'];
+        }
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
@@ -372,25 +439,44 @@ class DroneSurveyController extends Controller
                 $filePath = $upload->file_path;
             }
 
-            $fileName = $upload->original_name ?? $upload->file_name;
-            $fileType = pathinfo($fileName, PATHINFO_EXTENSION);
-            $fileSize = $upload->total_size;
-            $folderId = $request->input('folder_id') ?? ($upload->metadata['folder_id'] ?? (Folder::first()?->id ?? 1));
-            $docName = $request->input('document_name') ?: ($upload->metadata['document_name'] ?? $fileName);
+            // Unlink old file if different
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+                if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+                if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+            }
+
+            $fileName = substr((string)($upload->original_name ?? $upload->file_name), 0, 255);
+            $fullUploadPath = public_path($filePath);
+            $fileSize = file_exists($fullUploadPath) ? filesize($fullUploadPath) : $upload->total_size;
+            $folderId = (int)($request->input('folder_id') ?? ($upload->metadata['folder_id'] ?? (Folder::first()?->id ?? 1)));
+            $docName = $docNameInput ?: ($upload->metadata['document_name'] ?? $fileName);
+            $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+            $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+            $sizeFormatted = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
 
             $docId = null;
             if ($surveyId) {
-                $doc = DroneDocument::create([
-                    'drone_survey_id' => $surveyId,
-                    'folder_id'       => $folderId,
-                    'document_name'   => $docName,
-                    'file_name'       => $fileName,
-                    'file_path'       => $filePath,
-                    'file_type'       => $fileType,
-                    'file_size'       => $fileSize,
-                    'status'          => 'uploaded',
-                ]);
-                $docId = $doc->id;
+                if ($existingDoc) {
+                    $existingDoc->update([
+                        'folder_id'     => $folderId,
+                        'document_name' => $docName,
+                        'file_path'     => $filePath,
+                        'file_size'     => $fileSize,
+                        'status'        => 'uploaded',
+                    ]);
+                    $docId = $existingDoc->id;
+                } else {
+                    $doc = DroneDocument::create([
+                        'drone_survey_id' => $surveyId,
+                        'folder_id'       => $folderId,
+                        'document_name'   => $docName,
+                        'file_path'       => $filePath,
+                        'file_size'       => $fileSize,
+                        'status'          => 'uploaded',
+                    ]);
+                    $docId = $doc->id;
+                }
 
                 $upload->update([
                     'target_module' => 'drone',
@@ -399,46 +485,190 @@ class DroneSurveyController extends Controller
                 ]);
             }
 
+            $sessionDocs[$docItemKey] = [
+                'doc_item'        => $docItemKey,
+                'doc_id'          => $docId,
+                'doc_name'        => $docName,
+                'file_name'       => $fileName,
+                'file_path'       => $filePath,
+                'file_url'        => asset($filePath),
+                'file_size'       => $sizeFormatted,
+                'file_size_bytes' => $fileSize,
+                'is_zip'          => $isZip,
+                'folder_id'       => $folderId,
+                'uploaded_at'     => now()->format('d M Y, h:i A'),
+            ];
+            session(['drone_wizard.uploaded_docs' => $sessionDocs]);
+
             return response()->json([
+                'status'       => 1,
                 'success'      => true,
+                'message'      => 'Document uploaded successfully',
                 'doc_id'       => $docId,
+                'doc_item'     => $docItemKey,
+                'folder_id'    => $folderId,
                 'upload_token' => $upload->upload_token,
                 'file_name'    => $fileName,
+                'file_path'    => $filePath,
                 'file_url'     => asset($filePath),
-                'file_size'    => round($fileSize / 1024) . ' KB',
-                'status'       => 'uploaded',
+                'file_size'    => $sizeFormatted,
+                'size_bytes'   => $fileSize,
+                'is_zip'       => $isZip,
+                'uploaded'     => count($sessionDocs),
+                'total'        => 10,
+                'percent'      => min(100, round((count($sessionDocs) / 10) * 100)),
             ]);
         }
 
         // Direct multipart file upload
         $file = $request->file('file');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('uploads/drone', $fileName, 'public');
-        $folderId = $request->input('folder_id') ?? (Folder::first()?->id ?? 1);
-        $docName = $request->input('document_name') ?: $file->getClientOriginalName();
+        $uploadSubdir = 'uploads/drone';
+        $fullUploadPath = public_path($uploadSubdir);
+        if (!file_exists($fullUploadPath)) {
+            mkdir($fullUploadPath, 0777, true);
+        }
+
+        $origFileName = substr((string)$file->getClientOriginalName(), 0, 255);
+        $safeName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $origFileName);
+        $targetRelPath = $uploadSubdir . '/' . $safeName;
+
+        // Delete old file if replacing
+        if ($oldFilePath && $oldFilePath !== $targetRelPath) {
+            if (file_exists(public_path($oldFilePath))) @unlink(public_path($oldFilePath));
+            if (file_exists(public_path('storage/' . $oldFilePath))) @unlink(public_path('storage/' . $oldFilePath));
+            if (file_exists(storage_path('app/public/' . $oldFilePath))) @unlink(storage_path('app/public/' . $oldFilePath));
+        }
+
+        $file->move($fullUploadPath, $safeName);
+        $fileSize = file_exists($fullUploadPath . '/' . $safeName) ? filesize($fullUploadPath . '/' . $safeName) : $file->getSize();
+        $folderId = (int)($request->input('folder_id') ?? (Folder::first()?->id ?? 1));
+        $docName = $docNameInput ?: $origFileName;
+        $ext = strtolower(pathinfo($origFileName, PATHINFO_EXTENSION));
+        $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+        $sizeFormatted = $fileSize >= 1048576 ? round($fileSize / 1048576, 2) . ' MB' : round($fileSize / 1024, 1) . ' KB';
 
         $docId = null;
         if ($surveyId) {
-            $doc = DroneDocument::create([
-                'drone_survey_id' => $surveyId,
-                'folder_id'       => $folderId,
-                'document_name'   => $docName,
-                'file_name'       => $file->getClientOriginalName(),
-                'file_path'       => $filePath,
-                'file_type'       => $file->getClientOriginalExtension(),
-                'file_size'       => $file->getSize(),
-                'status'          => 'uploaded',
-            ]);
-            $docId = $doc->id;
+            if ($existingDoc) {
+                $existingDoc->update([
+                    'folder_id'     => $folderId,
+                    'document_name' => $docName,
+                    'file_path'     => $targetRelPath,
+                    'file_size'     => $fileSize,
+                    'status'        => 'uploaded',
+                ]);
+                $docId = $existingDoc->id;
+            } else {
+                $doc = DroneDocument::create([
+                    'drone_survey_id' => $surveyId,
+                    'folder_id'       => $folderId,
+                    'document_name'   => $docName,
+                    'file_path'       => $targetRelPath,
+                    'file_size'       => $fileSize,
+                    'status'          => 'uploaded',
+                ]);
+                $docId = $doc->id;
+            }
+        }
+
+        $sessionDocs[$docItemKey] = [
+            'doc_item'        => $docItemKey,
+            'doc_id'          => $docId,
+            'doc_name'        => $docName,
+            'file_name'       => $origFileName,
+            'file_path'       => $targetRelPath,
+            'file_url'        => asset($targetRelPath),
+            'file_size'       => $sizeFormatted,
+            'file_size_bytes' => $fileSize,
+            'is_zip'          => $isZip,
+            'folder_id'       => $folderId,
+            'uploaded_at'     => now()->format('d M Y, h:i A'),
+        ];
+        session(['drone_wizard.uploaded_docs' => $sessionDocs]);
+
+        return response()->json([
+            'status'       => 1,
+            'success'      => true,
+            'message'      => 'Document uploaded successfully',
+            'doc_id'       => $docId,
+            'doc_item'     => $docItemKey,
+            'folder_id'    => $folderId,
+            'file_name'    => $origFileName,
+            'file_path'    => $targetRelPath,
+            'file_url'     => asset($targetRelPath),
+            'file_size'    => $sizeFormatted,
+            'size_bytes'   => $fileSize,
+            'is_zip'       => $isZip,
+            'uploaded'     => count($sessionDocs),
+            'total'        => 10,
+            'percent'      => min(100, round((count($sessionDocs) / 10) * 100)),
+        ]);
+    }
+
+    /**
+     * Remove an uploaded Drone Survey document from draft session and database.
+     */
+    public function removeDocument(Request $request)
+    {
+        $request->validate([
+            'doc_item'        => 'nullable',
+            'doc_id'          => 'nullable|integer',
+            'drone_survey_id' => 'nullable',
+            'survey_id'       => 'nullable',
+            'document_name'   => 'nullable|string',
+            'folder_id'       => 'nullable|integer',
+        ]);
+
+        $surveyId = $request->input('drone_survey_id') ?? $request->input('survey_id');
+        $docItem = $request->input('doc_item') ?? $request->input('doc_id') ?? $request->input('document_name');
+
+        // 1. Remove from database
+        $dbDoc = null;
+        if ($request->filled('doc_id')) {
+            $dbDoc = DroneDocument::find($request->input('doc_id'));
+        } elseif ($surveyId) {
+            $q = DroneDocument::where('drone_survey_id', $surveyId);
+            if ($request->filled('document_name')) {
+                $name = $request->input('document_name');
+                $q->where(function ($sq) use ($name) {
+                    $sq->where('document_name', $name)
+                       ->orWhere('document_name', 'like', '%' . $name . '%');
+                });
+            }
+            $dbDoc = $q->first();
+        }
+
+        if ($dbDoc) {
+            $filePath = $dbDoc->file_path;
+            if ($filePath) {
+                if (file_exists(public_path($filePath))) @unlink(public_path($filePath));
+                if (file_exists(public_path('storage/' . $filePath))) @unlink(public_path('storage/' . $filePath));
+                if (file_exists(storage_path('app/public/' . $filePath))) @unlink(storage_path('app/public/' . $filePath));
+            }
+            $dbDoc->delete();
+        }
+
+        // 2. Remove from wizard session
+        $sessionDocs = session('drone_wizard.uploaded_docs', []);
+        if ($docItem !== null && isset($sessionDocs[$docItem])) {
+            $sessionPath = $sessionDocs[$docItem]['file_path'] ?? null;
+            if ($sessionPath) {
+                if (file_exists(public_path($sessionPath))) @unlink(public_path($sessionPath));
+                if (file_exists(public_path('storage/' . $sessionPath))) @unlink(public_path('storage/' . $sessionPath));
+                if (file_exists(storage_path('app/public/' . $sessionPath))) @unlink(storage_path('app/public/' . $sessionPath));
+            }
+            unset($sessionDocs[$docItem]);
+            session(['drone_wizard.uploaded_docs' => $sessionDocs]);
         }
 
         return response()->json([
-            'success'   => true,
-            'doc_id'    => $docId,
-            'file_name' => $file->getClientOriginalName(),
-            'file_url'  => asset('storage/' . $filePath),
-            'file_size' => round($file->getSize() / 1024) . ' KB',
-            'status'    => 'uploaded',
+            'status'   => 1,
+            'success'  => true,
+            'message'  => 'Document removed successfully.',
+            'doc_item' => $docItem,
+            'uploaded' => count($sessionDocs),
+            'total'    => 10,
+            'percent'  => min(100, round((count($sessionDocs) / 10) * 100)),
         ]);
     }
 }

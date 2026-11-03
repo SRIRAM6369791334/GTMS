@@ -2,6 +2,22 @@
 @section('title', 'PPT Department Workflow')
 @section('main_content')
 <link href="{{ asset('css/style1.css') }}" rel="stylesheet">
+<style>
+.checklist-row.row-dragover {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+.badge-status.uploaded {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
+}
+</style>
 @php
 $labels = ['Client','District','Minerals','Folders','Documents','Approval','Handling Team','Payment','Preview'];
 $folders = [
@@ -256,16 +272,44 @@ $folders = [
             </div>
 
             <div class="folder-checklist-box" id="ppt_checklist_container">
+              @php
+                $sessionUploadedDocs = $draft['uploaded_docs'] ?? [];
+              @endphp
               @foreach($folders as $fIdx => [$name, $detail])
-                @php $isM = ($fIdx < 3); @endphp
-                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom" data-ppt-row="{{ $fIdx }}" data-mandatory="{{ $isM ? '1' : '0' }}">
+                @php
+                  $isM = ($fIdx < 3);
+                  $docItemKey = (string)$fIdx;
+                  $docMatch = $sessionUploadedDocs[$docItemKey] ?? ($sessionUploadedDocs['folder_' . ($fIdx + 1)] ?? null);
+                  $isUp = !empty($docMatch);
+                  $isZip = $isUp && !empty($docMatch['is_zip']);
+                  $fileName = $docMatch['file_name'] ?? '';
+                  $fileSize = $docMatch['file_size'] ?? '';
+                  $fileUrl = !empty($docMatch['file_url']) ? $docMatch['file_url'] : (!empty($docMatch['file_path']) ? asset('storage/' . $docMatch['file_path']) : '');
+                @endphp
+                <div class="checklist-row py-2 d-flex align-items-center justify-content-between border-bottom {{ $isUp ? 'up' : '' }}" 
+                     data-ppt-row="{{ $fIdx }}" 
+                     data-doc-item="{{ $fIdx }}" 
+                     data-folder-id="{{ $fIdx + 1 }}" 
+                     data-doc-name="{{ $name }}" 
+                     data-mandatory="{{ $isM ? '1' : '0' }}">
                   <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
-                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
-                      <i class="bi bi-file-earmark"></i>
+                    <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" 
+                         style="width:34px; height:34px; background:{{ $isUp ? ($isZip ? '#fef3c7' : '#dcfce7') : '#f1f5f9' }}; color:{{ $isUp ? ($isZip ? '#d97706' : '#15803d') : '#64748b' }};">
+                      @if($isUp)
+                        <i class="bi {{ $isZip ? 'bi-file-earmark-zip text-warning' : 'bi-check-lg' }}" style="{{ !$isZip ? 'color:#15803d;' : '' }}"></i>
+                      @else
+                        <i class="bi bi-file-earmark"></i>
+                      @endif
                     </div>
                     <div class="text-truncate">
                       <div class="ci-name fw-semibold small text-dark text-truncate">{{ $loop->iteration }}. {{ $name }}</div>
-                      <div class="ci-meta text-muted" style="font-size:11px;">{{ $detail }} &middot; Not uploaded</div>
+                      <div class="ci-meta text-muted" style="font-size:11px;">
+                        @if($isUp)
+                          <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $fileName }}</span> &middot; {{ $fileSize }}
+                        @else
+                          {{ $detail }} &middot; Not uploaded
+                        @endif
+                      </div>
                     </div>
                   </div>
                   <div class="d-flex align-items-center gap-2 ms-3 flex-shrink-0 action-slot">
@@ -274,10 +318,40 @@ $folders = [
                       <option value="mandatory" {{ $isM ? 'selected' : '' }}>Mandatory</option>
                       <option value="optional" {{ !$isM ? 'selected' : '' }}>Optional</option>
                     </select>
-                    <input type="file" class="d-none ppt-file-input" data-row-idx="{{ $fIdx }}" accept=".pdf,.ppt,.pptx,.kml,.kmz,.jpg,.png">
-                    <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
-                      <i class="bi bi-upload me-1"></i>Upload
-                    </button>
+                    <input type="file" class="d-none ppt-file-input" 
+                           data-row-idx="{{ $fIdx }}" 
+                           data-doc-item="{{ $fIdx }}" 
+                           data-folder-id="{{ $fIdx + 1 }}" 
+                           data-doc-name="{{ $name }}" 
+                           accept=".pdf,.png,.jpg,.jpeg,.zip,.rar,.7z,.doc,.docx,.ppt,.pptx,.kml,.kmz,.dwg">
+                    @if($isUp)
+                      <span class="badge-status uploaded">Uploaded</span>
+                      <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" 
+                         class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-ppt-item" 
+                         style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+                         title="{{ $isZip ? 'Download / View ZIP Archive' : 'View Document' }}" 
+                         data-file-url="{{ $fileUrl }}" 
+                         data-file-name="{{ $fileName }}" 
+                         data-file-size="{{ $fileSize }}" 
+                         data-doc-name="{{ $name }}" 
+                         data-is-zip="{{ $isZip ? '1' : '0' }}">
+                        <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
+                      </a>
+                      <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-ppt-item" 
+                              style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+                              title="Change / Re-upload file">
+                        <i class="bi bi-arrow-repeat"></i>
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-ppt-item" 
+                              style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+                              title="Remove document">
+                        <i class="bi bi-trash3"></i>
+                      </button>
+                    @else
+                      <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
+                        <i class="bi bi-upload me-1"></i>Upload
+                      </button>
+                    @endif
                   </div>
                 </div>
               @endforeach
@@ -569,7 +643,122 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // PPT Step 5: Upload & View handlers
+  // PPT Step 5: Upload, Drag & Drop, View & Remove handlers
+  function uploadPptFileToServer(row, file) {
+    if (!row || !file) return;
+    const fIdx = row.getAttribute('data-doc-item') || row.getAttribute('data-ppt-row') || '0';
+    const folderId = row.getAttribute('data-folder-id') || (parseInt(fIdx, 10) + 1);
+    const docName = row.getAttribute('data-doc-name') || ('Folder ' + folderId);
+    const metaDiv = row.querySelector('.ci-meta');
+    const origMeta = metaDiv ? metaDiv.innerHTML : '';
+    if (metaDiv) {
+      metaDiv.innerHTML = '<span class="text-primary"><i class="spinner-border spinner-border-sm me-1"></i>Uploading...</span>';
+    }
+
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('file', file);
+    formData.append('field_id', fIdx);
+    formData.append('folder_id', folderId);
+    formData.append('doc_name', docName);
+
+    fetch('{{ route("ppt-department.upload") }}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 1 || res.success) {
+        row.classList.add('up');
+        const isZip = !!res.is_zip;
+        const iconDiv = row.querySelector('.ci-icon');
+        if (iconDiv) {
+          iconDiv.style.background = isZip ? '#fef3c7' : '#dcfce7';
+          iconDiv.style.color = isZip ? '#d97706' : '#15803d';
+          iconDiv.innerHTML = isZip 
+            ? '<i class="bi bi-file-earmark-zip text-warning"></i>' 
+            : '<i class="bi bi-check-lg" style="color:#15803d;"></i>';
+        }
+        if (metaDiv) {
+          const badgeHtml = isZip ? '<span class="badge bg-warning text-dark me-1" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP Archive</span>' : '';
+          metaDiv.innerHTML = `${badgeHtml}<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${res.file_name}</span> &middot; ${res.file_size}`;
+        }
+        const slot = row.querySelector('.action-slot');
+        if (slot) {
+          const reqSelect = slot.querySelector('.doc-req-select');
+          const fileInput = slot.querySelector('.ppt-file-input');
+          const selectHtml = reqSelect ? reqSelect.outerHTML : '';
+          const inputHtml = fileInput ? fileInput.outerHTML : '';
+          slot.innerHTML = `
+            ${selectHtml}
+            ${inputHtml}
+            <span class="badge-status uploaded">Uploaded</span>
+            <a href="${res.file_url}" target="_blank" rel="noopener noreferrer" 
+               class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-ppt-item" 
+               style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+               title="${isZip ? 'Download / View ZIP Archive' : 'View Document'}" 
+               data-file-url="${res.file_url}" 
+               data-file-name="${res.file_name}" 
+               data-file-size="${res.file_size}" 
+               data-doc-name="${docName}" 
+               data-is-zip="${isZip ? '1' : '0'}">
+              <i class="bi ${isZip ? 'bi-file-earmark-zip' : 'bi-eye'}"></i>
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-ppt-item" 
+                    style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+                    title="Change / Re-upload file">
+              <i class="bi bi-arrow-repeat"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-ppt-item" 
+                    style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;" 
+                    title="Remove document">
+              <i class="bi bi-trash3"></i>
+            </button>
+          `;
+          const newSel = slot.querySelector('.doc-req-select');
+          if (newSel) bindPptSingleReqListener(newSel);
+        }
+        updatePptDocProgress();
+      } else {
+        alert(res.message || 'File upload failed');
+        if (metaDiv) metaDiv.innerHTML = origMeta;
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Network error while uploading file.');
+      if (metaDiv) metaDiv.innerHTML = origMeta;
+    });
+  }
+
+  // Drag and drop attachment
+  function attachPptRowDnd(row) {
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('row-dragover');
+    });
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadPptFileToServer(this, e.dataTransfer.files[0]);
+      }
+    });
+  }
+  document.querySelectorAll('#ppt_checklist_container .checklist-row').forEach(attachPptRowDnd);
+
+  // Trigger file input
   document.addEventListener('click', function(e) {
     const uploadBtn = e.target.closest('.btn-upload-ppt-item');
     if (uploadBtn) {
@@ -579,59 +768,95 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Handle file select
   document.addEventListener('change', function(e) {
     if (e.target.classList.contains('ppt-file-input')) {
       const input = e.target;
       const row = input.closest('.checklist-row');
       if (input.files && input.files[0] && row) {
-        const file = input.files[0];
-        const blobUrl = URL.createObjectURL(file);
-        row.classList.add('up');
-
-        const iconDiv = row.querySelector('.ci-icon');
-        if (iconDiv) {
-          iconDiv.style.background = '#dcfce7';
-          iconDiv.style.color = '#15803d';
-          iconDiv.innerHTML = '<i class="bi bi-check-lg"></i>';
-        }
-
-        const metaDiv = row.querySelector('.ci-meta');
-        if (metaDiv) {
-          const sizeKb = Math.round(file.size / 1024);
-          metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${file.name}</span> &middot; ${sizeKb} KB`;
-        }
-
-        const slot = row.querySelector('.action-slot');
-        if (slot) {
-          const statusBadge = slot.querySelector('.badge-status');
-          if (statusBadge) {
-            statusBadge.className = 'badge-status uploaded';
-            statusBadge.textContent = 'Uploaded';
-          }
-
-          let viewBtn = slot.querySelector('.btn-view-ppt-item');
-          if (!viewBtn) {
-            viewBtn = document.createElement('a');
-            viewBtn.className = 'btn btn-sm btn-outline-info py-1 px-2 btn-view-ppt-item me-1';
-            viewBtn.style.fontSize = '.72rem';
-            viewBtn.target = '_blank';
-            viewBtn.rel = 'noopener noreferrer';
-            viewBtn.title = 'View document in separate page';
-            viewBtn.innerHTML = '<i class="bi bi-eye"></i> View';
-            const btnUpload = slot.querySelector('.btn-upload-ppt-item');
-            slot.insertBefore(viewBtn, btnUpload);
-          }
-          viewBtn.href = blobUrl;
-
-          const btnUpload = slot.querySelector('.btn-upload-ppt-item');
-          if (btnUpload) {
-            btnUpload.className = 'btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-ppt-item';
-            btnUpload.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Change';
-          }
-        }
-
-        updatePptDocProgress();
+        uploadPptFileToServer(row, input.files[0]);
       }
+    }
+  });
+
+  // Remove handler
+  document.addEventListener('click', function(e) {
+    const removeBtn = e.target.closest('.btn-remove-ppt-item');
+    if (removeBtn) {
+      const row = removeBtn.closest('.checklist-row');
+      const fIdx = row.getAttribute('data-doc-item') || row.getAttribute('data-ppt-row') || '0';
+      const docName = row.getAttribute('data-doc-name') || 'this document';
+      if (!confirm(`Are you sure you want to remove "${docName}"?`)) return;
+
+      const formData = new FormData();
+      formData.append('_token', '{{ csrf_token() }}');
+      formData.append('field_id', fIdx);
+      formData.append('folder_key', fIdx);
+
+      fetch('{{ route("ppt-department.remove") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 1 || res.success) {
+          row.classList.remove('up');
+          const iconDiv = row.querySelector('.ci-icon');
+          if (iconDiv) {
+            iconDiv.style.background = '#f1f5f9';
+            iconDiv.style.color = '#64748b';
+            iconDiv.innerHTML = '<i class="bi bi-file-earmark"></i>';
+          }
+          const metaDiv = row.querySelector('.ci-meta');
+          if (metaDiv) {
+            metaDiv.innerHTML = 'Presentation attachment &middot; Not uploaded';
+          }
+          const slot = row.querySelector('.action-slot');
+          if (slot) {
+            const reqSelect = slot.querySelector('.doc-req-select');
+            const fileInput = slot.querySelector('.ppt-file-input');
+            const selectHtml = reqSelect ? reqSelect.outerHTML : '';
+            const inputHtml = fileInput ? fileInput.outerHTML : '';
+            slot.innerHTML = `
+              ${selectHtml}
+              ${inputHtml}
+              <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
+                <i class="bi bi-upload me-1"></i>Upload
+              </button>
+            `;
+            const newSel = slot.querySelector('.doc-req-select');
+            if (newSel) bindPptSingleReqListener(newSel);
+          }
+          const fileInput = row.querySelector('.ppt-file-input');
+          if (fileInput) fileInput.value = '';
+          updatePptDocProgress();
+        } else {
+          alert(res.message || 'Failed to remove document.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Network error while removing document.');
+      });
+    }
+  });
+
+  // GtmsOpenWith viewer handler
+  document.addEventListener('click', function(e) {
+    const viewBtn = e.target.closest('.btn-view-item');
+    if (viewBtn && typeof window.GtmsOpenWith !== 'undefined') {
+      e.preventDefault();
+      window.GtmsOpenWith.open({
+        url: viewBtn.dataset.fileUrl,
+        name: viewBtn.dataset.fileName,
+        size: viewBtn.dataset.fileSize,
+        docName: viewBtn.dataset.docName,
+        isZip: viewBtn.dataset.isZip === '1' || viewBtn.dataset.isZip === 1
+      });
     }
   });
 
@@ -655,6 +880,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const row = document.createElement('div');
       row.className = 'checklist-row py-2 d-flex align-items-center justify-content-between border-bottom';
       row.setAttribute('data-mandatory', '0');
+      row.setAttribute('data-doc-item', 'custom_' + count);
+      row.setAttribute('data-folder-id', count);
+      row.setAttribute('data-doc-name', docName.trim());
       row.innerHTML = `
         <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
           <div class="ci-icon rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; background:#f1f5f9; color:#64748b;">
@@ -674,33 +902,36 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="mandatory">Mandatory</option>
             <option value="optional" selected>Optional</option>
           </select>
-          <input type="file" class="d-none ppt-file-input" accept=".pdf,.ppt,.pptx,.kml,.kmz,.jpg,.png">
+          <input type="file" class="d-none ppt-file-input" accept=".pdf,.ppt,.pptx,.kml,.kmz,.jpg,.png,.jpeg,.zip,.rar,.7z,.doc,.docx,.dwg">
           <button type="button" class="btn btn-sm btn-outline-navy py-1 px-2 btn-upload-ppt-item" style="font-size:.72rem;">
             <i class="bi bi-upload me-1"></i>Upload
           </button>
         </div>
       `;
       container.appendChild(row);
+      attachPptRowDnd(row);
       updatePptDocProgress();
       bindPptDocReqListeners();
     });
   }
 
+  function bindPptSingleReqListener(sel) {
+    sel.onchange = function() {
+      const row = this.closest('.checklist-row');
+      const isMandatory = this.value === 'mandatory';
+      if (row) {
+        row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
+      }
+      if (isMandatory) {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+      } else {
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+      }
+    };
+  }
+
   function bindPptDocReqListeners() {
-    document.querySelectorAll('#ppt_checklist_container .doc-req-select').forEach(function(sel) {
-      sel.onchange = function() {
-        const row = this.closest('.checklist-row');
-        const isMandatory = this.value === 'mandatory';
-        if (row) {
-          row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
-        }
-        if (isMandatory) {
-          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
-        } else {
-          this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
-        }
-      };
-    });
+    document.querySelectorAll('#ppt_checklist_container .doc-req-select').forEach(bindPptSingleReqListener);
   }
   bindPptDocReqListeners();
 

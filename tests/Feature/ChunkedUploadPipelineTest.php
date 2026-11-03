@@ -539,7 +539,7 @@ class ChunkedUploadPipelineTest extends TestCase
             'success'      => true,
             'upload_token' => $token,
             'file_name'    => 'dgps_cadastral_survey.dwg',
-            'status'       => 'uploaded',
+            'status'       => 1,
         ]);
 
         $this->assertDatabaseHas('dgps_documents', [
@@ -584,7 +584,7 @@ class ChunkedUploadPipelineTest extends TestCase
             'success'      => true,
             'upload_token' => $token,
             'file_name'    => 'drone_orthomosaic_highres.tif',
-            'status'       => 'uploaded',
+            'status'       => 1,
         ]);
 
         $this->assertDatabaseHas('drone_documents', [

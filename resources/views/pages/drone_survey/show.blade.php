@@ -397,6 +397,11 @@
   #gtms-drone-dossier-page .deliverable-row:hover {
     background: var(--ds-table-hover);
   }
+  #gtms-drone-dossier-page .deliverable-row.row-dragover {
+    background: #e0f2fe !important;
+    outline: 2px dashed #0284c7 !important;
+    outline-offset: -2px;
+  }
 
   /* Category Code Pills */
   #gtms-drone-dossier-page .pill-req { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
@@ -757,9 +762,9 @@
             </div>
             <div class="d-flex align-items-center gap-3">
               <div class="d-none d-sm-block text-end">
-                <span class="fw-bold text-dark" style="font-size:0.8rem;">{{ $uploadedCatalogCount }} / 10 Attached ({{ $completionPct }}%)</span>
+                <span class="fw-bold text-dark" style="font-size:0.8rem;"><span id="drone_attached_count">{{ $uploadedCatalogCount }}</span> / 10 Attached (<span id="drone_attached_pct">{{ $completionPct }}</span>%)</span>
                 <div class="progress mt-1" style="height: 6px; width: 130px; border-radius: 999px;">
-                  <div class="progress-bar bg-success" role="progressbar" style="width: {{ $completionPct }}%;"></div>
+                  <div class="progress-bar bg-success" id="drone_attached_bar" role="progressbar" style="width: {{ $completionPct }}%;"></div>
                 </div>
               </div>
               <button type="button" class="btn btn-sm px-2.5 py-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#uploadDroneModal" style="font-size:0.78rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">
@@ -796,10 +801,22 @@
                       'EC-04'            => 'pill-ec',
                       default            => 'pill-req'
                     };
+                    $filePath = $matchDoc?->file_path;
+                    $isPublic = $filePath ? str_starts_with($filePath, 'uploads/') : false;
+                    $fileUrl = $filePath ? ($isPublic ? asset($filePath) : asset('storage/' . $filePath)) : '';
+                    $origName = $filePath ? basename($filePath) : '';
+                    $ext = $filePath ? strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) : '';
+                    $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+                    $fileSizeFormatted = ($matchDoc && $matchDoc->file_size) ? ($matchDoc->file_size >= 1048576 ? round($matchDoc->file_size / 1048576, 2) . ' MB' : round($matchDoc->file_size / 1024, 1) . ' KB') : '';
                   @endphp
-                  <div class="deliverable-row">
+                  <div class="deliverable-row"
+                       data-doc-name="{{ $dName }}"
+                       data-survey-id="{{ $survey->id }}"
+                       data-folder-id="1"
+                       data-doc-id="{{ $matchDoc?->id ?? '' }}">
+                    <input type="file" class="row-file-input" style="display:none;" accept="{{ $dMeta['ext'] }}">
                     <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate me-2">
-                      <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; {{ $matchDoc ? 'background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0;' }}">
+                      <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; {{ $matchDoc ? 'background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0;' }}">
                         <i class="bi {{ $matchDoc ? 'bi-check-lg' : 'bi-file-earmark-text' }}"></i>
                       </div>
                       <div class="text-truncate">
@@ -812,22 +829,33 @@
                         </div>
                       </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                      @if($matchDoc && $matchDoc->file_path)
-                        <span class="item-status-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;">
-                          <i class="bi bi-check-circle-fill"></i>Uploaded
-                        </span>
-                        <a href="{{ asset('storage/' . $matchDoc->file_path) }}" target="_blank" rel="noopener noreferrer" class="item-action-btn" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">
-                          <i class="bi bi-eye"></i>View
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 row-controls">
+                      <span class="badge {{ $matchDoc ? ($isZip ? 'bg-warning text-dark' : 'bg-success') : 'bg-light text-muted border' }} d-inline-flex align-items-center gap-1 status-badge" style="font-size: 0.76rem; padding: 0.35rem 0.6rem;">
+                        <i class="bi {{ $matchDoc ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill') : 'bi-hourglass' }}"></i>
+                        <span class="badge-text">{{ $matchDoc ? ($origName . ($fileSizeFormatted ? ' (' . $fileSizeFormatted . ')' : '')) : 'Pending' }}</span>
+                      </span>
+
+                      <div class="btn-group btn-group-sm action-trio">
+                        <a href="{{ $fileUrl ?: '#' }}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-primary btn-view-item btn-view-drone-item"
+                           style="{{ $matchDoc ? '' : 'display:none;' }}"
+                           data-file-url="{{ $fileUrl }}"
+                           data-file-name="{{ $origName }}"
+                           data-file-size="{{ $fileSizeFormatted }}"
+                           data-doc-name="{{ $dName }}"
+                           data-is-zip="{{ $isZip ? '1' : '0' }}"
+                           title="View Document">
+                          <i class="bi bi-eye"></i> View
                         </a>
-                      @else
-                        <span class="item-status-pill" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0;">
-                          <i class="bi bi-hourglass"></i>Pending
-                        </span>
-                        <button type="button" class="item-action-btn btn-open-upload" data-doc-name="{{ $dName }}" style="background:#ffffff; color:#0F1E4D; border:1px solid #cbd5e1;">
-                          <i class="bi bi-cloud-arrow-up"></i>Upload
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item" title="{{ $matchDoc ? 'Re-upload file' : 'Upload file' }}">
+                          <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-cloud-arrow-up' }}"></i>
+                          <span class="btn-upload-text">{{ $matchDoc ? '' : 'Upload' }}</span>
                         </button>
-                      @endif
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item" style="{{ $matchDoc ? '' : 'display:none;' }}" title="Remove file">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 @endforeach
@@ -864,10 +892,22 @@
                       'VOL-10' => 'pill-vol',
                       default  => 'pill-log'
                     };
+                    $filePath = $matchDoc?->file_path;
+                    $isPublic = $filePath ? str_starts_with($filePath, 'uploads/') : false;
+                    $fileUrl = $filePath ? ($isPublic ? asset($filePath) : asset('storage/' . $filePath)) : '';
+                    $origName = $filePath ? basename($filePath) : '';
+                    $ext = $filePath ? strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) : '';
+                    $isZip = in_array($ext, ['zip', 'rar', '7z', 'tar', 'gz'], true);
+                    $fileSizeFormatted = ($matchDoc && $matchDoc->file_size) ? ($matchDoc->file_size >= 1048576 ? round($matchDoc->file_size / 1048576, 2) . ' MB' : round($matchDoc->file_size / 1024, 1) . ' KB') : '';
                   @endphp
-                  <div class="deliverable-row">
+                  <div class="deliverable-row"
+                       data-doc-name="{{ $dName }}"
+                       data-survey-id="{{ $survey->id }}"
+                       data-folder-id="2"
+                       data-doc-id="{{ $matchDoc?->id ?? '' }}">
+                    <input type="file" class="row-file-input" style="display:none;" accept="{{ $dMeta['ext'] }}">
                     <div class="d-flex align-items-center gap-2.5 flex-grow-1 text-truncate me-2">
-                      <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; {{ $matchDoc ? 'background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0;' }}">
+                      <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:34px; height:34px; {{ $matchDoc ? 'background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;' : 'background:#f1f5f9; color:#94a3b8; border:1px solid #e2e8f0;' }}">
                         <i class="bi {{ $matchDoc ? 'bi-check-lg' : 'bi-file-earmark-binary' }}"></i>
                       </div>
                       <div class="text-truncate">
@@ -880,22 +920,33 @@
                         </div>
                       </div>
                     </div>
-                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                      @if($matchDoc && $matchDoc->file_path)
-                        <span class="item-status-pill" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0;">
-                          <i class="bi bi-check-circle-fill"></i>Uploaded
-                        </span>
-                        <a href="{{ asset('storage/' . $matchDoc->file_path) }}" target="_blank" rel="noopener noreferrer" class="item-action-btn" style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe;">
-                          <i class="bi bi-eye"></i>View
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0 row-controls">
+                      <span class="badge {{ $matchDoc ? ($isZip ? 'bg-warning text-dark' : 'bg-success') : 'bg-light text-muted border' }} d-inline-flex align-items-center gap-1 status-badge" style="font-size: 0.76rem; padding: 0.35rem 0.6rem;">
+                        <i class="bi {{ $matchDoc ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill') : 'bi-hourglass' }}"></i>
+                        <span class="badge-text">{{ $matchDoc ? ($origName . ($fileSizeFormatted ? ' (' . $fileSizeFormatted . ')' : '')) : 'Pending' }}</span>
+                      </span>
+
+                      <div class="btn-group btn-group-sm action-trio">
+                        <a href="{{ $fileUrl ?: '#' }}"
+                           target="_blank"
+                           class="btn btn-sm btn-outline-primary btn-view-item btn-view-drone-item"
+                           style="{{ $matchDoc ? '' : 'display:none;' }}"
+                           data-file-url="{{ $fileUrl }}"
+                           data-file-name="{{ $origName }}"
+                           data-file-size="{{ $fileSizeFormatted }}"
+                           data-doc-name="{{ $dName }}"
+                           data-is-zip="{{ $isZip ? '1' : '0' }}"
+                           title="View Document">
+                          <i class="bi bi-eye"></i> View
                         </a>
-                      @else
-                        <span class="item-status-pill" style="background:#f8fafc; color:#64748b; border:1px solid #e2e8f0;">
-                          <i class="bi bi-hourglass"></i>Pending
-                        </span>
-                        <button type="button" class="item-action-btn btn-open-upload" data-doc-name="{{ $dName }}" style="background:#ffffff; color:#0F1E4D; border:1px solid #cbd5e1;">
-                          <i class="bi bi-cloud-arrow-up"></i>Upload
+                        <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item" title="{{ $matchDoc ? 'Re-upload file' : 'Upload file' }}">
+                          <i class="bi {{ $matchDoc ? 'bi-arrow-repeat' : 'bi-cloud-arrow-up' }}"></i>
+                          <span class="btn-upload-text">{{ $matchDoc ? '' : 'Upload' }}</span>
                         </button>
-                      @endif
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item" style="{{ $matchDoc ? '' : 'display:none;' }}" title="Remove file">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 @endforeach
@@ -1143,77 +1194,313 @@
 @push('scripts')
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    // Open modal with pre-selected document name
-    document.querySelectorAll('.btn-open-upload').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        var docName = this.getAttribute('data-doc-name');
-        var select = document.getElementById('modal_document_name');
-        if (select && docName) {
-          select.value = docName;
+    var CSRF_TOKEN = '{{ csrf_token() }}';
+    var UPLOAD_URL = '{{ route('drone-survey.upload') }}';
+    var REMOVE_URL = '{{ route('drone-survey.remove') }}';
+
+    function updateCatalogCounter() {
+      var rows = document.querySelectorAll('.deliverable-row');
+      var total = rows.length || 10;
+      var uploaded = 0;
+      rows.forEach(function(r) {
+        if (r.getAttribute('data-doc-id')) {
+          uploaded++;
         }
-        var modalEl = document.getElementById('uploadDroneModal');
-        if (modalEl && window.bootstrap) {
-          var modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-          modal.show();
+      });
+      var pct = Math.round((uploaded / total) * 100);
+      var countEl = document.getElementById('drone_attached_count');
+      var pctEl = document.getElementById('drone_attached_pct');
+      var barEl = document.getElementById('drone_attached_bar');
+      if (countEl) countEl.textContent = uploaded;
+      if (pctEl) pctEl.textContent = pct;
+      if (barEl) barEl.style.width = pct + '%';
+    }
+
+    function uploadDroneRowFile(row, file) {
+      if (!file) return;
+
+      var docName = row.getAttribute('data-doc-name');
+      var surveyId = row.getAttribute('data-survey-id');
+      var folderId = row.getAttribute('data-folder-id') || '1';
+      var docId = row.getAttribute('data-doc-id') || '';
+
+      var uploadBtn = row.querySelector('.btn-upload-item');
+      var origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
+      if (uploadBtn) {
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      }
+
+      var formData = new FormData();
+      formData.append('_token', CSRF_TOKEN);
+      formData.append('drone_survey_id', surveyId);
+      formData.append('document_name', docName);
+      formData.append('folder_id', folderId);
+      if (docId) formData.append('doc_id', docId);
+      formData.append('file', file);
+
+      fetch(UPLOAD_URL, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Upload failed with status ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.title = 'Re-upload file';
+          uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+          var textSpan = uploadBtn.querySelector('.btn-upload-text');
+          if (textSpan) textSpan.remove();
+        }
+
+        if (data.status === 1 || data.success) {
+          row.setAttribute('data-doc-id', data.doc_id || '');
+
+          // Update avatar
+          var avatar = row.querySelector('.row-avatar');
+          if (avatar) {
+            avatar.style.background = '#ecfdf5';
+            avatar.style.color = '#059669';
+            avatar.style.border = '1px solid #a7f3d0';
+            var icon = avatar.querySelector('i');
+            if (icon) icon.className = 'bi bi-check-lg';
+          }
+
+          // Update badge
+          var badge = row.querySelector('.status-badge');
+          if (badge) {
+            badge.style.background = '';
+            badge.style.color = '';
+            badge.style.border = '';
+            var isZip = data.is_zip;
+            badge.className = 'badge ' + (isZip ? 'bg-warning text-dark' : 'bg-success') + ' d-inline-flex align-items-center gap-1 status-badge';
+            var badgeIcon = isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-circle-fill';
+            var sizeStr = data.file_size ? ' (' + data.file_size + ')' : '';
+            badge.innerHTML = '<i class="bi ' + badgeIcon + '"></i> <span class="badge-text">' + (data.file_name || 'Attached') + sizeStr + '</span>';
+          }
+
+          // Update View button
+          var viewBtn = row.querySelector('.btn-view-item');
+          if (viewBtn) {
+            viewBtn.href = data.file_url || '#';
+            viewBtn.setAttribute('data-file-url', data.file_url || '');
+            viewBtn.setAttribute('data-file-name', data.file_name || '');
+            viewBtn.setAttribute('data-file-size', data.file_size || '');
+            viewBtn.setAttribute('data-is-zip', data.is_zip ? '1' : '0');
+            viewBtn.style.display = '';
+          }
+
+          // Show Remove button
+          var removeBtn = row.querySelector('.btn-remove-item');
+          if (removeBtn) {
+            removeBtn.style.display = '';
+          }
+
+          updateCatalogCounter();
+
+          if (window.toastr) {
+            toastr.success('Deliverable "' + (data.file_name || docName) + '" attached successfully!');
+          }
+        } else {
+          alert(data.message || 'Upload failed.');
+        }
+      })
+      .catch(function(err) {
+        if (uploadBtn) {
+          uploadBtn.disabled = false;
+          uploadBtn.innerHTML = origBtnHtml;
+        }
+        alert('Upload error: ' + err.message);
+      });
+    }
+
+    function removeDroneRowDocument(row) {
+      if (!confirm('Are you sure you want to remove this attached deliverable?')) {
+        return;
+      }
+
+      var docName = row.getAttribute('data-doc-name');
+      var surveyId = row.getAttribute('data-survey-id');
+      var docId = row.getAttribute('data-doc-id') || '';
+
+      var removeBtn = row.querySelector('.btn-remove-item');
+      if (removeBtn) {
+        removeBtn.disabled = true;
+        removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+      }
+
+      var formData = new FormData();
+      formData.append('_token', CSRF_TOKEN);
+      formData.append('drone_survey_id', surveyId);
+      formData.append('document_name', docName);
+      if (docId) formData.append('doc_id', docId);
+
+      fetch(REMOVE_URL, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+      })
+      .then(function(res) {
+        if (!res.ok) throw new Error('Remove failed with status ' + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        if (removeBtn) {
+          removeBtn.disabled = false;
+          removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+        }
+
+        if (data.status === 1 || data.success) {
+          row.setAttribute('data-doc-id', '');
+
+          // Reset avatar
+          var avatar = row.querySelector('.row-avatar');
+          var folderId = row.getAttribute('data-folder-id');
+          if (avatar) {
+            avatar.style.background = '#f1f5f9';
+            avatar.style.color = '#94a3b8';
+            avatar.style.border = '1px solid #e2e8f0';
+            var icon = avatar.querySelector('i');
+            if (icon) icon.className = 'bi ' + (folderId === '2' ? 'bi-file-earmark-binary' : 'bi-file-earmark-text');
+          }
+
+          // Reset badge to pending
+          var badge = row.querySelector('.status-badge');
+          if (badge) {
+            badge.className = 'badge bg-light text-muted border d-inline-flex align-items-center gap-1 status-badge';
+            badge.style.background = '';
+            badge.style.color = '';
+            badge.style.border = '';
+            badge.innerHTML = '<i class="bi bi-hourglass"></i> <span class="badge-text">Pending</span>';
+          }
+
+          // Hide View button
+          var viewBtn = row.querySelector('.btn-view-item');
+          if (viewBtn) {
+            viewBtn.style.display = 'none';
+            viewBtn.href = '#';
+            viewBtn.setAttribute('data-file-url', '');
+          }
+
+          // Reset upload button
+          var uploadBtn = row.querySelector('.btn-upload-item');
+          if (uploadBtn) {
+            uploadBtn.title = 'Upload file';
+            uploadBtn.innerHTML = '<i class="bi bi-cloud-arrow-up"></i> <span class="btn-upload-text">Upload</span>';
+          }
+
+          // Hide remove button
+          if (removeBtn) {
+            removeBtn.style.display = 'none';
+          }
+
+          // Clear hidden file input
+          var fileInput = row.querySelector('.row-file-input');
+          if (fileInput) fileInput.value = '';
+
+          updateCatalogCounter();
+
+          if (window.toastr) {
+            toastr.info('Deliverable removed successfully.');
+          }
+        } else {
+          alert(data.message || 'Remove failed.');
+        }
+      })
+      .catch(function(err) {
+        if (removeBtn) {
+          removeBtn.disabled = false;
+          removeBtn.innerHTML = '<i class="bi bi-trash"></i>';
+        }
+        alert('Remove error: ' + err.message);
+      });
+    }
+
+    // Initialize all deliverable rows: Event delegation & Drag-and-Drop
+    document.querySelectorAll('.deliverable-row').forEach(function(row) {
+      var fileInput = row.querySelector('.row-file-input');
+      var uploadBtn = row.querySelector('.btn-upload-item');
+      var removeBtn = row.querySelector('.btn-remove-item');
+
+      if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          fileInput.click();
+        });
+      }
+
+      if (fileInput) {
+        fileInput.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            uploadDroneRowFile(row, this.files[0]);
+          }
+        });
+      }
+
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          removeDroneRowDocument(row);
+        });
+      }
+
+      // Drag & Drop
+      row.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.add('row-dragover');
+      });
+
+      row.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('row-dragover');
+      });
+
+      row.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('row-dragover');
+        var files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+          uploadDroneRowFile(row, files[0]);
         }
       });
     });
 
-    // AJAX upload handler
-    var form = document.getElementById('droneUploadForm');
-    if (form) {
-      form.addEventListener('submit', function(e) {
+    // Modal support with sync to corresponding row
+    var modalUploadForm = document.getElementById('droneUploadForm');
+    if (modalUploadForm) {
+      modalUploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         var submitBtn = document.getElementById('btn_submit_upload');
-        var progressBox = document.getElementById('upload_progress_box');
-        var uploadBar = document.getElementById('upload_bar');
-        var uploadPercent = document.getElementById('upload_percent');
+        var select = document.getElementById('modal_document_name');
+        var fileIn = document.getElementById('modal_file_input');
+        if (!fileIn || !fileIn.files || !fileIn.files[0]) return;
 
-        var formData = new FormData(form);
-        submitBtn.disabled = true;
-        progressBox.style.display = 'block';
-
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '{{ route('drone-survey.upload') }}', true);
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-
-        xhr.upload.onprogress = function(e) {
-          if (e.lengthComputable) {
-            var pct = Math.round((e.loaded / e.total) * 100);
-            uploadBar.style.width = pct + '%';
-            uploadPercent.innerText = pct + '%';
+        var targetDocName = select ? select.value : '';
+        var matchingRow = null;
+        document.querySelectorAll('.deliverable-row').forEach(function(r) {
+          if (r.getAttribute('data-doc-name') === targetDocName) {
+            matchingRow = r;
           }
-        };
+        });
 
-        xhr.onload = function() {
-          submitBtn.disabled = false;
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              var res = JSON.parse(xhr.responseText);
-              if (res.success) {
-                if (window.toastr) {
-                  toastr.success('Deliverable attached successfully!');
-                }
-                setTimeout(function() {
-                  window.location.reload();
-                }, 600);
-                return;
-              }
-            } catch(e) {}
-            window.location.reload();
-          } else {
-            progressBox.style.display = 'none';
-            alert('Upload failed: ' + xhr.statusText);
+        if (matchingRow) {
+          var modalEl = document.getElementById('uploadDroneModal');
+          if (modalEl && window.bootstrap) {
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
           }
-        };
-
-        xhr.onerror = function() {
-          submitBtn.disabled = false;
-          progressBox.style.display = 'none';
-          alert('Upload failed due to network error.');
-        };
-
-        xhr.send(formData);
+          uploadDroneRowFile(matchingRow, fileIn.files[0]);
+          fileIn.value = '';
+        } else {
+          modalUploadForm.submit();
+        }
       });
     }
   });

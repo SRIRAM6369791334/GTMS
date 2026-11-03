@@ -183,36 +183,120 @@ $labels = ['Applicant','B2 Category','Folders','Documents','Validation','Approva
       </div>
 
     @elseif($step === 4)
-      <h4>Document Preparation & Upload</h4>
-      <div class="wc-sub">Prepare each file against the B2 checklist. To upload files to a live project dossier, open the project from the B2 list.</div>
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>
+          <h4>Document Preparation &amp; Upload</h4>
+          <div class="wc-sub">Prepare and upload each statutory document against the B2 checklist. Documents are asynchronously uploaded with instant preview.</div>
+        </div>
+        <span class="badge bg-light text-navy border px-3 py-2 fw-bold" id="b2_doc_counter" style="font-size:0.85rem;">0 / 9 Uploaded</span>
+      </div>
+
       @if($latestProject)
-        <div class="alert alert-info d-flex justify-content-between align-items-center">
+        <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
           <div>
             <strong>Latest Active Project:</strong> {{ $latestProject->project_code }} — {{ $latestProject->project_name }}
           </div>
           <a href="{{ route('environment-b2.show', $latestProject) }}" class="btn btn-sm btn-navy">Open Project Dossier</a>
         </div>
       @endif
-      <div class="dropzone"><i class="fa fa-cloud-upload-alt fa-3x text-muted mb-2"></i><div class="dz-title">Drag & drop files here, or open Project Dossier</div><div class="dz-sub">PDF, JPG, PNG and Office files &mdash; maximum 25 MB</div></div>
+
+      <div class="dropzone mb-3"><i class="fa fa-cloud-upload-alt fa-3x text-muted mb-2"></i><div class="dz-title">Drag & drop files onto any checklist row below</div><div class="dz-sub">PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, ZIP, KML &mdash; maximum 500 MB</div></div>
+
       @php
         $items = ['500m Radius Letter','Existing Pit Letter','Approved Mining Plan Book','DGPS Photograph','Pre-feasibility Report','GIS Data','Signed Reports','Common Application Form','Payment Receipt'];
+        $b2Uploaded = session('enviro_b2_wizard.uploaded_docs', []);
       @endphp
-      <div class="mt-4" id="enviro_b2_docs_container">
+      <div class="mt-3" id="enviro_b2_docs_container">
         @foreach($items as $item)
-          @php $isM = ($loop->iteration < 4); @endphp
-          <div class="checklist-row d-flex align-items-center justify-content-between p-2 border-bottom" data-mandatory="{{ $isM ? '1' : '0' }}">
-            <div class="d-flex align-items-center">
-              <i class="fa fa-file-pdf text-danger me-3 fa-lg"></i>
-              <div>
-                <div class="ci-name font-w600">{{ $loop->iteration }}. {{ $item }}</div>
-                <small class="text-muted">Folder item</small>
+          @php
+            $isM = ($loop->iteration < 4);
+            $docKey = 'b2_doc_' . $loop->iteration;
+            $doc = $b2Uploaded[$docKey] ?? ($b2Uploaded[$item] ?? null);
+            $isUp = !empty($doc);
+            $isZip = $isUp && !empty($doc['is_zip']);
+            $docUrl = $doc['file_url'] ?? '#';
+            $fileName = $doc['file_name'] ?? '';
+            $fileSize = $doc['file_size'] ?? '';
+          @endphp
+          <div class="checklist-row d-flex align-items-center justify-content-between p-2 mb-2 border rounded-3 {{ $isUp ? 'up border-success-subtle bg-light' : 'bg-white' }}"
+               data-doc-item="{{ $docKey }}"
+               data-doc-name="{{ $item }}"
+               data-mandatory="{{ $isM ? '1' : '0' }}">
+            
+            <input type="file" class="row-file-input d-none"
+                   data-doc-item="{{ $docKey }}"
+                   data-doc-name="{{ $item }}"
+                   accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.zip,.rar,.7z,.kml,.kmz,.dwg">
+
+            <div class="d-flex align-items-center flex-grow-1 text-truncate me-2">
+              <div class="ci-icon me-2.5 rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                   style="width:34px; height:34px; font-size:14px; {{ $isUp ? ($isZip ? 'background:#fef3c7; color:#d97706;' : 'background:var(--green-soft, #e6f4ea); color:var(--green, #10b981);') : 'background:#fee2e2; color:#dc2626;' }}">
+                @if($isUp)
+                  @if($isZip)
+                    <i class="bi bi-file-earmark-zip text-warning"></i>
+                  @else
+                    <i class="bi bi-check-lg" style="color:var(--green, #10b981);"></i>
+                  @endif
+                @else
+                  <i class="fa fa-file-pdf"></i>
+                @endif
+              </div>
+              <div class="text-truncate">
+                <div class="ci-name font-w600 text-dark text-truncate" style="font-size:0.88rem;">{{ $loop->iteration }}. {{ $item }}</div>
+                <div class="ci-meta text-muted" style="font-size:11px;">
+                  @if($isUp)
+                    <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $fileName }}</span> &middot; {{ $fileSize }}
+                  @else
+                    Not uploaded &middot; Max 500 MB
+                  @endif
+                </div>
               </div>
             </div>
-            <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isM ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
-                    style="font-size:0.75rem; width:110px; border-radius:6px;">
-              <option value="mandatory" {{ $isM ? 'selected' : '' }}>Mandatory</option>
-              <option value="optional" {{ !$isM ? 'selected' : '' }}>Optional</option>
-            </select>
+
+            <div class="d-flex align-items-center gap-1.5 flex-shrink-0 action-slot">
+              <select class="form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center {{ $isM ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
+                      style="font-size:0.72rem; width:95px; height:28px; border-radius:6px; cursor:pointer;">
+                <option value="mandatory" {{ $isM ? 'selected' : '' }}>Mandatory</option>
+                <option value="optional" {{ !$isM ? 'selected' : '' }}>Optional</option>
+              </select>
+
+              @if($isUp)
+                <span class="badge-status uploaded">Uploaded</span>
+
+                {{-- View Button (GtmsOpenWith Integration) --}}
+                <a href="{{ $docUrl }}" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item"
+                   target="_blank" rel="noopener noreferrer"
+                   style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;"
+                   title="{{ $isZip ? 'Download / View ZIP Archive' : 'View Document' }}"
+                   data-file-url="{{ $docUrl }}"
+                   data-file-name="{{ $fileName }}"
+                   data-file-size="{{ $fileSize }}"
+                   data-doc-name="{{ $item }}"
+                   data-is-zip="{{ $isZip ? '1' : '0' }}">
+                  <i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
+                </a>
+
+                {{-- Re-upload Button --}}
+                <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item"
+                        style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;"
+                        title="Change / Re-upload file">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+
+                {{-- Remove Button --}}
+                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item"
+                        style="font-size:.78rem; height:28px; display:inline-flex; align-items:center; justify-content:center;"
+                        title="Remove this document">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              @else
+                <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2.5 btn-upload-item"
+                        style="font-size:.75rem; height:28px; display:inline-flex; align-items:center; justify-content:center;"
+                        title="Upload file">
+                  <i class="bi bi-upload me-1"></i> Upload
+                </button>
+              @endif
+            </div>
           </div>
         @endforeach
       </div>
@@ -515,8 +599,281 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 
 @if($step === 4)
+<style>
+.checklist-row.row-dragover {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+.badge-status.uploaded {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  display: inline-block;
+}
+</style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  const csrfToken = '{{ csrf_token() }}';
+  const uploadUrl = '{{ route("enviro_b2.upload_document") }}';
+  const removeUrl = '{{ route("enviro_b2.remove_document") }}';
+
+  function updateB2Progress() {
+    const total = document.querySelectorAll('#enviro_b2_docs_container .checklist-row').length;
+    const uploaded = document.querySelectorAll('#enviro_b2_docs_container .checklist-row.up').length;
+    const counter = document.getElementById('b2_doc_counter');
+    if (counter) counter.textContent = `${uploaded} / ${total} Uploaded`;
+  }
+  updateB2Progress();
+
+  function markRowUploaded(row, fileName, fileSize, fileUrl, isZip) {
+    row.classList.add('up', 'border-success-subtle', 'bg-light');
+    row.classList.remove('bg-white');
+
+    const ext = fileName.split('.').pop().toLowerCase();
+    const zipStatus = isZip || ['zip', 'rar', '7z', 'tar', 'gz'].includes(ext);
+
+    const iconDiv = row.querySelector('.ci-icon');
+    if (iconDiv) {
+      iconDiv.style.background = zipStatus ? '#fef3c7' : 'var(--green-soft, #e6f4ea)';
+      iconDiv.style.color = zipStatus ? '#d97706' : 'var(--green, #10b981)';
+      iconDiv.innerHTML = zipStatus ? '<i class="bi bi-file-earmark-zip text-warning"></i>' : '<i class="bi bi-check-lg" style="color:var(--green, #10b981);"></i>';
+    }
+
+    const metaDiv = row.querySelector('.ci-meta');
+    if (metaDiv) {
+      metaDiv.innerHTML = `<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ${fileName}</span> &middot; ${fileSize}`;
+    }
+
+    const slot = row.querySelector('.action-slot');
+    if (slot) {
+      let badge = slot.querySelector('.badge-status');
+      if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'badge-status uploaded';
+        badge.textContent = 'Uploaded';
+        slot.appendChild(badge);
+      }
+
+      let viewBtn = slot.querySelector('.btn-view-item');
+      if (!viewBtn) {
+        viewBtn = document.createElement('a');
+        viewBtn.className = 'btn btn-sm btn-outline-info py-0 px-2 btn-view-item';
+        viewBtn.style.fontSize = '.78rem';
+        viewBtn.style.height = '28px';
+        viewBtn.style.display = 'inline-flex';
+        viewBtn.style.alignItems = 'center';
+        viewBtn.style.justifyContent = 'center';
+        viewBtn.target = '_blank';
+        viewBtn.rel = 'noopener noreferrer';
+        slot.appendChild(viewBtn);
+      }
+      viewBtn.href = fileUrl;
+      viewBtn.title = zipStatus ? 'Download / View ZIP Archive' : 'View Document';
+      viewBtn.setAttribute('data-file-url', fileUrl);
+      viewBtn.setAttribute('data-file-name', fileName);
+      viewBtn.setAttribute('data-file-size', fileSize);
+      viewBtn.setAttribute('data-doc-name', row.getAttribute('data-doc-name') || 'Document');
+      viewBtn.setAttribute('data-is-zip', zipStatus ? '1' : '0');
+      viewBtn.innerHTML = zipStatus ? '<i class="bi bi-file-earmark-zip"></i>' : '<i class="bi bi-eye"></i>';
+
+      let uploadBtn = slot.querySelector('.btn-upload-item');
+      if (uploadBtn) {
+        uploadBtn.className = 'btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item';
+        uploadBtn.style.fontSize = '.78rem';
+        uploadBtn.style.height = '28px';
+        uploadBtn.style.display = 'inline-flex';
+        uploadBtn.style.alignItems = 'center';
+        uploadBtn.style.justifyContent = 'center';
+        uploadBtn.title = 'Change / Re-upload file';
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+      }
+
+      let removeBtn = slot.querySelector('.btn-remove-item');
+      if (!removeBtn) {
+        removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-sm btn-outline-danger py-0 px-2 btn-remove-item';
+        removeBtn.style.fontSize = '.78rem';
+        removeBtn.style.height = '28px';
+        removeBtn.style.display = 'inline-flex';
+        removeBtn.style.alignItems = 'center';
+        removeBtn.style.justifyContent = 'center';
+        removeBtn.title = 'Remove this document';
+        removeBtn.innerHTML = '<i class="bi bi-trash3"></i>';
+        slot.appendChild(removeBtn);
+      }
+    }
+
+    updateB2Progress();
+  }
+
+  function markRowRemoved(row) {
+    row.classList.remove('up', 'border-success-subtle', 'bg-light');
+    row.classList.add('bg-white');
+
+    const iconDiv = row.querySelector('.ci-icon');
+    if (iconDiv) {
+      iconDiv.style.background = '#fee2e2';
+      iconDiv.style.color = '#dc2626';
+      iconDiv.innerHTML = '<i class="fa fa-file-pdf"></i>';
+    }
+
+    const metaDiv = row.querySelector('.ci-meta');
+    if (metaDiv) {
+      metaDiv.innerHTML = 'Not uploaded &middot; Max 500 MB';
+    }
+
+    const slot = row.querySelector('.action-slot');
+    if (slot) {
+      const badge = slot.querySelector('.badge-status');
+      if (badge) badge.remove();
+
+      const viewBtn = slot.querySelector('.btn-view-item');
+      if (viewBtn) viewBtn.remove();
+
+      const removeBtn = slot.querySelector('.btn-remove-item');
+      if (removeBtn) removeBtn.remove();
+
+      const uploadBtn = slot.querySelector('.btn-upload-item');
+      if (uploadBtn) {
+        uploadBtn.className = 'btn btn-sm btn-outline-navy py-0 px-2.5 btn-upload-item';
+        uploadBtn.style.fontSize = '.75rem';
+        uploadBtn.style.height = '28px';
+        uploadBtn.title = 'Upload file';
+        uploadBtn.innerHTML = '<i class="bi bi-upload me-1"></i> Upload';
+      }
+    }
+
+    const input = row.querySelector('.row-file-input');
+    if (input) input.value = '';
+
+    updateB2Progress();
+  }
+
+  function uploadFileToServer(row, file) {
+    const docItem = row.getAttribute('data-doc-item');
+    const docName = row.getAttribute('data-doc-name');
+
+    const formData = new FormData();
+    formData.append('_token', csrfToken);
+    formData.append('file', file);
+    formData.append('doc_item', docItem);
+    formData.append('document_name', docName);
+
+    const iconDiv = row.querySelector('.ci-icon');
+    if (iconDiv) {
+      iconDiv.innerHTML = '<i class="fa fa-spinner fa-spin text-primary"></i>';
+    }
+
+    fetch(uploadUrl, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 1 || data.success) {
+        markRowUploaded(row, data.file_name, data.file_size, data.file_url, data.is_zip);
+      } else {
+        alert(data.message || 'File upload failed.');
+        markRowRemoved(row);
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Network error while uploading file.');
+      markRowRemoved(row);
+    });
+  }
+
+  function attachRowDragAndDrop(row) {
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('row-dragover');
+    });
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadFileToServer(this, e.dataTransfer.files[0]);
+      }
+    });
+  }
+  document.querySelectorAll('#enviro_b2_docs_container .checklist-row').forEach(attachRowDragAndDrop);
+
+  // Trigger file dialog
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-upload-item');
+    if (btn && btn.closest('#enviro_b2_docs_container')) {
+      const row = btn.closest('.checklist-row');
+      const input = row.querySelector('.row-file-input');
+      if (input) input.click();
+    }
+  });
+
+  // Handle file select
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('row-file-input')) {
+      const input = e.target;
+      const row = input.closest('.checklist-row');
+      if (input.files && input.files[0] && row) {
+        uploadFileToServer(row, input.files[0]);
+      }
+    }
+  });
+
+  // Remove handler
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-remove-item');
+    if (btn && btn.closest('#enviro_b2_docs_container')) {
+      const row = btn.closest('.checklist-row');
+      const docItem = row.getAttribute('data-doc-item');
+      const docName = row.getAttribute('data-doc-name');
+
+      if (!confirm(`Are you sure you want to remove "${docName}"?`)) return;
+
+      const formData = new FormData();
+      formData.append('_token', csrfToken);
+      formData.append('doc_item', docItem);
+      formData.append('document_name', docName);
+
+      fetch(removeUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 1 || data.success) {
+          markRowRemoved(row);
+        } else {
+          alert(data.message || 'Failed to remove document.');
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Network error while removing document.');
+      });
+    }
+  });
+
   document.querySelectorAll('.doc-req-select').forEach(function(sel) {
     sel.addEventListener('change', function() {
       const row = this.closest('.checklist-row');
@@ -525,9 +882,9 @@ document.addEventListener('DOMContentLoaded', function() {
         row.setAttribute('data-mandatory', isMandatory ? '1' : '0');
       }
       if (isMandatory) {
-        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle';
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-danger-subtle text-danger bg-danger-subtle me-1';
       } else {
-        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light';
+        this.className = 'form-select form-select-sm doc-req-select py-0 px-2 fw-bold text-center border-secondary-subtle text-muted bg-light me-1';
       }
     });
   });

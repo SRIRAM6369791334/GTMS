@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             GtmsMasterDataSeeder::class,
             MiningNatureOfWorkSeeder::class,
             CustomerSeeder::class,
+            MasterPipelineSampleDataSeeder::class,
         ]);
     }
 }

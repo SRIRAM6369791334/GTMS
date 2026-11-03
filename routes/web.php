@@ -28,6 +28,7 @@ use App\Http\Controllers\Accounts\CustomerLedgerController;
 use App\Http\Controllers\Accounts\FinancialReportController;
 use App\Http\Controllers\ChunkUploadController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\MasterPipelineController;
 
 
 // Public Health & Version Status Endpoint
@@ -306,13 +307,24 @@ Route::middleware('auth')->group(function () {
         Route::get('/miningplan', [MiningController::class, 'index'])->name('miningplan.index');
         Route::get('/projectfolder', [MiningController::class, 'projectFolder'])->name('projectfolder');
         Route::get('/document', [MiningController::class, 'Document'])->name('document');
+        Route::get('/mining/documents/{id?}', [MiningController::class, 'Document'])->name('mining.documents');
+        Route::get('/mining-portal/documents/{id?}', [MiningController::class, 'Document'])->name('mining-portal.documents');
         Route::get('/process', [MiningController::class, 'Process'])->name('process');
     });
     Route::middleware('permission:mining.create')->group(function () {
         Route::get('/newapplication', [MiningController::class, 'newApplication'])->name('newapplication');
         Route::post('/newapplication', [MiningController::class, 'store'])->name('newapplication.store');
         Route::post('/newapplication/autosave', [MiningController::class, 'autoSaveStep'])->name('newapplication.autosave');
+    });
+    Route::middleware('permission:mining.create|mining.edit')->group(function () {
         Route::post('/mining/document/upload', [MiningController::class, 'uploadDocument'])->name('mining.document.upload');
+        Route::post('/mining/document/remove', [MiningController::class, 'removeDocument'])->name('mining.document.remove');
+        Route::post('/mining-portal/upload-document', [MiningController::class, 'uploadDocument'])->name('mining-portal.upload-document');
+        Route::post('/mining-portal/upload', [MiningController::class, 'uploadDocument'])->name('mining-portal.upload');
+        Route::post('/mining_portal/upload-document', [MiningController::class, 'uploadDocument'])->name('mining_portal.upload_document');
+        Route::post('/mining-portal/remove-document', [MiningController::class, 'removeDocument'])->name('mining-portal.remove-document');
+        Route::post('/mining-portal/remove', [MiningController::class, 'removeDocument'])->name('mining-portal.remove');
+        Route::post('/mining_portal/remove-document', [MiningController::class, 'removeDocument'])->name('mining_portal.remove_document');
     });
     Route::middleware('permission:mining.edit')->group(function () {
         Route::post('/mining/document/{id}/validate', [MiningController::class, 'validateDocument'])->name('mining.document.validate');
@@ -354,13 +366,25 @@ Route::middleware('auth')->group(function () {
         Route::post('/environment-b2', [EnvironmentalB2Controller::class, 'store'])->name('environment-b2.store');
     });
 
-    Route::middleware('permission:environment.b2.upload')->group(function () {
+    Route::middleware('permission:environment.b2.upload|environment.create|environment.edit|environment.b2.create')->group(function () {
         // Unified document upload (for B1 & B2 via eviron/{id})
         Route::post('/eviron/{id}/documents/{document}/upload', [EnverionsoneController::class, 'uploadDocument'])->name('eviron.documents.upload');
         Route::post('/eviron/{id}/documents/add', [EnverionsoneController::class, 'addDocument'])->name('eviron.documents.add');
+        Route::post('/eviron/{id}/documents/{document}/remove', [EnverionsoneController::class, 'removeDocument'])->name('eviron.documents.remove');
+        Route::post('/eviron/documents/remove', [EnverionsoneController::class, 'removeDocument'])->name('eviron.documents.remove_direct');
+        Route::post('/enviro_b1/upload-document', [EnverionsoneController::class, 'uploadDocument'])->name('enviro_b1.upload_document');
+        Route::post('/enviro-b1/upload', [EnverionsoneController::class, 'uploadDocument'])->name('enviro-b1.upload');
+        Route::post('/enviro_b1/remove-document', [EnverionsoneController::class, 'removeDocument'])->name('enviro_b1.remove_document');
+        Route::post('/enviro-b1/remove', [EnverionsoneController::class, 'removeDocument'])->name('enviro-b1.remove');
 
-        // B2 legacy upload
+        // B2 upload & remove routes
         Route::post('/environment-b2/documents/{document}/upload', [EnvironmentalB2Controller::class, 'upload'])->name('environment-b2.documents.upload');
+        Route::post('/environment-b2/documents/{document}/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('environment-b2.documents.remove');
+        Route::post('/environment-b2/documents/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('environment-b2.documents.remove_direct');
+        Route::post('/enviro_b2/upload-document', [EnvironmentalB2Controller::class, 'upload'])->name('enviro_b2.upload_document');
+        Route::post('/enviro-b2/upload', [EnvironmentalB2Controller::class, 'upload'])->name('enviro-b2.upload');
+        Route::post('/enviro_b2/remove-document', [EnvironmentalB2Controller::class, 'removeDocument'])->name('enviro_b2.remove_document');
+        Route::post('/enviro-b2/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('enviro-b2.remove');
     });
 
     Route::middleware('permission:environment.b2.review')->group(function () {
@@ -389,6 +413,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/ec-certificate/step/{step}', [EcCertificateController::class, 'saveStep'])->whereNumber('step')->name('ec-certificate.saveStep');
         Route::post('/ec-certificate', [EcCertificateController::class, 'store'])->name('ec-certificate.store');
     });
+    Route::middleware('permission:ec_certificate.create|ec_certificate.edit')->group(function () {
+        Route::post('/ec-certificate/upload', [EcCertificateController::class, 'uploadDocument'])->name('ec-certificate.upload');
+        Route::post('/ec-certificate/upload-document', [EcCertificateController::class, 'uploadDocument'])->name('ec-certificate.upload-document');
+        Route::post('/ec_certificate/upload-document', [EcCertificateController::class, 'uploadDocument'])->name('ec_certificate.upload_document');
+        Route::post('/ec-certificate/remove', [EcCertificateController::class, 'removeDocument'])->name('ec-certificate.remove');
+        Route::post('/ec-certificate/remove-document', [EcCertificateController::class, 'removeDocument'])->name('ec-certificate.remove-document');
+        Route::post('/ec_certificate/remove-document', [EcCertificateController::class, 'removeDocument'])->name('ec_certificate.remove_document');
+    });
     Route::middleware('permission:ec_certificate.edit')->group(function () {
         Route::post('/ec-certificate/{id}/status', [EcCertificateController::class, 'updateStatus'])->whereNumber('id')->name('ec-certificate.status');
     });
@@ -403,10 +435,17 @@ Route::middleware('auth')->group(function () {
         Route::post('/ppt-department/step/{step}', [PptDepartmentController::class, 'saveStep'])->whereNumber('step')->name('ppt-department.saveStep');
         Route::post('/ppt-department', [PptDepartmentController::class, 'store'])->name('ppt-department.store');
     });
+    Route::middleware('permission:ppt.create|ppt.edit')->group(function () {
+        Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
+        Route::post('/ppt_department/upload-document', [PptDepartmentController::class, 'uploadDocument'])->name('ppt_department.upload_document');
+        Route::post('/ppt-department/upload-document', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload_document');
+        Route::post('/ppt-department/remove', [PptDepartmentController::class, 'removeDocument'])->name('ppt-department.remove');
+        Route::post('/ppt_department/remove-document', [PptDepartmentController::class, 'removeDocument'])->name('ppt_department.remove_document');
+        Route::post('/ppt-department/remove-document', [PptDepartmentController::class, 'removeDocument'])->name('ppt-department.remove_document');
+    });
     Route::middleware('permission:ppt.edit')->group(function () {
         Route::post('/ppt-department/{id}/status', [PptDepartmentController::class, 'updateStatus'])->whereNumber('id')->name('ppt-department.status');
         Route::post('/ppt-department/{id}/approve-stage', [PptDepartmentController::class, 'approvePresentation'])->whereNumber('id')->name('ppt-department.approveStage');
-        Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
     });
 
     // DGPS Survey
@@ -419,8 +458,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/dgps-survey/step/{step}', [DgpsSurveyController::class, 'saveStep'])->whereNumber('step')->name('dgps-survey.saveStep');
         Route::post('/dgps-survey', [DgpsSurveyController::class, 'store'])->name('dgps-survey.store');
     });
-    Route::middleware('permission:dgps.edit')->group(function () {
+    Route::middleware('permission:dgps.edit|dgps.create')->group(function () {
         Route::post('/dgps-survey/upload', [DgpsSurveyController::class, 'uploadDocument'])->name('dgps-survey.upload');
+        Route::post('/dgps-survey/remove', [DgpsSurveyController::class, 'removeDocument'])->name('dgps-survey.remove');
+        Route::post('/dgps_survey/remove-document', [DgpsSurveyController::class, 'removeDocument'])->name('dgps_survey.remove_document');
     });
 
     // Drone Survey
@@ -435,6 +476,8 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('permission:drone.edit|drone.create')->group(function () {
         Route::post('/drone-survey/upload', [DroneSurveyController::class, 'uploadDocument'])->name('drone-survey.upload');
+        Route::post('/drone-survey/remove', [DroneSurveyController::class, 'removeDocument'])->name('drone-survey.remove');
+        Route::post('/drone_survey/remove-document', [DroneSurveyController::class, 'removeDocument'])->name('drone_survey.remove_document');
     });
 
     // EC Compliance (Half Yearly Compliance)
@@ -447,9 +490,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/ec-compliance/step/{step}', [EcComplianceController::class, 'saveStep'])->whereNumber('step')->name('ec-compliance.saveStep');
         Route::post('/ec-compliance', [EcComplianceController::class, 'store'])->name('ec-compliance.store');
     });
-    Route::middleware('permission:ec_compliance.edit')->group(function () {
+    Route::middleware('permission:ec_compliance.edit|ec_compliance.create')->group(function () {
         Route::post('/ec-compliance/{id}/status', [EcComplianceController::class, 'updateStatus'])->whereNumber('id')->name('ec-compliance.status');
         Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
+        Route::post('/ec_compliance/upload-document', [EcComplianceController::class, 'uploadDocument'])->name('ec_compliance.upload_document');
+        Route::post('/ec-compliance/remove', [EcComplianceController::class, 'removeDocument'])->name('ec-compliance.remove');
+        Route::post('/ec-compliance/remove-document', [EcComplianceController::class, 'removeDocument'])->name('ec-compliance.remove_document');
+        Route::post('/ec_compliance/remove-document', [EcComplianceController::class, 'removeDocument'])->name('ec_compliance.remove_document');
     });
 
     // Accounts & Financial Management Module
@@ -565,6 +612,16 @@ Route::middleware('auth')->group(function () {
             ->name('invoices.seal.remove');
         Route::get('/invoices/seal-status', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'status'])
             ->name('invoices.seal.status');
+    });
+
+    // Universal Master Application ID & Bidirectional Pipeline Workflow
+    Route::prefix('master-pipeline')->name('master-pipeline.')->group(function () {
+        Route::get('/', [MasterPipelineController::class, 'index'])->name('index');
+        Route::get('/timeline/{id}', [MasterPipelineController::class, 'timeline'])->name('timeline');
+        Route::match(['get', 'post'], '/create-from-lease/{leaseId}', [MasterPipelineController::class, 'createFromLease'])->name('create-from-lease');
+        Route::post('/forward/{id}', [MasterPipelineController::class, 'forward'])->name('forward');
+        Route::post('/return/{id}', [MasterPipelineController::class, 'returnForCorrection'])->name('return');
+        Route::post('/resubmit/{id}', [MasterPipelineController::class, 'resubmit'])->name('resubmit');
     });
 
 });

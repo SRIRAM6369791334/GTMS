@@ -1,6 +1,13 @@
 @extends('layouts.app')
 @section('title', 'PPT Application Dossier — ' . $ppt->application_no)
 @section('main_content')
+<style>
+.ppt-show-folder-row.row-dragover {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+</style>
 <div class="content-body default-height">
   <div class="container-fluid">
     {{-- Top Action Header --}}
@@ -177,16 +184,22 @@
                 7 => ['ADS', 'ADS reply documents and PPT presentation', 'fa-file-alt'],
                 8 => ['SEIAA Agenda', 'State Environmental Impact Assessment Agenda', 'fa-users'],
                 9 => ['SEIAA Minutes', 'Committee minutes and appraisal decision', 'fa-clipboard-check'],
-                10 => ['TOR Letter', 'Final EC Granted Order', 'fa-leaf']
+                10 => ['TOR Letter', 'Final EC Granted Order', 'fa-leaf'],
+                11 => ['Presentation Final', 'Final SEAC/SEIAA presentation file & slides', 'fa-desktop']
               ];
             @endphp
 
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush" id="ppt_show_folders_list">
               @foreach($foldersList as $fId => [$fName, $fDesc, $fIcon])
                 @php
                   $folderDocs = $ppt->documents->where('folder_id', $fId);
                 @endphp
-                <div class="list-group-item p-3">
+                <div class="list-group-item p-3 ppt-show-folder-row" 
+                     data-folder-id="{{ $fId }}" 
+                     data-ppt-id="{{ $ppt->id }}" 
+                     data-doc-name="{{ $fName }}">
+                  <input type="file" class="d-none ppt-show-file-input" 
+                         accept=".pdf,.png,.jpg,.jpeg,.zip,.rar,.7z,.doc,.docx,.ppt,.pptx,.kml,.kmz,.dwg">
                   <div class="d-flex align-items-center justify-content-between mb-2">
                     <div class="d-flex align-items-center gap-2">
                       <div class="rounded-circle d-flex align-items-center justify-content-center text-primary" style="width:32px; height:32px; background:#eff6ff;">
@@ -197,13 +210,19 @@
                         <div class="text-muted small">{{ $fDesc }}</div>
                       </div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
                       @if($folderDocs->isNotEmpty())
                         <span class="badge bg-success-subtle text-success border border-success-subtle">
                           <i class="bi bi-check-circle me-1"></i>{{ $folderDocs->count() }} Attached
                         </span>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-ppt-show-upload" style="font-size:11px;" title="Upload or drop additional file">
+                          <i class="bi bi-cloud-arrow-up me-1"></i>Upload
+                        </button>
                       @else
                         <span class="badge bg-light text-muted border">Pending Upload</span>
+                        <button type="button" class="btn btn-sm btn-outline-navy py-0 px-2 btn-ppt-show-upload" style="font-size:11px;">
+                          <i class="bi bi-upload me-1"></i>Upload
+                        </button>
                       @endif
                     </div>
                   </div>
@@ -211,20 +230,51 @@
                   @if($folderDocs->isNotEmpty())
                     <div class="bg-light p-2 rounded-2 mt-2">
                       @foreach($folderDocs as $doc)
-                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light">
+                        @php
+                          $lowerPath = strtolower($doc->file_path ?? '');
+                          $isDocZip = str_ends_with($lowerPath, '.zip') || str_ends_with($lowerPath, '.rar') || str_ends_with($lowerPath, '.7z');
+                          $docUrl = $doc->file_path ? asset('storage/' . $doc->file_path) : '';
+                          $formattedSize = $doc->file_size ? (round($doc->file_size / 1024) . ' KB') : '';
+                        @endphp
+                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-light doc-item-row" data-doc-id="{{ $doc->id }}">
                           <div class="d-flex align-items-center gap-2 text-truncate">
-                            <i class="bi bi-paperclip text-muted"></i>
+                            @if($isDocZip)
+                              <i class="bi bi-file-earmark-zip text-warning"></i>
+                            @else
+                              <i class="bi bi-paperclip text-muted"></i>
+                            @endif
                             <span class="small fw-semibold text-truncate">{{ $doc->document_name }}</span>
-                            @if($doc->file_size)
-                              <span class="badge bg-white text-muted border py-0" style="font-size:10px;">{{ round($doc->file_size / 1024) }} KB</span>
+                            @if($isDocZip)
+                              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-0" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP</span>
+                            @endif
+                            @if($formattedSize)
+                              <span class="badge bg-white text-muted border py-0" style="font-size:10px;">{{ $formattedSize }}</span>
                             @endif
                           </div>
-                          <div>
+                          <div class="d-flex align-items-center gap-1">
                             @if($doc->file_path)
-                              <a href="{{ asset('storage/' . $doc->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:11px;">
-                                <i class="bi bi-eye"></i> View
-                              </a>
+                              <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item" 
+                                      style="font-size:11px;" 
+                                      data-file-url="{{ $docUrl }}" 
+                                      data-file-name="{{ $doc->file_name ?: $doc->document_name }}" 
+                                      data-file-size="{{ $formattedSize }}" 
+                                      data-doc-name="{{ $doc->document_name }}" 
+                                      data-is-zip="{{ $isDocZip ? '1' : '0' }}" 
+                                      title="{{ $isDocZip ? 'Inspect / View ZIP archive' : 'View Document' }}">
+                                <i class="bi {{ $isDocZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i> View
+                              </button>
                             @endif
+                            <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-ppt-show-reupload" 
+                                    style="font-size:11px;" title="Change / Re-upload file">
+                              <i class="bi bi-arrow-repeat"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 btn-ppt-show-remove" 
+                                    data-doc-id="{{ $doc->id }}" 
+                                    data-folder-id="{{ $fId }}" 
+                                    data-doc-name="{{ $doc->document_name }}" 
+                                    style="font-size:11px;" title="Remove file">
+                              <i class="bi bi-trash3"></i>
+                            </button>
                           </div>
                         </div>
                       @endforeach
@@ -717,13 +767,159 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    formPptShowStatus.addEventListener('submit', function() {
-      if (btnSubmit) {
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Saving...';
+  // PPT Dossier Show: Upload, Drag & Drop, Re-upload, Remove, and View handlers
+  function uploadPptShowFile(row, file) {
+    if (!row || !file) return;
+    const folderId = row.dataset.folderId;
+    const pptId = row.dataset.pptId;
+    const docName = row.dataset.docName || ('Folder ' + folderId);
+
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('ppt_id', pptId);
+    formData.append('folder_id', folderId);
+    formData.append('field_id', folderId);
+    formData.append('doc_name', docName);
+    formData.append('file', file);
+
+    const uploadBtns = row.querySelectorAll('.btn-ppt-show-upload, .btn-ppt-show-reupload');
+    uploadBtns.forEach(b => {
+      b.disabled = true;
+      b.innerHTML = '<i class="spinner-border spinner-border-sm"></i>';
+    });
+
+    fetch('{{ route("ppt-department.upload") }}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
       }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 1 || res.success) {
+        window.location.reload();
+      } else {
+        alert(res.message || 'File upload failed');
+        uploadBtns.forEach(b => {
+          b.disabled = false;
+          b.innerHTML = '<i class="bi bi-upload me-1"></i>Upload';
+        });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      alert('Network error while uploading file.');
+      uploadBtns.forEach(b => {
+        b.disabled = false;
+        b.innerHTML = '<i class="bi bi-upload me-1"></i>Upload';
+      });
     });
   }
+
+  // Drag and Drop
+  document.querySelectorAll('.ppt-show-folder-row').forEach(row => {
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.add('row-dragover');
+    });
+    row.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.classList.remove('row-dragover');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        uploadPptShowFile(this, e.dataTransfer.files[0]);
+      }
+    });
+  });
+
+  // Upload & Re-upload button click
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-ppt-show-upload, .btn-ppt-show-reupload');
+    if (btn) {
+      const row = btn.closest('.ppt-show-folder-row');
+      const input = row ? row.querySelector('.ppt-show-file-input') : null;
+      if (input) input.click();
+    }
+  });
+
+  // Handle file input change
+  document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('ppt-show-file-input')) {
+      const input = e.target;
+      const row = input.closest('.ppt-show-folder-row');
+      if (input.files && input.files[0] && row) {
+        uploadPptShowFile(row, input.files[0]);
+      }
+    }
+  });
+
+  // Remove file handler
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.btn-ppt-show-remove');
+    if (btn) {
+      const docId = btn.dataset.docId;
+      const folderId = btn.dataset.folderId;
+      const docName = btn.dataset.docName || 'this file';
+      if (!confirm(`Are you sure you want to remove "${docName}"?`)) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="spinner-border spinner-border-sm"></i>';
+
+      const formData = new FormData();
+      formData.append('_token', '{{ csrf_token() }}');
+      formData.append('ppt_id', '{{ $ppt->id }}');
+      formData.append('doc_id', docId);
+      formData.append('folder_key', folderId);
+
+      fetch('{{ route("ppt-department.remove") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 1 || res.success) {
+          window.location.reload();
+        } else {
+          alert(res.message || 'Failed to remove file');
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-trash3"></i>';
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Network error while removing file');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-trash3"></i>';
+      });
+    }
+  });
+
+  // GtmsOpenWith viewer trigger
+  document.addEventListener('click', function(e) {
+    const viewBtn = e.target.closest('.btn-view-item');
+    if (viewBtn && typeof window.GtmsOpenWith !== 'undefined') {
+      e.preventDefault();
+      window.GtmsOpenWith.open({
+        url: viewBtn.dataset.fileUrl,
+        name: viewBtn.dataset.fileName,
+        size: viewBtn.dataset.fileSize,
+        docName: viewBtn.dataset.docName,
+        isZip: viewBtn.dataset.isZip === '1' || viewBtn.dataset.isZip === 1
+      });
+    }
+  });
 });
 </script>
 @endsection

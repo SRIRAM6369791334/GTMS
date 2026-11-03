@@ -97,9 +97,9 @@
               <i class="fa fa-folder-open text-primary me-2"></i> 1. Statutory Documents Checklist (19 Items)
             </h5>
             @php
-              $p1Docs = $comp->documents->where('folder_category', 'documents');
+              $p1Docs = $comp->documents->filter(fn($d) => in_array($d->folder_category, ['documents', 'checklist']) || empty($d->folder_category));
             @endphp
-            <span class="badge bg-light text-navy border">{{ $p1Docs->count() }} Attached</span>
+            <span class="badge bg-light text-navy border" id="p1_counter">{{ $p1Docs->count() }} Attached</span>
           </div>
           <div class="card-body p-0">
             @php
@@ -125,26 +125,58 @@
                 '19. CCTV Camera & Security Installation Photo'
               ];
             @endphp
-            <div class="list-group list-group-flush pillar-checklist-scroll">
+            <div class="list-group list-group-flush pillar-checklist-scroll" id="pillar1_list">
               @foreach($pillar1Items as $item)
                 @php
                   $docMatch = $p1Docs->firstWhere('document_name', $item);
+                  $hasFile = $docMatch && !empty($docMatch->file_path);
+                  $isZip = $hasFile && (str_ends_with(strtolower($docMatch->file_path), '.zip') || str_ends_with(strtolower($docMatch->file_name ?? ''), '.zip'));
+                  $fileUrl = $hasFile ? asset('storage/' . $docMatch->file_path) : '';
+                  $fileSizeFormatted = $hasFile && $docMatch->file_size ? number_format($docMatch->file_size / 1024, 1) . ' KB' : '';
                 @endphp
-                <div class="list-group-item py-2 px-3 d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center gap-2 text-truncate">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {{ $docMatch ? 'bg-success text-white' : 'bg-light text-muted' }}" style="width:28px; height:28px; font-size:12px;">
-                      <i class="bi {{ $docMatch ? 'bi-check-lg' : 'bi-file-earmark' }}"></i>
+                <div class="list-group-item py-2 px-3 d-flex align-items-center justify-content-between ec-doc-row {{ $hasFile ? 'up' : '' }}"
+                     data-comp-id="{{ $comp->id }}"
+                     data-doc-name="{{ $item }}"
+                     data-category="checklist"
+                     data-doc-id="{{ $docMatch?->id }}">
+                  <div class="d-flex align-items-center gap-2 text-truncate flex-grow-1">
+                    <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:28px; height:28px; font-size:12px; background:{{ $hasFile ? ($isZip ? '#fef3c7' : '#dcfce7') : '#f1f5f9' }}; color:{{ $hasFile ? ($isZip ? '#d97706' : '#15803d') : '#64748b' }};">
+                      <i class="bi {{ $hasFile ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : 'bi-file-earmark' }}"></i>
                     </div>
-                    <span class="small fw-semibold text-dark text-truncate">{{ $item }}</span>
+                    <div class="text-truncate">
+                      <span class="small fw-semibold text-dark text-truncate doc-title">{{ $item }}</span>
+                      @if($hasFile)
+                        <div class="doc-meta text-muted" style="font-size:10px;">
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }}"><i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $docMatch->file_name ?: basename($docMatch->file_path) }}</span>
+                          @if($fileSizeFormatted) &middot; {{ $fileSizeFormatted }} @endif
+                        </div>
+                      @else
+                        <div class="doc-meta text-muted" style="font-size:10px;">Not uploaded</div>
+                      @endif
+                    </div>
                   </div>
-                  <div class="flex-shrink-0 ms-2">
-                    @if($docMatch && $docMatch->file_path)
-                      <a href="{{ asset('storage/' . $docMatch->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-0 px-2" style="font-size:11px;">
-                        <i class="bi bi-eye"></i> View
-                      </a>
-                    @else
-                      <span class="badge bg-light text-muted border py-0" style="font-size:10px;">Pending</span>
-                    @endif
+                  <div class="flex-shrink-0 ms-2 d-flex align-items-center gap-1 action-group">
+                    <a href="{{ $fileUrl ?: '#' }}"
+                       class="btn btn-sm btn-outline-info py-0 px-2 btn-view-item btn-view-comp-item {{ $hasFile ? '' : 'd-none' }}"
+                       style="font-size:11px;"
+                       data-file-url="{{ $fileUrl }}"
+                       data-file-name="{{ $docMatch->file_name ?? $item }}"
+                       data-file-size="{{ $fileSizeFormatted }}"
+                       data-doc-name="{{ $item }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Document">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+
+                    <input type="file" class="d-none row-file-input" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.zip">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 btn-upload-item" style="font-size:11px;" title="{{ $hasFile ? 'Re-upload Document' : 'Upload Document' }}">
+                      <i class="bi {{ $hasFile ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-1 btn-remove-item {{ $hasFile ? '' : 'd-none' }}" style="font-size:11px;" title="Remove Document">
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </div>
                 </div>
               @endforeach
@@ -159,9 +191,9 @@
               <i class="fa fa-flask text-warning me-2"></i> 2. Site Analysis Study (NABL Laboratory Tests)
             </h5>
             @php
-              $p2Docs = $comp->documents->where('folder_category', 'site_analysis');
+              $p2Docs = $comp->documents->filter(fn($d) => in_array($d->folder_category, ['site_analysis', 'lab']));
             @endphp
-            <span class="badge bg-light text-navy border">{{ $p2Docs->count() }} / 4 Reports</span>
+            <span class="badge bg-light text-navy border" id="p2_counter">{{ $p2Docs->count() }} / 4 Reports</span>
           </div>
           <div class="card-body p-0">
             @php
@@ -172,29 +204,58 @@
                 '4. Water Sample Test Report'        => 'Groundwater & surface runoff quality test against IS 10500 standards'
               ];
             @endphp
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush" id="pillar2_list">
               @foreach($pillar2Items as $tName => $tMeta)
                 @php
                   $tMatch = $p2Docs->firstWhere('document_name', $tName);
+                  $hasFile = $tMatch && !empty($tMatch->file_path);
+                  $isZip = $hasFile && (str_ends_with(strtolower($tMatch->file_path), '.zip') || str_ends_with(strtolower($tMatch->file_name ?? ''), '.zip'));
+                  $fileUrl = $hasFile ? asset('storage/' . $tMatch->file_path) : '';
+                  $fileSizeFormatted = $hasFile && $tMatch->file_size ? number_format($tMatch->file_size / 1024, 1) . ' KB' : '';
                 @endphp
-                <div class="list-group-item p-3 d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {{ $tMatch ? 'bg-success text-white' : 'bg-warning-subtle text-warning' }}" style="width:34px; height:34px;">
-                      <i class="bi {{ $tMatch ? 'bi-check-lg' : 'bi-droplet-half' }}"></i>
+                <div class="list-group-item p-3 d-flex align-items-center justify-content-between ec-doc-row {{ $hasFile ? 'up' : '' }}"
+                     data-comp-id="{{ $comp->id }}"
+                     data-doc-name="{{ $tName }}"
+                     data-category="site_analysis"
+                     data-doc-id="{{ $tMatch?->id }}">
+                  <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
+                    <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:34px; height:34px; background:{{ $hasFile ? ($isZip ? '#fef3c7' : '#dcfce7') : '#fef3c7' }}; color:{{ $hasFile ? ($isZip ? '#d97706' : '#15803d') : '#d97706' }};">
+                      <i class="bi {{ $hasFile ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : 'bi-droplet-half' }}"></i>
                     </div>
-                    <div>
-                      <div class="fw-bold text-navy">{{ $tName }}</div>
-                      <div class="text-muted small">{{ $tMeta }}</div>
+                    <div class="text-truncate">
+                      <div class="fw-bold text-navy text-truncate doc-title">{{ $tName }}</div>
+                      <div class="text-muted small doc-meta">
+                        @if($hasFile)
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }}"><i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $tMatch->file_name ?: basename($tMatch->file_path) }}</span>
+                          @if($fileSizeFormatted) &middot; {{ $fileSizeFormatted }} @endif
+                          &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>
+                        @else
+                          {{ $tMeta }}
+                        @endif
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    @if($tMatch && $tMatch->file_path)
-                      <a href="{{ asset('storage/' . $tMatch->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-1 px-3">
-                        <i class="bi bi-eye me-1"></i> View Test Report
-                      </a>
-                    @else
-                      <span class="badge bg-light text-muted border">Pending Lab Testing</span>
-                    @endif
+                  <div class="flex-shrink-0 ms-2 d-flex align-items-center gap-1 action-group">
+                    <a href="{{ $fileUrl ?: '#' }}"
+                       class="btn btn-sm btn-outline-info py-1 px-3 btn-view-item btn-view-lab-item {{ $hasFile ? '' : 'd-none' }}"
+                       data-file-url="{{ $fileUrl }}"
+                       data-file-name="{{ $tMatch->file_name ?? $tName }}"
+                       data-file-size="{{ $fileSizeFormatted }}"
+                       data-doc-name="{{ $tName }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Test Report">
+                      <i class="bi bi-eye me-1"></i> View
+                    </a>
+
+                    <input type="file" class="d-none row-file-input" accept=".pdf,.doc,.docx,.zip">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-item" title="{{ $hasFile ? 'Re-upload Report' : 'Upload Report' }}">
+                      <i class="bi {{ $hasFile ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item {{ $hasFile ? '' : 'd-none' }}" title="Remove Report">
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </div>
                 </div>
               @endforeach
@@ -209,9 +270,9 @@
               <i class="fa fa-file-alt text-info me-2"></i> 3. Statutory Compliance Report
             </h5>
             @php
-              $p3Docs = $comp->documents->where('folder_category', 'report');
+              $p3Docs = $comp->documents->filter(fn($d) => in_array($d->folder_category, ['report', 'report_preparation']));
             @endphp
-            <span class="badge bg-light text-navy border">{{ $p3Docs->count() }} / 3 Documents</span>
+            <span class="badge bg-light text-navy border" id="p3_counter">{{ $p3Docs->count() }} / 3 Documents</span>
           </div>
           <div class="card-body p-0">
             @php
@@ -221,29 +282,57 @@
                 '3. Comprehensive EC-Compliance Report'         => 'Condition-wise point-by-point statutory compliance verification report'
               ];
             @endphp
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush" id="pillar3_list">
               @foreach($pillar3Items as $rName => $rMeta)
                 @php
                   $rMatch = $p3Docs->firstWhere('document_name', $rName);
+                  $hasFile = $rMatch && !empty($rMatch->file_path);
+                  $isZip = $hasFile && (str_ends_with(strtolower($rMatch->file_path), '.zip') || str_ends_with(strtolower($rMatch->file_name ?? ''), '.zip'));
+                  $fileUrl = $hasFile ? asset('storage/' . $rMatch->file_path) : '';
+                  $fileSizeFormatted = $hasFile && $rMatch->file_size ? number_format($rMatch->file_size / 1024, 1) . ' KB' : '';
                 @endphp
-                <div class="list-group-item p-3 d-flex align-items-center justify-content-between">
-                  <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 {{ $rMatch ? 'bg-success text-white' : 'bg-light text-muted' }}" style="width:34px; height:34px;">
-                      <i class="bi {{ $rMatch ? 'bi-check-lg' : 'bi-file-text' }}"></i>
+                <div class="list-group-item p-3 d-flex align-items-center justify-content-between ec-doc-row {{ $hasFile ? 'up' : '' }}"
+                     data-comp-id="{{ $comp->id }}"
+                     data-doc-name="{{ $rName }}"
+                     data-category="report_preparation"
+                     data-doc-id="{{ $rMatch?->id }}">
+                  <div class="d-flex align-items-center gap-3 flex-grow-1 text-truncate">
+                    <div class="row-avatar rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                         style="width:34px; height:34px; background:{{ $hasFile ? ($isZip ? '#fef3c7' : '#dcfce7') : '#eff6ff' }}; color:{{ $hasFile ? ($isZip ? '#d97706' : '#15803d') : '#0284c7' }};">
+                      <i class="bi {{ $hasFile ? ($isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') : 'bi-file-text' }}"></i>
                     </div>
-                    <div>
-                      <div class="fw-bold text-navy">{{ $rName }}</div>
-                      <div class="text-muted small">{{ $rMeta }}</div>
+                    <div class="text-truncate">
+                      <div class="fw-bold text-navy text-truncate doc-title">{{ $rName }}</div>
+                      <div class="text-muted small doc-meta">
+                        @if($hasFile)
+                          <span class="{{ $isZip ? 'text-warning-emphasis' : 'text-success' }}"><i class="bi {{ $isZip ? 'bi-file-earmark-zip' : 'bi-paperclip' }}"></i> {{ $rMatch->file_name ?: basename($rMatch->file_path) }}</span>
+                          @if($fileSizeFormatted) &middot; {{ $fileSizeFormatted }} @endif
+                        @else
+                          {{ $rMeta }}
+                        @endif
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    @if($rMatch && $rMatch->file_path)
-                      <a href="{{ asset('storage/' . $rMatch->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info py-1 px-3">
-                        <i class="bi bi-eye me-1"></i> View Document
-                      </a>
-                    @else
-                      <span class="badge bg-light text-muted border">In Draft</span>
-                    @endif
+                  <div class="flex-shrink-0 ms-2 d-flex align-items-center gap-1 action-group">
+                    <a href="{{ $fileUrl ?: '#' }}"
+                       class="btn btn-sm btn-outline-info py-1 px-3 btn-view-item btn-view-report-item {{ $hasFile ? '' : 'd-none' }}"
+                       data-file-url="{{ $fileUrl }}"
+                       data-file-name="{{ $rMatch->file_name ?? $rName }}"
+                       data-file-size="{{ $fileSizeFormatted }}"
+                       data-doc-name="{{ $rName }}"
+                       data-is-zip="{{ $isZip ? '1' : '0' }}"
+                       title="View Document">
+                      <i class="bi bi-eye me-1"></i> View
+                    </a>
+
+                    <input type="file" class="d-none row-file-input" accept=".pdf,.doc,.docx,.zip">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-item" title="{{ $hasFile ? 'Re-upload Document' : 'Upload Document' }}">
+                      <i class="bi {{ $hasFile ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item {{ $hasFile ? '' : 'd-none' }}" title="Remove Document">
+                      <i class="bi bi-trash"></i>
+                    </button>
                   </div>
                 </div>
               @endforeach
@@ -279,21 +368,53 @@
               </div>
             </div>
             @php
-              $pariveshDoc = $comp->documents->firstWhere('folder_category', 'parivesh_upload');
+              $pariveshDoc = $comp->documents->first(fn($d) => in_array($d->folder_category, ['parivesh', 'parivesh_upload']) || $d->document_name === 'Parivesh Acknowledgement Receipt');
+              $hasReceipt = $pariveshDoc && !empty($pariveshDoc->file_path);
+              $receiptUrl = $hasReceipt ? asset('storage/' . $pariveshDoc->file_path) : '';
+              $receiptSize = $hasReceipt && $pariveshDoc->file_size ? number_format($pariveshDoc->file_size / 1024, 1) . ' KB' : '';
             @endphp
-            @if($pariveshDoc && $pariveshDoc->file_path)
-              <div class="mt-3 p-3 bg-success-subtle rounded-3 border border-success-subtle d-flex align-items-center justify-content-between">
-                <div>
-                  <i class="bi bi-file-earmark-check-fill text-success fs-4 me-2"></i>
-                  <span class="fw-bold text-navy">Official MoEFCC Parivesh Acknowledgement Receipt</span>
+            <div class="mt-3 p-3 {{ $hasReceipt ? 'bg-success-subtle border-success-subtle' : 'bg-light border-secondary-subtle' }} rounded-3 border d-flex align-items-center justify-content-between ec-doc-row {{ $hasReceipt ? 'up' : '' }}"
+                 id="pillar4_receipt_row"
+                 data-comp-id="{{ $comp->id }}"
+                 data-doc-name="Parivesh Acknowledgement Receipt"
+                 data-category="parivesh"
+                 data-doc-id="{{ $pariveshDoc?->id }}">
+              <div class="d-flex align-items-center gap-2 flex-grow-1 text-truncate">
+                <i class="bi {{ $hasReceipt ? 'bi-file-earmark-check-fill text-success' : 'bi-file-earmark-pdf text-muted' }} fs-4 flex-shrink-0"></i>
+                <div class="text-truncate">
+                  <span class="fw-bold text-navy doc-title">Official MoEFCC Parivesh Acknowledgement Receipt</span>
+                  <div class="text-muted small doc-meta">
+                    @if($hasReceipt)
+                      <span class="text-success"><i class="bi bi-paperclip"></i> {{ $pariveshDoc->file_name ?: basename($pariveshDoc->file_path) }}</span>
+                      @if($receiptSize) &middot; {{ $receiptSize }} @endif
+                    @else
+                      Not attached yet
+                    @endif
+                  </div>
                 </div>
-                <a href="{{ asset('storage/' . $pariveshDoc->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success">
-                  <i class="bi bi-eye me-1"></i> View Receipt PDF
-                </a>
               </div>
-            @endif
-          </div>
-        </div>
+              <div class="flex-shrink-0 ms-2 d-flex align-items-center gap-1 action-group">
+                <a href="{{ $receiptUrl ?: '#' }}"
+                   class="btn btn-sm btn-success py-1 px-3 btn-view-item btn-view-receipt {{ $hasReceipt ? '' : 'd-none' }}"
+                   data-file-url="{{ $receiptUrl }}"
+                   data-file-name="{{ $pariveshDoc->file_name ?? 'Parivesh Acknowledgement Receipt' }}"
+                   data-file-size="{{ $receiptSize }}"
+                   data-doc-name="Parivesh Acknowledgement Receipt"
+                   data-is-zip="0"
+                   title="View Receipt PDF">
+                  <i class="bi bi-eye me-1"></i> View Receipt
+                </a>
+
+                <input type="file" class="d-none row-file-input" accept=".pdf">
+                <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 btn-upload-item" title="{{ $hasReceipt ? 'Re-upload Receipt' : 'Upload Receipt' }}">
+                  <i class="bi {{ $hasReceipt ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                </button>
+
+                <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 btn-remove-item {{ $hasReceipt ? '' : 'd-none' }}" title="Remove Receipt">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
       </div>
 
       {{-- Sidebar Cards: Handlers & Payments --}}
@@ -912,6 +1033,281 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSubmit.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Saving...';
       }
     });
+  }
+});
+</script>
+
+<style>
+.ec-doc-row.row-dragover {
+  background-color: #f0fdf4 !important;
+  outline: 2px dashed #16a34a !important;
+  outline-offset: -2px;
+}
+</style>
+<script>
+// Step 5 Interactive AJAX Upload, Drag & Drop, and Removal for EC Compliance Dossier
+document.addEventListener('DOMContentLoaded', function() {
+  const CSRF_TOKEN = '{{ csrf_token() }}';
+  const UPLOAD_URL = '{{ route("ec-compliance.upload") }}';
+  const REMOVE_URL = '{{ route("ec-compliance.remove") }}';
+  const COMP_ID = '{{ $comp->id }}';
+
+  document.querySelectorAll('.ec-doc-row').forEach(function(row) {
+    const fileInput = row.querySelector('.row-file-input');
+    const uploadBtn = row.querySelector('.btn-upload-item');
+    const removeBtn = row.querySelector('.btn-remove-item');
+    const category = row.getAttribute('data-category') || 'checklist';
+    const docName = row.getAttribute('data-doc-name') || 'Document';
+
+    if (uploadBtn && fileInput) {
+      uploadBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
+      });
+    }
+
+    if (fileInput) {
+      fileInput.addEventListener('change', function() {
+        if (this.files && this.files.length > 0) {
+          uploadEcShowFile(row, this.files[0], category, docName);
+        }
+      });
+    }
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        removeEcShowFile(row, category, docName);
+      });
+    }
+
+    // Drag & Drop
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.add('row-dragover');
+      }, false);
+    });
+
+    ['dragleave', 'dragend', 'drop'].forEach(function(eventName) {
+      row.addEventListener(eventName, function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        row.classList.remove('row-dragover');
+      }, false);
+    });
+
+    row.addEventListener('drop', function(e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        uploadEcShowFile(row, dt.files[0], category, docName);
+      }
+    });
+  });
+
+  function uploadEcShowFile(row, file, category, docName) {
+    const uploadBtn = row.querySelector('.btn-upload-item');
+    const origBtnHtml = uploadBtn ? uploadBtn.innerHTML : '';
+    if (uploadBtn) {
+      uploadBtn.disabled = true;
+      uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    }
+
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('compliance_id', COMP_ID);
+    formData.append('file', file);
+    formData.append('document_name', docName);
+    formData.append('folder_category', category);
+
+    fetch(UPLOAD_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Upload failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+        uploadBtn.title = 'Re-upload Document';
+      }
+
+      if (data.status === 1 || data.success) {
+        row.classList.add('up');
+        row.setAttribute('data-doc-id', data.doc_id || '');
+        const isZip = data.is_zip || (data.file_name && data.file_name.toLowerCase().endsWith('.zip'));
+
+        // Update avatar
+        const avatar = row.querySelector('.row-avatar');
+        if (avatar) {
+          avatar.style.background = isZip ? '#fef3c7' : '#dcfce7';
+          avatar.style.color = isZip ? '#d97706' : '#15803d';
+          avatar.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip-fill' : 'bi-check-lg') + '"></i>';
+        }
+
+        // Update meta
+        const metaDiv = row.querySelector('.doc-meta');
+        if (metaDiv) {
+          const sizeStr = data.file_size ? ' &middot; ' + data.file_size : '';
+          const extraBadge = category === 'site_analysis' ? ' &middot; <span class="badge bg-warning-subtle text-warning-emphasis">NABL Accredited</span>' : '';
+          metaDiv.innerHTML = '<span class="' + (isZip ? 'text-warning-emphasis' : 'text-success') + '"><i class="bi ' + (isZip ? 'bi-file-earmark-zip' : 'bi-paperclip') + '"></i> ' + (data.file_name || docName) + '</span>' + sizeStr + extraBadge;
+        }
+
+        // Update View button
+        let viewBtn = row.querySelector('.btn-view-item, .btn-view-comp-item, .btn-view-lab-item, .btn-view-report-item, .btn-view-receipt');
+        if (viewBtn) {
+          viewBtn.classList.remove('d-none');
+          viewBtn.href = data.file_url || '#';
+          viewBtn.setAttribute('data-file-url', data.file_url || '');
+          viewBtn.setAttribute('data-file-name', data.file_name || docName);
+          viewBtn.setAttribute('data-file-size', data.file_size || '');
+          viewBtn.setAttribute('data-doc-name', docName);
+          viewBtn.setAttribute('data-is-zip', isZip ? '1' : '0');
+        }
+
+        // Show Remove button
+        const removeBtn = row.querySelector('.btn-remove-item');
+        if (removeBtn) {
+          removeBtn.classList.remove('d-none');
+        }
+
+        updateShowCounters();
+
+        if (window.toastr) {
+          toastr.success('Document "' + (data.file_name || docName) + '" uploaded successfully!');
+        }
+      } else {
+        alert(data.message || 'Upload failed.');
+      }
+    })
+    .catch(function(err) {
+      if (uploadBtn) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
+      }
+      alert('Upload error: ' + err.message);
+    });
+  }
+
+  function removeEcShowFile(row, category, docName) {
+    if (!confirm('Are you sure you want to remove this attached file?')) return;
+
+    const removeBtn = row.querySelector('.btn-remove-item');
+    const origBtnHtml = removeBtn ? removeBtn.innerHTML : '';
+    if (removeBtn) {
+      removeBtn.disabled = true;
+      removeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+    }
+
+    const formData = new FormData();
+    formData.append('_token', CSRF_TOKEN);
+    formData.append('compliance_id', COMP_ID);
+    formData.append('document_name', docName);
+    formData.append('folder_category', category);
+    const docId = row.getAttribute('data-doc-id');
+    if (docId) formData.append('doc_id', docId);
+
+    fetch(REMOVE_URL, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json'
+      },
+      body: formData
+    })
+    .then(function(res) {
+      if (!res.ok) {
+        return res.json().then(function(j) { throw new Error(j.message || ('Remove failed with status ' + res.status)); });
+      }
+      return res.json();
+    })
+    .then(function(data) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+        removeBtn.classList.add('d-none');
+      }
+
+      if (data.status === 1 || data.success) {
+        row.classList.remove('up');
+        row.setAttribute('data-doc-id', '');
+
+        // Reset file input
+        const fileInput = row.querySelector('.row-file-input');
+        if (fileInput) fileInput.value = '';
+
+        // Reset avatar
+        const avatar = row.querySelector('.row-avatar');
+        if (avatar) {
+          avatar.style.background = category === 'site_analysis' ? '#fef3c7' : (category === 'report_preparation' ? '#eff6ff' : '#f1f5f9');
+          avatar.style.color = category === 'site_analysis' ? '#d97706' : (category === 'report_preparation' ? '#0284c7' : '#64748b');
+          const defIcon = category === 'site_analysis' ? 'bi-droplet-half' : (category === 'report_preparation' ? 'bi-file-text' : 'bi-file-earmark');
+          avatar.innerHTML = '<i class="bi ' + defIcon + '"></i>';
+        }
+
+        // Reset meta
+        const metaDiv = row.querySelector('.doc-meta');
+        if (metaDiv) {
+          metaDiv.innerHTML = row.id === 'pillar4_receipt_row' ? 'Not attached yet' : 'Not uploaded';
+        }
+
+        // Hide View button
+        const viewBtn = row.querySelector('.btn-view-item, .btn-view-comp-item, .btn-view-lab-item, .btn-view-report-item, .btn-view-receipt');
+        if (viewBtn) {
+          viewBtn.classList.add('d-none');
+          viewBtn.href = '#';
+        }
+
+        // Reset upload button
+        const uploadBtn = row.querySelector('.btn-upload-item');
+        if (uploadBtn) {
+          uploadBtn.innerHTML = '<i class="bi bi-upload"></i>';
+          uploadBtn.title = 'Upload Document';
+        }
+
+        updateShowCounters();
+
+        if (window.toastr) {
+          toastr.success('Document "' + docName + '" removed successfully.');
+        }
+      } else {
+        alert(data.message || 'Remove failed.');
+      }
+    })
+    .catch(function(err) {
+      if (removeBtn) {
+        removeBtn.disabled = false;
+        removeBtn.innerHTML = origBtnHtml;
+      }
+      alert('Remove error: ' + err.message);
+    });
+  }
+
+  function updateShowCounters() {
+    const p1Up = document.querySelectorAll('#pillar1_list .ec-doc-row.up').length;
+    const p1Total = document.querySelectorAll('#pillar1_list .ec-doc-row').length;
+    const p1Badge = document.getElementById('p1_counter');
+    if (p1Badge) p1Badge.textContent = p1Up + ' Attached';
+
+    const p2Up = document.querySelectorAll('#pillar2_list .ec-doc-row.up').length;
+    const p2Total = document.querySelectorAll('#pillar2_list .ec-doc-row').length;
+    const p2Badge = document.getElementById('p2_counter');
+    if (p2Badge) p2Badge.textContent = p2Up + ' / ' + p2Total + ' Reports';
+
+    const p3Up = document.querySelectorAll('#pillar3_list .ec-doc-row.up').length;
+    const p3Total = document.querySelectorAll('#pillar3_list .ec-doc-row').length;
+    const p3Badge = document.getElementById('p3_counter');
+    if (p3Badge) p3Badge.textContent = p3Up + ' / ' + p3Total + ' Documents';
   }
 });
 </script>
