@@ -36,8 +36,9 @@ Route::get('/system/version', function () {
     return response()->json([
         'app' => config('app.name', 'GTMS'),
         'status' => 'online',
-        'watchtower_auto_deploy' => 'ACTIVE_AND_VERIFIED',
-        'build' => 'v1.0.2-auto-deployed-by-watchtower',
+        'build' => 'v1.0.3-second-verification-success',
+        'verified_by' => 'Sriram and Antigravity',
+        'auto_deploy_status' => '100_PERCENT_AUTONOMOUS',
         'timestamp' => now()->toIso8601String(),
         'php' => PHP_VERSION,
         'laravel' => app()->version(),
