@@ -36,6 +36,7 @@ Route::get('/system/version', function () {
     return response()->json([
         'app' => config('app.name', 'GTMS'),
         'status' => 'online',
+        'build' => 'v1.0.1-cicd-verified',
         'timestamp' => now()->toIso8601String(),
         'php' => PHP_VERSION,
         'laravel' => app()->version(),
