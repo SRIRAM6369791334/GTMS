@@ -37,7 +37,7 @@ Route::get('/system/version', function () {
         'app' => config('app.name', 'GTMS'),
         'status' => 'online',
         'build' => 'v1.0.3-second-verification-success',
-        'verified_by' => 'Okay',
+        'verified_by' => 'Okay verifed',
         'auto_deploy_status' => '100_PERCENT_AUTONOMOUS',
         'timestamp' => now()->toIso8601String(),
         'php' => PHP_VERSION,
