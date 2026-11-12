@@ -110,6 +110,8 @@ class EnvironmentProject extends Model
     }
 
     protected $casts = [
+        'parivesh_password' => \App\Casts\EncryptedOrPlain::class,
+        'email_password' => \App\Casts\EncryptedOrPlain::class,
         'public_hearing_date' => 'date',
         'product_value'       => 'decimal:2',
         'paid_amount'         => 'decimal:2',

@@ -42,6 +42,8 @@ class Customer extends Model
     ];
 
     protected $casts = [
+        'parivesh_password' => \App\Casts\EncryptedOrPlain::class,
+        'email_password' => \App\Casts\EncryptedOrPlain::class,
         'area' => 'string',
         'status' => 'integer',
     ];

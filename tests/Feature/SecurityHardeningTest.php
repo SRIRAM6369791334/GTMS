@@ -71,6 +71,26 @@ class SecurityHardeningTest extends TestCase
         $this->assertSame('notifications.clear-all', $route->getName());
     }
 
+    public function test_portal_passwords_are_encrypted_at_rest_and_legacy_plaintext_still_reads(): void
+    {
+        $customer = \App\Models\Customer::withoutGlobalScopes()->create([
+            'customer_name'     => 'Encryption Test',
+            'mobile_num'        => '9000000099',
+            'parivesh_password' => 'Pv#Secret1',
+            'email_password'    => 'Mail#Secret1',
+        ]);
+
+        $raw = \Illuminate\Support\Facades\DB::table('customers')->where('id', $customer->id)->first();
+        $this->assertNotSame('Pv#Secret1', $raw->parivesh_password);
+        $this->assertSame('Pv#Secret1', \Illuminate\Support\Facades\Crypt::decryptString($raw->parivesh_password));
+        $this->assertSame('Mail#Secret1', $customer->fresh()->email_password);
+
+        // Row not yet converted by the migration: plaintext must still read, not throw.
+        \Illuminate\Support\Facades\DB::table('customers')->where('id', $customer->id)
+            ->update(['parivesh_password' => 'legacy-plain']);
+        $this->assertSame('legacy-plain', $customer->fresh()->parivesh_password);
+    }
+
     public function test_version_endpoint_does_not_disclose_runtime_versions(): void
     {
         $response = $this->getJson('/system/version')->assertOk();
