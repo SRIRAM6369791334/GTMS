@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -30,12 +31,14 @@ class AuthController extends Controller
             ->orWhere('user_code', $credentials['email'])
             ->first();
 
-        if (!$user) {
+        // Same message for unknown user and wrong password: do not reveal which accounts exist.
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
             return back()->withErrors([
-                'email' => 'No account found with this email or User ID.',
+                'email' => 'Invalid email / User ID or password.',
             ])->onlyInput('email');
         }
 
+        // Inactive notice only after the password is proven.
         if ($user->status != 1) {
             return back()->withErrors([
                 'email' => 'Your account is inactive. Please contact administrator.',
@@ -48,7 +51,7 @@ class AuthController extends Controller
         }
 
         return back()->withErrors([
-            'password' => 'Incorrect password entered.',
+            'email' => 'Invalid email / User ID or password.',
         ])->onlyInput('email');
     }
 

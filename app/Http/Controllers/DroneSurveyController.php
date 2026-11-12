@@ -269,8 +269,8 @@ class DroneSurveyController extends Controller
                 'location'               => $request->input('location', $draft['location'] ?? 'Quarry Site'),
                 'flight_date'            => $request->input('flight_date', $draft['flight_date'] ?? date('Y-m-d')),
                 'drone_pilot_name'       => $draft['drone_pilot_name'] ?? 'S. Karthik',
-                'pilot_rpc_no'           => $draft['pilot_rpc_no'] ?? 'RPC #DRN-TN-8821',
-                'drone_uin_no'           => $draft['drone_uin_no'] ?? 'UIN-TN-DRN-2026-9901',
+                'pilot_rpc_no'           => $draft['pilot_rpc_no'] ?? null,
+                'drone_uin_no'           => $draft['drone_uin_no'] ?? null,
                 'drone_model'            => $draft['drone_model'] ?? 'DJI Matrice 300 RTK',
                 'altitude_meters'        => (float) ($draft['altitude_meters'] ?? 120),
                 'gsd_cm_px'              => (float) ($draft['gsd_cm_px'] ?? 2.5),
@@ -429,7 +429,7 @@ class DroneSurveyController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $surveyId = $surveyId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {
@@ -631,8 +631,7 @@ class DroneSurveyController extends Controller
             if ($request->filled('document_name')) {
                 $name = $request->input('document_name');
                 $q->where(function ($sq) use ($name) {
-                    $sq->where('document_name', $name)
-                       ->orWhere('document_name', 'like', '%' . $name . '%');
+                    $sq->where('document_name', $name);
                 });
             }
             $dbDoc = $q->first();

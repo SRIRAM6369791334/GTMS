@@ -264,7 +264,6 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('admin123'),
-                'show_password' => 'admin123',
                 'mobile_num' => '9876543210',
                 'branch_id' => $branch->id,
                 'role_id' => $adminRole->id,
@@ -287,7 +286,6 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'Staff User',
                 'password' => Hash::make('staff123'),
-                'show_password' => 'staff123',
                 'mobile_num' => '9876543211',
                 'branch_id' => $branch->id,
                 'role_id' => $staffRole->id,
@@ -296,7 +294,6 @@ class RolePermissionSeeder extends Seeder
             ]
         );
         $staffUser->password = Hash::make('staff123');
-        $staffUser->show_password = 'staff123';
         $staffUser->user_code = 'LUK_002';
         $staffUser->role_id = $staffRole->id;
         $staffUser->branch_id = $branch->id;
@@ -310,7 +307,6 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'Field Officer',
                 'password' => Hash::make('officer123'),
-                'show_password' => 'officer123',
                 'mobile_num' => '9876543212',
                 'branch_id' => $branch->id,
                 'role_id' => $officerRole->id,
@@ -319,7 +315,6 @@ class RolePermissionSeeder extends Seeder
             ]
         );
         $officerUser->password = Hash::make('officer123');
-        $officerUser->show_password = 'officer123';
         $officerUser->user_code = 'LUK_003';
         $officerUser->role_id = $officerRole->id;
         $officerUser->branch_id = $branch->id;

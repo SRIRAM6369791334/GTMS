@@ -24,6 +24,62 @@ class ChunkedUploadService
     public const MAX_TOTAL_SIZE = 53687091200;
 
     /**
+     * File extensions the chunk engine accepts (union of the module upload allow-lists).
+     * Executable / server-interpreted types (php, phtml, phar, htaccess, ...) are never allowed.
+     */
+    public const ALLOWED_EXTENSIONS = [
+        'pdf', 'png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'bmp', 'tif', 'tiff',
+        'zip', 'rar', '7z', 'tar', 'gz',
+        'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'txt', 'csv', 'rtf',
+        'kml', 'kmz', 'xml', 'dwg', 'dxf', 'shp', 'las', 'laz', 'ply', 'obs', 'rnx', 'dat',
+        'mp4', 'webm', 'mkv', 'avi', 'mov',
+    ];
+
+    /**
+     * Ensure the file name carries an allowed extension.
+     *
+     * @throws RuntimeException
+     */
+    public static function assertAllowedExtension(string $fileName): void
+    {
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+        if ($extension === '' || !in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+            throw new RuntimeException('File type is not allowed.');
+        }
+    }
+
+    /**
+     * Validate a target module path such as "drone" or "lease_applications/LA-2026-0001".
+     * Rejects traversal segments, absolute paths and unexpected characters.
+     *
+     * @throws RuntimeException
+     */
+    public static function sanitizeModulePath(?string $module): ?string
+    {
+        if ($module === null || $module === '') {
+            return null;
+        }
+
+        $module = str_replace('\\', '/', $module);
+        if (str_starts_with($module, '/') || preg_match('/^[A-Za-z]:/', $module)) {
+            throw new RuntimeException('Invalid target module.');
+        }
+
+        $module = trim($module, '/');
+        $segments = explode('/', $module);
+
+        foreach ($segments as $segment) {
+            if ($segment === '' || $segment === '.' || $segment === '..'
+                || !preg_match('/^[A-Za-z0-9_.-]{1,100}$/', $segment)) {
+                throw new RuntimeException('Invalid target module.');
+            }
+        }
+
+        return implode('/', $segments);
+    }
+
+    /**
      * Initialize a chunked upload session.
      *
      * @param  array<string, mixed>  $data
@@ -35,6 +91,7 @@ class ChunkedUploadService
         $token = 'upl_' . Str::random(32);
 
         $originalName = $data['original_name'] ?? $data['file_name'] ?? 'upload.bin';
+        self::assertAllowedExtension($originalName);
         $extension = pathinfo($originalName, PATHINFO_EXTENSION);
         $basename = pathinfo($originalName, PATHINFO_FILENAME);
         $safeName = Str::slug($basename) . ($extension ? '.' . strtolower($extension) : '');
@@ -59,7 +116,7 @@ class ChunkedUploadService
         }
 
         $mimeType = $data['mime_type'] ?? 'application/octet-stream';
-        $targetModule = $data['target_module'] ?? $data['module'] ?? null;
+        $targetModule = self::sanitizeModulePath($data['target_module'] ?? $data['module'] ?? null);
         $referenceId = isset($data['reference_id']) ? (int) $data['reference_id'] : (isset($data['module_record_id']) ? (int) $data['module_record_id'] : null);
         $clientHash = $data['file_hash'] ?? null;
 
@@ -260,7 +317,9 @@ class ChunkedUploadService
 
         $upload->update(['status' => 'assembled']);
 
-        $module = $targetModule ?? $upload->target_module ?? 'general';
+        // Re-check at assembly time: target module may come from a different caller than init.
+        self::assertAllowedExtension((string) $upload->file_name);
+        $module = self::sanitizeModulePath($targetModule ?? $upload->target_module) ?? 'general';
         $refId = $referenceId ?? $upload->reference_id;
 
         // Destination folder hierarchy: public/uploads/{module}/[REF-{refId}/]

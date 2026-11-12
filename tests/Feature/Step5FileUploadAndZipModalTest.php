@@ -772,6 +772,7 @@ class Step5FileUploadAndZipModalTest extends TestCase
         $token = 'chk_test_' . uniqid();
         $chunkedUpload = \App\Models\ChunkedUpload::create([
             'upload_token'    => $token,
+            'user_id'         => $this->user->id,
             'original_name'   => 'drone_video_2026.mp4',
             'file_name'       => 'drone_video_2026.mp4',
             'file_path'       => $relFilePath,

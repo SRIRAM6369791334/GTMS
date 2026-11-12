@@ -164,18 +164,17 @@ class BranchController extends Controller
             ]);
         }
 
-        // 4. Cascade delete: remove all users assigned to this branch and the branch itself atomically
-        $deletedUserCount = 0;
-        DB::transaction(function () use ($branch, &$deletedUserCount) {
-            $deletedUserCount = User::where('branch_id', $branch->id)->count();
-            User::where('branch_id', $branch->id)->delete();
-            $branch->delete();
-        });
-
-        $msg = 'Branch Deleted Successfully';
-        if ($deletedUserCount > 0) {
-            $msg = "Branch and {$deletedUserCount} associated user account(s) deleted successfully.";
+        // 4. Safeguard: never delete user accounts as a side effect. Staff must be moved first.
+        $userCount = User::where('branch_id', $branch->id)->count();
+        if ($userCount > 0) {
+            return response()->json([
+                'status'  => 0,
+                'message' => "This department still has {$userCount} user account(s). Move them to another department before deleting it.",
+            ]);
         }
+
+        $branch->delete();
+        $msg = 'Branch Deleted Successfully';
 
         return response()->json([
             'status'  => 1,

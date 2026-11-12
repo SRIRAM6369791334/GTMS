@@ -227,20 +227,20 @@ class UserManagementAndAuthTest extends TestCase
         ]);
         $resNonExistent->assertRedirect('/login');
         $resNonExistent->assertSessionHasErrors([
-            'email' => 'No account found with this email or User ID.',
+            'email' => 'Invalid email / User ID or password.',
         ]);
         $resNonExistent->assertSessionMissing('errors.password');
 
-        // 2. Existing user with wrong password: error isolated under key 'password'
+        // 2. Existing user with wrong password: same generic message (no account enumeration)
         $resBadPass = $this->from('/login')->post('/login', [
             'email' => $this->adminUser->email,
             'password' => 'completely_wrong_pass',
         ]);
         $resBadPass->assertRedirect('/login');
         $resBadPass->assertSessionHasErrors([
-            'password' => 'Incorrect password entered.',
+            'email' => 'Invalid email / User ID or password.',
         ]);
-        $resBadPass->assertSessionMissing('errors.email');
+        $resBadPass->assertSessionMissing('errors.password');
     }
 
     /**
@@ -302,7 +302,7 @@ class UserManagementAndAuthTest extends TestCase
         $this->assertNotNull($createdUser);
         $expectedCode = 'LUK_' . str_pad($createdUser->id, 3, '0', STR_PAD_LEFT);
         $this->assertEquals($expectedCode, $createdUser->user_code);
-        $this->assertEquals('securePass123', $createdUser->show_password);
+        $this->assertNull($createdUser->show_password, 'Plaintext password must not be stored.');
         $this->assertEquals('9840123456', $createdUser->mobile_num);
     }
 

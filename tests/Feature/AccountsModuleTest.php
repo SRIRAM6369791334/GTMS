@@ -1316,4 +1316,66 @@ class AccountsModuleTest extends TestCase
         $response->assertSee('Customer Ledger');
         $response->assertSee('Financial Reports');
     }
+
+    /**
+     * Business rule: a payment may not exceed the pending balance.
+     */
+    public function test_payment_collection_rejects_overpayment(): void
+    {
+        $customer = $this->createTestCustomer();
+
+        $mining = MiningApplication::create([
+            'customer_id'    => $customer->id,
+            'application_no' => 'MP-OVER-' . uniqid(),
+            'district_id'    => $this->district->id,
+            'product_value'  => 100000.00,
+            'paid_amount'    => 90000.00,
+            'pending_amount' => 10000.00,
+            'payment_status' => 'partial',
+            'branch_id'      => $this->branch->id,
+        ]);
+
+        $this->post(route('accounts.payments.store'), [
+            'customer_id'      => $customer->id,
+            'application_type' => 'mining',
+            'application_id'   => $mining->id,
+            'amount_paid'      => 15000.00,
+            'payment_mode'     => 'Cash',
+            'transaction_date' => '2026-11-13',
+        ])->assertSessionHasErrors('amount_paid');
+
+        $this->assertEquals('90000.00', $mining->fresh()->paid_amount);
+        $this->assertFalse(PaymentReceipt::where('application_type', 'mining')->where('application_id', $mining->id)->exists());
+    }
+
+    /**
+     * Business rule: the receipt customer must own the application.
+     */
+    public function test_payment_collection_rejects_customer_mismatch(): void
+    {
+        $owner = $this->createTestCustomer();
+        $other = $this->createTestCustomer();
+
+        $mining = MiningApplication::create([
+            'customer_id'    => $owner->id,
+            'application_no' => 'MP-MISMATCH-' . uniqid(),
+            'district_id'    => $this->district->id,
+            'product_value'  => 50000.00,
+            'paid_amount'    => 0,
+            'pending_amount' => 50000.00,
+            'payment_status' => 'pending',
+            'branch_id'      => $this->branch->id,
+        ]);
+
+        $this->post(route('accounts.payments.store'), [
+            'customer_id'      => $other->id,
+            'application_type' => 'mining',
+            'application_id'   => $mining->id,
+            'amount_paid'      => 1000.00,
+            'payment_mode'     => 'Cash',
+            'transaction_date' => '2026-11-13',
+        ])->assertSessionHasErrors('customer_id');
+
+        $this->assertEquals('0.00', $mining->fresh()->paid_amount);
+    }
 }

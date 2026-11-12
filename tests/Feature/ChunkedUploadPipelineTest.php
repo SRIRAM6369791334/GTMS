@@ -749,4 +749,94 @@ class ChunkedUploadPipelineTest extends TestCase
         $response->assertStatus(404);
         $response->assertJson(['success' => false]);
     }
+
+    /**
+     * Security: guests cannot use the chunk upload API.
+     */
+    public function test_guest_cannot_use_chunk_upload_api(): void
+    {
+        $this->postJson('/api/upload/chunk/init', [
+            'file_name'  => 'x.pdf',
+            'total_size' => 1024,
+        ])->assertStatus(401);
+
+        $this->postJson('/api/upload/chunk/assemble', ['upload_token' => 'upl_any'])->assertStatus(401);
+        $this->getJson('/api/upload/chunk/status?upload_token=upl_any')->assertStatus(401);
+    }
+
+    /**
+     * Security: executable / unknown extensions are rejected at init.
+     */
+    public function test_init_rejects_disallowed_extensions(): void
+    {
+        foreach (['shell.php', 'x.phtml', 'x.phar', '.htaccess', 'noext'] as $name) {
+            $this->actingAs($this->admin)->postJson('/api/upload/chunk/init', [
+                'file_name'     => $name,
+                'total_size'    => 1024,
+                'target_module' => 'drone',
+            ])->assertStatus(422);
+        }
+    }
+
+    /**
+     * Security: path traversal in target_module is rejected at init and assemble.
+     */
+    public function test_target_module_path_traversal_is_rejected(): void
+    {
+        foreach (['../../public', '..', 'drone/../../x', '/etc', 'drone\\..\\x'] as $module) {
+            $this->actingAs($this->admin)->postJson('/api/upload/chunk/init', [
+                'file_name'     => 'report.pdf',
+                'total_size'    => 1024,
+                'target_module' => $module,
+            ])->assertStatus(422);
+        }
+
+        $token = $this->initTestUpload(1, 1024, 1024);
+        $this->actingAs($this->admin)->postJson('/api/upload/chunk/upload', [
+            'upload_token' => $token,
+            'chunk_index'  => 0,
+            'chunk'        => UploadedFile::fake()->createWithContent('chunk_0', str_repeat('A', 1024)),
+        ])->assertStatus(200);
+
+        $this->actingAs($this->admin)->postJson('/api/upload/chunk/assemble', [
+            'upload_token'  => $token,
+            'target_module' => '../../public',
+        ])->assertStatus(422);
+    }
+
+    /**
+     * Security: one user cannot read, write, assemble or cancel another user's session.
+     */
+    public function test_user_cannot_touch_another_users_upload_session(): void
+    {
+        $token = $this->initTestUpload(1, 1024, 1024);
+
+        $other = User::create([
+            'name'      => 'Other Staff',
+            'email'     => 'other_' . Str::random(8) . '@gtms.test',
+            'user_code' => 'OTH_' . rand(1000, 9999),
+            'password'  => bcrypt(Str::random(16)),
+            'branch_id' => $this->branch->id,
+            'status'    => 1,
+        ]);
+
+        $this->actingAs($other)->getJson("/api/upload/chunk/status?upload_token={$token}")->assertStatus(404);
+        $this->actingAs($other)->postJson('/api/upload/chunk/upload', [
+            'upload_token' => $token,
+            'chunk_index'  => 0,
+            'chunk'        => UploadedFile::fake()->createWithContent('chunk_0', str_repeat('A', 1024)),
+        ])->assertStatus(404);
+        $this->actingAs($other)->postJson('/api/upload/chunk/assemble', ['upload_token' => $token])->assertStatus(404);
+        $this->actingAs($other)->postJson('/api/upload/chunk/cancel', ['upload_token' => $token])->assertStatus(404);
+
+        $this->assertDatabaseHas('chunked_uploads', ['upload_token' => $token, 'status' => 'pending']);
+    }
+
+    /**
+     * Security: plaintext password is never returned or stored for new users.
+     */
+    public function test_user_json_never_contains_show_password(): void
+    {
+        $this->assertContains('show_password', (new User())->getHidden());
+    }
 }

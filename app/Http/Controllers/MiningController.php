@@ -278,8 +278,9 @@ class MiningController extends Controller
                     'email'                    => $request->email,
                     'district_id'              => $request->district_id,
                     'mineral_id'               => $primaryMineralId,
-                    'pan'                      => $request->pan ?: ('PAN' . substr(strtoupper(uniqid()), 0, 7)),
-                    'aadhaar_no'               => $request->aadhaar_no ?: ('9999' . str_pad(mt_rand(10000000, 99999999), 8, '0', STR_PAD_LEFT)),
+                    // No fabricated identity numbers: leave empty when not provided.
+                    'pan'                      => $request->pan ?: null,
+                    'aadhaar_no'               => $request->aadhaar_no ?: null,
                     'gstin'                    => $request->gstin,
                     'area'                     => $request->area_extent_ha,
                     'address'                  => $request->address,
@@ -332,11 +333,14 @@ class MiningController extends Controller
             ];
 
             // Ensure common_id exists if previously empty
-            if (empty($miningApp->common_id)) {
-                if (preg_match('/(?:MP|MDG)-(\d{4}-\d+)/', $miningApp->application_no, $m)) {
-                    $appUpdates['common_id'] = 'GTMS-' . $m[1];
-                } else {
-                    $appUpdates['common_id'] = 'GTMS-' . date('Y') . '-' . str_pad($miningApp->id, 4, '0', STR_PAD_LEFT);
+            // Single source: the master project (lease-born or standalone).
+            if (empty($miningApp->common_id) || empty($miningApp->master_project_id)) {
+                $master = $miningApp->master_project_id
+                    ? \App\Models\MasterProject::find($miningApp->master_project_id)
+                    : $this->resolveMasterProject($request, true, $miningApp->customer_id, $miningApp->lease_application_id);
+                if ($master) {
+                    $appUpdates['common_id'] = $master->master_application_id;
+                    $appUpdates['master_project_id'] = $master->id;
                 }
             }
 
@@ -344,10 +348,12 @@ class MiningController extends Controller
             $applicationNo = $miningApp->application_no;
         } else {
             [$applicationNo, $generatedCommonId] = $this->generateMiningAppNumber();
-            $commonId = $request->input('common_id') ?: $generatedCommonId;
+            $master = $this->resolveMasterProject($request, true, $customerId ?? null);
+            $commonId = $master?->master_application_id;
 
             $miningApp = MiningApplication::create([
                 'common_id'           => $commonId,
+                'master_project_id'   => $master?->id,
                 'lease_application_id'=> $request->input('lease_application_id') ?: null,
                 'application_no'      => $applicationNo,
                 'customer_id'               => $customerId,
@@ -683,10 +689,12 @@ class MiningController extends Controller
         } else {
             // Create initial draft mining application
             [$applicationNo, $generatedCommonId] = $this->generateMiningAppNumber();
-            $commonId = $request->input('common_id') ?: $generatedCommonId;
+            $master = $this->resolveMasterProject($request, false, $customerId ?? null);
+            $commonId = $master?->master_application_id;
 
             $miningApp = MiningApplication::create([
                 'common_id'                 => $commonId,
+                'master_project_id'         => $master?->id,
                 'lease_application_id'      => $request->input('lease_application_id') ?: null,
                 'application_no'            => $applicationNo,
                 'customer_id'               => $customerId ?: 1,
@@ -952,7 +960,7 @@ class MiningController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $appId = $appId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {
@@ -1324,6 +1332,38 @@ class MiningController extends Controller
      * Helper: Concurrency-safe atomic application number & Common ID generator for Mining Applications
      * Returns: [$applicationNo, $commonId]
      */
+    /**
+     * Resolve the master project that owns this mining plan's GTMS ID.
+     * Order: linked lease's master -> existing master named in the request -> new standalone master.
+     * With $allowCreate = false (drafts) no new pipeline entry is created and null may be returned.
+     */
+    private function resolveMasterProject(Request $request, bool $allowCreate, $customerId = null, $leaseId = null): ?\App\Models\MasterProject
+    {
+        $pipeline = app(\App\Services\MasterPipelineService::class);
+
+        $leaseId = $leaseId ?: $request->input('lease_application_id');
+        if ($leaseId && ($lease = \App\Models\LeaseApplication::find($leaseId))) {
+            return $pipeline->createOrGetMasterProject($lease, Auth::user());
+        }
+
+        $requested = $request->input('common_id');
+        if ($requested && ($existing = \App\Models\MasterProject::where('master_application_id', $requested)->first())) {
+            return $existing;
+        }
+
+        if (!$allowCreate) {
+            return null;
+        }
+
+        return $pipeline->createStandaloneMasterProject([
+            'customer_id' => $customerId ?: null,
+            'branch_id'   => Auth::user()->branch_id ?? null,
+            'district_id' => $request->input('district_id') ?: null,
+            'taluk'       => $request->input('taluk'),
+            'village'     => $request->input('village'),
+        ], 'mining', Auth::user());
+    }
+
     private function generateMiningAppNumber(): array
     {
         $year = date('Y');
@@ -1479,6 +1519,13 @@ class MiningController extends Controller
             'action'        => 'Project Initiated from Mining Plan',
             'description'   => "Environment Clearance project {$projectCode} created from Mining Plan {$mining->application_no} with cloned documents.",
         ]);
+
+        // Keep the master pipeline in step with this module move.
+        try {
+            app(\App\Services\MasterPipelineService::class)->syncModuleMove($mining->master_project_id, 'environment', $envProject, Auth::user());
+        } catch (\Throwable $e) {
+            \Log::warning('Master pipeline sync failed (mining -> environment): ' . $e->getMessage());
+        }
 
         $successMsg = "Mining Plan successfully moved to Environment Clearance ({$projectCode}) with document carry-over!";
 
