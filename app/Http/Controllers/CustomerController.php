@@ -636,7 +636,7 @@ class CustomerController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
 
             if (!$upload->isAssembled()) {
                 $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'lease_applications/' . $appNo, $draftAppId);
@@ -2082,7 +2082,7 @@ class CustomerController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
 
             if (!$upload->isAssembled()) {
                 $assembly = app(ChunkedUploadService::class)->assembleFile($upload->upload_token, 'lease_applications/' . $appNo, $doc->lease_application_id);

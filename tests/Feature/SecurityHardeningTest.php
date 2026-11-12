@@ -1,0 +1,81 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Branch;
+use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
+use Spatie\Permission\PermissionRegistrar;
+use Tests\TestCase;
+
+/**
+ * Regression tests for the security hardening batch:
+ * permissions on master pipeline / invoice seal, route order, version disclosure.
+ */
+class SecurityHardeningTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    protected User $noPermUser;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $branch = Branch::first() ?? Branch::create([
+            'branch_name' => 'Security Test Branch',
+            'status'      => 1,
+        ]);
+
+        // User with no role and no permissions.
+        $this->noPermUser = User::create([
+            'name'      => 'No Permission User',
+            'email'     => 'noperm_' . Str::random(8) . '@gtms.test',
+            'user_code' => 'NOP_' . rand(1000, 9999),
+            'password'  => bcrypt(Str::random(16)),
+            'branch_id' => $branch->id,
+            'status'    => 1,
+        ]);
+    }
+
+    public function test_master_pipeline_requires_department_permission(): void
+    {
+        $this->actingAs($this->noPermUser)->get(route('master-pipeline.index'))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->post(route('master-pipeline.forward', 1))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->post(route('master-pipeline.return', 1))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->post(route('master-pipeline.resubmit', 1))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->post(route('master-pipeline.create-from-lease', 1))->assertStatus(403);
+    }
+
+    public function test_create_from_lease_rejects_get(): void
+    {
+        $this->actingAs($this->noPermUser)->get('/master-pipeline/create-from-lease/1')->assertStatus(405);
+    }
+
+    public function test_invoice_seal_requires_account_permission(): void
+    {
+        $this->actingAs($this->noPermUser)->post(route('accounts.invoices.seal.upload'))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->post(route('accounts.invoices.seal.remove'))->assertStatus(403);
+        $this->actingAs($this->noPermUser)->get(route('accounts.invoices.seal.status'))->assertStatus(403);
+    }
+
+    public function test_notifications_clear_all_route_is_reachable(): void
+    {
+        $route = app('router')->getRoutes()->match(
+            \Illuminate\Http\Request::create('/notifications/clear-all', 'DELETE')
+        );
+
+        $this->assertSame('notifications.clear-all', $route->getName());
+    }
+
+    public function test_version_endpoint_does_not_disclose_runtime_versions(): void
+    {
+        $response = $this->getJson('/system/version')->assertOk();
+
+        $this->assertArrayNotHasKey('php', $response->json());
+        $this->assertArrayNotHasKey('laravel', $response->json());
+    }
+}

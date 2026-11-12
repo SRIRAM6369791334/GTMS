@@ -529,8 +529,7 @@ class EnverionsoneController extends Controller
         if (!$doc && $projectId && $docNameInput) {
             $doc = EnvironmentDocument::where('environment_project_id', $projectId)
                 ->where(function ($q) use ($docNameInput) {
-                    $q->where('document_name', $docNameInput)
-                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                    $q->where('document_name', $docNameInput);
                 })->first();
         }
 

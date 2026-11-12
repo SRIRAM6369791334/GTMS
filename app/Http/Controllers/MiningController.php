@@ -952,7 +952,7 @@ class MiningController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $appId = $appId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {

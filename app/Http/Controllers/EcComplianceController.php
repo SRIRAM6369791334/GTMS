@@ -470,7 +470,7 @@ class EcComplianceController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $complianceId = $complianceId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {
@@ -667,8 +667,7 @@ class EcComplianceController extends Controller
             $q = EcComplianceDocument::where('ec_compliance_id', $complianceId);
             if ($docNameInput) {
                 $q->where(function ($sq) use ($docNameInput) {
-                    $sq->where('document_name', $docNameInput)
-                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                    $sq->where('document_name', $docNameInput);
                 });
             }
             $dbDoc = $q->first();

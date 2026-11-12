@@ -33,6 +33,16 @@ class ChunkUploadController extends Controller
             ->exists();
     }
 
+    /**
+     * Only our own RuntimeException messages are safe to show; anything else may leak paths.
+     */
+    protected function clientMessage(Throwable $e, string $prefix): string
+    {
+        return $e instanceof RuntimeException
+            ? $prefix . ': ' . $e->getMessage()
+            : $prefix . '.';
+    }
+
     protected function uploadNotFound(): JsonResponse
     {
         return response()->json([
@@ -116,7 +126,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to initialize chunked upload: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to initialize chunked upload'),
             ], 422);
         }
     }
@@ -186,7 +196,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to save chunk: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to save chunk'),
                 'chunk_index' => $chunkIndex,
             ], 400);
         }
@@ -225,7 +235,7 @@ class ChunkUploadController extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve upload status: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to retrieve upload status'),
             ], 500);
         }
     }
@@ -279,7 +289,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'File assembly failed: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'File assembly failed'),
             ], $statusCode);
         }
     }
@@ -325,7 +335,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to cancel upload session: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to cancel upload session'),
             ], 500);
         }
     }

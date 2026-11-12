@@ -350,7 +350,7 @@ class DgpsSurveyController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $surveyId = $surveyId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {
@@ -548,8 +548,7 @@ class DgpsSurveyController extends Controller
             if ($request->filled('document_name')) {
                 $name = $request->input('document_name');
                 $q->where(function ($sq) use ($name) {
-                    $sq->where('document_name', $name)
-                       ->orWhere('document_name', 'like', '%' . $name . '%');
+                    $sq->where('document_name', $name);
                 });
             }
             $dbDoc = $q->first();

@@ -40,8 +40,6 @@ Route::get('/system/version', function () {
         'verified_by' => 'Okay verifed',
         'auto_deploy_status' => '100_PERCENT_AUTONOMOUS',
         'timestamp' => now()->toIso8601String(),
-        'php' => PHP_VERSION,
-        'laravel' => app()->version(),
     ]);
 })->name('system.version');
 
@@ -63,8 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
     Route::post('/notifications/{id}/mark-as-unread', [NotificationController::class, 'markAsUnread'])->name('notifications.mark-as-unread');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    // clear-all must be registered before {id}, or {id} captures "clear-all".
     Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::post('/notifications/seed-demo', [NotificationController::class, 'seedDemo'])->name('notifications.seed-demo');
 
     Route::get('/dashboard', function () {
@@ -610,21 +609,28 @@ Route::middleware('auth')->group(function () {
 
         // Invoice Seal & Signature Management (Manual Upload & Blank Space Mode)
         Route::post('/invoices/seal-upload', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'upload'])
+            ->middleware('permission:account.edit')
             ->name('invoices.seal.upload');
         Route::post('/invoices/seal-remove', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'remove'])
+            ->middleware('permission:account.edit')
             ->name('invoices.seal.remove');
         Route::get('/invoices/seal-status', [\App\Http\Controllers\Accounts\InvoiceSealController::class, 'status'])
+            ->middleware('permission:account.view')
             ->name('invoices.seal.status');
     });
 
     // Universal Master Application ID & Bidirectional Pipeline Workflow
-    Route::prefix('master-pipeline')->name('master-pipeline.')->group(function () {
-        Route::get('/', [MasterPipelineController::class, 'index'])->name('index');
-        Route::get('/timeline/{id}', [MasterPipelineController::class, 'timeline'])->name('timeline');
-        Route::match(['get', 'post'], '/create-from-lease/{leaseId}', [MasterPipelineController::class, 'createFromLease'])->name('create-from-lease');
-        Route::post('/forward/{id}', [MasterPipelineController::class, 'forward'])->name('forward');
-        Route::post('/return/{id}', [MasterPipelineController::class, 'returnForCorrection'])->name('return');
-        Route::post('/resubmit/{id}', [MasterPipelineController::class, 'resubmit'])->name('resubmit');
+    // Read: any department view permission. Write: any department edit permission.
+    $pipelineView = 'permission:application.view|mining.view|environment.view|ppt.view|dgps.view|drone.view|ec_certificate.view|ec_compliance.view';
+    $pipelineEdit = 'permission:application.edit|mining.edit|environment.edit|ppt.edit|dgps.edit|drone.edit|ec_certificate.edit|ec_compliance.edit';
+    Route::prefix('master-pipeline')->name('master-pipeline.')->group(function () use ($pipelineView, $pipelineEdit) {
+        Route::get('/', [MasterPipelineController::class, 'index'])->middleware($pipelineView)->name('index');
+        Route::get('/timeline/{id}', [MasterPipelineController::class, 'timeline'])->middleware($pipelineView)->name('timeline');
+        // POST only: creating a master project changes state.
+        Route::post('/create-from-lease/{leaseId}', [MasterPipelineController::class, 'createFromLease'])->middleware($pipelineEdit)->name('create-from-lease');
+        Route::post('/forward/{id}', [MasterPipelineController::class, 'forward'])->middleware($pipelineEdit)->name('forward');
+        Route::post('/return/{id}', [MasterPipelineController::class, 'returnForCorrection'])->middleware($pipelineEdit)->name('return');
+        Route::post('/resubmit/{id}', [MasterPipelineController::class, 'resubmit'])->middleware($pipelineEdit)->name('resubmit');
     });
 
 });
