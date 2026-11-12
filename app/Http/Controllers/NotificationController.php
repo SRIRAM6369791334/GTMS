@@ -19,8 +19,8 @@ class NotificationController extends Controller
     {
         $user = auth()->user();
 
-        // If user has zero notifications, auto-seed realistic GTMS notifications
-        if ($user && $user->notifications()->count() === 0) {
+        // Demo notifications are seeded only outside production (never auto-created for real users).
+        if ($user && !app()->environment('production') && $user->notifications()->count() === 0) {
             $this->seedDefaultNotifications($user);
         }
 
@@ -206,6 +206,8 @@ class NotificationController extends Controller
      */
     public function seedDemo(Request $request)
     {
+        abort_if(app()->environment('production'), 404);
+
         $user = auth()->user() ?? User::first();
         if ($user) {
             $this->seedDefaultNotifications($user, true);

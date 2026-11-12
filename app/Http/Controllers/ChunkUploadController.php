@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChunkedUpload;
 use App\Services\ChunkedUploadService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,38 @@ class ChunkUploadController extends Controller
     public function __construct(
         protected ChunkedUploadService $chunkService
     ) {
+    }
+
+    /**
+     * Only the user who started an upload session may touch it.
+     */
+    protected function ownsUpload(?string $token): bool
+    {
+        if (!$token) {
+            return false;
+        }
+
+        return ChunkedUpload::where('upload_token', $token)
+            ->where('user_id', Auth::id())
+            ->exists();
+    }
+
+    /**
+     * Only our own RuntimeException messages are safe to show; anything else may leak paths.
+     */
+    protected function clientMessage(Throwable $e, string $prefix): string
+    {
+        return $e instanceof RuntimeException
+            ? $prefix . ': ' . $e->getMessage()
+            : $prefix . '.';
+    }
+
+    protected function uploadNotFound(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Upload session not found or has expired.',
+        ], 404);
     }
 
     /**
@@ -93,7 +126,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to initialize chunked upload: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to initialize chunked upload'),
             ], 422);
         }
     }
@@ -133,6 +166,10 @@ class ChunkUploadController extends Controller
         $chunkIndex = (int) $request->input('chunk_index');
         $chunkHash = $request->input('chunk_hash');
 
+        if (!$this->ownsUpload($token)) {
+            return $this->uploadNotFound();
+        }
+
         try {
             $part = $this->chunkService->saveChunk($token, $chunkIndex, $chunkFile, $chunkHash);
             $upload = $part->chunkedUpload;
@@ -159,7 +196,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to save chunk: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to save chunk'),
                 'chunk_index' => $chunkIndex,
             ], 400);
         }
@@ -180,6 +217,10 @@ class ChunkUploadController extends Controller
             ], 422);
         }
 
+        if (!$this->ownsUpload((string) $token)) {
+            return $this->uploadNotFound();
+        }
+
         try {
             $statusData = $this->chunkService->getStatus((string) $token);
 
@@ -194,7 +235,7 @@ class ChunkUploadController extends Controller
         } catch (Throwable $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve upload status: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to retrieve upload status'),
             ], 500);
         }
     }
@@ -228,6 +269,10 @@ class ChunkUploadController extends Controller
             $referenceId = (int) $referenceId;
         }
 
+        if (!$this->ownsUpload($token)) {
+            return $this->uploadNotFound();
+        }
+
         try {
             $assemblyResult = $this->chunkService->assembleFile($token, $targetModule, $referenceId);
 
@@ -244,7 +289,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'File assembly failed: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'File assembly failed'),
             ], $statusCode);
         }
     }
@@ -263,6 +308,10 @@ class ChunkUploadController extends Controller
                 'success' => false,
                 'message' => 'The upload_token parameter is required to cancel an upload.',
             ], 422);
+        }
+
+        if (!$this->ownsUpload((string) $token)) {
+            return $this->uploadNotFound();
         }
 
         try {
@@ -286,7 +335,7 @@ class ChunkUploadController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to cancel upload session: ' . $e->getMessage(),
+                'message' => $this->clientMessage($e, 'Failed to cancel upload session'),
             ], 500);
         }
     }

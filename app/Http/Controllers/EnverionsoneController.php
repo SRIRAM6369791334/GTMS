@@ -529,8 +529,7 @@ class EnverionsoneController extends Controller
         if (!$doc && $projectId && $docNameInput) {
             $doc = EnvironmentDocument::where('environment_project_id', $projectId)
                 ->where(function ($q) use ($docNameInput) {
-                    $q->where('document_name', $docNameInput)
-                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                    $q->where('document_name', $docNameInput);
                 })->first();
         }
 
@@ -775,10 +774,10 @@ class EnverionsoneController extends Controller
                 'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
                 'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
-                'product_value'          => 25000.00,
-                'paid_amount'            => 25000.00,
+                'product_value'          => 0.00,
+                'paid_amount'            => 0.00,
                 'pending_amount'         => 0.00,
-                'payment_status'         => 'paid',
+                'payment_status'         => 'pending',
                 'branch_id'              => $project->branch_id ?? 1,
                 'created_by'             => Auth::id(),
             ]);
@@ -794,15 +793,6 @@ class EnverionsoneController extends Controller
                         'sort_order'       => $h->sort_order ?? 1,
                     ]);
                 }
-            } else {
-                ApplicationHandler::create([
-                    'application_type' => 'ppt',
-                    'application_id'   => $ppt->id,
-                    'name'             => 'Dr. K. Ravichandran',
-                    'role'             => 'Lead Technical Consultant',
-                    'notes'            => 'SEAC ToR presentation defense',
-                    'sort_order'       => 1,
-                ]);
             }
         }
 
@@ -819,6 +809,13 @@ class EnverionsoneController extends Controller
             'description'   => "TOR completed and submitted to PPT Department for ToR Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
         ]);
+
+        // Keep the master pipeline in step with this module move.
+        try {
+            app(\App\Services\MasterPipelineService::class)->syncModuleMove($project->master_project_id, 'ppt', $ppt, Auth::user());
+        } catch (\Throwable $e) {
+            \Log::warning('Master pipeline sync failed (environment -> ppt): ' . $e->getMessage());
+        }
 
         $successMsg = "Stage 1 (TOR) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC ToR Presentation Approval.";
 
@@ -864,10 +861,10 @@ class EnverionsoneController extends Controller
                 'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
                 'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
-                'product_value'          => 25000.00,
-                'paid_amount'            => 25000.00,
+                'product_value'          => 0.00,
+                'paid_amount'            => 0.00,
                 'pending_amount'         => 0.00,
-                'payment_status'         => 'paid',
+                'payment_status'         => 'pending',
                 'branch_id'              => $project->branch_id ?? 1,
                 'created_by'             => Auth::id(),
             ]);
@@ -883,15 +880,6 @@ class EnverionsoneController extends Controller
                         'sort_order'       => $h->sort_order ?? 1,
                     ]);
                 }
-            } else {
-                ApplicationHandler::create([
-                    'application_type' => 'ppt',
-                    'application_id'   => $ppt->id,
-                    'name'             => 'Dr. K. Ravichandran',
-                    'role'             => 'Lead Technical Consultant',
-                    'notes'            => 'Final SEAC / SEIAA EC presentation defense',
-                    'sort_order'       => 1,
-                ]);
             }
         }
 
@@ -908,6 +896,13 @@ class EnverionsoneController extends Controller
             'description'   => "ETA completed and submitted to PPT Department for Final EC Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
         ]);
+
+        // Keep the master pipeline in step with this module move.
+        try {
+            app(\App\Services\MasterPipelineService::class)->syncModuleMove($project->master_project_id, 'ppt', $ppt, Auth::user());
+        } catch (\Throwable $e) {
+            \Log::warning('Master pipeline sync failed (environment -> ppt): ' . $e->getMessage());
+        }
 
         $successMsg = "Stage 2 (ETA) submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC/SEIAA Final EC Appraisal.";
 
@@ -953,10 +948,10 @@ class EnverionsoneController extends Controller
                 'parivesh_password'      => $project->parivesh_password ?? $project->customer?->parivesh_password,
                 'email_password'         => $project->email_password ?? $project->customer?->email_password,
                 'status'                 => 'agenda_scheduled',
-                'product_value'          => 25000.00,
-                'paid_amount'            => 25000.00,
+                'product_value'          => 0.00,
+                'paid_amount'            => 0.00,
                 'pending_amount'         => 0.00,
-                'payment_status'         => 'paid',
+                'payment_status'         => 'pending',
                 'branch_id'              => $project->branch_id ?? 1,
                 'created_by'             => Auth::id(),
             ]);
@@ -972,15 +967,6 @@ class EnverionsoneController extends Controller
                         'sort_order'       => $h->sort_order ?? 1,
                     ]);
                 }
-            } else {
-                ApplicationHandler::create([
-                    'application_type' => 'ppt',
-                    'application_id'   => $ppt->id,
-                    'name'             => 'Dr. K. Ravichandran',
-                    'role'             => 'Lead Technical Consultant',
-                    'notes'            => 'SEAC Category B2 EC presentation defense',
-                    'sort_order'       => 1,
-                ]);
             }
         }
 
@@ -996,6 +982,13 @@ class EnverionsoneController extends Controller
             'description'   => "Category B2 project submitted to PPT Department for SEAC Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
         ]);
+
+        // Keep the master pipeline in step with this module move.
+        try {
+            app(\App\Services\MasterPipelineService::class)->syncModuleMove($project->master_project_id, 'ppt', $ppt, Auth::user());
+        } catch (\Throwable $e) {
+            \Log::warning('Master pipeline sync failed (environment -> ppt): ' . $e->getMessage());
+        }
 
         $successMsg = "Category B2 submitted to PPT Department ({$ppt->application_no})! Awaiting SEAC Presentation Approval.";
 

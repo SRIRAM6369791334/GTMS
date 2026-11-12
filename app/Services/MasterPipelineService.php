@@ -98,7 +98,12 @@ class MasterPipelineService
                 }
             }
 
-            $masterId = $this->generateMasterId();
+            // Keep an ID the lease already carries (it may be printed on documents);
+            // otherwise reserve the next one from the master sequence.
+            $existingId = $lockedLease?->common_id ?: $lease->common_id;
+            $idTaken = $existingId && MasterProject::withoutGlobalScopes()->withTrashed()
+                ->where('master_application_id', $existingId)->exists();
+            $masterId = ($existingId && !$idTaken) ? $existingId : $this->generateMasterId();
 
             // Extract survey numbers from relationship or direct attribute
             $surveyNumbers = '';
@@ -163,6 +168,76 @@ class MasterPipelineService
     }
 
     /**
+     * Single source of the GTMS-YYYY-NNNN ID for a lease: the lease's master project.
+     */
+    public function masterIdForLease(LeaseApplication $lease, ?User $officer = null): string
+    {
+        return $this->createOrGetMasterProject($lease, $officer)->master_application_id;
+    }
+
+    /**
+     * Master project for a department record that has no lease (e.g. a standalone mining plan).
+     * Reserves the GTMS ID in master_projects so it can never collide with a lease-born ID.
+     */
+    public function createStandaloneMasterProject(array $attributes, string $stage, ?User $officer = null): MasterProject
+    {
+        return DB::transaction(function () use ($attributes, $stage, $officer) {
+            $master = MasterProject::create(array_merge([
+                'master_application_id' => $this->generateMasterId(),
+                'current_stage'         => $this->normalizeDepartment($stage),
+                'pipeline_status'       => 'in_progress',
+                'created_by'            => $officer?->id,
+            ], $attributes));
+
+            PipelineMovement::create([
+                'master_project_id' => $master->id,
+                'from_department'   => 'system',
+                'to_department'     => $master->current_stage,
+                'action_type'       => 'Initiation',
+                'priority'          => 'normal',
+                'reason'            => 'Master project initialized from standalone ' . $master->current_stage . ' record',
+                'officer_id'        => $officer?->id,
+                'officer_name'      => $officer?->name ?: 'System',
+                'metadata'          => [],
+            ]);
+
+            return $master;
+        });
+    }
+
+    /**
+     * Keep the master pipeline in step with a module "move" button.
+     * Forwards the master project when the target stage is ahead of its current stage,
+     * and links the new department record. Never moves a project backward.
+     */
+    public function syncModuleMove(?int $masterProjectId, string $toDepartment, Model $record, ?User $officer): void
+    {
+        if (!$masterProjectId || !$officer) {
+            return;
+        }
+
+        $master = MasterProject::find($masterProjectId);
+        if (!$master) {
+            return;
+        }
+
+        $to = $this->normalizeDepartment($toDepartment);
+        $fromRank = $this->stageOrder[$this->normalizeDepartment($master->current_stage)] ?? 0;
+        $toRank = $this->stageOrder[$to] ?? 0;
+
+        if ($toRank > $fromRank) {
+            $this->forwardStage($master, $to, [
+                'record' => $record,
+                'reason' => 'Synced from module move to ' . $this->getDepartmentLabel($to),
+            ], $officer);
+        } else {
+            // Already at or past this stage: just link the record.
+            $this->associateDepartmentRecord($master, $to, ['record' => $record], []);
+            $master->save();
+        }
+    }
+
+    /**
      * Alias for createOrGetMasterProject to satisfy interface contracts.
      */
     public function createFromLease(LeaseApplication $lease, ?User $officer = null): MasterProject
@@ -197,9 +272,9 @@ class MasterPipelineService
             // Associate department record ID if passed or newly created
             $this->associateDepartmentRecord($master, $normalizedTo, $payload, $autoFill);
 
-            // Update Master stage & status
+            // Update Master stage & status ("completed" is terminal)
             $master->current_stage = $normalizedTo;
-            $master->pipeline_status = 'in_progress';
+            $master->pipeline_status = $normalizedTo === 'completed' ? 'completed' : 'in_progress';
             $master->save();
 
             // Record immutable movement

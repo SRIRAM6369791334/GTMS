@@ -39,6 +39,8 @@ class EcCertificate extends Model
     ];
 
     protected $casts = [
+        'parivesh_password' => \App\Casts\EncryptedOrPlain::class,
+        'email_password' => \App\Casts\EncryptedOrPlain::class,
         'issue_date'     => 'date',
         'expiry_date'    => 'date',
         'validity_years' => 'integer',

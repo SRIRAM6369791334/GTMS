@@ -218,8 +218,8 @@ class EcComplianceController extends Controller
 
         // Step 3: NABL Lab Info
         if ($step === 3) {
-            $draft['nabl_lab_name']      = $request->input('nabl_lab_name', 'Glens Innovation Labs (NABL #TC-7712)');
-            $draft['nabl_certificate_no'] = $request->input('nabl_certificate_no', 'NABL/ENV/2026/0441');
+            $draft['nabl_lab_name']      = $request->input('nabl_lab_name');
+            $draft['nabl_certificate_no'] = $request->input('nabl_certificate_no');
             $draft['monitoring_date']    = $request->input('monitoring_date', date('Y-m-d'));
         }
 
@@ -297,11 +297,11 @@ class EcComplianceController extends Controller
                 'compliance_year'             => $request->input('compliance_year', $draft['compliance_year'] ?? date('Y')),
                 'submission_due_date'         => $request->input('submission_due_date', $draft['submission_due_date'] ?? '2026-12-01'),
                 'submission_date'             => date('Y-m-d'),
-                'parivesh_app_no'             => $request->input('parivesh_app_no', $draft['parivesh_app_no'] ?? 'SIA/TN/MIN/' . rand(10000, 99999) . '/' . date('Y')),
-                'parivesh_acknowledgement_no' => $request->input('parivesh_acknowledgement_no', $draft['parivesh_acknowledgement_no'] ?? 'PARIVESH-ACK-TN-2026-' . rand(1000, 9999)),
+                'parivesh_app_no'             => $request->input('parivesh_app_no', $draft['parivesh_app_no'] ?? null),
+                'parivesh_acknowledgement_no' => $request->input('parivesh_acknowledgement_no', $draft['parivesh_acknowledgement_no'] ?? null),
                 'parivesh_uploaded_date'      => date('Y-m-d'),
-                'nabl_lab_name'               => $request->input('nabl_lab_name', $draft['nabl_lab_name'] ?? 'Glens Innovation Labs (NABL #TC-7712)'),
-                'nabl_certificate_no'         => $request->input('nabl_certificate_no', $draft['nabl_certificate_no'] ?? 'NABL/ENV/2026/0441'),
+                'nabl_lab_name'               => $request->input('nabl_lab_name', $draft['nabl_lab_name'] ?? null),
+                'nabl_certificate_no'         => $request->input('nabl_certificate_no', $draft['nabl_certificate_no'] ?? null),
                 'monitoring_date'             => $request->input('monitoring_date', $draft['monitoring_date'] ?? date('Y-m-d')),
                 'status'                      => 'uploaded_to_parivesh',
                 'product_value'               => $val,
@@ -470,7 +470,7 @@ class EcComplianceController extends Controller
 
         // Handle Chunked Upload Token
         if ($request->filled('upload_token')) {
-            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->firstOrFail();
+            $upload = ChunkedUpload::where('upload_token', $request->input('upload_token'))->where('user_id', auth()->id())->firstOrFail();
             $complianceId = $complianceId ?? $upload->reference_id;
 
             if (!$upload->isAssembled()) {
@@ -667,8 +667,7 @@ class EcComplianceController extends Controller
             $q = EcComplianceDocument::where('ec_compliance_id', $complianceId);
             if ($docNameInput) {
                 $q->where(function ($sq) use ($docNameInput) {
-                    $sq->where('document_name', $docNameInput)
-                       ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
+                    $sq->where('document_name', $docNameInput);
                 });
             }
             $dbDoc = $q->first();

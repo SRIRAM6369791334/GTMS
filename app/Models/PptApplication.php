@@ -43,6 +43,8 @@ class PptApplication extends Model
     ];
 
     protected $casts = [
+        'parivesh_password' => \App\Casts\EncryptedOrPlain::class,
+        'email_password' => \App\Casts\EncryptedOrPlain::class,
         'product_value'  => 'decimal:2',
         'paid_amount'    => 'decimal:2',
         'pending_amount' => 'decimal:2',

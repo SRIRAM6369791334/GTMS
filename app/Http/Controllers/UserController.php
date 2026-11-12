@@ -120,7 +120,6 @@ class UserController extends Controller
         $user->status = $request->input('status', 1);
         $user->remember_token = Str::random(10);
         $user->mobile_num = trim($request->mobile_num ?? '');
-        $user->show_password = $request->password;
 
         // Upload Image
         if ($request->hasFile('image')) {
@@ -254,7 +253,6 @@ class UserController extends Controller
         }
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
-            $user->show_password = $request->password;
         }
         $user->role_id = $request->role_id;
         $user->branch_id = $request->branch_id;

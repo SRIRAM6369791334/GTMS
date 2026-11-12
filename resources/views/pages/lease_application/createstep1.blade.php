@@ -89,8 +89,8 @@
             document.addEventListener('DOMContentLoaded', function() {
               @foreach($draft['step1'] as $key => $value)
                 @if(!is_array($value))
-                  var el = document.getElementById('field_{{ $key }}');
-                  if (el) el.value = '{!! addslashes($value) !!}';
+                  var el = document.getElementById(@json('field_' . $key));
+                  if (el) el.value = @json((string) $value);
                 @endif
               @endforeach
             });
