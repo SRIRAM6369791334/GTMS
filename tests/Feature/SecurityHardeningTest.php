@@ -91,6 +91,27 @@ class SecurityHardeningTest extends TestCase
         $this->assertSame('legacy-plain', $customer->fresh()->parivesh_password);
     }
 
+    public function test_pipeline_forward_to_completed_marks_pipeline_completed(): void
+    {
+        $service = app(\App\Services\MasterPipelineService::class);
+        $master = $service->createStandaloneMasterProject(['customer_id' => null], 'ppt', $this->noPermUser);
+
+        $service->forwardStage($master, 'completed', ['reason' => 'All approvals received'], $this->noPermUser);
+
+        $this->assertSame('completed', $master->fresh()->pipeline_status);
+        $this->assertSame('completed', $master->fresh()->current_stage);
+    }
+
+    public function test_standalone_master_ids_come_from_master_sequence(): void
+    {
+        $service = app(\App\Services\MasterPipelineService::class);
+        $a = $service->createStandaloneMasterProject([], 'mining', $this->noPermUser);
+        $b = $service->createStandaloneMasterProject([], 'mining', $this->noPermUser);
+
+        $this->assertMatchesRegularExpression('/^GTMS-\d{4}-\d{4,}$/', $a->master_application_id);
+        $this->assertNotSame($a->master_application_id, $b->master_application_id);
+    }
+
     public function test_version_endpoint_does_not_disclose_runtime_versions(): void
     {
         $response = $this->getJson('/system/version')->assertOk();

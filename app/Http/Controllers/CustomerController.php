@@ -274,9 +274,10 @@ class CustomerController extends Controller
             $existingPassword = $draft['step6']['mimas_password'] ?? ($draft['step2']['mimas_password'] ?? null);
             if (!$existingPassword && !empty($draft['application_id'])) {
                 $cred = MimasCredential::where('lease_application_id', $draft['application_id'])->first();
-                $existingPassword = $cred ? $cred->password : 'MimasPass@2026';
+                $existingPassword = $cred ? $cred->password : null;
             }
-            $validated['mimas_password'] = $existingPassword ?? 'MimasPass@2026';
+            // No hard-coded fallback password: leave empty until staff enter the real one.
+            $validated['mimas_password'] = $existingPassword ?? '';
         }
 
         if (empty($validated['mimas_contact'])) {
@@ -1586,7 +1587,6 @@ class CustomerController extends Controller
 
             if ($leaseApp) {
                 $leaseApp->update([
-                    'common_id'          => 'GTMS-' . substr($appNo, 3),
                     'application_no'     => $appNo,
                     'customer_id'        => $customer->id,
                     'district_id'        => $district->id,
@@ -1610,7 +1610,6 @@ class CustomerController extends Controller
                 ]);
             } else {
                 $leaseApp = LeaseApplication::create([
-                    'common_id'                => 'GTMS-' . substr($appNo, 3),
                     'application_no'           => $appNo,
                     'customer_id'              => $customer->id,
                     'district_id'              => $district->id,
@@ -1658,19 +1657,19 @@ class CustomerController extends Controller
 
             // MIMAS credentials
             $mimasUserId = $step6['mimas_user_id'] ?? ($step1['mimas_no'] ?? $customer->mimas_no);
-            $mimasPassword = $step6['mimas_password'] ?? 'MimasPass@2026';
-            $mimasEmail = $step6['mimas_email'] ?? ($step1['email'] ?? ($customer->email ?? 'applicant@portal.tn.gov.in'));
-            $mimasContact = $step6['mimas_contact'] ?? ($step1['mobile_num'] ?? ($customer->mobile_num ?? '0000000000'));
+            // No fabricated defaults: unknown values stay empty, portal status stays pending
+            // until staff record a real MIMAS acknowledgement.
+            $mimasPassword = $step6['mimas_password'] ?? '';
+            $mimasEmail = $step6['mimas_email'] ?? ($step1['email'] ?? ($customer->email ?? null));
+            $mimasContact = $step6['mimas_contact'] ?? ($step1['mobile_num'] ?? ($customer->mobile_num ?? null));
 
             MimasCredential::updateOrCreate(
                 ['lease_application_id' => $leaseApp->id],
                 [
-                    'user_id'        => $mimasUserId,
+                    'user_id'        => $mimasUserId ?? '',
                     'password'       => $mimasPassword,
                     'email'          => $mimasEmail,
                     'contact_number' => $mimasContact,
-                    'mimas_ack_no'   => 'ACK-MMS-' . date('Y') . '-' . rand(1000, 9999),
-                    'portal_status'  => 'verified',
                 ]
             );
 
@@ -1897,6 +1896,10 @@ class CustomerController extends Controller
                     @rmdir($oldPath);
                 }
             }
+
+            // Single source of the GTMS-YYYY-NNNN ID: the lease's master project
+            // (sets lease.common_id and master_project_id).
+            app(\App\Services\MasterPipelineService::class)->createOrGetMasterProject($leaseApp->fresh(), $user);
 
             // Log the activity
             $this->logActivity($leaseApp->id, 'application_submitted', 'Lease application ' . $appNo . ' submitted with ' . count($docsMeta) . ' documents.');
@@ -2338,14 +2341,11 @@ class CustomerController extends Controller
         }
 
         // 1. Resolve Universal Common ID (GTMS-YYYY-XXXX)
-        $commonId = $lease->common_id;
-        if (empty($commonId)) {
-            $year = date('Y', strtotime($lease->created_at ?? 'now'));
-            if ($lease->application_no && preg_match('/LA-(\d{4}-\d+)/', $lease->application_no, $m)) {
-                $commonId = 'GTMS-' . $m[1];
-            } else {
-                $commonId = 'GTMS-' . $year . '-' . str_pad($lease->id, 4, '0', STR_PAD_LEFT);
-            }
+        // Single source: the lease's master project (created here if missing).
+        $pipeline = app(\App\Services\MasterPipelineService::class);
+        $master = $pipeline->createOrGetMasterProject($lease, Auth::user());
+        $commonId = $master->master_application_id;
+        if ($lease->common_id !== $commonId) {
             $lease->update(['common_id' => $commonId]);
         }
 
@@ -2490,6 +2490,13 @@ class CustomerController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::warning('Activity log failed: ' . $e->getMessage());
+        }
+
+        // Keep the master pipeline in step with this module move.
+        try {
+            $pipeline->syncModuleMove($master->id, 'mining', $miningApp, Auth::user());
+        } catch (\Throwable $e) {
+            \Log::warning('Master pipeline sync failed (lease -> mining): ' . $e->getMessage());
         }
 
         $successMsg = "Successfully transitioned to Mining Plan domain under Common ID: {$commonId}! {$clonedCount} verified statutory documents auto-carried.";

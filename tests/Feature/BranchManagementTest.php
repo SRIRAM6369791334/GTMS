@@ -614,7 +614,7 @@ class BranchManagementTest extends TestCase
         $this->assertDatabaseHas('branches', ['id' => $branchWithAdmin->id]);
     }
 
-    public function test_branch_deletion_cascades_assigned_users(): void
+    public function test_branch_deletion_is_blocked_while_users_are_assigned(): void
     {
         // 1. Create a branch to delete
         $targetBranch = Branch::create([
@@ -653,12 +653,19 @@ class BranchManagementTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJson([
-            'status' => 1,
+            'status' => 0,
         ]);
 
-        // 4. Verify branch is gone AND both assigned users are cascade deleted
+        // 4. Branch and its users are kept: user accounts are never deleted as a side effect
+        $this->assertDatabaseHas('branches', ['id' => $targetBranch->id]);
+        $this->assertDatabaseHas('users', ['id' => $user1->id]);
+        $this->assertDatabaseHas('users', ['id' => $user2->id]);
+
+        // 5. After moving the users away, deletion succeeds
+        User::whereIn('id', [$user1->id, $user2->id])->update(['branch_id' => $this->adminUser->branch_id]);
+        $this->actingAs($this->adminUser)->postJson(route('branchdelete'), ['id' => $targetBranch->id])
+            ->assertJson(['status' => 1]);
         $this->assertDatabaseMissing('branches', ['id' => $targetBranch->id]);
-        $this->assertDatabaseMissing('users', ['id' => $user1->id]);
-        $this->assertDatabaseMissing('users', ['id' => $user2->id]);
+        $this->assertDatabaseHas('users', ['id' => $user1->id]);
     }
 }

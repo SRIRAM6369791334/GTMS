@@ -21,6 +21,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PaymentCollectionController extends Controller implements HasMiddleware
@@ -483,10 +484,25 @@ class PaymentCollectionController extends Controller implements HasMiddleware
                     ->lockForUpdate()
                     ->firstOrFail();
 
+                // Receipt customer must be the application's customer.
+                if (!empty($appModel->customer_id) && (int) $appModel->customer_id !== (int) $request->customer_id) {
+                    throw ValidationException::withMessages([
+                        'customer_id' => 'The selected customer does not own this application.',
+                    ]);
+                }
+
                 $previousPaid = (float) ($appModel->paid_amount ?? 0);
                 $productValue = (float) ($appModel->product_value ?? 0);
 
                 $newPaid = round($previousPaid + $amountPaid, 2);
+
+                // No overpayment: amount may not exceed the pending balance.
+                if ($productValue > 0 && $newPaid > $productValue) {
+                    $pending = max(0.00, round($productValue - $previousPaid, 2));
+                    throw ValidationException::withMessages([
+                        'amount_paid' => 'Amount exceeds the pending balance of ₹' . number_format($pending, 2) . '.',
+                    ]);
+                }
 
                 if ($productValue > 0) {
                     $newPending = max(0.00, round($productValue - $newPaid, 2));

@@ -191,23 +191,23 @@ class DgpsSurveyController extends Controller
         try {
             $survey = DgpsSurvey::create([
                 'survey_no'            => $surveyNo,
-                'field_book_no'        => 'FB-TN-' . rand(100, 999),
+                'field_book_no'        => $request->input('field_book_no', $draft['field_book_no'] ?? null),
                 'customer_id'          => $customerId,
                 'lease_application_id' => $request->input('lease_application_id', $draft['lease_application_id'] ?? null),
                 'lease_area_ha'        => (float)($request->input('lease_area_ha', $draft['lease_area_ha'] ?? 3.85)),
                 'surveyed_area_ha'     => (float)($request->input('surveyed_area_ha', $draft['surveyed_area_ha'] ?? 3.84)),
-                'area_discrepancy_ha'  => 0.01,
+                'area_discrepancy_ha'  => $request->input('area_discrepancy_ha', $draft['area_discrepancy_ha'] ?? null),
                 'location'             => $request->input('location', $draft['location'] ?? 'Salem District'),
                 'survey_date'          => $request->input('survey_date', $draft['survey_date'] ?? date('Y-m-d')),
-                'instrument_model'     => 'Trimble R12i GNSS RTK Base & Rover',
-                'instrument_serial_no' => 'SN-TRM-889102',
-                'survey_status'        => 'completed',
-                'report_status'        => 'verified',
+                'instrument_model'     => $request->input('instrument_model', $draft['instrument_model'] ?? null),
+                'instrument_serial_no' => $request->input('instrument_serial_no', $draft['instrument_serial_no'] ?? null),
+                'survey_status'        => 'scheduled',
+                'report_status'        => 'pending',
                 'product_value'        => $val,
                 'paid_amount'          => $paid,
                 'pending_amount'       => $pending,
                 'payment_status'       => $pStatus,
-                'survey_team_notes'    => 'SOI Benchmark fixed at Pillar #1, rover calibration verified within 5mm tolerance',
+                'survey_team_notes'    => $request->input('survey_team_notes', $draft['survey_team_notes'] ?? null),
             ]);
 
             // Save Handlers

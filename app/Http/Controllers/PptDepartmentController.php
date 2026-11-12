@@ -236,15 +236,6 @@ class PptDepartmentController extends Controller
                         ]);
                     }
                 }
-            } else {
-                ApplicationHandler::create([
-                    'application_type' => 'ppt',
-                    'application_id'   => $ppt->id,
-                    'name'             => 'Dr. K. Ravichandran',
-                    'role'             => 'Lead Presentation Consultant',
-                    'notes'            => 'Committee defense and technical queries',
-                    'sort_order'       => 1,
-                ]);
             }
 
             // Save Payment
