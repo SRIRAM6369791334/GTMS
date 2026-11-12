@@ -630,7 +630,8 @@ Route::middleware('auth')->group(function () {
 });
 
 // GTMS Resilient Chunked Upload Engine API Routes
-Route::prefix('api/upload/chunk')->group(function () {
+// Authenticated only: these endpoints write files to disk.
+Route::middleware('auth')->prefix('api/upload/chunk')->group(function () {
     Route::post('/init', [ChunkUploadController::class, 'init'])->name('api.upload.chunk.init');
     Route::post('/upload', [ChunkUploadController::class, 'uploadChunk'])->name('api.upload.chunk.upload');
     Route::get('/status', [ChunkUploadController::class, 'status'])->name('api.upload.chunk.status');

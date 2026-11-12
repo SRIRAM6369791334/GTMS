@@ -302,7 +302,7 @@ class UserManagementAndAuthTest extends TestCase
         $this->assertNotNull($createdUser);
         $expectedCode = 'LUK_' . str_pad($createdUser->id, 3, '0', STR_PAD_LEFT);
         $this->assertEquals($expectedCode, $createdUser->user_code);
-        $this->assertEquals('securePass123', $createdUser->show_password);
+        $this->assertNull($createdUser->show_password, 'Plaintext password must not be stored.');
         $this->assertEquals('9840123456', $createdUser->mobile_num);
     }
 

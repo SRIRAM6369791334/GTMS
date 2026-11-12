@@ -39,6 +39,7 @@ public function branch()
     protected $hidden = [
         'password',
         'remember_token',
+        'show_password', // legacy plaintext column: never serialize
     ];
 
     /**
