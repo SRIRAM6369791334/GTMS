@@ -43,6 +43,11 @@
     body[data-theme-version="dark"] .nav-header .brand-text {
         color: #f8fafc !important;
     }
+    /* Below 1200px the sidebar header collapses to icon width: the "GTMS" text
+       would otherwise spill over the page title. */
+    @media (max-width: 1199.98px) {
+        .nav-header .brand-text { display: none !important; }
+    }
 
     /* COLLAPSED MINI SIDEBAR STATE (when hamburger is touched) */
     #main-wrapper.menu-toggle .nav-header {
