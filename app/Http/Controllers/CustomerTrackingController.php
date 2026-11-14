@@ -1598,7 +1598,9 @@ class CustomerTrackingController extends Controller
                         ($l->taluk ? $l->taluk . ' Taluk, ' : '') .
                         "{$dist} Dist.");
             $val = (float)$l->product_value;
-            $amt = $val > 0 ? $val : 150000.00;
+            // Free (fee waived) applications are invoiced at 0 with the waiver noted
+            $leaseFree = ($l->payment_status ?? '') === 'free';
+            $amt = $leaseFree ? 0.0 : ($val > 0 ? $val : 150000.00);
 
             $catalog->push([
                 'key'            => 'lease_' . $l->id,
@@ -1615,8 +1617,11 @@ class CustomerTrackingController extends Controller
                 'extent'         => $l->area_extent_ha ? ($l->area_extent_ha . ' Ha') : null,
                 'status'         => $l->status ?: 'Active',
                 'amount'         => $amt,
-                'has_real_val'   => $val > 0,
+                'has_real_val'   => $val > 0 || $leaseFree,
                 'paid_amount'    => (float)$l->paid_amount,
+                'is_free'        => $leaseFree,
+                'waived_amount'  => $leaseFree ? (float)$l->waived_amount : null,
+                'waiver_reason'  => $leaseFree ? $l->waiver_reason : null,
                 'sac'            => '998341',
                 'tax_title'      => "Preparation of Mining Lease Application, Revenue Scrutiny & Statutory MMS Filing",
                 'proforma_title' => "Mining Lease Application & Revenue Documentation",
@@ -1966,6 +1971,10 @@ class CustomerTrackingController extends Controller
                     'sac'          => $app['sac'],
                     'amount'       => (float)$app['amount'],
                     'bullets'      => $app['bullets'],
+                    'is_free'      => !empty($app['is_free']),
+                    'waiver_note'  => !empty($app['is_free'])
+                        ? 'Free of charge — application fee waived' . (!empty($app['waived_amount']) ? ' (₹ ' . number_format($app['waived_amount'], 2) . ' waived)' : '') . '. Reason: ' . ($app['waiver_reason'] ?: 'Not recorded')
+                        : null,
                 ];
             } else {
                 $items[] = [
@@ -1981,6 +1990,10 @@ class CustomerTrackingController extends Controller
                     'sac'          => $app['sac'],
                     'amount'       => (float)$app['amount'],
                     'bullets'      => $app['bullets'],
+                    'is_free'      => !empty($app['is_free']),
+                    'waiver_note'  => !empty($app['is_free'])
+                        ? 'Free of charge — application fee waived' . (!empty($app['waived_amount']) ? ' (₹ ' . number_format($app['waived_amount'], 2) . ' waived)' : '') . '. Reason: ' . ($app['waiver_reason'] ?: 'Not recorded')
+                        : null,
                 ];
             }
         }

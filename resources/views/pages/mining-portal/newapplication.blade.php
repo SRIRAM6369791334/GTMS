@@ -1,10 +1,14 @@
 @extends('layouts.app')
 @section('title', 'New Mining Application')
+@push('styles')
+<link href="/css/gtms-lease.css?v=3" rel="stylesheet">
+@endpush
+
 @section('main_content')
 
 <div class="content-body default-height">
     <div class="container-fluid">
-        <div id="gtms-mining-page">
+        <div id="gtms-mining-page" class="lz-page">
             <div class="wizard-wrap">
 
                 <!-- ========================================================== -->
@@ -12,10 +16,10 @@
                 <!-- ========================================================== -->
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
                     <div>
-                        <div class="mining-eyebrow text-uppercase fw-bold mb-0.5" style="font-size: 0.74rem; letter-spacing: 0.05em; color: var(--orange, #ea580c) !important;">
+                        <div class="mining-eyebrow text-uppercase fw-bold mb-0.5 lz-eyebrow" style="font-size: 0.74rem; letter-spacing: 0.05em; color: var(--orange, #ea580c) !important;">
                             <i class="bi bi-signpost-split me-1"></i> Mining Portal &bull; Statutory Intake Wizard
                         </div>
-                        <h3 class="mining-title fw-bold mb-0" style="font-size: 1.25rem; color: #0F1E4D;">
+                        <h3 class="mining-title fw-bold mb-0 lz-title" style="font-size: 1.25rem; color: #0F1E4D;">
                             <i class="bi bi-journal-plus text-primary me-2"></i>Register New Mining Application
                         </h3>
                     </div>
@@ -124,7 +128,7 @@
                         <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="mining-banner-icon-badge">
-                                    <i class="bi bi-arrow-repeat fa-spin"></i>
+                                    <i class="bi {{ !empty($prefillData['lease_application_id']) ? 'bi-box-arrow-in-down' : 'bi-arrow-repeat' }}"></i>
                                 </div>
                                 <div>
                                     <div class="mining-banner-title fw-bold">
@@ -138,12 +142,16 @@
                                         @endif
                                     </div>
                                     <div class="mining-banner-desc">
-                                        Client profile, district jurisdiction, and survey extents from Lease Application have been auto-populated. Complete the required Mining fields below to finalize your plan.
+                                        @if(!empty($prefillData['lease_application_id']))
+                                            Client profile, district jurisdiction, and survey extents from Lease Application have been auto-populated. Complete the required Mining fields below to finalize your plan.
+                                        @else
+                                            Your saved draft has been reopened with everything entered so far, including uploaded documents. Continue from where you left off.
+                                        @endif
                                     </div>
                                 </div>
                             </div>
                             <span class="badge mining-badge-success-pill">
-                                <i class="bi bi-check-circle-fill me-1"></i> Data Auto-Fetched
+                                <i class="bi bi-check-circle-fill me-1"></i> {{ !empty($prefillData['lease_application_id']) ? 'Data Auto-Fetched' : 'Draft Restored' }}
                             </span>
                         </div>
                     </div>
@@ -152,24 +160,24 @@
                 <form method="POST" action="{{ route('newapplication.store') }}" id="miningWizardForm" enctype="multipart/form-data">
                     @csrf
 
-                    <div class="card mining-main-card wizard-card">
+                    <div class="card mining-main-card wizard-card lz-card">
 
                         {{-- ========================================================== --}}
                         {{-- STEP 1: CLIENT INFORMATION (UNIVERSAL MIMAS LOOKUP + PROFILE) --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane" id="pane_0">
                             <!-- HEADER BANNER -->
-                            <div class="s1-header-block mb-3.5">
+                            <div class="s1-header-block mb-3.5 lz-head">
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
-                                    <div class="wc-eyebrow s1-eyebrow">
+                                    <div class="wc-eyebrow s1-eyebrow lz-eyebrow">
                                         <i class="bi bi-shield-check me-1"></i> Step 1 of 9 &bull; Applicant Identity &amp; Profile
                                     </div>
-                                    <span class="s1-time-tag">
+                                    <span class="s1-time-tag lz-time">
                                         <i class="bi bi-clock-history me-1"></i> Est. ~2 mins
                                     </span>
                                 </div>
-                                <h4 class="s1-title">Applicant &amp; Enterprise Details</h4>
-                                <div class="wc-sub s1-subtitle">
+                                <h4 class="s1-title lz-title">Applicant &amp; Enterprise Details</h4>
+                                <div class="wc-sub s1-subtitle lz-subtitle">
                                     Lookup an existing registered customer via Customer Unique ID or enter the applicant identity details below.
                                 </div>
                             </div>
@@ -188,9 +196,9 @@
                                     Enter or select the applicant's Customer Unique ID (e.g. MIMAS number or Customer ID). The system will automatically retrieve and populate all registered profile information.
                                 </p>
 
-                                <div class="input-group s1-input-group s1-lookup-input-group">
-                                    <span class="input-group-text s1-addon s1-lookup-addon"><i class="bi bi-search"></i></span>
-                                    <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold s1-input s1-lookup-field" 
+                                <div class="input-group s1-input-group s1-lookup-input-group lz-group">
+                                    <span class="input-group-text s1-addon s1-lookup-addon lz-addon"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="mimas_search_input" class="form-control text-uppercase fw-bold s1-input s1-lookup-field lz-input" 
                                            placeholder="Type or select Customer Unique ID (e.g. TN-MMS-SLM-001)" list="mimas_datalist" autocomplete="off"
                                            value="{{ $prefillData['mimas_no'] ?? '' }}">
                                     <button class="btn s1-btn-fetch px-3.5 fw-bold" type="button" id="btn_lookup_mimas">
@@ -218,44 +226,44 @@
                             <input type="hidden" name="current_step" id="field_current_step" value="{{ $prefillData['current_step'] ?? 1 }}">
 
                             <!-- SECTION 1: APPLICANT & ENTERPRISE PROFILE -->
-                            <div class="s1-section-card mb-3.5">
-                                <div class="s1-section-header">
+                            <div class="s1-section-card mb-3.5 lz-section">
+                                <div class="s1-section-header lz-section-head">
                                     <i class="bi bi-person-badge text-primary me-2"></i>
-                                    <span class="s1-section-title">Applicant &amp; Business Profile</span>
+                                    <span class="s1-section-title lz-section-title">Applicant &amp; Business Profile</span>
                                 </div>
 
-                                <div class="row gx-3 gy-3 s1-form-row">
+                                <div class="row gx-3 gy-3 s1-form-row lz-row">
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="field_client_name">
+                                        <label class="form-label s1-label lz-label" for="field_client_name">
                                             Client / Representative Name <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-person"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field" id="field_client_name" name="client_name" 
-                                                   placeholder="e.g. R. Kumaresan" value="{{ old('client_name', $prefillData['client_name'] ?? '') }}" required>
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-person"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field lz-input" id="field_client_name" name="client_name" 
+                                                   placeholder="e.g. R. Kumaresan" value="{{ old('client_name', $prefillData['client_name'] ?? '') }}" required data-v="name" data-v-label="Client name">
                                         </div>
-                                        <div class="form-text-hint s1-hint">As on official government ID proof.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">As on official government ID proof.</div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="field_company_name">
+                                        <label class="form-label s1-label lz-label" for="field_company_name">
                                             Company / Firm / Quarry Name <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-building"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field" id="field_company_name" name="company_name" 
-                                                   placeholder="e.g. Sri Bala Traders" value="{{ old('company_name', $prefillData['company_name'] ?? '') }}" required>
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-building"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field lz-input" id="field_company_name" name="company_name" 
+                                                   placeholder="e.g. Sri Bala Traders" value="{{ old('company_name', $prefillData['company_name'] ?? '') }}" required data-v="company" data-v-label="Company name">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Registered business or concession title.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Registered business or concession title.</div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="applicant_type_id">
+                                        <label class="form-label s1-label lz-label" for="applicant_type_id">
                                             Applicant Category <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-person-vcard"></i></span>
-                                            <select name="applicant_type_id" id="applicant_type_id" class="form-select s1-input auto-filled-field" required>
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-person-vcard"></i></span>
+                                            <select name="applicant_type_id" id="applicant_type_id" data-v-label="Applicant category" class="form-select s1-input auto-filled-field lz-input" required>
                                                 <option value="">-- Select Category --</option>
                                                 @foreach($applicantTypes as $type)
                                                     <option value="{{ $type->id }}" {{ old('applicant_type_id', $prefillData['applicant_type_id'] ?? '') == $type->id ? 'selected' : '' }}>
@@ -264,120 +272,120 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="form-text-hint s1-hint">Individual, Partnership, Pvt Ltd, etc.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Individual, Partnership, Pvt Ltd, etc.</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- SECTION 2: CONTACT & SITE REPRESENTATIVES -->
-                            <div class="s1-section-card mb-3.5">
-                                <div class="s1-section-header">
+                            <div class="s1-section-card mb-3.5 lz-section">
+                                <div class="s1-section-header lz-section-head">
                                     <i class="bi bi-telephone-inbound text-info me-2"></i>
-                                    <span class="s1-section-title">Contact &amp; Site Representatives</span>
+                                    <span class="s1-section-title lz-section-title">Contact &amp; Site Representatives</span>
                                 </div>
 
-                                <div class="row gx-3 gy-3 s1-form-row">
+                                <div class="row gx-3 gy-3 s1-form-row lz-row">
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="field_mobile_num">
+                                        <label class="form-label s1-label lz-label" for="field_mobile_num">
                                             Primary Phone Number <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-telephone"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field" id="field_mobile_num" name="mobile_num" 
-                                                   placeholder="10-digit primary phone number" value="{{ old('mobile_num', $prefillData['mobile_num'] ?? '') }}" required>
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-telephone"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field lz-input" id="field_mobile_num" name="mobile_num" 
+                                                   placeholder="10-digit primary phone number" value="{{ old('mobile_num', $prefillData['mobile_num'] ?? '') }}" required data-v="mobile" data-v-label="Mobile number">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Primary mobile for statutory SMS alerts and official notices.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Primary mobile for statutory SMS alerts and official notices.</div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="field_email">
-                                            Email Address&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_email">
+                                            Email Address&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-envelope"></i></span>
-                                            <input type="email" class="form-control s1-input auto-filled-field" id="field_email" name="email" 
-                                                   placeholder="customer@example.com" value="{{ old('email', $prefillData['email'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-envelope"></i></span>
+                                            <input type="email" class="form-control s1-input auto-filled-field lz-input" id="field_email" name="email" 
+                                                   placeholder="customer@example.com" value="{{ old('email', $prefillData['email'] ?? '') }}" data-v="email" data-v-label="Email">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Receives e-copies of proceedings and fee receipts.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Receives e-copies of proceedings and fee receipts.</div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="field_secondary_contact_person">
-                                            Secondary Contact Person&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_secondary_contact_person">
+                                            Secondary Contact Person&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-person-gear"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field" id="field_secondary_contact_person" name="secondary_contact_person" 
-                                                   placeholder="e.g. Site Supervisor / Manager" value="{{ old('secondary_contact_person', $prefillData['secondary_contact_person'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-person-gear"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field lz-input" id="field_secondary_contact_person" name="secondary_contact_person" 
+                                                   placeholder="e.g. Site Supervisor / Manager" value="{{ old('secondary_contact_person', $prefillData['secondary_contact_person'] ?? '') }}" data-v="text" data-v-label="Secondary contact person">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Site supervisor or operational representative.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Site supervisor or operational representative.</div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="field_secondary_mobile_num">
-                                            Secondary Phone Number&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_secondary_mobile_num">
+                                            Secondary Phone Number&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-phone"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field" id="field_secondary_mobile_num" name="secondary_mobile_num" 
-                                                   placeholder="10-digit secondary phone number" value="{{ old('secondary_mobile_num', $prefillData['secondary_mobile_num'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-phone"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field lz-input" id="field_secondary_mobile_num" name="secondary_mobile_num" 
+                                                   placeholder="10-digit secondary phone number" value="{{ old('secondary_mobile_num', $prefillData['secondary_mobile_num'] ?? '') }}" data-v="mobile" data-v-label="Secondary mobile number" data-v-different="mobile_num">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Alternate contact number for quarry site.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Alternate contact number for quarry site.</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- SECTION 3: STATUTORY IDENTIFIERS & REGISTERED ADDRESS -->
-                            <div class="s1-section-card mb-3.5">
-                                <div class="s1-section-header">
+                            <div class="s1-section-card mb-3.5 lz-section">
+                                <div class="s1-section-header lz-section-head">
                                     <i class="bi bi-shield-check text-success me-2"></i>
-                                    <span class="s1-section-title">Statutory Identifiers &amp; Registered Office Address</span>
+                                    <span class="s1-section-title lz-section-title">Statutory Identifiers &amp; Registered Office Address</span>
                                 </div>
 
-                                <div class="row gx-3 gy-3 s1-form-row">
+                                <div class="row gx-3 gy-3 s1-form-row lz-row">
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="field_pan">
+                                        <label class="form-label s1-label lz-label" for="field_pan">
                                             PAN Number <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-credit-card-2-front"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field text-uppercase font-monospace fw-bold" id="field_pan" name="pan" 
-                                                   placeholder="AAACS1234F" maxlength="10" value="{{ old('pan', $prefillData['pan'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-credit-card-2-front"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field text-uppercase font-monospace fw-bold lz-input" id="field_pan" name="pan" 
+                                                   placeholder="AAACS1234F" value="{{ old('pan', $prefillData['pan'] ?? '') }}" data-v="pan" data-v-label="PAN">
                                         </div>
-                                        <div class="form-text-hint s1-hint">10-character alphanumeric Income Tax PAN.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">10-character alphanumeric Income Tax PAN.</div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="field_aadhaar_no">
-                                            Aadhaar Number&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_aadhaar_no">
+                                            Aadhaar Number&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-person-bounding-box"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field font-monospace" id="field_aadhaar_no" name="aadhaar_no" 
-                                                   placeholder="XXXX-XXXX-XXXX" maxlength="14" value="{{ old('aadhaar_no', $prefillData['aadhaar_no'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-person-bounding-box"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field font-monospace lz-input" id="field_aadhaar_no" name="aadhaar_no" 
+                                                   placeholder="XXXX-XXXX-XXXX" value="{{ old('aadhaar_no', $prefillData['aadhaar_no'] ?? '') }}" data-v="aadhaar" data-v-label="Aadhaar">
                                         </div>
-                                        <div class="form-text-hint s1-hint">12-digit UIDAI number (automatically formatted).</div>
+                                        <div class="form-text-hint s1-hint lz-hint">12-digit UIDAI number (automatically formatted).</div>
                                     </div>
 
                                     <div class="col-md-4">
-                                        <label class="form-label s1-label" for="field_gstin">
-                                            GSTIN&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_gstin">
+                                            GSTIN&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-receipt"></i></span>
-                                            <input type="text" class="form-control s1-input auto-filled-field text-uppercase font-monospace" id="field_gstin" name="gstin" 
-                                                   placeholder="33AAACS1234F1Z5" maxlength="15" value="{{ old('gstin', $prefillData['gstin'] ?? '') }}">
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-receipt"></i></span>
+                                            <input type="text" class="form-control s1-input auto-filled-field text-uppercase font-monospace lz-input" id="field_gstin" name="gstin" 
+                                                   placeholder="33AAACS1234F1Z5" value="{{ old('gstin', $prefillData['gstin'] ?? '') }}" data-v="gstin" data-v-label="GSTIN">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Goods &amp; Services Tax Identification Number.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Goods &amp; Services Tax Identification Number.</div>
                                     </div>
 
                                     <div class="col-12">
-                                        <label class="form-label s1-label" for="field_address">
-                                            <i class="bi bi-geo-alt text-muted me-1"></i> Registered Office Address&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_address">
+                                            <i class="bi bi-geo-alt text-muted me-1"></i> Registered Office Address&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <textarea class="form-control s1-input s1-textarea auto-filled-field" id="field_address" name="address" rows="3" 
-                                                  placeholder="Street, City, Taluk, Village, Pincode...">{{ old('address', $prefillData['address'] ?? '') }}</textarea>
-                                        <div class="form-text-hint s1-hint">Official postal address registered with the Department of Geology and Mining.</div>
+                                        <textarea class="form-control s1-input s1-textarea auto-filled-field lz-input lz-textarea" id="field_address" name="address" rows="3" 
+                                                  placeholder="Street, City, Taluk, Village, Pincode..." data-v="address" data-v-label="Address">{{ old('address', $prefillData['address'] ?? '') }}</textarea>
+                                        <div class="form-text-hint s1-hint lz-hint">Official postal address registered with the Department of Geology and Mining.</div>
                                     </div>
                                 </div>
                             </div>
@@ -389,13 +397,13 @@
                         <div class="wizard-pane d-none" id="pane_1">
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                                 <div>
-                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
                                         <i class="bi bi-diagram-3 me-1"></i> STEP 2 OF 9 &bull; STATUTORY WORK CLASSIFICATION
                                     </div>
                                     <h4 class="fw-bold text-navy mt-1 mb-0">Select Nature of Work Scope</h4>
                                     <p class="text-muted small mb-0 mt-1">The statutory software workflow, folder checklists, and required regulatory filings dynamically adapt based on this domain selection.</p>
                                 </div>
-                                <span class="s1-time-tag">
+                                <span class="s1-time-tag lz-time">
                                     <i class="bi bi-clock-history me-1"></i> Est. ~1 min
                                 </span>
                             </div>
@@ -480,13 +488,13 @@
                         <div class="wizard-pane d-none" id="pane_2">
                             <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom flex-wrap gap-2">
                                 <div>
-                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
                                         <i class="bi bi-gem me-1"></i> STEP 3 OF 9 &bull; MINERAL CONCESSION &amp; SCHEME
                                     </div>
                                     <h4 class="fw-bold text-navy mt-1 mb-0">2.1 Minerals &amp; 2.1.1 Plan Type</h4>
                                     <p class="text-muted small mb-0 mt-1">This sub-configuration applies exclusively to <strong>Mining Plan</strong> domain applications.</p>
                                 </div>
-                                <span class="s1-time-tag">
+                                <span class="s1-time-tag lz-time">
                                     <i class="bi bi-clock-history me-1"></i> Est. ~1 min
                                 </span>
                             </div>
@@ -589,36 +597,36 @@
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_3">
                             <!-- HEADER BANNER -->
-                            <div class="s1-header-block mb-3.5">
+                            <div class="s1-header-block mb-3.5 lz-head">
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
-                                    <div class="wc-eyebrow s1-eyebrow">
+                                    <div class="wc-eyebrow s1-eyebrow lz-eyebrow">
                                         <i class="bi bi-geo-alt me-1"></i> Step 4 of 9 &bull; Territorial Jurisdiction &amp; Location Details
                                     </div>
-                                    <span class="s1-time-tag">
+                                    <span class="s1-time-tag lz-time">
                                         <i class="bi bi-clock-history me-1"></i> Est. ~1.5 mins
                                     </span>
                                 </div>
-                                <h4 class="s1-title">District Administration &amp; Site Demarcation</h4>
-                                <div class="wc-sub s1-subtitle">
+                                <h4 class="s1-title lz-title">District Administration &amp; Site Demarcation</h4>
+                                <div class="wc-sub s1-subtitle lz-subtitle">
                                     Assign the designated Mines Department office, administrative taluk, revenue village, and cadastral survey numbers.
                                 </div>
                             </div>
 
                             <!-- SECTION 1: DISTRICT JURISDICTION & EXTENT SPECIFICATIONS -->
-                            <div class="s1-section-card mb-3.5">
-                                <div class="s1-section-header">
+                            <div class="s1-section-card mb-3.5 lz-section">
+                                <div class="s1-section-header lz-section-head">
                                     <i class="bi bi-bank text-primary me-2"></i>
-                                    <span class="s1-section-title">District Administration &amp; Concession Extent</span>
+                                    <span class="s1-section-title lz-section-title">District Administration &amp; Concession Extent</span>
                                 </div>
 
-                                <div class="row gx-3 gy-3 s1-form-row">
+                                <div class="row gx-3 gy-3 s1-form-row lz-row">
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="district_id">
+                                        <label class="form-label s1-label lz-label" for="district_id">
                                             District Jurisdiction <span class="text-danger ms-1">*</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-geo-alt-fill text-primary"></i></span>
-                                            <select name="district_id" id="district_id" class="form-select s1-input auto-filled-field" required>
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-geo-alt-fill text-primary"></i></span>
+                                            <select name="district_id" id="district_id" class="form-select s1-input auto-filled-field lz-input" required>
                                                 <option value="">-- Select District Mining Office --</option>
                                                 @foreach($districts as $district)
                                                     <option value="{{ $district->id }}" {{ old('district_id', $prefillData['district_id'] ?? '') == $district->id ? 'selected' : '' }}>
@@ -627,77 +635,77 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="form-text-hint s1-hint">Assigns the Assistant Director / Mines Department jurisdiction.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Assigns the Assistant Director / Mines Department jurisdiction.</div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="field_area_extent_ha">
-                                            Area Extent (in Hectares / Patta)&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="field_area_extent_ha">
+                                            Area Extent (in Hectares / Patta)&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-bounding-box-circles text-info"></i></span>
-                                            <input type="text" name="area_extent_ha" id="field_area_extent_ha" class="form-control s1-input auto-filled-field font-monospace fw-bold" 
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-bounding-box-circles text-info"></i></span>
+                                            <input type="text" name="area_extent_ha" id="field_area_extent_ha" class="form-control s1-input auto-filled-field font-monospace fw-bold lz-input" 
                                                    placeholder="e.g. 2.45 or 14.20.20" value="{{ old('area_extent_ha', $prefillData['area_extent_ha'] ?? '') }}">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Quarry concession total area in standard decimal (e.g. 2.4500 Ha) or Revenue Patta format (e.g. 14.20.20).</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Quarry concession total area in standard decimal (e.g. 2.4500 Ha) or Revenue Patta format (e.g. 14.20.20).</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- SECTION 2: REVENUE LOCATION & CADASTRAL PARCELS -->
-                            <div class="s1-section-card mb-3.5">
-                                <div class="s1-section-header">
+                            <div class="s1-section-card mb-3.5 lz-section">
+                                <div class="s1-section-header lz-section-head">
                                     <i class="bi bi-map-fill text-success me-2"></i>
-                                    <span class="s1-section-title">Revenue Administration &amp; Cadastral Parcels</span>
+                                    <span class="s1-section-title lz-section-title">Revenue Administration &amp; Cadastral Parcels</span>
                                 </div>
 
-                                <div class="row gx-3 gy-3 s1-form-row">
+                                <div class="row gx-3 gy-3 s1-form-row lz-row">
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="taluk">
-                                            Revenue Taluk&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="taluk">
+                                            Revenue Taluk&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-signpost-2 text-secondary"></i></span>
-                                            <input type="text" name="taluk" id="taluk" class="form-control s1-input auto-filled-field" 
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-signpost-2 text-secondary"></i></span>
+                                            <input type="text" name="taluk" id="taluk" class="form-control s1-input auto-filled-field lz-input" 
                                                    placeholder="e.g. Mettur / Salem South" value="{{ old('taluk', $prefillData['taluk'] ?? '') }}">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Revenue taluk of the quarry site.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Revenue taluk of the quarry site.</div>
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label s1-label" for="village">
-                                            Revenue Village&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="village">
+                                            Revenue Village&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-houses text-secondary"></i></span>
-                                            <input type="text" name="village" id="village" class="form-control s1-input auto-filled-field" 
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-houses text-secondary"></i></span>
+                                            <input type="text" name="village" id="village" class="form-control s1-input auto-filled-field lz-input" 
                                                    placeholder="e.g. Mallur Village" value="{{ old('village', $prefillData['village'] ?? '') }}">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Revenue village boundary where the quarry is situated.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Revenue village boundary where the quarry is situated.</div>
                                     </div>
 
                                     <div class="col-12">
-                                        <label class="form-label s1-label" for="survey_numbers_text">
-                                            Cadastral Survey Number(s)&nbsp;<span class="s1-opt-tag">(Optional)</span>
+                                        <label class="form-label s1-label lz-label" for="survey_numbers_text">
+                                            Cadastral Survey Number(s)&nbsp;<span class="s1-opt-tag lz-opt">(Optional)</span>
                                         </label>
-                                        <div class="input-group s1-input-group">
-                                            <span class="input-group-text s1-addon"><i class="bi bi-pin-map-fill text-danger"></i></span>
-                                            <input type="text" name="survey_numbers_text" id="survey_numbers_text" class="form-control s1-input auto-filled-field font-monospace" 
+                                        <div class="input-group s1-input-group lz-group">
+                                            <span class="input-group-text s1-addon lz-addon"><i class="bi bi-pin-map-fill text-danger"></i></span>
+                                            <input type="text" name="survey_numbers_text" id="survey_numbers_text" class="form-control s1-input auto-filled-field font-monospace lz-input" 
                                                    placeholder="e.g. 112/3A, 112/3B, 115/1" value="{{ old('survey_numbers_text', $prefillData['survey_numbers_text'] ?? '') }}">
                                         </div>
-                                        <div class="form-text-hint s1-hint">Comma-separated survey numbers as per revenue records.</div>
+                                        <div class="form-text-hint s1-hint lz-hint">Comma-separated survey numbers as per revenue records.</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- STATUTORY ROUTING NOTICE -->
-                            <div class="s1-notice-card mt-3 mb-0 p-3">
+                            <div class="s1-notice-card mt-3 mb-0 p-3 lz-notice">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div class="d-flex align-items-center gap-3">
                                         <div class="s1-notice-icon-box">
-                                            <i class="bi bi-shield-check s1-notice-icon"></i>
+                                            <i class="bi bi-shield-check s1-notice-icon lz-notice-icon"></i>
                                         </div>
-                                        <div class="s1-notice-text">
+                                        <div class="s1-notice-text lz-notice-text">
                                             <strong>Statutory Routing Notice:</strong> This territorial jurisdiction routes the application to the designated 
                                             @php
                                                 $activeDistName = null;
@@ -722,17 +730,17 @@
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_4">
                             <!-- HEADER BANNER -->
-                            <div class="s1-header-block mb-3.5">
+                            <div class="s1-header-block mb-3.5 lz-head">
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
-                                    <div class="wc-eyebrow s1-eyebrow">
+                                    <div class="wc-eyebrow s1-eyebrow lz-eyebrow">
                                         <i class="bi bi-folder-check me-1"></i> Step 5 of 9 &bull; Regulatory Document Repository
                                     </div>
-                                    <span class="s1-time-tag">
+                                    <span class="s1-time-tag lz-time">
                                         <i class="bi bi-clock-history me-1"></i> Est. ~1 min overview
                                     </span>
                                 </div>
-                                <h4 class="s1-title">Statutory Folder Architecture</h4>
-                                <div class="wc-sub s1-subtitle">
+                                <h4 class="s1-title lz-title">Statutory Folder Architecture</h4>
+                                <div class="wc-sub s1-subtitle lz-subtitle">
                                     Based on your selection of <strong class="text-navy fw-bold" id="disp_selected_now">Mining Plan</strong>, the statutory documentation checklists are partitioned below into distinct regulatory folders.
                                 </div>
                             </div>
@@ -1027,17 +1035,17 @@
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_5">
                             <!-- HEADER BANNER -->
-                            <div class="s1-header-block mb-3.5">
+                            <div class="s1-header-block mb-3.5 lz-head">
                                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-1.5">
-                                    <div class="wc-eyebrow s1-eyebrow">
+                                    <div class="wc-eyebrow s1-eyebrow lz-eyebrow">
                                         <i class="bi bi-cloud-arrow-up me-1"></i> Step 6 of 9 &bull; Regulatory Repository &amp; Digital Plans
                                     </div>
-                                    <span class="s1-time-tag">
+                                    <span class="s1-time-tag lz-time">
                                         <i class="bi bi-clock-history me-1"></i> Est. ~5-8 mins
                                     </span>
                                 </div>
-                                <h4 class="s1-title">Statutory Document Checklist &amp; Digital Plans</h4>
-                                <div class="wc-sub s1-subtitle">
+                                <h4 class="s1-title lz-title">Statutory Document Checklist &amp; Digital Plans</h4>
+                                <div class="wc-sub s1-subtitle lz-subtitle">
                                     Upload statutory documents, affidavits, site photographs, and digital survey plans for <strong class="text-navy fw-bold" id="disp_upload_now">Mining Plan</strong> across the statutory folders.
                                 </div>
                             </div>
@@ -1052,9 +1060,9 @@
                                         <span class="s5-summary-label">Mandatory Dossier Checklist Progress</span>
                                     </div>
                                     <div class="d-flex align-items-baseline gap-2">
-                                        <span class="s5-counter-text text-primary" id="doc_counter_text">0 / 0</span>
-                                        <span class="s5-counter-sub text-muted">files attached</span>
-                                        <span class="badge bg-primary text-white ms-2 px-2.5 py-1 rounded-pill" id="doc_percent_badge">0%</span>
+                                        <span class="s5-counter-text" id="doc_counter_text">0 / 0</span>
+                                        <span class="s5-counter-sub">uploaded</span>
+                                        <span class="d-none" id="doc_percent_badge">0%</span>
                                     </div>
                                 </div>
                                 <div class="progress s5-summary-progress">
@@ -1067,75 +1075,45 @@
                                 @if(isset($natureOfWorks) && isset($folders) && isset($documentFields))
                                     @foreach($natureOfWorks as $now)
                                         <div class="now-doc-group d-none" id="doc_group_now_{{ $now->id }}" data-now-id="{{ $now->id }}">
+                                            @php $folderNo = 0; $docNo = 0; @endphp
                                             @foreach($folders as $folder)
                                                 @php
                                                     $fFields = $documentFields->where('nature_of_work_id', $now->id)->where('folder_id', $folder->id);
                                                 @endphp
                                                 @if($fFields->isNotEmpty())
-                                                    <div class="folder-doc-block mb-4">
-                                                        <div class="d-flex justify-content-between align-items-center mb-2.5 s5-folder-heading-wrap">
-                                                            <div class="s5-folder-heading d-flex align-items-center gap-2.5">
-                                                                <div class="s5-folder-icon-box">
-                                                                    <i class="bi bi-folder2-open text-primary"></i>
-                                                                </div>
-                                                                <div>
-                                                                    <h6 class="s5-folder-title mb-0">{{ $loop->iteration }}. {{ $folder->name }}</h6>
-                                                                    <div class="s5-folder-subtitle">Folder ID: #{{ $folder->id }} &middot; <span class="folder-total-count">{{ $fFields->count() }}</span> Checklist Items</div>
-                                                                </div>
+                                                    @php
+                                                        $folderNo = ($folderNo ?? 0) + 1;
+                                                        $customCarriedDocs = collect();
+                                                        if (!empty($prefillData['existing_docs'])) {
+                                                            $customCarriedDocs = $prefillData['existing_docs']->filter(function($d) use ($folder) {
+                                                                return empty($d->document_field_id) && $d->folder_id == $folder->id && !empty($d->file_path);
+                                                            });
+                                                        }
+                                                        $folderItemTotal = $fFields->count() + $customCarriedDocs->count();
+                                                        $fmtSize = function ($b) { return !is_numeric($b) || !$b ? '' : ($b >= 1048576 ? round($b / 1048576, 1) . ' MB' : max(1, round($b / 1024)) . ' KB'); };
+                                                    @endphp
+                                                    <div class="folder-doc-block">
+                                                        {{-- Folder heading: same layout as Lease Step 5 --}}
+                                                        <div class="d-flex justify-content-between align-items-center mb-2 mt-4 s5-folder-heading-wrap">
+                                                            <div class="s5-folder-heading">
+                                                                <i class="bi bi-folder2-open text-primary me-2"></i>
+                                                                <span>{{ $folderNo }}. {{ $folder->name }}</span>
                                                             </div>
                                                             <div class="d-flex align-items-center gap-2">
                                                                 <button type="button" class="btn btn-sm s5-btn-add-doc btn-open-mining-add-doc"
                                                                         data-folder-id="{{ $folder->id }}"
-                                                                        data-folder-name="{{ $folder->name }}"
+                                                                        data-folder-name="{{ $folderNo }}. {{ $folder->name }}"
                                                                         data-now-id="{{ $now->id }}">
                                                                     <i class="bi bi-plus-circle me-1"></i>Add Document
                                                                 </button>
-                                                                <span class="badge s5-folder-pill folder-pill-counter" id="pill_folder_{{ $now->id }}_{{ $folder->id }}">
-                                                                    0 / {{ $fFields->count() }} Attached
-                                                                </span>
+                                                                <span class="badge s5-folder-pill folder-pill-counter" id="pill_folder_{{ $now->id }}_{{ $folder->id }}">Folder ID: #{{ $folder->id }} &middot; <span class="folder-total-count">{{ $folderItemTotal }}</span> Items</span>
                                                             </div>
                                                         </div>
 
                                                         <div class="folder-checklist-box" id="folder_checklist_{{ $now->id }}_{{ $folder->id }}">
-                                                            @php
-                                                                $customCarriedDocs = collect();
-                                                                if (!empty($prefillData['existing_docs'])) {
-                                                                    $customCarriedDocs = $prefillData['existing_docs']->filter(function($d) use ($folder) {
-                                                                        return empty($d->document_field_id) && $d->folder_id == $folder->id && !empty($d->file_path);
-                                                                    });
-                                                                }
-                                                            @endphp
-
-                                                            @foreach($customCarriedDocs as $cDoc)
-                                                                <div class="checklist-row up" id="row_carried_{{ $cDoc->id }}">
-                                                                    <div class="d-flex align-items-center gap-2.5 flex-grow-1 min-w-0">
-                                                                        <div class="ci-icon ci-icon-carried">
-                                                                            <i class="bi bi-check2-circle ci-status-icon"></i>
-                                                                        </div>
-                                                                        <div class="min-w-0">
-                                                                            <div class="ci-name text-truncate">
-                                                                                <span class="badge bg-light text-primary border me-1" style="font-size:10px;">Lease Doc</span>
-                                                                                {{ $cDoc->document_name }}
-                                                                            </div>
-                                                                            <div class="ci-meta text-success text-truncate">
-                                                                                <i class="bi bi-link-45deg me-1"></i> Carried from Lease: {{ $cDoc->file_name ?? basename($cDoc->file_path) }}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
-                                                                        <span class="badge s5-badge-carried">
-                                                                            <i class="bi bi-check-lg me-1"></i>Carried
-                                                                        </span>
-                                                                        <a href="{{ asset($cDoc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-success s5-btn-action" title="View attached document">
-                                                                            <i class="bi bi-eye"></i>
-                                                                        </a>
-                                                                        <input type="hidden" class="doc-file-input" data-has-existing="1">
-                                                                    </div>
-                                                                </div>
-                                                            @endforeach
-
                                                             @foreach($fFields as $field)
                                                                 @php
+                                                                    $docNo = ($docNo ?? 0) + 1;
                                                                     $matchedDoc = null;
                                                                     if (!empty($prefillData['existing_docs'])) {
                                                                         $matchedDoc = $prefillData['existing_docs']->first(function($d) use ($field) {
@@ -1151,64 +1129,90 @@
                                                                         });
                                                                     }
                                                                     $hasDoc = $matchedDoc && !empty($matchedDoc->file_path);
+                                                                    $isOwnDoc = $hasDoc && $matchedDoc instanceof \App\Models\MiningDocument
+                                                                        && !empty($prefillData['mining_app_id'])
+                                                                        && $matchedDoc->mining_application_id == $prefillData['mining_app_id']
+                                                                        && $matchedDoc->document_field_id == $field->id;
+                                                                    $mName = $hasDoc ? ($matchedDoc->file_name ?? basename($matchedDoc->file_path)) : '';
+                                                                    $mSize = $hasDoc ? $fmtSize($matchedDoc->file_size ?? null) : '';
+                                                                    $mUrl = $hasDoc ? asset($matchedDoc->file_path) : '';
+                                                                    $isZipMatched = $hasDoc && preg_match('/\.(zip|rar|7z|tar|gz)$/i', $matchedDoc->file_path);
                                                                 @endphp
-                                                                <div class="checklist-row {{ $hasDoc ? 'up' : '' }}" id="row_field_{{ $field->id }}" data-field-id="{{ $field->id }}" data-mandatory="{{ $field->required ? '1' : '0' }}">
-                                                                    <div class="d-flex align-items-center gap-2.5 flex-grow-1 min-w-0">
-                                                                        <div class="ci-icon">
-                                                                            <i class="bi {{ $hasDoc ? 'bi-check2-circle' : 'bi-file-earmark' }} ci-status-icon"></i>
-                                                                        </div>
-                                                                        <div class="min-w-0">
-                                                                            <div class="ci-name text-truncate">{{ $loop->iteration }}. {{ $field->name }}</div>
-                                                                            <div class="ci-meta text-truncate" id="meta_field_{{ $field->id }}">
-                                                                                @if($hasDoc)
-                                                                                    <span class="text-success fw-semibold"><i class="bi bi-link-45deg me-1"></i> Auto-Imported: {{ $matchedDoc->file_name ?? basename($matchedDoc->file_path) }}</span>
-                                                                                @else
-                                                                                    Not uploaded &middot; Max 25 MB
-                                                                                @endif
-                                                                            </div>
+                                                                <div class="checklist-row {{ $hasDoc ? 'up' : '' }}" id="row_field_{{ $field->id }}" data-field-id="{{ $field->id }}" data-mandatory="{{ $field->required ? '1' : '0' }}" @if($isOwnDoc) data-doc-id="{{ $matchedDoc->id }}" @endif>
+                                                                    <input type="file" name="doc_files[{{ $field->id }}]" id="file_field_{{ $field->id }}" class="doc-file-input d-none" data-field-id="{{ $field->id }}" data-field-name="{{ $field->name }}" data-has-existing="{{ $hasDoc ? '1' : '0' }}" accept=".pdf,.png,.jpg,.jpeg,.kml,.kmz,.zip,.rar,.7z,.doc,.docx,.dwg,.dxf,.txt,.rtf,.odt,.ods,.odp,.xls,.xlsx,.csv,.ppt,.pptx,.webp,.tif,.tiff,.geojson,.gpx,.bmp">
+                                                                    <div class="ci-icon {{ $isZipMatched ? 'ci-icon-zip' : '' }}">
+                                                                        @if($hasDoc)
+                                                                            <i class="bi {{ $isZipMatched ? 'bi-file-earmark-zip text-warning' : 'bi-check-lg ci-ok' }}"></i>
+                                                                        @else
+                                                                            <i class="bi bi-file-earmark"></i>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="flex-grow-1 min-w-0">
+                                                                        <div class="ci-name">{{ $docNo }}. {{ preg_replace('/^\d+[\.\s-]+/', '', $field->name) }}</div>
+                                                                        <div class="ci-meta" id="meta_field_{{ $field->id }}">
+                                                                            @if($hasDoc && !$isOwnDoc)
+                                                                                <span class="text-success fw-semibold"><i class="bi bi-link-45deg"></i> From lease: {{ $mName }}</span>
+                                                                            @elseif($hasDoc)
+                                                                                {{ $mName }}@if($mSize) &middot; {{ $mSize }}@endif
+                                                                            @else
+                                                                                Not uploaded
+                                                                            @endif
                                                                         </div>
                                                                     </div>
-
-                                                                    <div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">
-                                                                        <select class="form-select form-select-sm doc-req-select {{ $field->required ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }}"
+                                                                    <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                                                                        <select class="form-select form-select-sm doc-req-select {{ $field->required ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light' }} me-1"
                                                                                 name="doc_requirements[{{ $field->id }}]"
                                                                                 data-field-id="{{ $field->id }}"
                                                                                 title="Set requirement status (Mandatory or Optional)">
                                                                             <option value="mandatory" {{ $field->required ? 'selected' : '' }}>Mandatory</option>
                                                                             <option value="optional" {{ !$field->required ? 'selected' : '' }}>Optional</option>
                                                                         </select>
-
-                                                                        @php
-                                                                            $mPath = strtolower($matchedDoc->file_path ?? '');
-                                                                            $isZipMatched = str_ends_with($mPath, '.zip') || str_ends_with($mPath, '.rar') || str_ends_with($mPath, '.7z');
-                                                                            $mUrl = $hasDoc ? asset($matchedDoc->file_path) : '';
-                                                                            $mName = $matchedDoc->file_name ?? basename($matchedDoc->file_path ?? '');
-                                                                        @endphp
                                                                         @if($hasDoc)
-                                                                            <span class="badge {{ $isZipMatched ? 'bg-warning text-dark' : 's5-badge-attached' }}" id="badge_field_{{ $field->id }}">
-                                                                                <i class="bi {{ $isZipMatched ? 'bi-file-earmark-zip-fill' : 'bi-check-lg' }} me-1"></i>{{ $isZipMatched ? 'ZIP Attached' : 'Attached' }}
-                                                                            </span>
-                                                                            <a href="{{ $mUrl }}" target="_blank" class="btn btn-sm btn-outline-info s5-btn-action btn-view-doc btn-view-item" 
-                                                                               title="{{ $isZipMatched ? 'Inspect / View ZIP archive' : 'View attached document' }}"
-                                                                               data-file-url="{{ $mUrl }}"
-                                                                               data-file-name="{{ $mName }}"
-                                                                               data-file-size=""
-                                                                               data-doc-name="{{ $field->name }}"
-                                                                               data-is-zip="{{ $isZipMatched ? '1' : '0' }}">
+                                                                            <span class="badge-status uploaded">{{ $isOwnDoc ? 'Uploaded' : 'Carried' }}</span>
+                                                                            <a href="{{ $mUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info btn-view-item btn-view-doc"
+                                                                               title="{{ $isZipMatched ? 'Download / View ZIP Archive' : 'View Document' }}"
+                                                                               data-file-url="{{ $mUrl }}" data-file-name="{{ $mName }}" data-file-size="{{ $mSize }}"
+                                                                               data-doc-name="{{ $field->name }}" data-is-zip="{{ $isZipMatched ? '1' : '0' }}">
                                                                                 <i class="bi {{ $isZipMatched ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i>
                                                                             </a>
-                                                                            <button type="button" class="btn btn-sm btn-outline-secondary s5-btn-action btn-trigger-upload" data-field-id="{{ $field->id }}" title="Change file">
-                                                                                <i class="bi bi-arrow-repeat"></i>
-                                                                            </button>
+                                                                            <button type="button" class="btn btn-sm btn-outline-secondary btn-upload-item btn-trigger-upload" data-field-id="{{ $field->id }}" title="Change / Re-upload file"><i class="bi bi-arrow-repeat"></i></button>
                                                                         @else
-                                                                            <button type="button" class="btn btn-sm s5-btn-upload btn-trigger-upload" data-field-id="{{ $field->id }}">
-                                                                                <i class="bi bi-upload me-1"></i> Upload
-                                                                            </button>
+                                                                            <button type="button" class="btn btn-sm btn-outline-navy btn-upload-item btn-trigger-upload" data-field-id="{{ $field->id }}" title="Upload file"><i class="bi bi-upload me-1"></i> Upload</button>
                                                                         @endif
-                                                                        <button type="button" class="btn btn-sm btn-outline-danger s5-btn-action btn-remove-file d-none" data-field-id="{{ $field->id }}" title="Remove attachment">
-                                                                            <i class="bi bi-trash3"></i>
-                                                                        </button>
-                                                                        <input type="file" name="doc_files[{{ $field->id }}]" id="file_field_{{ $field->id }}" class="doc-file-input d-none" data-field-id="{{ $field->id }}" data-field-name="{{ $field->name }}" data-has-existing="{{ $hasDoc ? '1' : '0' }}" accept=".pdf,.png,.jpg,.jpeg,.kml,.kmz,.zip,.rar,.7z,.doc,.docx,.dwg,.dxf,.txt,.rtf,.odt,.ods,.odp,.xls,.xlsx,.csv,.ppt,.pptx,.webp,.tif,.tiff,.geojson,.gpx,.bmp">
+                                                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-file {{ $isOwnDoc ? '' : 'd-none' }}" data-field-id="{{ $field->id }}" title="Remove this document"><i class="bi bi-trash3"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            @endforeach
+
+                                                            @foreach($customCarriedDocs as $cDoc)
+                                                                @php
+                                                                    $ownCustom = $cDoc instanceof \App\Models\MiningDocument && !empty($prefillData['mining_app_id']) && $cDoc->mining_application_id == $prefillData['mining_app_id'];
+                                                                    $cName = $cDoc->file_name ?? basename($cDoc->file_path);
+                                                                    $cSize = $fmtSize($cDoc->file_size ?? null);
+                                                                    $cUrl = asset($cDoc->file_path);
+                                                                    $cZip = (bool) preg_match('/\.(zip|rar|7z|tar|gz)$/i', $cDoc->file_path);
+                                                                @endphp
+                                                                <div class="checklist-row up" id="{{ $ownCustom ? 'row_custom_saved_' : 'row_carried_' }}{{ $cDoc->id }}" @if($ownCustom) data-custom-id="saved_{{ $cDoc->id }}" data-doc-id="{{ $cDoc->id }}" @endif data-mandatory="0">
+                                                                    <div class="ci-icon {{ $cZip ? 'ci-icon-zip' : '' }}"><i class="bi {{ $cZip ? 'bi-file-earmark-zip text-warning' : 'bi-check-lg ci-ok' }}"></i></div>
+                                                                    <div class="flex-grow-1 min-w-0">
+                                                                        <div class="ci-name">
+                                                                            <span class="badge bg-light text-primary border me-1" style="font-size:10px;">{{ $ownCustom ? 'Custom' : 'Lease Doc' }}</span>{{ $cDoc->document_name }}
+                                                                        </div>
+                                                                        <div class="ci-meta">
+                                                                            @if($ownCustom)
+                                                                                <span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> {{ $cName }}</span>@if($cSize) &middot; {{ $cSize }}@endif
+                                                                            @else
+                                                                                <span class="text-success fw-semibold"><i class="bi bi-link-45deg"></i> From lease: {{ $cName }}</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">
+                                                                        <span class="badge-status uploaded">{{ $ownCustom ? 'Uploaded' : 'Carried' }}</span>
+                                                                        <a href="{{ $cUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info btn-view-item btn-view-doc" title="View Document" data-file-url="{{ $cUrl }}" data-file-name="{{ $cName }}" data-file-size="{{ $cSize }}" data-doc-name="{{ $cDoc->document_name }}" data-is-zip="{{ $cZip ? '1' : '0' }}"><i class="bi {{ $cZip ? 'bi-file-earmark-zip' : 'bi-eye' }}"></i></a>
+                                                                        @if($ownCustom)
+                                                                            <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-custom-row" title="Remove this custom document"><i class="bi bi-trash3"></i></button>
+                                                                        @endif
+                                                                        <input type="hidden" class="doc-file-input" data-has-existing="1">
                                                                     </div>
                                                                 </div>
                                                             @endforeach
@@ -1246,7 +1250,7 @@
                         <div class="wizard-pane d-none" id="pane_6">
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
                                 <div>
-                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                    <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
                                         <i class="bi bi-people-fill me-1"></i> STEP 7 OF 9 &bull; PROJECT EXECUTION TEAM
                                     </div>
                                     <h4 class="fw-bold text-navy mt-1 mb-0">Project Handling Team &amp; In-Charge Persons</h4>
@@ -1340,17 +1344,17 @@
                         {{-- STEP 8: PAYMENT & FINANCIAL SETTLEMENT                     --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_7">
-                            <div class="s1-header-block mb-4">
+                            <div class="s1-header-block mb-4 lz-head">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
                                             <i class="bi bi-cash-stack me-1"></i> STEP 8 OF 9 &bull; FINANCIAL SETTLEMENT &amp; BILLING LEDGER
                                         </div>
-                                        <h4 class="s1-title mb-1">Payment &amp; Financial Settlement</h4>
-                                        <p class="s1-subtitle mb-0">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
+                                        <h4 class="s1-title mb-1 lz-title">Payment &amp; Financial Settlement</h4>
+                                        <p class="s1-subtitle mb-0 lz-subtitle">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <span class="badge s1-time-tag"><i class="bi bi-clock-history me-1"></i> Est. ~1-2 mins</span>
+                                        <span class="badge s1-time-tag lz-time"><i class="bi bi-clock-history me-1"></i> Est. ~1-2 mins</span>
                                         <span class="badge s7-ledger-pill">
                                             <i class="bi bi-cash-stack me-1.5"></i>Billing Ledger
                                         </span>
@@ -1440,7 +1444,7 @@
                                     <div class="row g-4 mb-4">
                                         <!-- Product Value -->
                                         <div class="col-md-4">
-                                            <label class="form-label s7-label mb-2">
+                                            <label class="form-label s7-label mb-2 lz-label">
                                                 Product / Service Value (₹) <span class="text-danger">*</span>
                                             </label>
                                             <div class="s7-input-group">
@@ -1451,12 +1455,12 @@
                                                        id="mining_product_value" name="product_value" 
                                                        value="{{ old('product_value', $prefillData['product_value'] ?? '0.00') }}" placeholder="0.00" required>
                                             </div>
-                                            <div class="s7-field-hint mt-2">Total agreed fee for mining application.</div>
+                                            <div class="s7-field-hint mt-2 lz-hint">Total agreed fee for mining application.</div>
                                         </div>
 
                                         <!-- Paid Amount -->
                                         <div class="col-md-4">
-                                            <label class="form-label s7-label mb-2">
+                                            <label class="form-label s7-label mb-2 lz-label">
                                                 Paid Amount (₹) <span class="text-danger">*</span>
                                             </label>
                                             <div class="s7-input-group">
@@ -1468,7 +1472,7 @@
                                                        value="{{ old('paid_amount', $prefillData['paid_amount'] ?? '0.00') }}" placeholder="0.00" required>
                                             </div>
                                             <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-1">
-                                                <span class="s7-field-hint">Advance paid by applicant.</span>
+                                                <span class="s7-field-hint lz-hint">Advance paid by applicant.</span>
                                                 <div class="s7-quick-presets d-flex align-items-center gap-1.5">
                                                     <button type="button" class="btn s7-preset-btn" id="btn_quick_full" title="Set paid equal to value">100% Full</button>
                                                     <button type="button" class="btn s7-preset-btn" id="btn_quick_half" title="Set paid to 50%">50% Advance</button>
@@ -1480,7 +1484,7 @@
                                         <!-- Pending Balance -->
                                         <div class="col-md-4">
                                             <div class="d-flex align-items-center justify-content-between mb-2">
-                                                <label class="form-label s7-label mb-0">Pending Balance (₹)</label>
+                                                <label class="form-label s7-label mb-0 lz-label">Pending Balance (₹)</label>
                                                 <span class="badge s7-auto-tag">Auto-Calculated</span>
                                             </div>
                                             <div class="s7-input-group s7-group-readonly">
@@ -1491,14 +1495,14 @@
                                                        id="mining_pending_amount" name="pending_amount" 
                                                        value="{{ old('pending_amount', $prefillData['pending_amount'] ?? '0.00') }}" readonly placeholder="0.00">
                                             </div>
-                                            <div class="s7-field-hint mt-2">Auto-calculated: (Value &minus; Paid).</div>
+                                            <div class="s7-field-hint mt-2 lz-hint">Auto-calculated: (Value &minus; Paid).</div>
                                         </div>
                                     </div>
 
                                     <div class="row g-4 align-items-center">
                                         <!-- Settlement Status -->
                                         <div class="col-md-6">
-                                            <label class="form-label s7-label mb-2">
+                                            <label class="form-label s7-label mb-2 lz-label">
                                                 Settlement Status <span class="text-danger">*</span>
                                             </label>
                                             <div class="s7-select-wrap">
@@ -1508,7 +1512,7 @@
                                                     <option value="paid" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>🟢 Paid (Fully Cleared)</option>
                                                 </select>
                                             </div>
-                                            <div class="s7-field-hint mt-2">Adapts dynamically based on amounts, or select manually.</div>
+                                            <div class="s7-field-hint mt-2 lz-hint">Adapts dynamically based on amounts, or select manually.</div>
                                         </div>
 
                                         <!-- Live Settlement Assessment Feedback Box -->
@@ -1533,11 +1537,11 @@
 
                                         <!-- Payment Notes / Transaction Reference -->
                                         <div class="col-12 mt-3">
-                                            <label class="form-label s7-label mb-2">Payment Notes / Transaction Reference</label>
+                                            <label class="form-label s7-label mb-2 lz-label">Payment Notes / Transaction Reference</label>
                                             <input type="text" class="form-control s7-notes-input" id="mining_payment_notes" name="payment_notes" 
                                                    placeholder="e.g. Advance paid via NEFT Ref: UTR291840, Cheque #10294" 
                                                    value="{{ old('payment_notes', '') }}">
-                                            <div class="s7-field-hint mt-2">Optional instrument number, bank name, or receipt remarks.</div>
+                                            <div class="s7-field-hint mt-2 lz-hint">Optional instrument number, bank name, or receipt remarks.</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1558,19 +1562,19 @@
                         {{-- STEP 9: APPLICATION SUMMARY & SUBMISSION                   --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_8">
-                            <div class="s1-header-block mb-4">
+                            <div class="s1-header-block mb-4 lz-head">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
                                     <div>
-                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1">
+                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
                                             <i class="bi bi-clipboard2-check-fill me-1"></i> STEP 9 OF 9 &bull; DOSSIER SCRUTINY &amp; FINAL REVIEW
                                         </div>
-                                        <h4 class="s1-title mb-1">
+                                        <h4 class="s1-title mb-1 lz-title">
                                             <i class="bi bi-clipboard2-check-fill text-primary me-2"></i>Application Scrutiny &amp; Final Review
                                         </h4>
-                                        <p class="s1-subtitle mb-0">Verify all applicant metadata, legal work scope, assigned team, uploaded documents, and billing ledger before final launch.</p>
+                                        <p class="s1-subtitle mb-0 lz-subtitle">Verify all applicant metadata, legal work scope, assigned team, uploaded documents, and billing ledger before final launch.</p>
                                     </div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <span class="badge s1-time-tag"><i class="bi bi-clock-history me-1"></i> Est. ~2-3 mins</span>
+                                        <span class="badge s1-time-tag lz-time"><i class="bi bi-clock-history me-1"></i> Est. ~2-3 mins</span>
                                         <span class="badge s8-scrutiny-pill">
                                             <i class="bi bi-shield-check me-1.5"></i>Pre-Submission Scrutiny
                                         </span>
@@ -1687,7 +1691,7 @@
                                         </div>
                                         <div class="col-lg-4 col-md-6">
                                             <div class="s8-data-tile">
-                                                <span class="s8-tile-label">Customer Unique ID (MIMAS)</span>
+                                                <span class="s8-tile-label">Customer Unique ID </span>
                                                 <span class="s8-tile-value font-monospace text-primary" id="disp_rev_mimas">-</span>
                                             </div>
                                         </div>
@@ -1903,21 +1907,21 @@
                         {{-- ========================================================== --}}
                         {{-- WIZARD ACTION BUTTONS DOCK (SAVE DRAFT + BACK + CONTINUE)   --}}
                         {{-- ========================================================== --}}
-                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top flex-wrap gap-2">
-                            <a href="{{ route('miningplan.index') }}" class="btn s1-btn-cancel px-3.5" id="btnCancel">
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top flex-wrap gap-2 lz-actions">
+                            <a href="{{ route('miningplan.index') }}" class="btn s1-btn-cancel px-3.5 lz-btn lz-btn-ghost lz-btn-cancel" id="btnCancel">
                                 <i class="bi bi-x-lg me-1"></i> Cancel
                             </a>
-                            <button type="button" class="btn btn-outline-slate px-4" id="btnPrev" style="display:none;">
+                            <button type="button" class="btn btn-outline-slate px-4 lz-btn lz-btn-ghost" id="btnPrev" style="display:none;">
                                 <i class="bi bi-arrow-left me-2"></i>Back
                             </button>
                             <div class="d-flex gap-2 ms-auto">
-                                <button type="button" class="btn btn-outline-primary s-btn-draft px-3.5" id="btnSaveDraft">
+                                <button type="button" class="btn btn-outline-primary s-btn-draft px-3.5 lz-btn lz-btn-outline" id="btnSaveDraft">
                                     <i class="bi bi-floppy me-2"></i>Save Draft &amp; Exit
                                 </button>
-                                <button type="button" class="btn btn-navy s-btn-submit px-4" id="btnNext">
+                                <button type="button" class="btn btn-navy s-btn-submit px-4 lz-btn lz-btn-primary" id="btnNext">
                                     Continue<i class="bi bi-arrow-right ms-2"></i>
                                 </button>
-                                <button type="submit" class="btn btn-emerald px-4" id="btnSubmit" style="display:none;" disabled>
+                                <button type="submit" class="btn btn-emerald px-4 lz-btn lz-btn-primary s-btn-final" id="btnSubmit" style="display:none;" disabled>
                                     <i class="bi bi-check2-circle me-1.5"></i>Submit Final Application
                                 </button>
                             </div>
@@ -2048,149 +2052,12 @@
 }
 
 /* Main Card */
-#gtms-mining-page .mining-main-card {
-    background: var(--min-surface);
-    border: 1px solid var(--min-border);
-    border-radius: 14px;
-    padding: 24px 28px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
-}
 
 /* Stepper Progress Bar (Lease Application Standard) */
-#gtms-mining-page .step-progress {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    position: relative;
-    padding: 10px 14px;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    margin-bottom: 22px;
-}
-
-#gtms-mining-page .step-progress::before {
-    content: "";
-    position: absolute;
-    top: 26px;
-    left: 45px;
-    right: 45px;
-    height: 2px;
-    background: var(--min-border);
-    z-index: 1;
-}
-
-#gtms-mining-page .sp-step {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    text-decoration: none;
-    min-width: 60px;
-    text-align: center;
-    cursor: pointer;
-    user-select: none;
-    transition: transform 0.15s ease;
-}
-
-#gtms-mining-page .sp-step:hover .circ {
-    transform: scale(1.08);
-}
-
-#gtms-mining-page .sp-step .circ {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.80rem;
-    font-weight: 700;
-    border: 2px solid var(--min-border-strong);
-    background: var(--min-surface);
-    color: var(--min-text-muted);
-    transition: all 0.25s ease;
-}
-
-#gtms-mining-page .sp-step.active .circ {
-    background: #0F1E4D;
-    border-color: #0F1E4D;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(15, 30, 77, 0.16);
-}
-
-#gtms-mining-page .sp-step.done .circ {
-    background: #10b981;
-    border-color: #10b981;
-    color: #ffffff;
-    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-}
-
-#gtms-mining-page .sp-step .sp-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: var(--min-text-muted);
-    white-space: nowrap;
-    letter-spacing: 0.01em;
-    margin-top: 4px;
-}
-
-#gtms-mining-page .sp-step.active .sp-label {
-    color: #0F1E4D;
-    font-weight: 800;
-}
-
-#gtms-mining-page .sp-step.done .sp-label {
-    color: #10b981;
-    font-weight: 700;
-}
 
 /* ==========================================================================
    STEP 1 (LEASE APPLICATION PARITY DESIGN SYSTEM)
    ========================================================================== */
-#gtms-mining-page .s1-header-block {
-    margin-bottom: 20px;
-}
-
-#gtms-mining-page .s1-eyebrow {
-    color: var(--orange, #ea580c);
-    font-weight: 700;
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1;
-    margin-bottom: 0;
-}
-
-#gtms-mining-page .s1-time-tag {
-    font-size: 0.73rem;
-    font-weight: 600;
-    color: #64748b;
-    background: #f1f5f9;
-    padding: 3px 8px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    line-height: 1.2;
-}
-
-#gtms-mining-page .s1-title {
-    font-weight: 800;
-    font-size: 1.25rem;
-    color: #0F1E4D;
-    line-height: 1.3;
-    margin-top: 6px;
-    margin-bottom: 5px;
-}
-
-#gtms-mining-page .s1-subtitle {
-    font-size: 0.83rem;
-    color: #64748b;
-    line-height: 1.5;
-    margin-bottom: 0;
-}
 
 /* LOOKUP CARD - LIGHT */
 #gtms-mining-page .s1-lookup-card {
@@ -2272,139 +2139,11 @@
 }
 
 /* SECTION PANELS - LIGHT */
-#gtms-mining-page .s1-section-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 18px 20px;
-    margin-bottom: 18px;
-    transition: border-color 0.2s ease;
-}
-
-#gtms-mining-page .s1-section-card:hover {
-    border-color: #cbd5e1;
-}
-
-#gtms-mining-page .s1-section-header {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #0F1E4D;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
-    line-height: 1.2;
-}
-
-#gtms-mining-page .s1-label {
-    font-size: 0.80rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 6px;
-    line-height: 1.25;
-    display: flex;
-    align-items: center;
-}
-
-#gtms-mining-page .s1-form-row {
-    --bs-gutter-x: 1rem;
-    --bs-gutter-y: 1.25rem;
-}
-
-#gtms-mining-page .s1-opt-tag {
-    font-size: 0.72rem;
-    color: #64748b;
-    font-weight: normal;
-    margin-left: 3px;
-}
-
-#gtms-mining-page .s1-hint {
-    font-size: 0.72rem;
-    color: #64748b;
-    line-height: 1.4;
-    margin-top: 6px;
-    margin-bottom: 2px;
-}
 
 /* INPUT GROUPS - LIGHT */
-#gtms-mining-page .s1-input-group {
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-#gtms-mining-page .s1-input-group:focus-within {
-    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.10);
-    border-radius: 8px;
-}
-
-#gtms-mining-page .s1-input-group .s1-addon {
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    border-right: none !important;
-    border-radius: 8px 0 0 8px;
-    color: #64748b;
-    font-size: 0.88rem;
-    width: 38px;
-    height: 40px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-#gtms-mining-page .s1-input-group .s1-input {
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    border-left: none !important;
-    border-radius: 0 8px 8px 0 !important;
-    font-size: 0.86rem;
-    height: 40px;
-    padding: 8px 12px;
-    color: #0f172a;
-    transition: all 0.2s ease;
-    box-shadow: none !important;
-    outline: none !important;
-}
-
-#gtms-mining-page .s1-input-group:focus-within .s1-addon {
-    border-color: #0F1E4D !important;
-    color: #0F1E4D;
-}
-
-#gtms-mining-page .s1-input-group:focus-within .s1-input {
-    border-color: #0F1E4D !important;
-}
-
-#gtms-mining-page .s1-textarea {
-    border: 1.5px solid #cbd5e1 !important;
-    border-radius: 8px !important;
-    font-size: 0.86rem;
-    padding: 10px 14px !important;
-    min-height: 80px !important;
-    line-height: 1.5;
-    color: #0f172a;
-    background-color: #ffffff;
-    transition: all 0.2s ease;
-    width: 100%;
-}
-
-#gtms-mining-page .s1-textarea:focus {
-    border-color: #0F1E4D !important;
-    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.10) !important;
-    outline: none;
-}
 
 /* NOTICE CARD - LIGHT */
-#gtms-mining-page .s1-notice-card {
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    border-radius: 10px;
-    padding: 14px 18px;
-    margin-top: 20px;
-}
+
 #gtms-mining-page .s1-notice-icon-box {
     width: 38px;
     height: 38px;
@@ -2415,16 +2154,6 @@
     justify-content: center;
     flex-shrink: 0;
 }
-#gtms-mining-page .s1-notice-icon {
-    color: #1d4ed8;
-    font-size: 1.2rem;
-    line-height: 1;
-}
-#gtms-mining-page .s1-notice-text {
-    font-size: 0.84rem;
-    color: #1e3a8a;
-    line-height: 1.5;
-}
 
 #gtms-mining-page .field-autofilled {
     background-color: #ecfdf5 !important;
@@ -2432,85 +2161,7 @@
     transition: background-color 0.6s ease;
 }
 
-#gtms-mining-page .s1-btn-cancel {
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    color: #64748b;
-    font-size: 0.86rem;
-    font-weight: 600;
-    height: 40px;
-    padding: 0 18px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    transition: all 0.2s ease;
-}
-
-#gtms-mining-page .s1-btn-cancel:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
-    color: #334155;
-}
-
-#gtms-mining-page .s-btn-draft {
-    background: #ffffff;
-    border: 1.5px solid #0F1E4D !important;
-    color: #0F1E4D !important;
-    font-size: 0.86rem;
-    font-weight: 700;
-    height: 40px;
-    padding: 0 18px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-}
-
-#gtms-mining-page .s-btn-draft:hover {
-    background: #eff6ff !important;
-    color: #0F1E4D !important;
-}
-
-#gtms-mining-page .s-btn-submit {
-    background: #0F1E4D !important;
-    border-color: #0F1E4D !important;
-    color: #ffffff !important;
-    font-size: 0.86rem;
-    font-weight: 700;
-    height: 40px;
-    padding: 0 24px;
-    border-radius: 8px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.2);
-    transition: all 0.2s ease;
-}
-
-#gtms-mining-page .s-btn-submit:hover {
-    background: #162a6b !important;
-    border-color: #162a6b !important;
-    box-shadow: 0 4px 10px rgba(15, 30, 77, 0.3);
-    transform: translateY(-1px);
-}
-
 /* Header & Badges */
-#gtms-mining-page .mining-eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.06em;
-}
-
-#gtms-mining-page .mining-title {
-    font-size: 1.35rem;
-    color: var(--min-text-dark);
-}
-
-#gtms-mining-page .mining-subtitle {
-    font-size: 13px;
-}
 
 #gtms-mining-page .mining-status-pill {
     background: #f1f5f9;
@@ -2585,7 +2236,7 @@
 }
 
 #gtms-mining-page .mining-input,
-#gtms-mining-page .mining-select {
+  #gtms-mining-page .mining-select {
     height: 42px;
     border-radius: 8px;
     border: 1px solid var(--min-border-strong);
@@ -2604,16 +2255,10 @@
 }
 
 #gtms-mining-page .mining-input:focus,
-#gtms-mining-page .mining-select:focus,
-#gtms-mining-page .mining-textarea:focus {
+  #gtms-mining-page .mining-select:focus,
+  #gtms-mining-page .mining-textarea:focus {
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
-
-#gtms-mining-page .mining-hint {
-    font-size: 11px;
-    color: var(--min-text-muted);
-    margin-top: 4px;
 }
 
 /* Lookup Card */
@@ -3127,8 +2772,8 @@ body[data-theme-version="dark"] #gtms-mining-page .mining-label {
 }
 
 body[data-theme-version="dark"] #gtms-mining-page .mining-banner-card,
-body[data-theme-version="dark"] #gtms-mining-page .mining-lookup-card,
-body[data-theme-version="dark"] #gtms-mining-page .mining-callout-info {
+  body[data-theme-version="dark"] #gtms-mining-page .mining-lookup-card,
+  body[data-theme-version="dark"] #gtms-mining-page .mining-callout-info {
     background: #0f172a;
     border-color: #1e3a8a;
 }
@@ -3159,22 +2804,22 @@ body[data-theme-version="dark"] #gtms-mining-page .s3-rule-badge {
 }
 
 body[data-theme-version="dark"] #gtms-mining-page .nature-card,
-body[data-theme-version="dark"] #gtms-mining-page .mineral-card,
-body[data-theme-version="dark"] #gtms-mining-page .plan-card {
+  body[data-theme-version="dark"] #gtms-mining-page .mineral-card,
+  body[data-theme-version="dark"] #gtms-mining-page .plan-card {
     background: #18191a !important;
     border-color: #2b2d30 !important;
 }
 
 body[data-theme-version="dark"] #gtms-mining-page .nature-card:hover,
-body[data-theme-version="dark"] #gtms-mining-page .mineral-card:hover,
-body[data-theme-version="dark"] #gtms-mining-page .plan-card:hover {
+  body[data-theme-version="dark"] #gtms-mining-page .mineral-card:hover,
+  body[data-theme-version="dark"] #gtms-mining-page .plan-card:hover {
     background: #202225 !important;
     border-color: #3e4451 !important;
 }
 
 body[data-theme-version="dark"] #gtms-mining-page .nature-card-title,
-body[data-theme-version="dark"] #gtms-mining-page .mineral-title,
-body[data-theme-version="dark"] #gtms-mining-page .plan-title {
+  body[data-theme-version="dark"] #gtms-mining-page .mineral-title,
+  body[data-theme-version="dark"] #gtms-mining-page .plan-title {
     color: #f8fafc !important;
 }
 
@@ -3285,24 +2930,6 @@ body[data-theme-version="dark"] .mining-modal-header {
 /* -------------------------------------------------------------------------
    HARMONIZED EXECUTIVE SUITE STYLES (LEASE APPLICATION PARITY)
    ------------------------------------------------------------------------- */
-#gtms-mining-page .s1-eyebrow {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    color: var(--min-primary);
-}
-
-#gtms-mining-page .s1-time-tag {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    padding: 4px 10px;
-    border-radius: 20px;
-    display: inline-flex;
-    align-items: center;
-}
 
 /* Quick Jump Edit Buttons (Step 9) */
 #gtms-mining-page .s8-btn-edit {
@@ -3503,7 +3130,7 @@ body[data-theme-version="dark"] .mining-modal-header {
     border-radius: 12px;
 }
 #gtms-mining-page .s4-notice-card,
-#gtms-mining-page .s4-notice-panel {
+  #gtms-mining-page .s4-notice-panel {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-left: 4px solid #0F1E4D;
@@ -3709,6 +3336,951 @@ body[data-theme-version="dark"] .mining-modal-header {
     border: 2px dashed #2563eb !important;
     background: #eff6ff !important;
 }
+/* ===== Step 6 documents: copied from Lease Step 5 (createstep5) so both look the same ===== */
+  #gtms-mining-page #pane_5 .s5-summary-banner {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+
+  #gtms-mining-page #pane_5 .s5-summary-badge {
+    background: #0F1E4D;
+    color: #ffffff;
+    font-size: 0.70rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  #gtms-mining-page #pane_5 .s5-summary-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  #gtms-mining-page #pane_5 .s5-counter-text {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0F1E4D;
+    line-height: 1;
+  }
+
+  #gtms-mining-page #pane_5 .s5-counter-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  #gtms-mining-page #pane_5 .s5-summary-progress {
+    height: 8px;
+    background-color: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  #gtms-mining-page #pane_5 .s5-summary-bar {
+    background: linear-gradient(90deg, #0F1E4D 0%, #2563eb 100%);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+
+  /* FOLDER HEADINGS */
+  #gtms-mining-page #pane_5 .s5-folder-heading-wrap {
+    margin-top: 24px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  #gtms-mining-page #pane_5 .s5-folder-heading {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #0F1E4D;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+  }
+
+  #gtms-mining-page #pane_5 .s5-btn-add-doc {
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: #0F1E4D;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 10px;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-mining-page #pane_5 .s5-btn-add-doc:hover {
+    background: #f1f5f9;
+    border-color: #0F1E4D;
+    color: #0F1E4D;
+  }
+
+  #gtms-mining-page #pane_5 .s5-folder-pill {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  /* CHECKLIST BOX & ROWS */
+  #gtms-mining-page #pane_5 .folder-checklist-box {
+    margin-bottom: 12px;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 11px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row.row-dragover {
+    border: 2px dashed #2563eb !important;
+    background: #eff6ff !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row.up {
+    border-color: #cbd5e1;
+  }
+
+  #gtms-mining-page #pane_5 .ci-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-right: 12px;
+    background: #f8fafc;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+  }
+
+  #gtms-mining-page #pane_5 .ci-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.3;
+    margin-bottom: 2px;
+  }
+
+  #gtms-mining-page #pane_5 .ci-meta {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.3;
+  }
+
+  /* REQUIREMENT DROPDOWN */
+  #gtms-mining-page #pane_5 .doc-req-select {
+    font-size: 0.73rem;
+    font-weight: 600;
+    height: 28px;
+    border-radius: 6px;
+    padding: 2px 22px 2px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  #gtms-mining-page #pane_5 .doc-req-select:focus {
+    box-shadow: 0 0 0 2px rgba(15, 30, 77, 0.15) !important;
+  }
+
+  /* Optional state: readable slate text on a light chip (was grey-on-grey) */
+  #gtms-mining-page #pane_5 .doc-req-select.text-muted {
+    color: #475569 !important;
+    background-color: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+  }
+  #gtms-mining-page #pane_5 .doc-req-select.text-danger {
+    color: #B91C1C !important;
+  }
+  #gtms-mining-page #pane_5 .doc-req-select,
+  #gtms-mining-page #pane_5 .doc-req-select.form-select-sm {
+    min-height: 30px;
+    height: 30px;
+  }
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .doc-req-select.text-muted {
+    color: #CBD5E1 !important;
+    background-color: #1E293B !important;
+    border-color: #334155 !important;
+  }
+
+  /* ROW ACTION BUTTONS */
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item {
+    height: 28px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 0 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1.5px solid #cbd5e1;
+    color: #0F1E4D;
+    background: #ffffff;
+    transition: all 0.15s ease-in-out;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item:hover {
+    background: #0F1E4D;
+    border-color: #0F1E4D;
+    color: #ffffff !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item:hover * {
+    color: #ffffff !important;
+  }
+
+  /* RESUME BUTTON (Paused Chunked Upload) - Light Mode */
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item,
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning {
+    background-color: #fffbeb !important;
+    border: 1.5px solid #f59e0b !important;
+    color: #b45309 !important;
+    font-weight: 600 !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item *,
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning * {
+    color: #b45309 !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item:hover,
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning:hover {
+    background-color: #0F1E4D !important;
+    border-color: #0F1E4D !important;
+    color: #ffffff !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item:hover *,
+  #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning:hover * {
+    color: #ffffff !important;
+  }
+
+  /* Discard Button (Paused Chunked Upload) - Light Mode */
+  #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item {
+    height: 28px;
+    width: 30px;
+    font-size: 0.80rem;
+    padding: 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #fecdd3;
+    color: #e11d48;
+    background: #fff1f2;
+    transition: all 0.15s ease-in-out;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item:hover {
+    background: #e11d48;
+    border-color: #e11d48;
+    color: #ffffff !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item:hover * {
+    color: #ffffff !important;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-view-item {
+    height: 28px;
+    width: 30px;
+    font-size: 0.80rem;
+    padding: 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #bfdbfe;
+    color: #1d4ed8;
+    background: #eff6ff;
+    transition: all 0.15s ease-in-out;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-view-item:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #ffffff;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-remove-item {
+    height: 28px;
+    width: 30px;
+    font-size: 0.80rem;
+    padding: 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid #fecaca;
+    color: #dc2626;
+    background: #fef2f2;
+    transition: all 0.15s ease-in-out;
+  }
+
+  #gtms-mining-page #pane_5 .checklist-row .btn-remove-item:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+  }
+
+  #gtms-mining-page #pane_5 .badge-status.uploaded {
+    height: 28px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    border-radius: 6px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+  }
+
+  /* FOOTER ACTIONS */
+
+/* ==========================================================================
+     DARK MODE STYLES (Strictly Scoped to body[data-theme-version="dark"])
+     ========================================================================== */
+
+/* SUMMARY BANNER - DARK */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-summary-banner {
+    background: #18191a !important;
+    border-color: #2b2d30 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-summary-badge {
+    background: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-summary-label {
+    color: #cbd5e1 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-counter-text {
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-counter-sub {
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-summary-progress {
+    background-color: #2b2d30 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-summary-bar {
+    background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%) !important;
+  }
+
+  /* FOLDER HEADINGS - DARK */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-folder-heading-wrap {
+    border-bottom-color: #2b2d30 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-folder-heading {
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-btn-add-doc {
+    background: #18191a !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-btn-add-doc:hover {
+    background: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .s5-folder-pill {
+    background: #25282a !important;
+    color: #cbd5e1 !important;
+    border-color: #3b4252 !important;
+  }
+
+  /* CHECKLIST ROWS - DARK */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row {
+    background: #18191a !important;
+    border-color: #2b2d30 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row:hover {
+    border-color: #3e4451 !important;
+    background: #1c1d1f !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row.up {
+    border-color: #2b2d30 !important;
+    background: #18191a !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row.row-dragover {
+    border: 2px dashed #3b82f6 !important;
+    background: #13233a !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .ci-icon {
+    background: #25282a !important;
+    color: #94a3b8 !important;
+    border-color: #3b4252 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .ci-name {
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .ci-meta {
+    color: #94a3b8 !important;
+  }
+
+  /* REQUIREMENT SELECT - DARK */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .doc-req-select.border-danger-subtle {
+    background-color: #450a0a !important;
+    color: #fca5a5 !important;
+    border-color: #7f1d1d !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .doc-req-select.border-secondary-subtle {
+    background-color: #25282a !important;
+    color: #cbd5e1 !important;
+    border-color: #3b4252 !important;
+  }
+
+  /* ACTION BUTTONS - DARK */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item {
+    background: #18191a !important;
+    border-color: #3b82f6 !important;
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item:hover {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item:hover * {
+    color: #ffffff !important;
+  }
+
+  /* Resume Button (Paused Chunked Upload) - Dark Mode */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item,
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    border-color: rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item *,
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning * {
+    color: #fbbf24 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item:hover,
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning:hover {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+    color: #0f172a !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-resume-item:hover *,
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-upload-item.btn-warning:hover * {
+    color: #0f172a !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item {
+    background: rgba(244, 63, 94, 0.12) !important;
+    border-color: rgba(244, 63, 94, 0.35) !important;
+    color: #fb7185 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item:hover {
+    background: #e11d48 !important;
+    border-color: #e11d48 !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-discard-paused-item:hover * {
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-view-item {
+    background: #172554 !important;
+    border-color: #1e3a8a !important;
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-view-item:hover {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-remove-item {
+    background: #450a0a !important;
+    border-color: #7f1d1d !important;
+    color: #f87171 !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .checklist-row .btn-remove-item:hover {
+    background: #dc2626 !important;
+    border-color: #dc2626 !important;
+    color: #ffffff !important;
+  }
+
+  body[data-theme-version="dark"] #gtms-mining-page #pane_5 .badge-status.uploaded {
+    background: #062c20 !important;
+    color: #34d399 !important;
+    border-color: #059669 !important;
+  }
+
+  /* ACTIONS - DARK */
+
+/* MODALS DARK MODE PARITY */
+  body[data-theme-version="dark"] .modal-content {
+    background-color: #1e1e1e !important;
+    border: 1px solid #2e3440 !important;
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-header {
+    border-bottom-color: #2e3440 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-body {
+    background-color: #18191a !important;
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-footer {
+    background-color: #18191a !important;
+    border-top-color: #2e3440 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-body .form-control,
+  body[data-theme-version="dark"] .modal-body .form-select {
+    background-color: #161717 !important;
+    border-color: #3b4252 !important;
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-body .form-label {
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-body .form-text {
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] .modal-body .input-group-text {
+    background-color: #25282a !important;
+    border-color: #3b4252 !important;
+    color: #94a3b8 !important;
+  }
+
+  /* ==========================================================================
+     CUSTOM DOCUMENT MODAL STYLING (.s5-custom-modal)
+     ========================================================================== */
+  .s5-custom-modal .s5-modal-content {
+    border-radius: 16px !important;
+    overflow: hidden;
+    border: 1px solid rgba(15, 30, 77, 0.12) !important;
+    box-shadow: 0 20px 45px -12px rgba(15, 30, 77, 0.28) !important;
+  }
+
+  .s5-custom-modal .s5-modal-header {
+    background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%) !important;
+    padding: 1.25rem 1.5rem !important;
+    border-bottom: none !important;
+  }
+
+  .s5-custom-modal .s5-modal-icon-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    color: #60a5fa;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+  }
+
+  .s5-custom-modal .s5-modal-body {
+    background-color: #ffffff !important;
+    padding: 1.5rem 1.5rem 1.25rem !important;
+  }
+
+  .s5-custom-modal .s5-modal-label {
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    margin-bottom: 0.35rem !important;
+    letter-spacing: 0.01em;
+  }
+
+  .s5-custom-modal .s5-modal-target-folder {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    transition: all 0.2s ease;
+  }
+
+  .s5-custom-modal .s5-folder-mini-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #e0e7ff;
+    color: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+  }
+
+  .s5-custom-modal .s5-folder-name-input {
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    color: #1e293b !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .s5-custom-modal .s5-folder-target-badge {
+    background: #e0e7ff !important;
+    color: #3730a3 !important;
+    font-weight: 600 !important;
+    font-size: 0.72rem !important;
+    padding: 5px 9px !important;
+    border-radius: 6px !important;
+    letter-spacing: 0.02em;
+  }
+
+  .s5-custom-modal .s5-modal-input-group {
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .s5-custom-modal .s5-modal-addon {
+    background: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-right: none !important;
+    color: #64748b !important;
+    font-size: 0.95rem;
+    padding: 0.55rem 0.85rem;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+  }
+
+  .s5-custom-modal .s5-modal-input {
+    border: 1.5px solid #cbd5e1 !important;
+    font-size: 0.88rem !important;
+    color: #1e293b !important;
+    padding: 0.55rem 0.85rem !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .s5-custom-modal .s5-modal-input:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  }
+
+  .s5-custom-modal .s5-field-hint {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.35;
+  }
+
+  .s5-custom-modal .s5-modal-upload-box {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+  }
+
+  .s5-custom-modal .s5-modal-upload-box:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .s5-custom-modal .s5-modal-file-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 5;
+  }
+
+  .s5-custom-modal .s5-upload-icon-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .s5-custom-modal .s5-upload-prompt {
+    font-size: 0.86rem;
+    color: #334155;
+  }
+
+  .s5-custom-modal .s5-browse-link {
+    color: #2563eb;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 600;
+  }
+
+  .s5-custom-modal .s5-selected-file-name {
+    font-size: 0.8rem;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 4px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    max-width: 90%;
+  }
+
+  .s5-custom-modal .s5-upload-allowed-types {
+    font-size: 0.72rem;
+    color: #94a3b8;
+  }
+
+  .s5-custom-modal .s5-modal-footer {
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    padding: 1rem 1.5rem !important;
+  }
+
+  .s5-custom-modal .s5-modal-btn-cancel {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
+    font-size: 0.86rem !important;
+    padding: 0.55rem 1.25rem !important;
+    border-radius: 8px !important;
+    transition: all 0.15s ease;
+  }
+
+  .s5-custom-modal .s5-modal-btn-cancel:hover {
+    background: #f1f5f9 !important;
+    color: #1e293b !important;
+    border-color: #94a3b8 !important;
+  }
+
+  .s5-custom-modal .s5-modal-btn-submit {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.86rem !important;
+    padding: 0.55rem 1.35rem !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+    transition: all 0.15s ease;
+  }
+
+  .s5-custom-modal .s5-modal-btn-submit:hover {
+    background: linear-gradient(135deg, #172554 0%, #1d4ed8 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     DARK MODE PARITY FOR .s5-custom-modal
+     -------------------------------------------------------------------------- */
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-content {
+    background-color: #1a1b1d !important;
+    border: 1px solid #2e3440 !important;
+    box-shadow: 0 20px 45px -12px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-body {
+    background-color: #18191a !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-label {
+    color: #e2e8f0 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-target-folder {
+    background: #25282a !important;
+    border-color: #3b4252 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-folder-mini-icon {
+    background: rgba(99, 102, 241, 0.15) !important;
+    color: #818cf8 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-folder-name-input {
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-folder-target-badge {
+    background: rgba(99, 102, 241, 0.2) !important;
+    color: #a5b4fc !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-addon {
+    background: #25282a !important;
+    border-color: #3b4252 !important;
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-input {
+    background-color: #161717 !important;
+    border-color: #3b4252 !important;
+    color: #f1f5f9 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-field-hint {
+    color: #94a3b8 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-upload-box {
+    border-color: #3b4252 !important;
+    background: #161717 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-upload-box:hover {
+    border-color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.08) !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-upload-icon-circle {
+    background: rgba(37, 99, 235, 0.2) !important;
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-upload-prompt {
+    color: #e2e8f0 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-browse-link {
+    color: #60a5fa !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-selected-file-name {
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.15) !important;
+    border-color: rgba(52, 211, 153, 0.3) !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-upload-allowed-types {
+    color: #64748b !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-footer {
+    background: #18191a !important;
+    border-top-color: #2e3440 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-btn-cancel {
+    background: #25282a !important;
+    border-color: #3b4252 !important;
+    color: #cbd5e1 !important;
+  }
+
+  body[data-theme-version="dark"] .s5-custom-modal .s5-modal-btn-cancel:hover {
+    background: #32373d !important;
+    color: #ffffff !important;
+    border-color: #64748b !important;
+#gtms-mining-page #pane_5 .checklist-row > .flex-grow-1 { min-width: 0; }
+#gtms-mining-page #pane_5 .ci-icon .ci-ok { color: var(--green, #16a34a); }
+#gtms-mining-page #pane_5 .checklist-row.up .ci-icon { background: var(--green-soft, #e6f4ea); border-color: #bbf7d0; }
+#gtms-mining-page #pane_5 .checklist-row.up .ci-icon.ci-icon-zip { background: #fef3c7; border-color: #fde68a; }
+/* ===== end Lease Step 5 copy ===== */
+/* ---- Step 6 instant upload (Lease Step 5 parity) ---- */
+#gtms-mining-page .checklist-row { transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease, opacity .28s ease, transform .28s ease; }
+#gtms-mining-page .checklist-row > .flex-grow-1 > .min-w-0 { flex: 1 1 auto; }
+#gtms-mining-page .upload-progress-wrap { margin-top: 6px; max-width: 520px; animation: gtmsUpIn .22s ease-out; }
+#gtms-mining-page .upload-progress-wrap .up-line { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 4px; }
+#gtms-mining-page .upload-progress-wrap .up-text { color: #1d4ed8; font-weight: 600; white-space: normal; }
+#gtms-mining-page .upload-progress-wrap .up-queued .up-text { color: #b45309; }
+#gtms-mining-page .upload-progress-wrap .up-saving .up-text { color: #15803d; }
+#gtms-mining-page .upload-progress-wrap .up-badge { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; flex-shrink: 0; }
+#gtms-mining-page .upload-progress-wrap .up-queued .up-badge { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+#gtms-mining-page .upload-progress-wrap .up-saving .up-badge { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+#gtms-mining-page .upload-progress-wrap .up-track { height: 6px; border-radius: 3px; background: #e2e8f0; overflow: hidden; }
+#gtms-mining-page .upload-progress-wrap .up-bar { transition: width .2s linear; background-color: #2563eb; }
+#gtms-mining-page .upload-progress-wrap .up-bar-queued { background-color: #f59e0b; }
+#gtms-mining-page .upload-progress-wrap .up-bar-saving { background-color: #16a34a; }
+#gtms-mining-page .upload-progress-wrap .up-error { font-size: 11.5px; font-weight: 600; color: #dc2626; }
+#gtms-mining-page .checklist-row.row-upload-failed { border-color: #fecaca !important; background: #fff7f7 !important; }
+#gtms-mining-page .checklist-row.row-just-uploaded { animation: gtmsUpDone 1.1s ease-out; }
+#gtms-mining-page .checklist-row.row-just-uploaded .ci-icon { animation: gtmsUpPop .45s cubic-bezier(.34,1.56,.64,1); }
+#gtms-mining-page .checklist-row.row-entering { opacity: 0; transform: translateY(-6px); }
+#gtms-mining-page .checklist-row.row-removing { opacity: 0; transform: translateX(20px); }
+#gtms-mining-page .ci-icon.ci-icon-zip { background: #fef3c7 !important; color: #d97706 !important; }
+#gtms-mining-page .btn-trigger-upload:disabled { opacity: 1; cursor: progress; }
+@keyframes gtmsUpIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+@keyframes gtmsUpDone { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.45); } 100% { box-shadow: 0 0 0 10px rgba(22,163,74,0); } }
+@keyframes gtmsUpPop { 0% { transform: scale(.6); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+    #gtms-mining-page .checklist-row, #gtms-mining-page .upload-progress-wrap, #gtms-mining-page .checklist-row.row-just-uploaded, #gtms-mining-page .checklist-row.row-just-uploaded .ci-icon { animation: none !important; transition: none !important; }
+}
+body[data-theme-version="dark"] #gtms-mining-page .upload-progress-wrap .up-track { background: #334155; }
+body[data-theme-version="dark"] #gtms-mining-page .upload-progress-wrap .up-text { color: #93c5fd; }
+body[data-theme-version="dark"] #gtms-mining-page .checklist-row.row-upload-failed { background: rgba(220,38,38,.08) !important; border-color: rgba(220,38,38,.4) !important; }
 #gtms-mining-page .ci-icon {
     width: 36px;
     height: 36px;
@@ -3891,7 +4463,7 @@ body[data-theme-version="dark"] .mining-modal-header {
     border-top: 1px solid #e2e8f0;
 }
 #modalAddCustomMiningDoc .form-control,
-#modalAddCustomMiningDoc .form-select {
+  #modalAddCustomMiningDoc .form-select {
     background: #ffffff !important;
     border: 1.5px solid #cbd5e1 !important;
     border-radius: 8px !important;
@@ -3900,7 +4472,7 @@ body[data-theme-version="dark"] .mining-modal-header {
     box-shadow: none !important;
 }
 #modalAddCustomMiningDoc .form-control:focus,
-#modalAddCustomMiningDoc .form-select:focus {
+  #modalAddCustomMiningDoc .form-select:focus {
     border-color: #2563eb !important;
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }
@@ -4104,11 +4676,7 @@ body[data-theme-version="dark"] .mining-modal-header {
 #gtms-mining-page .s7-form-section-body {
     padding: 24px;
 }
-#gtms-mining-page .s7-label {
-    font-size: 13px;
-    font-weight: 700;
-    color: #0F1E4D;
-}
+
 #gtms-mining-page .s7-auto-tag {
     font-size: 11px;
     font-weight: 600;
@@ -4183,11 +4751,7 @@ body[data-theme-version="dark"] .mining-modal-header {
     color: #dc2626 !important;
     cursor: default;
 }
-#gtms-mining-page .s7-field-hint {
-    font-size: 11.5px;
-    color: #64748b;
-    line-height: 1.35;
-}
+
 #gtms-mining-page .s7-preset-btn {
     font-size: 11px;
     font-weight: 700;
@@ -4747,9 +5311,8 @@ body[data-theme-version="dark"] .mining-modal-header {
 }
 
 /* DARK MODE OVERRIDES FOR NEW HARMONIZED COMPONENTS */
-body[data-theme-version="dark"] #gtms-mining-page .s1-time-tag,
 body[data-theme-version="dark"] #gtms-mining-page .s6-team-pill,
-body[data-theme-version="dark"] #gtms-mining-page .s7-ledger-pill {
+  body[data-theme-version="dark"] #gtms-mining-page .s7-ledger-pill {
     background: #1e293b;
     border-color: #334155;
     color: #94a3b8;
@@ -4765,8 +5328,8 @@ body[data-theme-version="dark"] #gtms-mining-page .s8-btn-edit:hover {
     color: #ffffff;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s4-summary-banner,
-body[data-theme-version="dark"] #gtms-mining-page .s6-banner-card,
-body[data-theme-version="dark"] #gtms-mining-page .s7-banner-card {
+  body[data-theme-version="dark"] #gtms-mining-page .s6-banner-card,
+  body[data-theme-version="dark"] #gtms-mining-page .s7-banner-card {
     background: #1e293b;
     border-color: #334155;
 }
@@ -4784,7 +5347,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s4-folder-card {
     border-color: #334155;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s4-folder-no,
-body[data-theme-version="dark"] #gtms-mining-page .s4-chip {
+  body[data-theme-version="dark"] #gtms-mining-page .s4-chip {
     background: #0f172a;
     border-color: #334155;
     color: #94a3b8;
@@ -4830,7 +5393,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s4-folder-card.is-progress {
     border-color: #3b82f6;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s4-notice-card,
-body[data-theme-version="dark"] #gtms-mining-page .s4-notice-panel {
+  body[data-theme-version="dark"] #gtms-mining-page .s4-notice-panel {
     background: #18191a !important;
     border: 1px solid #2e3440 !important;
     border-left: 4px solid #3b82f6 !important;
@@ -5020,7 +5583,7 @@ body[data-theme-version="dark"] .s5-modal-footer {
     border-top-color: #2b2d30 !important;
 }
 body[data-theme-version="dark"] #modalAddCustomMiningDoc .form-control,
-body[data-theme-version="dark"] #modalAddCustomMiningDoc .form-select {
+  body[data-theme-version="dark"] #modalAddCustomMiningDoc .form-select {
     background: #161717 !important;
     border-color: #334155 !important;
     color: #f1f5f9 !important;
@@ -5030,7 +5593,7 @@ body[data-theme-version="dark"] #modalAddCustomMiningDoc #mining_custom_folder_n
     color: #60a5fa !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s6-banner-title,
-body[data-theme-version="dark"] #gtms-mining-page .s7-banner-title {
+  body[data-theme-version="dark"] #gtms-mining-page .s7-banner-title {
     color: #f1f5f9;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s6-tip-box {
@@ -5050,59 +5613,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s7-tip-box {
     border-color: rgba(59, 130, 246, 0.25);
     color: #bfdbfe;
 }
-body[data-theme-version="dark"] #gtms-mining-page .step-progress::before {
-    background: #2a3d66 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .sp-step .circ {
-    background: #161717 !important;
-    border-color: #374151 !important;
-    color: #94a3b8 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .sp-step.active .circ {
-    background: #2563eb !important;
-    border-color: #2563eb !important;
-    color: #ffffff !important;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .sp-step.done .circ {
-    background: #10b981 !important;
-    border-color: #10b981 !important;
-    color: #ffffff !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .sp-step.active .sp-label {
-    color: #60a5fa !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-section-card {
-    background: #181c26 !important;
-    border-color: #2a3d66 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-section-header {
-    color: #f1f5f9 !important;
-    border-color: #2a3d66 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-section-title {
-    color: #93c5fd !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-label {
-    color: #f1f5f9 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-opt-tag {
-    color: #94a3b8 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-hint {
-    color: #94a3b8 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-title {
-    color: #f1f5f9 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-subtitle {
-    color: #94a3b8 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-time-tag {
-    background: #161717 !important;
-    border-color: #374151 !important;
-    color: #94a3b8 !important;
-}
+
 body[data-theme-version="dark"] #gtms-mining-page .s1-lookup-card {
     background: #181c26 !important;
     border-color: #2a3d66 !important;
@@ -5128,68 +5639,13 @@ body[data-theme-version="dark"] #gtms-mining-page .s1-lookup-input-group .s1-btn
     border-color: #2563eb !important;
     color: #ffffff !important;
 }
-body[data-theme-version="dark"] #gtms-mining-page .s1-addon {
-    background-color: #161717 !important;
-    border-color: #374151 !important;
-    color: #94a3b8 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-input {
-    background-color: #161717 !important;
-    border-color: #374151 !important;
-    color: #f1f5f9 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-textarea {
-    background-color: #161717 !important;
-    border-color: #3b4252 !important;
-    color: #f8fafc !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-textarea:focus {
-    border-color: #60a5fa !important;
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18) !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-textarea::placeholder {
-    color: #64748b !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-input-group:focus-within .s1-addon {
-    border-color: #60a5fa !important;
-    color: #60a5fa !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-input-group:focus-within .s1-input {
-    border-color: #60a5fa !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-btn-cancel {
-    background: #161717 !important;
-    border-color: #374151 !important;
-    color: #94a3b8 !important;
-}
+
 /* NOTICE CARD - DARK */
-body[data-theme-version="dark"] #gtms-mining-page .s1-notice-card {
-    background: #172033 !important;
-    border-color: #223761 !important;
-}
+
 body[data-theme-version="dark"] #gtms-mining-page .s1-notice-icon-box {
     background: #1e293b !important;
 }
-body[data-theme-version="dark"] #gtms-mining-page .s1-notice-icon {
-    color: #60a5fa !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s1-notice-text {
-    color: #cbd5e1 !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s-btn-draft {
-    background: transparent !important;
-    border-color: #3b82f6 !important;
-    color: #60a5fa !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s-btn-draft:hover {
-    background: #1e3a8a !important;
-    color: #ffffff !important;
-}
-body[data-theme-version="dark"] #gtms-mining-page .s-btn-submit {
-    background: #2563eb !important;
-    border-color: #2563eb !important;
-    color: #ffffff !important;
-}
+
 /* -------------------------------------------------------------------------
    STEP 8 (FINANCIAL SETTLEMENT) DARK MODE PARITY
    ------------------------------------------------------------------------- */
@@ -5271,9 +5727,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s7-badge-status-tag {
     background: #334155 !important;
     color: #cbd5e1 !important;
 }
-body[data-theme-version="dark"] #gtms-mining-page .s7-label {
-    color: #f1f5f9 !important;
-}
+
 body[data-theme-version="dark"] #gtms-mining-page .s7-auto-tag {
     background: #334155 !important;
     color: #94a3b8 !important;
@@ -5311,9 +5765,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s7-input {
 body[data-theme-version="dark"] #gtms-mining-page .s7-input-readonly {
     color: #f87171 !important;
 }
-body[data-theme-version="dark"] #gtms-mining-page .s7-field-hint {
-    color: #94a3b8 !important;
-}
+
 body[data-theme-version="dark"] #gtms-mining-page .s7-preset-btn {
     background: #0f172a !important;
     border-color: #334155 !important;
@@ -5325,7 +5777,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s7-preset-btn:hover {
     color: #0f172a !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s7-select,
-body[data-theme-version="dark"] #gtms-mining-page .s7-notes-input {
+  body[data-theme-version="dark"] #gtms-mining-page .s7-notes-input {
     background: #0f172a !important;
     border-color: #334155 !important;
     color: #f8fafc !important;
@@ -5466,7 +5918,7 @@ body[data-theme-version="dark"] #gtms-mining-page .s8-table thead {
     background: #0f172a !important;
 }
 body[data-theme-version="dark"] #gtms-mining-page .s8-table th,
-body[data-theme-version="dark"] #gtms-mining-page .s8-table td {
+  body[data-theme-version="dark"] #gtms-mining-page .s8-table td {
     border-color: #334155 !important;
     color: #f1f5f9 !important;
 }
@@ -5557,6 +6009,36 @@ body[data-theme-version="dark"] #gtms-mining-page .s8-declaration-text {
 body[data-theme-version="dark"] #gtms-mining-page .s8-check-confirm .form-check-label {
     color: #f1f5f9 !important;
 }
+
+  /* ==========================================================================
+     MINING WIZARD — layout fixes on top of gtms-lease.css
+     ========================================================================== */
+  /* 9-step wizard needs more room than the 900px form steps */
+  #gtms-mining-page.lz-page { max-width: 1080px; }
+  #gtms-mining-page.lz-page > .wizard-wrap { max-width: 100%; padding-left: 0; padding-right: 0; }
+
+  /* PAN / Aadhaar / GSTIN: same font as other inputs, slight tracking for codes */
+  #gtms-mining-page #field_pan,
+  #gtms-mining-page #field_aadhaar_no,
+  #gtms-mining-page #field_gstin,
+  #gtms-mining-page #mimas_search_input {
+    font-family: inherit !important;
+    font-size: 0.9rem !important;
+    letter-spacing: 0.04em;
+  }
+
+  /* Inline step messages (wizFail) under tile groups / tables */
+  #gtms-mining-page .wiz-group-error {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-top: 8px;
+    color: var(--gt-danger, #DC2626);
+  }
+
+  /* Final submit keeps its green signal */
+  #gtms-mining-page .lz-btn.s-btn-final { background: #15803D; border-color: #15803D; box-shadow: 0 4px 12px rgba(21, 128, 61, .25); }
+  #gtms-mining-page .lz-btn.s-btn-final:hover { background: #166534; border-color: #166534; }
+  #gtms-mining-page .lz-btn.s-btn-final:disabled { opacity: .5; }
 </style>
 
 <!-- ========================================================== -->
@@ -5564,16 +6046,9 @@ body[data-theme-version="dark"] #gtms-mining-page .s8-check-confirm .form-check-
 <!-- ========================================================== -->
 <script>
 function initMiningWizard() {
+    // The server decides the starting step: it honours ?step only when there
+    // is a draft (resume) or lease to continue, otherwise it starts at Step 1.
     var initialStep = {{ (int)($prefillData['current_step'] ?? 1) }};
-    try {
-        var urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('step')) {
-            var parsedStep = parseInt(urlParams.get('step'), 10);
-            if (!isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 9) {
-                initialStep = parsedStep;
-            }
-        }
-    } catch (e) {}
 
     var currentStep = Math.max(0, Math.min(8, initialStep - 1));
     var btnNext = document.getElementById('btnNext');
@@ -5624,11 +6099,7 @@ function initMiningWizard() {
     function performMimasLookup() {
         var searchVal = $('#mimas_search_input').val().trim();
         if (!searchVal) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please enter or select a Customer Unique ID to lookup.', confirmButtonColor: '#0F1E4D' });
-            } else {
-                alert('Please enter or select a Customer Unique ID to lookup.');
-            }
+            wizFail(document.getElementById('mimas_search_input'), 'Enter or select a Customer Unique ID to look up.');
             return;
         }
 
@@ -5857,10 +6328,40 @@ function initMiningWizard() {
             populateSummary();
         }
 
+        syncStepEyebrows();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // "Step X of Y" in each pane header follows the stepper (Minerals step is
+    // hidden unless Mining Plan is chosen), like Lease's "Step 5 of 8".
+    function syncStepEyebrows() {
+        var nodes = Array.prototype.filter.call(document.querySelectorAll('#wizardStepper .sp-step'), function (n) {
+            return n.offsetParent !== null && getComputedStyle(n).display !== 'none';
+        });
+        document.querySelectorAll('.wizard-pane .wc-eyebrow').forEach(function (eb) {
+            var pane = eb.closest('.wizard-pane');
+            var idx = pane ? parseInt(pane.id.replace('pane_', ''), 10) : NaN;
+            var pos = nodes.findIndex(function (n) { return n.id === 'stepNode_' + idx; });
+            if (pos === -1) return;
+            eb.innerHTML = eb.innerHTML.replace(/Step\s+\d+\s+of\s+\d+/i, 'Step ' + (pos + 1) + ' of ' + nodes.length);
+        });
+    }
+
+    // Autosaves run one at a time. Without this, clicking Next before the first
+    // save returned sent a second request with no mining_app_id, so every step
+    // created a new draft and the URL never kept ?resume= (reload lost the data).
+    var autoSaveQueue = $.Deferred().resolve().promise();
     function autoSaveStepData(targetStepNum, callback) {
+        autoSaveQueue = autoSaveQueue.then(function () {
+            var done = $.Deferred();
+            sendAutoSave(targetStepNum, function (res) {
+                try { if (typeof callback === 'function') callback(res); } finally { done.resolve(); }
+            });
+            return done.promise();
+        });
+    }
+
+    function sendAutoSave(targetStepNum, callback) {
         var form = document.getElementById('miningWizardForm');
         if (!form) {
             if (typeof callback === 'function') callback();
@@ -5886,7 +6387,7 @@ function initMiningWizard() {
                         if (mIdInput) mIdInput.value = res.mining_app_id;
                         try {
                             var u = new URL(window.location.href);
-                            if (!u.searchParams.has('resume')) {
+                            if (u.searchParams.get('resume') !== String(res.mining_app_id)) {
                                 u.searchParams.set('resume', res.mining_app_id);
                                 window.history.replaceState({ step: targetStepNum }, '', u.toString());
                             }
@@ -5900,39 +6401,107 @@ function initMiningWizard() {
                 if (typeof callback === 'function') callback(res);
             },
             error: function(xhr) {
-                console.warn('Auto-save step notification:', xhr);
+                var json = xhr && xhr.responseJSON ? xhr.responseJSON : {};
+                if (xhr && xhr.status === 422 && json.errors) {
+                    // Go back to the step that holds the first invalid field and
+                    // show each message under its field (no popup).
+                    var firstKey = Object.keys(json.errors)[0];
+                    var firstEl = form.querySelector('[name="' + firstKey + '"]') || form.querySelector('[name="' + firstKey + '[]"]');
+                    var pane = firstEl ? firstEl.closest('[id^="pane_"]') : null;
+                    if (pane) {
+                        var paneStep = parseInt(pane.id.replace('pane_', ''), 10);
+                        if (!isNaN(paneStep) && paneStep !== currentStep) showStep(paneStep);
+                    }
+                    if (window.GTMSValidate) {
+                        GTMSValidate.showErrors(form, json.errors);
+                    }
+                } else if (window.GTMS && GTMS.toast) {
+                    GTMS.toast('error', 'Draft could not be saved (error ' + (xhr ? xhr.status : 'network') + '). Your entries are still on the page.');
+                }
                 if (typeof callback === 'function') callback(null);
             }
         });
     }
 
-    function validateCurrentStep(step, onProceedAnyway) {
-        if (step === 0) {
-            var cname = document.getElementById('field_client_name').value.trim();
-            var compname = document.getElementById('field_company_name').value.trim();
-            var atid = document.getElementById('applicant_type_id').value;
-            var mob = document.getElementById('field_mobile_num').value.trim();
+    // ---- Inline step validation: messages appear under the field or group (no popups) ----
+    function clearWizardErrors(scope) {
+        (scope || document).querySelectorAll('.wiz-group-error').forEach(function (e) { e.remove(); });
+    }
 
-            if (!cname) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please enter the Client / Representative Name.', confirmButtonColor: '#0F1E4D' }); return false; }
-            if (!compname) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please enter the Company / Firm Name.', confirmButtonColor: '#0F1E4D' }); return false; }
-            if (!atid) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select an Applicant Category.', confirmButtonColor: '#0F1E4D' }); return false; }
-            if (!mob) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please enter a valid Mobile Number.', confirmButtonColor: '#0F1E4D' }); return false; }
+    // target: a form control (message under it) or a container of tiles / rows
+    function wizFail(target, msg) {
+        if (!target) return false;
+        var isControl = /^(INPUT|SELECT|TEXTAREA)$/.test(target.tagName);
+        if (isControl) {
+            target.classList.add('is-invalid');
+            var host = target.closest('.input-group') || target;
+            var box = host.parentElement.querySelector(':scope > .gt-v-error, :scope > .wiz-group-error');
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'invalid-feedback d-block wiz-group-error';
+                host.insertAdjacentElement('afterend', box);
+            }
+            box.textContent = msg;
+            box.setAttribute('role', 'alert');
+            target.focus({ preventScroll: true });
+        } else {
+            var gbox = target.querySelector(':scope > .wiz-group-error');
+            if (!gbox) {
+                gbox = document.createElement('div');
+                gbox.className = 'invalid-feedback d-block wiz-group-error';
+                target.appendChild(gbox);
+            }
+            gbox.textContent = msg;
+            gbox.setAttribute('role', 'alert');
+        }
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.remove('gt-shake'); void target.offsetWidth; target.classList.add('gt-shake');
+        return false;
+    }
+
+    function groupOf(selector) {
+        var first = document.querySelector(selector);
+        return first ? (first.closest('.row') || first.parentElement) : null;
+    }
+
+    function validateCurrentStep(step, onProceedAnyway) {
+        var pane = document.getElementById('pane_' + step);
+        clearWizardErrors(pane);
+
+        if (step === 0) {
+            // data-v / required fields of Step 1 (gtms-validate.js rules)
+            if (window.GTMSValidate && pane) {
+                var firstBad = null;
+                pane.querySelectorAll('[data-v], [required]').forEach(function (el) {
+                    if (el.type === 'hidden' || el.disabled || el.offsetParent === null) return;
+                    if (!GTMSValidate.check(el) && !firstBad) firstBad = el;
+                });
+                if (firstBad) {
+                    firstBad.focus({ preventScroll: true });
+                    firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+            } else {
+                var checks = [
+                    ['field_client_name', 'Enter the client / representative name.'],
+                    ['field_company_name', 'Enter the company / firm name.'],
+                    ['applicant_type_id', 'Select an applicant category.'],
+                    ['field_mobile_num', 'Enter the mobile number.']
+                ];
+                for (var i = 0; i < checks.length; i++) {
+                    var el = document.getElementById(checks[i][0]);
+                    if (el && !el.value.trim()) return wizFail(el, checks[i][1]);
+                }
+            }
         }
         if (step === 1) {
             var now = document.querySelector('input[name="nature_of_work_id"]:checked');
-            if (!now) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a Nature of Work.', confirmButtonColor: '#0F1E4D' }); return false; }
+            if (!now) return wizFail(groupOf('input[name="nature_of_work_id"]'), 'Select a nature of work.');
             var nowName = (now.getAttribute('data-name') || '').toLowerCase().trim();
             if (nowName === 'others' || now.value === '8') {
                 var otherNowInput = document.getElementById('field_other_nature_of_work_name_mining');
                 if (!otherNowInput || !otherNowInput.value.trim()) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Validation Required',
-                        text: 'Please specify the custom Nature of Work scope.',
-                        confirmButtonColor: '#0F1E4D'
-                    });
-                    if (otherNowInput) otherNowInput.focus();
-                    return false;
+                    return wizFail(otherNowInput || groupOf('input[name="nature_of_work_id"]'), 'Specify the custom nature of work.');
                 }
             }
         }
@@ -5940,24 +6509,18 @@ function initMiningWizard() {
             var checkedMinerals = document.querySelectorAll('input[name="mineral_ids[]"]:checked');
             var pt = document.querySelector('input[name="plan_type_id"]:checked');
             if (!checkedMinerals || checkedMinerals.length === 0) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select at least one Mineral for this Mining Plan.', confirmButtonColor: '#0F1E4D' });
-                return false;
-            }
-            if (!pt) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select Which Plan is Prepared.', confirmButtonColor: '#0F1E4D' });
-                return false;
+                return wizFail(groupOf('input[name="mineral_ids[]"]'), 'Select at least one mineral for this mining plan.');
             }
             var othersCb = document.getElementById('mineral_8');
             var otherNameInput = document.getElementById('field_other_mineral_name_mining');
             if (othersCb && othersCb.checked && (!otherNameInput || !otherNameInput.value.trim())) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please specify the Other Mineral Name.', confirmButtonColor: '#0F1E4D' });
-                if (otherNameInput) otherNameInput.focus();
-                return false;
+                return wizFail(otherNameInput || groupOf('input[name="mineral_ids[]"]'), 'Specify the other mineral name.');
             }
+            if (!pt) return wizFail(groupOf('input[name="plan_type_id"]'), 'Select which plan is prepared.');
         }
         if (step === 3) {
-            var did = document.getElementById('district_id').value;
-            if (!did) { Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a District.', confirmButtonColor: '#0F1E4D' }); return false; }
+            var ds = document.getElementById('district_id');
+            if (ds && !ds.value) return wizFail(ds, 'Select a district.');
         }
         if (step === 5) {
             var nowId = getActiveNatureOfWorkId();
@@ -5984,74 +6547,85 @@ function initMiningWizard() {
             }
 
             if (missingMandatory.length > 0) {
+                // A real decision (stay or continue as draft), so this stays a dialog
                 var missingHtml = '<div class="text-start" style="font-size:0.85rem;"><p class="mb-2 text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> ' + missingMandatory.length + ' Mandatory Document(s) Not Uploaded:</p><ul class="mb-2 ps-3 text-muted" style="max-height:160px; overflow-y:auto;">' +
                     missingMandatory.map(function(name) { return '<li>' + escapeHtml(name) + '</li>'; }).join('') +
                     '</ul><p class="text-muted small mb-0">Statutory guidelines require these documents to be attached. Do you want to stay and upload them now, or proceed with draft?</p></div>';
 
+                var proceed = function () {
+                    if (typeof onProceedAnyway === 'function') {
+                        onProceedAnyway();
+                    } else {
+                        currentStep = 6;
+                        showStep(currentStep);
+                        autoSaveStepData(currentStep + 1);
+                    }
+                };
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Mandatory Documents Missing!',
+                        title: 'Mandatory documents missing',
                         html: missingHtml,
                         showCancelButton: true,
-                        confirmButtonColor: '#0F1E4D',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bi bi-arrow-right-circle me-1"></i> Proceed Anyway (Save Draft)',
-                        cancelButtonText: '<i class="bi bi-upload me-1"></i> Stay &amp; Upload'
+                        reverseButtons: true,
+                        buttonsStyling: false,
+                        customClass: { popup: 'gt-swal', confirmButton: 'swal2-confirm', cancelButton: 'swal2-cancel' },
+                        confirmButtonText: '<i class="bi bi-arrow-right-circle me-1"></i> Continue as draft',
+                        cancelButtonText: '<i class="bi bi-upload me-1"></i> Stay &amp; upload'
                     }).then(function(result) {
-                        if (result.isConfirmed) {
-                            if (typeof onProceedAnyway === 'function') {
-                                onProceedAnyway();
-                            } else {
-                                currentStep = 6;
-                                showStep(currentStep);
-                                autoSaveStepData(currentStep + 1);
-                            }
-                        }
+                        if (result.isConfirmed) proceed();
                     });
-                } else {
-                    if (confirm('Warning: ' + missingMandatory.length + ' mandatory documents are missing. Proceed anyway?')) {
-                        if (typeof onProceedAnyway === 'function') {
-                            onProceedAnyway();
-                        } else {
-                            currentStep = 6;
-                            showStep(currentStep);
-                            autoSaveStepData(currentStep + 1);
-                        }
-                    }
+                } else if (window.GTMS && GTMS.confirm) {
+                    GTMS.confirm(missingMandatory.length + ' mandatory documents are missing. Continue as draft?', { danger: false })
+                        .then(function (ok) { if (ok) proceed(); });
                 }
                 return false;
             }
         }
         if (step === 6) {
-            var handlerRows = $('#mining_handlers_tbody tr');
-            var hasInvalidHandler = false;
-            handlerRows.each(function() {
-                var n = $(this).find('.handler-name-input').val().trim();
-                var r = $(this).find('.handler-role-input').val().trim();
-                if ((n && !r) || (!n && r)) {
-                    hasInvalidHandler = true;
-                }
+            var badRow = null;
+            $('#mining_handlers_tbody tr').each(function() {
+                var $n = $(this).find('.handler-name-input'), $r = $(this).find('.handler-role-input');
+                var n = ($n.val() || '').trim(), r = ($r.val() || '').trim();
+                if (!badRow && n && !r) badRow = $r.get(0);
+                if (!badRow && !n && r) badRow = $n.get(0);
             });
-            if (hasInvalidHandler) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please provide both Name and Role for each assigned handling person.', confirmButtonColor: '#0F1E4D' });
-                return false;
+            if (badRow) {
+                return wizFail(badRow, badRow.classList.contains('handler-name-input')
+                    ? 'Enter the person name for this role.'
+                    : 'Enter the role / designation for this person.');
             }
         }
         if (step === 7) {
-            var pVal = parseFloat($('#mining_product_value').val()) || 0;
-            var pPaid = parseFloat($('#mining_paid_amount').val()) || 0;
-            if (pVal < 0 || pPaid < 0) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Product Value and Paid Amount cannot be negative.', confirmButtonColor: '#0F1E4D' });
-                return false;
-            }
-            if (pPaid > pVal && pVal > 0) {
-                Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Paid Amount cannot exceed Product Value.', confirmButtonColor: '#0F1E4D' });
-                return false;
-            }
+            var pvEl = document.getElementById('mining_product_value');
+            var paEl = document.getElementById('mining_paid_amount');
+            var pVal = parseFloat(pvEl && pvEl.value) || 0;
+            var pPaid = parseFloat(paEl && paEl.value) || 0;
+            if (pVal < 0) return wizFail(pvEl, 'Product value cannot be negative.');
+            if (pPaid < 0) return wizFail(paEl, 'Paid amount cannot be negative.');
+            if (pPaid > pVal && pVal > 0) return wizFail(paEl, 'Paid amount cannot be more than the product value.');
         }
         return true;
     }
+
+    // Clear a group/field message as soon as the user fixes it
+    document.getElementById('miningWizardForm').addEventListener('change', function (e) {
+        var row = e.target.closest('.row');
+        if (row) row.querySelectorAll(':scope > .wiz-group-error').forEach(function (b) { b.remove(); });
+        if (e.target.classList.contains('is-invalid') && e.target.value) {
+            e.target.classList.remove('is-invalid');
+            var host = e.target.closest('.input-group') || e.target;
+            var b = host.parentElement.querySelector(':scope > .wiz-group-error');
+            if (b) b.remove();
+        }
+    });
+    document.getElementById('miningWizardForm').addEventListener('input', function (e) {
+        if (e.target.classList.contains('is-invalid') && e.target.value.trim()) {
+            var host = e.target.closest('.input-group') || e.target;
+            var b = host.parentElement.querySelector(':scope > .wiz-group-error');
+            if (b) { b.remove(); e.target.classList.remove('is-invalid'); }
+        }
+    });
 
     function populateFolderPreview() {
         var selectedNow = document.querySelector('input[name="nature_of_work_id"]:checked');
@@ -6275,17 +6849,7 @@ function initMiningWizard() {
             fInputs.forEach(function(fi) {
                 if ((fi.files && fi.files.length > 0) || fi.getAttribute('data-has-existing') === '1') fUp++;
             });
-            var pill = fBlock.querySelector('.folder-pill-counter');
-            if (pill) {
-                pill.textContent = fUp + ' / ' + fTotal + ' Attached';
-                if (fUp === fTotal && fTotal > 0) {
-                    pill.className = 'badge bg-success-subtle text-success border border-success-subtle folder-pill-counter s5-folder-pill';
-                } else if (fUp > 0) {
-                    pill.className = 'badge bg-primary-subtle text-primary border border-primary-subtle folder-pill-counter s5-folder-pill';
-                } else {
-                    pill.className = 'badge s5-folder-pill folder-pill-counter';
-                }
-            }
+            // Lease layout: the pill shows "Folder ID: #x · N Items"; only the count changes
             var totalCountSpan = fBlock.querySelector('.folder-total-count');
             if (totalCountSpan) {
                 totalCountSpan.textContent = fTotal;
@@ -6326,80 +6890,291 @@ function initMiningWizard() {
         $('#file_field_' + fieldId).trigger('click');
     });
 
-    $(document).on('change', '.doc-file-input', function() {
-        var fieldId = $(this).data('field-id');
-        var row = document.getElementById('row_field_' + fieldId);
-        if (!row) return;
+    // ---- Step 6 uploads: same method as Lease Step 5 ----
+    // Each file uploads the moment it is picked or dropped (one at a time, in a
+    // queue), with a live MB / % progress bar. Files over 5 MB go through the
+    // chunked upload API. The file is saved to the draft's dossier right away,
+    // so a reload keeps it and the final submit does not re-send it.
+    var MINING_UPLOAD_URL = "{{ route('mining.document.upload') }}";
+    var MINING_REMOVE_URL = "{{ route('mining.document.remove') }}";
+    var MINING_CSRF = $('meta[name="csrf-token"]').attr('content');
+    var miningUploadBusy = false;
+    var miningUploadQueue = [];
 
-        if (this.files && this.files[0]) {
-            var file = this.files[0];
-            var fNameLower = file.name.toLowerCase();
-            var isZip = fNameLower.endsWith('.zip') || fNameLower.endsWith('.rar') || fNameLower.endsWith('.7z');
-            this.setAttribute('data-has-existing', '1');
-            row.classList.add('up');
-            var iconBox = row.querySelector('.ci-icon');
-            if (iconBox) {
-                if (isZip) {
-                    iconBox.style.background = '#fef3c7';
-                    iconBox.style.color = '#d97706';
-                    iconBox.innerHTML = '<i class="bi bi-file-earmark-zip-fill text-warning ci-status-icon"></i>';
-                } else {
-                    iconBox.removeAttribute('style');
-                    iconBox.innerHTML = '<i class="bi bi-check2-circle ci-status-icon"></i>';
-                }
-            }
-            var meta = document.getElementById('meta_field_' + fieldId);
-            if (meta) {
-                var zipPrefix = isZip ? '<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle me-1" style="font-size:10px;"><i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP</span>' : '';
-                meta.innerHTML = zipPrefix + '<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ' + escapeHtml(file.name) + '</span> &middot; ' + formatFileSize(file.size);
-            }
-            var badge = document.getElementById('badge_field_' + fieldId);
-            var badgeClass = isZip ? 'badge bg-warning text-dark' : 'badge s5-badge-attached';
-            var badgeContent = isZip ? '<i class="bi bi-file-earmark-zip-fill me-1"></i>ZIP Attached' : '<i class="bi bi-check-lg me-1"></i>Attached';
-            if (badge) {
-                badge.className = badgeClass;
-                badge.innerHTML = badgeContent;
-            } else {
-                badge = document.createElement('span');
-                badge.id = 'badge_field_' + fieldId;
-                badge.className = badgeClass;
-                badge.innerHTML = badgeContent;
-                var actionCol = row.querySelector('.ms-2.flex-shrink-0');
-                if (actionCol) {
-                    var btnUpload = actionCol.querySelector('.btn-trigger-upload');
-                    actionCol.insertBefore(badge, btnUpload);
-                }
-            }
-            var btn = row.querySelector('.btn-trigger-upload');
-            if (btn) {
-                btn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
-                btn.className = 'btn btn-sm btn-outline-secondary s5-btn-action btn-trigger-upload';
-                btn.title = 'Change file';
-                var viewLink = row.querySelector('.btn-view-doc');
-                var blobUrl = URL.createObjectURL(file);
-                if (!viewLink) {
-                    viewLink = document.createElement('a');
-                    viewLink.className = 'btn btn-sm btn-outline-info s5-btn-action btn-view-doc btn-view-item me-1';
-                    viewLink.target = '_blank';
-                    viewLink.rel = 'noopener noreferrer';
-                    viewLink.title = isZip ? 'Inspect / View ZIP archive' : 'View attached document';
-                    viewLink.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip' : 'bi-eye') + '"></i>';
-                    btn.parentNode.insertBefore(viewLink, btn);
-                }
-                viewLink.href = blobUrl;
-                viewLink.setAttribute('data-file-url', blobUrl);
-                viewLink.setAttribute('data-file-name', file.name);
-                viewLink.setAttribute('data-file-size', formatFileSize(file.size));
-                viewLink.setAttribute('data-doc-name', $(this).data('field-name') || 'Document');
-                viewLink.setAttribute('data-is-zip', isZip ? '1' : '0');
-            }
-            var removeBtn = row.querySelector('.btn-remove-file');
-            if (removeBtn) {
-                removeBtn.className = 'btn btn-sm btn-outline-danger s5-btn-action btn-remove-file';
-                removeBtn.classList.remove('d-none');
-            }
+    function rowFolderId(row) {
+        var box = row ? row.closest('.folder-checklist-box') : null;
+        var m = box ? /_(\d+)$/.exec(box.id) : null;
+        return m ? m[1] : '';
+    }
+
+    function rowUploadSlot(row) {
+        var holder = row.querySelector('.flex-grow-1 .min-w-0') || row.querySelector('.flex-grow-1');
+        var wrap = row.querySelector('.upload-progress-wrap');
+        if (!wrap && holder) {
+            wrap = document.createElement('div');
+            wrap.className = 'upload-progress-wrap';
+            holder.appendChild(wrap);
         }
+        return wrap;
+    }
+
+    function rowUploadError(row, msg) {
+        var wrap = rowUploadSlot(row);
+        if (wrap) {
+            wrap.innerHTML = '<div class="up-error"><i class="bi bi-exclamation-circle me-1"></i>' + escapeHtml(msg) + '</div>';
+        }
+        row.classList.add('row-upload-failed');
+    }
+
+    function rowProgress(row, state, cur, tot, label) {
+        var wrap = rowUploadSlot(row);
+        if (!wrap) return;
+        row.classList.remove('row-upload-failed');
+        var curMB = (cur / 1048576).toFixed(1), totMB = (tot / 1048576).toFixed(1);
+        var pct = tot > 0 ? Math.min(99, Math.round((cur / tot) * 100)) : 0;
+        var text, badge, bar;
+        if (state === 'queued') {
+            text = '<i class="bi bi-hourglass-split me-1"></i>In queue: waiting for the previous upload (' + totMB + ' MB)';
+            badge = 'Queued'; bar = 100;
+        } else if (state === 'saving') {
+            text = '<i class="bi bi-gear-wide-connected me-1"></i>Saving file to the dossier…';
+            badge = '100%'; bar = 100;
+        } else {
+            text = '<i class="bi bi-cloud-arrow-up me-1"></i>' + (label || 'Uploading:') + ' <strong>' + curMB + ' MB</strong> / ' + totMB + ' MB';
+            badge = pct + '%'; bar = pct;
+        }
+        wrap.innerHTML =
+            '<div class="up-line up-' + state + '"><span class="up-text">' + text + '</span><span class="up-badge">' + badge + '</span></div>' +
+            '<div class="progress up-track"><div class="progress-bar progress-bar-striped progress-bar-animated up-bar up-bar-' + state + '" role="progressbar" style="width:' + bar + '%"></div></div>';
+        var btn = row.querySelector('.btn-trigger-upload');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = state === 'queued'
+                ? '<span class="spinner-grow spinner-grow-sm me-1" style="width:10px;height:10px;"></span>Queued'
+                : '<span class="spinner-border spinner-border-sm me-1" style="width:11px;height:11px;"></span>' + (state === 'saving' ? 'Saving' : pct + '%');
+        }
+    }
+
+    function markMiningRowUploaded(row, data) {
+        var fileName = data.file_name || 'Attached file';
+        var isZip = !!data.is_zip || /\.(zip|rar|7z|tar|gz)$/i.test(fileName);
+        var wrap = row.querySelector('.upload-progress-wrap');
+        if (wrap) wrap.remove();
+        row.classList.remove('row-upload-failed');
+        row.classList.add('up', 'row-just-uploaded');
+        setTimeout(function () { row.classList.remove('row-just-uploaded'); }, 1200);
+        if (data.doc_id) row.setAttribute('data-doc-id', data.doc_id);
+
+        var inp = row.querySelector('.doc-file-input');
+        if (inp) {
+            if (inp.type === 'file') inp.value = '';   // already on the server: final submit must not re-send it
+            inp.setAttribute('data-has-existing', '1');
+        }
+
+        var iconBox = row.querySelector('.ci-icon');
+        if (iconBox) {
+            iconBox.removeAttribute('style');
+            iconBox.classList.toggle('ci-icon-zip', isZip);
+            iconBox.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip text-warning' : 'bi-check-lg ci-ok') + '"></i>';
+        }
+        var meta = row.querySelector('.ci-meta');
+        if (meta) {
+            meta.innerHTML = (row.hasAttribute('data-custom-id') ? '<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ' + escapeHtml(fileName) + '</span>' : escapeHtml(fileName)) +
+                (data.file_size ? ' &middot; ' + escapeHtml(String(data.file_size)) : '');
+        }
+
+        var actions = row.querySelector('.ms-2.flex-shrink-0');
+        var uploadBtn = row.querySelector('.btn-trigger-upload');
+        var badge = row.querySelector('.badge-status');
+        if (!badge && actions) {
+            badge = document.createElement('span');
+            actions.insertBefore(badge, uploadBtn || actions.querySelector('.btn-remove-file, .btn-remove-custom-row'));
+        }
+        if (badge) {
+            badge.className = 'badge-status uploaded';
+            badge.textContent = 'Uploaded';
+        }
+
+        var view = row.querySelector('.btn-view-doc');
+        if (!view && actions) {
+            view = document.createElement('a');
+            view.className = 'btn btn-sm btn-outline-info btn-view-item btn-view-doc';
+            view.target = '_blank';
+            view.rel = 'noopener noreferrer';
+            actions.insertBefore(view, uploadBtn || actions.querySelector('.btn-remove-file, .btn-remove-custom-row'));
+        }
+        if (view && data.file_url) {
+            view.href = data.file_url;
+            view.title = isZip ? 'Inspect / View ZIP archive' : 'View attached document';
+            view.setAttribute('data-file-url', data.file_url);
+            view.setAttribute('data-file-name', fileName);
+            view.setAttribute('data-file-size', data.file_size || '');
+            view.setAttribute('data-doc-name', (row.querySelector('.ci-name') || {}).textContent ? row.querySelector('.ci-name').textContent.trim() : 'Document');
+            view.setAttribute('data-is-zip', isZip ? '1' : '0');
+            view.innerHTML = '<i class="bi ' + (isZip ? 'bi-file-earmark-zip' : 'bi-eye') + '"></i>';
+        }
+
+        if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.className = 'btn btn-sm btn-outline-secondary btn-upload-item btn-trigger-upload';
+            uploadBtn.title = 'Change / re-upload file';
+            uploadBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+        }
+        var rm = row.querySelector('.btn-remove-file, .btn-remove-custom-row');
+        if (rm) { rm.classList.remove('d-none'); rm.disabled = false; rm.innerHTML = '<i class="bi bi-trash3"></i>'; }
         updateUploadProgress();
+    }
+
+    function markMiningRowEmpty(row) {
+        var wrap = row.querySelector('.upload-progress-wrap');
+        if (wrap) wrap.remove();
+        row.classList.remove('up', 'row-upload-failed');
+        row.removeAttribute('data-doc-id');
+        var inp = row.querySelector('.doc-file-input');
+        if (inp) { if (inp.type === 'file') inp.value = ''; inp.setAttribute('data-has-existing', '0'); }
+        var iconBox = row.querySelector('.ci-icon');
+        if (iconBox) { iconBox.removeAttribute('style'); iconBox.classList.remove('ci-icon-zip'); iconBox.innerHTML = '<i class="bi bi-file-earmark"></i>'; }
+        var meta = row.querySelector('.ci-meta');
+        if (meta) meta.textContent = 'Not uploaded';
+        row.querySelectorAll('.badge-status, .btn-view-doc').forEach(function (el) { el.remove(); });
+        var btn = row.querySelector('.btn-trigger-upload');
+        if (btn) { btn.disabled = false; btn.className = 'btn btn-sm btn-outline-navy btn-upload-item btn-trigger-upload'; btn.title = 'Upload file'; btn.innerHTML = '<i class="bi bi-upload me-1"></i> Upload'; }
+        var rm = row.querySelector('.btn-remove-file');
+        if (rm) { rm.classList.add('d-none'); rm.disabled = false; rm.innerHTML = '<i class="bi bi-trash3"></i>'; }
+        updateUploadProgress();
+    }
+
+    // The draft must exist before a file can be attached to it
+    function ensureMiningDraftId() {
+        return new Promise(function (resolve, reject) {
+            var idEl = document.getElementById('field_mining_app_id');
+            if (idEl && idEl.value) return resolve(idEl.value);
+            autoSaveStepData(currentStep + 1, function (res) {
+                var id = idEl ? idEl.value : '';
+                if (id) resolve(id); else reject(new Error('Save the application details first (the draft could not be saved).'));
+            });
+        });
+    }
+
+    function postMiningJson(url, fd) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('X-CSRF-TOKEN', MINING_CSRF);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.onload = function () {
+                var data = null;
+                try { data = JSON.parse(xhr.responseText); } catch (e) {}
+                if (xhr.status >= 200 && xhr.status < 300 && data && (data.status === 1 || data.success)) return resolve(data);
+                var msg = (data && data.errors && Object.values(data.errors)[0] && Object.values(data.errors)[0][0]) || (data && data.message) || ('Server error (HTTP ' + xhr.status + ')');
+                reject(new Error(msg));
+            };
+            xhr.onerror = function () { reject(new Error('Network error. Check the connection and try again.')); };
+            if (fd.__onProgress) xhr.upload.onprogress = fd.__onProgress;
+            xhr.send(fd);
+        });
+    }
+
+    async function executeMiningUpload(row, file, extra) {
+        var appId = await ensureMiningDraftId();
+        var base = function (fd) {
+            fd.append('mining_application_id', appId);
+            fd.append('folder_id', rowFolderId(row));
+            if (row.getAttribute('data-field-id')) fd.append('field_id', row.getAttribute('data-field-id'));
+            if (row.getAttribute('data-doc-id')) fd.append('document_id', row.getAttribute('data-doc-id'));
+            if (extra && extra.documentName) fd.append('document_name', extra.documentName);
+            return fd;
+        };
+        var size = file.size;
+        rowProgress(row, 'uploading', 0, size, 'Preparing upload:');
+
+        if (size <= 5 * 1024 * 1024) {
+            var fd = base(new FormData());
+            fd.append('file', file);
+            fd.__onProgress = function (e) { if (e.lengthComputable) rowProgress(row, 'uploading', e.loaded, e.total, 'Uploading:'); };
+            return postMiningJson(MINING_UPLOAD_URL, fd);
+        }
+
+        // Large file: chunked upload (3 parallel workers, 3 retries per chunk)
+        var CHUNK = size > 1024 * 1024 * 1024 ? 25 * 1048576 : (size > 200 * 1048576 ? 15 * 1048576 : 5 * 1048576);
+        var total = Math.ceil(size / CHUNK);
+        var initRes = await fetch('/api/upload/chunk/init', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': MINING_CSRF, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            body: JSON.stringify({ file_name: file.name, total_size: size, chunk_size: CHUNK, total_chunks: total, mime_type: file.type || 'application/octet-stream', target_module: 'mining', reference_id: parseInt(appId, 10) })
+        });
+        var init = await initRes.json().catch(function () { return {}; });
+        if (!init.success || !init.upload_token) throw new Error(init.message || 'Large-file upload could not start.');
+        var token = init.upload_token, loaded = {}, next = 0, failed = null;
+        var refresh = function () {
+            var sum = 0; for (var k in loaded) sum += loaded[k];
+            var doneCount = Object.keys(loaded).filter(function (k) { return loaded[k] >= Math.min(CHUNK, size - k * CHUNK); }).length;
+            rowProgress(row, 'uploading', sum, size, 'Chunk ' + Math.min(total, doneCount + 1) + '/' + total + ':');
+        };
+        var worker = async function () {
+            while (next < total && !failed) {
+                var idx = next++, start = idx * CHUNK, blob = file.slice(start, Math.min(size, start + CHUNK));
+                for (var attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        var cfd = new FormData();
+                        cfd.append('upload_token', token);
+                        cfd.append('chunk_index', idx);
+                        cfd.append('chunk', blob, file.name);
+                        cfd.__onProgress = function (e) { if (e.lengthComputable) { loaded[idx] = e.loaded; refresh(); } };
+                        await postMiningJson('/api/upload/chunk/upload', cfd);
+                        loaded[idx] = blob.size; refresh();
+                        break;
+                    } catch (err) {
+                        if (attempt === 3) { failed = err; throw err; }
+                        await new Promise(function (r) { setTimeout(r, attempt * 1000); });
+                    }
+                }
+            }
+        };
+        var pool = [];
+        for (var w = 0; w < Math.min(3, total); w++) pool.push(worker());
+        await Promise.all(pool);
+        rowProgress(row, 'saving', size, size);
+        var ffd = base(new FormData());
+        ffd.append('upload_token', token);
+        return postMiningJson(MINING_UPLOAD_URL, ffd);
+    }
+
+    function runMiningUploadQueue() {
+        if (miningUploadBusy) return;
+        var job = miningUploadQueue.shift();
+        if (!job) return;
+        miningUploadBusy = true;
+        executeMiningUpload(job.row, job.file, job.extra)
+            .then(function (data) {
+                markMiningRowUploaded(job.row, data);
+                if (window.GTMS && GTMS.toast) GTMS.toast('success', (data.file_name || 'File') + ' uploaded');
+                if (job.done) job.done(data);
+            })
+            .catch(function (err) {
+                rowUploadError(job.row, err.message || 'Upload failed.');
+                var btn = job.row.querySelector('.btn-trigger-upload');
+                if (btn) { btn.disabled = false; btn.innerHTML = job.row.classList.contains('up') ? '<i class="bi bi-arrow-repeat"></i>' : '<i class="bi bi-upload me-1"></i> Upload'; }
+                var inp = job.row.querySelector('.doc-file-input[type="file"]');
+                if (inp) inp.value = '';
+                if (job.fail) job.fail(err);
+            })
+            .finally(function () { miningUploadBusy = false; runMiningUploadQueue(); });
+    }
+
+    function queueMiningUpload(row, file, extra, done, fail) {
+        miningUploadQueue = miningUploadQueue.filter(function (j) { return j.row !== row; });
+        miningUploadQueue.push({ row: row, file: file, extra: extra, done: done, fail: fail });
+        if (miningUploadBusy) rowProgress(row, 'queued', 0, file.size);
+        runMiningUploadQueue();
+    }
+
+    $(document).on('change', '.doc-file-input', function() {
+        if (this.type !== 'file' || !this.files || !this.files[0]) return;
+        var row = this.closest('.checklist-row');
+        if (!row) return;
+        queueMiningUpload(row, this.files[0]);
     });
 
     $(document).on('click', '.btn-view-doc, .btn-view-item', function(e) {
@@ -6418,45 +7193,46 @@ function initMiningWizard() {
         }
     });
 
+    // Remove an uploaded file (field rows keep their slot; custom rows disappear)
+    function removeMiningRowFile(row, isCustom) {
+        var queued = miningUploadQueue.findIndex(function (j) { return j.row === row; });
+        if (queued !== -1) miningUploadQueue.splice(queued, 1);
+        var appId = (document.getElementById('field_mining_app_id') || {}).value || '';
+        var rm = row.querySelector('.btn-remove-file, .btn-remove-custom-row');
+        var finish = function () {
+            if (isCustom) {
+                row.classList.add('row-removing');
+                setTimeout(function () { row.remove(); updateUploadProgress(); }, 280);
+            } else {
+                markMiningRowEmpty(row);
+            }
+        };
+        if (!appId || (!row.getAttribute('data-doc-id') && !row.getAttribute('data-field-id'))) { finish(); return; }
+        if (rm) { rm.disabled = true; rm.innerHTML = '<span class="spinner-border spinner-border-sm" style="width:10px;height:10px;"></span>'; }
+        var fd = new FormData();
+        fd.append('mining_application_id', appId);
+        if (row.getAttribute('data-doc-id')) fd.append('document_id', row.getAttribute('data-doc-id'));
+        if (row.getAttribute('data-field-id')) fd.append('field_id', row.getAttribute('data-field-id'));
+        if (isCustom) fd.append('delete_record', '1');
+        postMiningJson(MINING_REMOVE_URL, fd)
+            .then(function () { finish(); if (window.GTMS && GTMS.toast) GTMS.toast('success', 'Document removed'); })
+            .catch(function (err) {
+                if (rm) { rm.disabled = false; rm.innerHTML = '<i class="bi bi-trash3"></i>'; }
+                rowUploadError(row, err.message || 'Could not remove the file.');
+            });
+    }
+
+    function confirmMiningRemove(row, isCustom) {
+        var ask = (window.GTMS && GTMS.confirm)
+            ? GTMS.confirm('Remove this attached file? It will be deleted from the dossier.', { title: 'Remove document?', confirmText: 'Yes, remove it', danger: true })
+            : Promise.resolve(window.confirm('Remove this attached file?'));
+        ask.then(function (ok) { if (ok) removeMiningRowFile(row, isCustom); });
+    }
+
     $(document).on('click', '.btn-remove-file', function(e) {
         e.preventDefault();
-        var fieldId = $(this).data('field-id');
-        var row = document.getElementById('row_field_' + fieldId);
-        var fileInput = document.getElementById('file_field_' + fieldId);
-
-        if (fileInput) {
-            fileInput.value = '';
-            fileInput.setAttribute('data-has-existing', '0');
-        }
-
-        if (row) {
-            var viewLink = row.querySelector('.btn-view-doc');
-            if (viewLink) {
-                viewLink.remove();
-            }
-            row.classList.remove('up');
-            var iconBox = row.querySelector('.ci-icon');
-            if (iconBox) {
-                iconBox.removeAttribute('style');
-                iconBox.innerHTML = '<i class="bi bi-file-earmark ci-status-icon"></i>';
-            }
-            var meta = document.getElementById('meta_field_' + fieldId);
-            if (meta) {
-                meta.textContent = 'Not uploaded · Max 25 MB';
-            }
-            var badge = document.getElementById('badge_field_' + fieldId);
-            if (badge) {
-                badge.remove();
-            }
-            var btn = row.querySelector('.btn-trigger-upload');
-            if (btn) {
-                btn.innerHTML = '<i class="bi bi-upload me-1"></i> Upload';
-                btn.className = 'btn btn-sm s5-btn-upload btn-trigger-upload';
-                btn.title = 'Upload file';
-            }
-            $(this).addClass('d-none');
-        }
-        updateUploadProgress();
+        var row = this.closest('.checklist-row');
+        if (row) confirmMiningRemove(row, false);
     });
 
     // ==========================================
@@ -6501,72 +7277,64 @@ function initMiningWizard() {
         var fileInput = document.getElementById('mining_custom_doc_file');
 
         if (!docName) {
-            Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please enter a Document Name.', confirmButtonColor: '#0F1E4D' });
+            wizFail(document.getElementById('mining_custom_doc_name'), 'Enter the document name.');
             return;
         }
         if (!fileInput.files || !fileInput.files[0]) {
-            Swal.fire({ icon: 'warning', title: 'Validation Required', text: 'Please select a file to attach.', confirmButtonColor: '#0F1E4D' });
+            wizFail(fileInput, 'Select a file to attach.');
+            return;
+        }
+
+        var container = document.getElementById('folder_checklist_' + nowId + '_' + folderId);
+        if (!container) {
+            if (window.GTMS && GTMS.toast) GTMS.toast('error', 'Folder checklist not found. Reload the page and try again.');
+            return;
+        }
+        var dupe = Array.prototype.some.call(container.querySelectorAll('.checklist-row[data-custom-id] .ci-name'), function (el) {
+            return el.textContent.replace(/^\s*Custom\s*/, '').trim().toLowerCase() === docName.toLowerCase();
+        });
+        if (dupe) {
+            wizFail(document.getElementById('mining_custom_doc_name'), 'A custom document with this name already exists in this folder.');
             return;
         }
 
         var file = fileInput.files[0];
         var customId = 'c_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        var dispSize = formatFileSize(file.size);
 
-        var container = document.getElementById('folder_checklist_' + nowId + '_' + folderId);
-        if (!container) {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'Folder checklist container not found.', confirmButtonColor: '#0F1E4D' });
-            return;
-        }
-
-        var rowHtml = '<div class="checklist-row up" id="row_custom_' + customId + '" data-custom-id="' + customId + '" data-mandatory="' + (isMandatory ? '1' : '0') + '">' +
-            '<div class="d-flex align-items-center gap-2.5 flex-grow-1 min-w-0">' +
-                '<div class="ci-icon ci-icon-carried">' +
-                    '<i class="bi bi-check2-circle ci-status-icon"></i>' +
-                '</div>' +
-                '<div class="min-w-0">' +
-                    '<div class="ci-name text-truncate">' +
-                        '<span class="badge bg-light text-primary border me-1" style="font-size:10px;">Custom</span>' +
-                        escapeHtml(docName) +
-                    '</div>' +
-                    '<div class="ci-meta text-muted text-truncate" id="meta_custom_' + customId + '">' +
-                        '<span class="text-success fw-semibold"><i class="bi bi-paperclip"></i> ' + escapeHtml(file.name) + '</span> &middot; ' + dispSize +
-                    '</div>' +
-                '</div>' +
+        var rowHtml = '<div class="checklist-row row-entering" id="row_custom_' + customId + '" data-custom-id="' + customId + '" data-mandatory="' + (isMandatory ? '1' : '0') + '">' +
+            '<div class="ci-icon"><i class="bi bi-file-earmark"></i></div>' +
+            '<div class="flex-grow-1 min-w-0">' +
+                '<div class="ci-name"><span class="badge bg-light text-primary border me-1" style="font-size:10px;">Custom</span>' + escapeHtml(docName) + '</div>' +
+                '<div class="ci-meta" id="meta_custom_' + customId + '">' + escapeHtml(file.name) + ' &middot; ' + formatFileSize(file.size) + '</div>' +
             '</div>' +
-            '<div class="d-flex align-items-center gap-2 ms-2 flex-shrink-0">' +
-                '<select class="form-select form-select-sm doc-req-select ' + (isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light') + '" name="custom_docs[' + customId + '][requirement]" data-custom-id="' + customId + '" title="Set requirement status (Mandatory or Optional)">' +
+            '<div class="d-flex align-items-center gap-1 ms-2 flex-shrink-0">' +
+                '<select class="form-select form-select-sm doc-req-select me-1 ' + (isMandatory ? 'border-danger-subtle text-danger bg-danger-subtle' : 'border-secondary-subtle text-muted bg-light') + '" name="custom_docs[' + customId + '][requirement]" data-custom-id="' + customId + '" title="Set requirement status (Mandatory or Optional)">' +
                     '<option value="mandatory" ' + (isMandatory ? 'selected' : '') + '>Mandatory</option>' +
                     '<option value="optional" ' + (!isMandatory ? 'selected' : '') + '>Optional</option>' +
                 '</select>' +
-                '<span class="badge s5-badge-attached"><i class="bi bi-check-lg me-1"></i>Attached</span>' +
-                '<a href="' + URL.createObjectURL(file) + '" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-info s5-btn-action btn-view-doc" title="View attached document">' +
-                    '<i class="bi bi-eye"></i>' +
-                '</a>' +
-                '<button type="button" class="btn btn-sm btn-outline-danger s5-btn-action btn-remove-custom-row" data-custom-id="' + customId + '" title="Remove custom document">' +
-                    '<i class="bi bi-trash3"></i>' +
-                '</button>' +
-                '<input type="hidden" name="custom_docs[' + customId + '][folder_id]" value="' + folderId + '">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger btn-remove-item btn-remove-custom-row d-none" data-custom-id="' + customId + '" title="Remove this custom document"><i class="bi bi-trash3"></i></button>' +
+                '<input type="hidden" name="custom_docs[' + customId + '][folder_id]" value="' + escapeHtml(folderId) + '">' +
                 '<input type="hidden" name="custom_docs[' + customId + '][name]" value="' + escapeHtml(docName) + '">' +
                 '<input type="hidden" name="custom_docs[' + customId + '][required]" class="custom-doc-required-input" value="' + (isMandatory ? '1' : '0') + '">' +
-                '<input type="file" name="custom_doc_files[' + customId + ']" id="file_custom_' + customId + '" class="doc-file-input d-none" data-custom-id="' + customId + '">' +
+                '<input type="hidden" class="doc-file-input" data-custom-id="' + customId + '" data-has-existing="0">' +
             '</div>' +
         '</div>';
 
         $(container).append(rowHtml);
+        var row = document.getElementById('row_custom_' + customId);
+        setTimeout(function () { row.classList.remove('row-entering'); }, 400);
 
-        var dt = new DataTransfer();
-        dt.items.add(file);
-        document.getElementById('file_custom_' + customId).files = dt.files;
-
-        var modalEl = document.getElementById('modalAddCustomMiningDoc');
-        var modal = bootstrap.Modal.getInstance(modalEl);
+        var modal = bootstrap.Modal.getInstance(document.getElementById('modalAddCustomMiningDoc'));
         if (modal) modal.hide();
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
+        // Upload right away, like the checklist rows
+        queueMiningUpload(row, file, { documentName: docName }, null, function () {
+            // keep the row so the error under it stays visible; allow removing it
+            var rm = row.querySelector('.btn-remove-custom-row');
+            if (rm) rm.classList.remove('d-none');
+        });
         updateUploadProgress();
-        if (typeof toastr !== 'undefined') {
-            toastr.success('Document "' + docName + '" attached to ' + folderName);
-        }
     });
 
     $(document).on('change', '.doc-req-select', function() {
@@ -6586,9 +7354,10 @@ function initMiningWizard() {
 
     $(document).on('click', '.btn-remove-custom-row', function(e) {
         e.preventDefault();
-        var customId = $(this).data('custom-id');
-        $('#row_custom_' + customId).remove();
-        updateUploadProgress();
+        var row = this.closest('.checklist-row');
+        if (!row) return;
+        if (!row.getAttribute('data-doc-id')) { removeMiningRowFile(row, true); return; }   // never reached the server
+        confirmMiningRemove(row, true);
     });
 
     // ==========================================
@@ -6623,7 +7392,8 @@ function initMiningWizard() {
         document.getElementById('prev_mimas_val').textContent = mimasNo || 'Not specified';
         document.getElementById('disp_rev_mimas').textContent = mimasNo || 'Not specified';
 
-        var distText = ds.options[ds.selectedIndex] ? ds.options[ds.selectedIndex].text : '-';
+        // Empty value = the "-- Select District --" placeholder: don't show it as data
+        var distText = (ds && ds.value && ds.options[ds.selectedIndex]) ? ds.options[ds.selectedIndex].text : 'Not selected';
         document.getElementById('prev_district').textContent = distText;
 
         var nowName = selectedNow ? (selectedNow.getAttribute('data-name') || selectedNow.value) : '-';
@@ -7124,16 +7894,8 @@ function initMiningWizard() {
         var ack = document.getElementById('confirm_mining_scrutiny_ack');
         if (ack && !ack.checked) {
             e.preventDefault();
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Compliance Acknowledgment Required',
-                    text: 'Please confirm the statutory declaration checkbox before submitting.',
-                    confirmButtonColor: '#0F1E4D'
-                });
-            } else {
-                alert('Please confirm the statutory declaration checkbox before submitting.');
-            }
+            // message under the declaration, no popup
+            wizFail((ack.closest('.form-check') || ack).parentElement || ack, 'Tick the declaration to submit the application.');
             ack.focus();
             return false;
         }
@@ -7145,8 +7907,16 @@ function initMiningWizard() {
         var $btn = $(this);
         $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1.5" role="status"></span> Saving Draft...');
 
-        autoSaveStepData(currentStep + 1, function() {
-            if (typeof toastr !== 'undefined') {
+        autoSaveStepData(currentStep + 1, function(res) {
+            // Leave only when the draft was really saved; otherwise stay with the
+            // errors shown under the fields (handled in autoSaveStepData).
+            if (!res || res.status !== 1) {
+                $btn.prop('disabled', false).html('<i class="bi bi-floppy me-2"></i>Save Draft &amp; Exit');
+                return;
+            }
+            if (window.GTMS && GTMS.toast) {
+                GTMS.toast('success', 'Draft saved. Returning to Mining Plans…');
+            } else if (typeof toastr !== 'undefined') {
                 toastr.success('Draft saved successfully. Returning to Mining Plans...');
             }
             setTimeout(function() {
@@ -7154,6 +7924,20 @@ function initMiningWizard() {
             }, 300);
         });
     });
+
+    @if($errors->any())
+    // Final submit was rejected by the server: open the step with the first
+    // invalid field and show every message under its field.
+    (function () {
+        var errs = @json($errors->toArray());
+        var f = document.getElementById('miningWizardForm');
+        var firstKey = Object.keys(errs)[0];
+        var el = f && (f.querySelector('[name="' + firstKey + '"]') || f.querySelector('[name="' + firstKey + '[]"]'));
+        var pane = el ? el.closest('[id^="pane_"]') : null;
+        if (pane) showStep(parseInt(pane.id.replace('pane_', ''), 10));
+        if (window.GTMSValidate && f) setTimeout(function () { GTMSValidate.showErrors(f, errs); }, 60);
+    })();
+    @endif
 
     // Quick-jump edit buttons in Step 9 Review
     $(document).on('click', '.s9-btn-edit', function(e) {

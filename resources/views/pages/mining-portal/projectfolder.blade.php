@@ -1209,6 +1209,59 @@ body[data-theme-version="dark"] .btn-filter-status.btn-filter-all.active {
     opacity: 0;
     cursor: pointer;
 }
+
+/* ==========================================================================
+   LIST PAGE ALIGNMENT FIXES (gtms-module-upgrade)
+   ========================================================================== */
+/* Title block takes the free space; the action button stays on the right */
+.pf-header-bar > :first-child { flex: 1 1 420px; min-width: 0; }
+.pf-header-bar > :last-child { flex-shrink: 0; }
+@media (max-width: 575.98px) {
+    .pf-header-bar > :last-child, .pf-header-bar > :last-child .btn, .pf-header-bar > :last-child a { width: 100%; justify-content: center; }
+}
+
+/* Toolbar: controls shrink to share one row instead of wrapping to 2-3 rows */
+.pf-toolbar > * { min-width: 0; }
+.pf-toolbar .pf-search-wrap { flex: 2 1 220px; min-width: 200px; }
+.pf-toolbar select,
+.pf-toolbar .pf-filter-select {
+    flex: 1 1 130px;
+    min-width: 120px;
+    max-width: 200px;
+    min-height: 40px;
+}
+.pf-toolbar .ms-auto select { flex: 0 0 auto; min-width: 104px; }
+
+/* Table: headers on one line; table scrolls inside its card when narrow */
+.pf-table-wrap, #pfTableWrap { overflow-x: auto; }
+table.pf-table thead th,
+#miningTable thead th { white-space: nowrap; }
+
+/* Small screens: title row (title + version pill) wraps instead of being cut off */
+.pf-header-bar .d-flex { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.pf-header-bar .pf-title { min-width: 0; overflow-wrap: anywhere; }
+.pf-tabs-dock { flex-wrap: wrap; max-width: 100%; row-gap: 4px; }
+
+/* Folder document table: actions stay on one line, notes wrap inside their own column */
+.pf-doc-table td:last-child { white-space: nowrap; width: 1%; }
+.pf-doc-table .pf-btn-upload-direct { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; min-height: 34px; }
+.pf-doc-table .pf-review-note {
+    display: block;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.45;
+    max-width: 100%;
+    padding: 4px 8px;
+    overflow-wrap: anywhere;
+}
+.pf-doc-table td:nth-child(2) { min-width: 220px; }
+
+/* DataTables pagination: no grey wrapper box, even 36px buttons */
+.dataTables_wrapper .dataTables_paginate { background: transparent !important; padding: 0 !important; border-radius: 0 !important; gap: 6px !important; }
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    min-width: 36px !important; height: 36px !important; padding: 0 12px !important; margin: 0 !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
 </style>
 
 <div class="content-body default-height">
@@ -1875,7 +1928,7 @@ body[data-theme-version="dark"] .btn-filter-status.btn-filter-all.active {
                                                             <div>
                                                                 <div class="fw-bold text-dark pf-doc-name-text">{{ $doc->document_name }}</div>
                                                                 @if($doc->review_note)
-                                                                    <div class="badge bg-danger-subtle text-danger border border-danger-subtle mt-1" style="font-size:0.7rem;">
+                                                                    <div class="badge bg-danger-subtle text-danger border border-danger-subtle mt-1 pf-review-note" style="font-size:0.7rem;">
                                                                         <i class="fa fa-info-circle me-1"></i>Note: {{ $doc->review_note }}
                                                                     </div>
                                                                 @endif
@@ -1930,10 +1983,10 @@ body[data-theme-version="dark"] .btn-filter-status.btn-filter-all.active {
                                                             </form>
 
                                                             @if($doc->file_path)
-                                                                <a href="{{ asset($doc->file_path) }}" target="_blank" class="btn btn-sm btn-light border px-2 py-1" title="View Document">
+                                                                <a href="{{ asset($doc->file_path) }}" target="_blank" class="btn btn-sm btn-light border px-2 py-1 btn-view-doc" data-file-name="{{ $doc->file_name ?: $doc->document_name }}" data-doc-name="{{ $doc->document_name }}" title="View Document" aria-label="View {{ $doc->document_name }}">
                                                                     <i class="fa fa-eye text-primary"></i>
                                                                 </a>
-                                                                <a href="{{ asset($doc->file_path) }}" download class="btn btn-sm btn-light border px-2 py-1" title="Download Document">
+                                                                <a href="{{ asset($doc->file_path) }}" download class="btn btn-sm btn-light border px-2 py-1" title="Download Document" aria-label="Download {{ $doc->document_name }}">
                                                                     <i class="fa fa-download text-secondary"></i>
                                                                 </a>
                                                             @endif

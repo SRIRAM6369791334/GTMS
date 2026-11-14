@@ -659,7 +659,7 @@ body[data-theme-version="dark"] .table-admin .doc-name {
 
         <div class="col-md-3 col-sm-6">
           <div class="data-cell">
-            <div class="data-cell-label">Customer Unique ID (MIMAS)</div>
+            <div class="data-cell-label">Customer Unique ID </div>
             <div class="data-cell-value">
               <span class="data-value-text font-monospace">{{ $project->customer?->mimas_no ?: 'N/A' }}</span>
               @if(!empty($project->customer?->mimas_no))
@@ -1967,7 +1967,7 @@ document.addEventListener('DOMContentLoaded', function() {
             '<h5 class="fw-bold" style="color:#0F1E4D;">' + fileName + '</h5>' +
             '<p class="text-muted small">Direct in-browser preview is not supported for .' + fileExt.toUpperCase() + ' files.</p>' +
             '<a href="' + fileUrl + '" class="btn btn-primary px-4 py-2 mt-2" download>' +
-            '<i class="fa fa-download me-1"></i> Download PPT Documents w</a>' +
+            '<i class="fa fa-download me-1"></i> Download Now</a>' +
             '</div>';
         }
       }

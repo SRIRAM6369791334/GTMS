@@ -1359,6 +1359,40 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
 
 .pr-timeline-dot.phase-lease { background-color: #64748b; }
 .pr-timeline-dot.phase-mining { background-color: #3b82f6; }
+
+/* ==========================================================================
+   LIST PAGE ALIGNMENT FIXES (gtms-module-upgrade)
+   ========================================================================== */
+/* Title block takes the free space; the action button stays on the right */
+.pr-header-bar > :first-child { flex: 1 1 420px; min-width: 0; }
+.pr-header-bar > :last-child { flex-shrink: 0; }
+@media (max-width: 575.98px) {
+    .pr-header-bar > :last-child, .pr-header-bar > :last-child .btn, .pr-header-bar > :last-child a { width: 100%; justify-content: center; }
+}
+
+/* Toolbar: controls shrink to share one row instead of wrapping to 2-3 rows */
+.pr-toolbar > * { min-width: 0; }
+.pr-toolbar .pr-search-wrap { flex: 2 1 220px; min-width: 200px; }
+.pr-toolbar select,
+.pr-toolbar .pr-filter-select {
+    flex: 1 1 130px;
+    min-width: 120px;
+    max-width: 200px;
+    min-height: 40px;
+}
+.pr-toolbar .ms-auto select { flex: 0 0 auto; min-width: 104px; }
+
+/* Table: headers on one line; table scrolls inside its card when narrow */
+.pr-table-wrap, #prTableWrap { overflow-x: auto; }
+table.pr-table thead th,
+#miningTable thead th { white-space: nowrap; }
+
+/* DataTables pagination: no grey wrapper box, even 36px buttons */
+.dataTables_wrapper .dataTables_paginate { background: transparent !important; padding: 0 !important; border-radius: 0 !important; gap: 6px !important; }
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    min-width: 36px !important; height: 36px !important; padding: 0 12px !important; margin: 0 !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
 </style>
 
 <div class="content-body default-height">
@@ -2237,7 +2271,7 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
                                                 File: <span class="text-primary fw-semibold">{{ $doc->file_name }}</span> &middot; 
                                                 Uploaded {{ $doc->uploaded_at ? $doc->uploaded_at->format('d M Y') : '' }}
                                             @else
-                                                <span class="text-danger">PPT Documents t yet uploaded</span>
+                                                <span class="text-danger">Not yet uploaded</span>
                                             @endif
                                         </div>
                                         @if($doc->review_note)
@@ -2260,7 +2294,7 @@ body[data-theme-version="dark"] .pr-file-link-chip:hover {
                                     @endif
 
                                     @if($doc->file_path)
-                                        <a href="{{ asset($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="View Document">
+                                        <a href="{{ asset($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-secondary btn-view-doc" data-file-name="{{ $doc->file_name ?: $doc->document_name }}" data-doc-name="{{ $doc->document_name }}" title="View Document" aria-label="View {{ $doc->document_name }}">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     @endif

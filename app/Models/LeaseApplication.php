@@ -40,6 +40,10 @@ class LeaseApplication extends Model
         'paid_amount',
         'pending_amount',
         'payment_status',
+        'waived_amount',
+        'waiver_reason',
+        'waived_by',
+        'waived_at',
         'status',
         'go_number',
         'go_date',
@@ -56,6 +60,8 @@ class LeaseApplication extends Model
         'product_value' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'pending_amount' => 'decimal:2',
+        'waived_amount' => 'decimal:2',
+        'waived_at' => 'datetime',
         'start_date' => 'date',
         'end_date' => 'date',
         'go_date' => 'date',
@@ -167,5 +173,16 @@ class LeaseApplication extends Model
     public function masterProject(): BelongsTo
     {
         return $this->belongsTo(MasterProject::class, 'master_project_id');
+    }
+
+    /** Fee waived: nothing is chargeable, see waived_amount + waiver_reason. */
+    public function isFree(): bool
+    {
+        return $this->payment_status === 'free';
+    }
+
+    public function waivedByUser()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'waived_by');
     }
 }

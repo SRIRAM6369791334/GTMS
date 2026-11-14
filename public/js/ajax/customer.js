@@ -159,7 +159,7 @@ $(document).ready(function() {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function(key, value) {
                         $('#customeradd .' + key + '_error').text(value[0]);
-                        toastr.error(value[0]);
+                        $('#customeradd [name="' + key + '"]').addClass('is-invalid'); // error shown under the field only
                     });
                 } else {
                     toastr.error("Failed to add customer. Please check the inputs.");
@@ -334,7 +334,7 @@ $(document).ready(function() {
                     var errors = xhr.responseJSON.errors;
                     $.each(errors, function(key, value) {
                         $('#customeredit .edit_' + key + '_error').text(value[0]);
-                        toastr.error(value[0]);
+                        $('#customeredit [name="' + key + '"]').addClass('is-invalid'); // error shown under the field only
                     });
                 } else {
                     toastr.error("Failed to update customer.");

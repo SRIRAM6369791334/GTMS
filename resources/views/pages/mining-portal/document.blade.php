@@ -1057,7 +1057,7 @@ $(document).ready(function() {
         if (!file || !$item.length) return;
         var maxSize = 25 * 1024 * 1024; // 25MB
         if (file.size > maxSize) {
-            alert('The selected file size is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.');
+            (window.GTMS && GTMS.toast ? GTMS.toast('error', 'The selected file is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.') : alert('The selected file is ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB. Maximum allowed size is 25 MB.'));
             return;
         }
 
@@ -1090,14 +1090,14 @@ $(document).ready(function() {
             if (res.status === 1 || res.success) {
                 window.location.reload();
             } else {
-                alert(res.message || 'File upload failed');
+                (window.GTMS && GTMS.toast ? GTMS.toast('error', res.message || 'File upload failed') : alert(res.message || 'File upload failed'));
                 $label.removeClass('disabled').css('pointer-events', '');
                 $label.find('.upload-text').text(origText);
             }
         })
         .catch(function(err) {
             console.error(err);
-            alert('Network error while uploading file.');
+            (window.GTMS && GTMS.toast ? GTMS.toast('error', 'Network error while uploading file.') : alert('Network error while uploading file.'));
             $label.removeClass('disabled').css('pointer-events', '');
             $label.find('.upload-text').text(origText);
         });
@@ -1119,7 +1119,16 @@ $(document).ready(function() {
         var appId = $btn.data('app-id');
         var docName = $btn.data('doc-name') || 'this document';
 
-        if (!confirm('Are you sure you want to remove "' + docName + '"?')) return;
+        // SweetAlert confirm is async: ask once, then re-run this handler when confirmed
+        if (!$btn.data('confirmed')) {
+            if (window.GTMS && GTMS.confirm) {
+                GTMS.confirm('Remove "' + docName + '"? The uploaded file will be deleted.', { danger: true, confirmText: 'Remove' })
+                    .then(function (ok) { if (ok) { $btn.data('confirmed', 1); $btn.trigger('click'); } });
+                return;
+            }
+            if (!confirm('Are you sure you want to remove "' + docName + '"?')) return;
+        }
+        $btn.removeData('confirmed');
 
         $btn.prop('disabled', true).html('<i class="spinner-border spinner-border-sm"></i>');
 
@@ -1141,13 +1150,13 @@ $(document).ready(function() {
             if (res.status === 1 || res.success) {
                 window.location.reload();
             } else {
-                alert(res.message || 'Failed to remove document.');
+                (window.GTMS && GTMS.toast ? GTMS.toast('error', res.message || 'Failed to remove document.') : alert(res.message || 'Failed to remove document.'));
                 $btn.prop('disabled', false).html('<i class="bi bi-trash3"></i>');
             }
         })
         .catch(function(err) {
             console.error(err);
-            alert('Network error while removing document.');
+            (window.GTMS && GTMS.toast ? GTMS.toast('error', 'Network error while removing document.') : alert('Network error while removing document.'));
             $btn.prop('disabled', false).html('<i class="bi bi-trash3"></i>');
         });
     });

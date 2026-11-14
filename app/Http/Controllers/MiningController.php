@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Validator;
 use App\Models\ChunkedUpload;
 use App\Services\ChunkedUploadService;
 
@@ -59,7 +60,23 @@ class MiningController extends Controller
      */
     public function newApplication(Request $request)
     {
-        $customers = Customer::orderBy('customer_name')->get();
+        // Reload safety: the wizard URL gets ?resume=<draft id> after the first
+        // autosave. If a reload happens without it (e.g. before that save came
+        // back), reopen the draft this session was filling in instead of
+        // starting over at Step 1. A plain /newapplication starts a new one.
+        if (!$request->filled('resume') && !$request->filled('lease_id')) {
+            if (!$request->has('step')) {
+                session()->forget('mining_wizard_draft_id');
+            } elseif ((int) $request->query('step') > 1 && ($draftId = session('mining_wizard_draft_id'))) {
+                $draft = MiningApplication::where('id', $draftId)->where('status', 'draft')->first();
+                if ($draft) {
+                    return redirect()->route('newapplication', ['resume' => $draft->id, 'step' => (int) $request->query('step')]);
+                }
+                session()->forget('mining_wizard_draft_id');
+            }
+        }
+
+        $customers =Customer::orderBy('customer_name')->get();
         $districts = District::where('status', 1)->orderBy('name')->get();
         $minerals = Mineral::where('status', 1)->orderBy('name')->get();
         $applicantTypes = ApplicantType::where('status', 1)->orderBy('name')->get();
@@ -175,9 +192,17 @@ class MiningController extends Controller
                     'product_value'            => $lease->product_value ?? 0,
                     'paid_amount'              => $lease->paid_amount ?? 0,
                     'pending_amount'           => $lease->pending_amount ?? 0,
-                    'payment_status'           => $lease->payment_status ?? 'pending',
+                    // A waived (free) lease fee does not carry over: mining has no
+                    // 'free' status, so start its own payment as pending.
+                    'payment_status'           => in_array($lease->payment_status, ['pending', 'partial', 'paid'], true) ? $lease->payment_status : 'pending',
                 ];
             }
+        }
+
+        // Step guard: without a draft (resume) or a lease to continue there is
+        // nothing to show in later steps, so a bare ?step=N always starts at 1.
+        if (empty($prefillData['mining_app_id']) && empty($prefillData['lease_application_id'])) {
+            $prefillData['current_step'] = 1;
         }
 
         return view('pages.mining-portal.newapplication', compact(
@@ -211,7 +236,7 @@ class MiningController extends Controller
             'taluk'                     => 'nullable|string|max:255',
             'village'                   => 'nullable|string|max:255',
             'survey_numbers_text'       => 'nullable|string|max:500',
-            'area_extent_ha'            => 'nullable|numeric',
+            'area_extent_ha'            => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'other_mineral_name'        => 'nullable|string|max:255',
         ];
 
@@ -231,19 +256,20 @@ class MiningController extends Controller
         }
 
         // Check if customer_id is provided or if new customer details are submitted
+        $this->normalizeIdentityInput($request);
         if ($request->filled('customer_id')) {
             $rules['customer_id'] = 'required|exists:customers,id';
+            // existing customer: still check formats of anything typed
+            $rules = array_merge($this->identityFormatRules(false), $rules);
         } else {
-            $rules['client_name']              = 'required|string|max:255';
-            $rules['secondary_contact_person'] = 'nullable|string|max:255';
-            $rules['company_name']             = 'required|string|max:255';
-            $rules['mobile_num']               = 'required|string|max:20';
-            $rules['secondary_mobile_num']     = 'nullable|string|max:20';
-            $rules['pan']                      = 'nullable|string|max:10';
-            $rules['aadhaar_no']               = 'nullable|string|max:14';
+            // new customer: name, company and mobile are mandatory, all formats checked
+            $rules = array_merge($rules, $this->identityFormatRules(true));
         }
+        $rules['product_value']  = 'nullable|numeric|min:0';
+        $rules['paid_amount']    = 'nullable|numeric|min:0';
+        $rules['payment_status'] = 'nullable|in:pending,partial,paid';
 
-        $request->validate($rules);
+        $request->validate($rules, $this->identityFormatMessages());
 
         // Resolve mineral IDs array
         $mineralIds = $request->input('mineral_ids', []);
@@ -572,6 +598,8 @@ class MiningController extends Controller
             }
         }
 
+        session()->forget('mining_wizard_draft_id');
+
         return redirect()->route('projectfolder', ['id' => $miningApp->id])
             ->with('success', 'Mining Application ' . $applicationNo . ' registered successfully!');
     }
@@ -583,6 +611,36 @@ class MiningController extends Controller
     {
         $appId = $request->input('mining_app_id');
         $step = max(1, min(9, (int)$request->input('current_step', 1)));
+
+        // Autosave is partial, so formats are checked only for fields that are filled
+        $this->normalizeIdentityInput($request);
+        $validator = Validator::make($request->all(), array_merge($this->identityFormatRules(false), [
+            'mining_app_id'     => 'nullable|integer|exists:mining_applications,id',
+            'customer_id'       => 'nullable|integer|exists:customers,id',
+            'nature_of_work_id' => 'nullable|exists:nature_of_works,id',
+            'applicant_type_id' => 'nullable|exists:applicant_types,id',
+            'district_id'       => 'nullable|exists:districts,id',
+            'area_extent_ha'    => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
+            'product_value'     => 'nullable|numeric|min:0',
+            'paid_amount'       => 'nullable|numeric|min:0',
+            'payment_status'    => 'nullable|in:pending,partial,paid',
+        ]), $this->identityFormatMessages());
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Please fix the highlighted fields.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        // A new draft needs a client: never attach it to a placeholder customer
+        if (!$appId && !$request->filled('customer_id') && !$request->filled('client_name')) {
+            return response()->json([
+                'status'  => 0,
+                'message' => 'Enter the client details in Step 1 before the draft can be saved.',
+                'errors'  => ['client_name' => ['Enter the client / representative name.']],
+            ], 422);
+        }
 
         // Resolve or create Customer record if client info is present
         $customerId = $request->input('customer_id');
@@ -615,7 +673,7 @@ class MiningController extends Controller
                     'address'                  => $request->input('address'),
                     'status'                   => 1,
                     'branch_id'                => Auth::user()->branch_id ?? null,
-                    'created_by'               => Auth::id() ?? 1,
+                    'created_by'               => Auth::id(),
                 ]);
             }
             $customerId = $customer->id;
@@ -697,11 +755,12 @@ class MiningController extends Controller
                 'master_project_id'         => $master?->id,
                 'lease_application_id'      => $request->input('lease_application_id') ?: null,
                 'application_no'            => $applicationNo,
-                'customer_id'               => $customerId ?: 1,
-                'nature_of_work_id'         => $request->input('nature_of_work_id') ?: 1,
+                // Real values only: fields not chosen yet stay NULL until their step
+                'customer_id'               => $customerId,
+                'nature_of_work_id'         => $request->input('nature_of_work_id') ?: null,
                 'other_nature_of_work_name' => $isOthers ? $request->input('other_nature_of_work_name') : null,
-                'applicant_type_id'         => $request->input('applicant_type_id') ?: 1,
-                'district_id'               => $request->input('district_id') ?: 1,
+                'applicant_type_id'         => $request->input('applicant_type_id') ?: null,
+                'district_id'               => $request->input('district_id') ?: null,
                 'mineral_id'                => $primaryMineralId,
                 'other_mineral_name'        => $isMiningPlan ? $request->input('other_mineral_name') : null,
                 'plan_type_id'              => $isMiningPlan ? $request->input('plan_type_id') : null,
@@ -713,13 +772,16 @@ class MiningController extends Controller
                 'current_step'              => $step,
                 'status'                    => 'draft',
                 'branch_id'                 => Auth::user()->branch_id ?? null,
-                'created_by'                => Auth::id() ?? 1,
+                'created_by'                => Auth::id(),
             ]);
 
             if ($isMiningPlan && !empty($mineralIds)) {
                 $miningApp->minerals()->sync($mineralIds);
             }
         }
+
+        // Remember the draft so a reload without ?resume= reopens it (see newApplication)
+        session(['mining_wizard_draft_id' => $miningApp->id]);
 
         return response()->json([
             'status'         => 1,
@@ -930,11 +992,12 @@ class MiningController extends Controller
                 ->where('document_field_id', $fieldId)
                 ->first();
         } elseif ($appId && $docNameInput) {
+            // Custom document (no checklist field): exact name in the same folder only.
+            // A LIKE match here could overwrite a different document's file.
             $doc = MiningDocument::where('mining_application_id', $appId)
-                ->where(function ($q) use ($docNameInput) {
-                    $q->where('document_name', $docNameInput)
-                      ->orWhere('document_name', 'like', '%' . $docNameInput . '%');
-                })
+                ->whereNull('document_field_id')
+                ->where('document_name', $docNameInput)
+                ->when($folderId, fn ($q) => $q->where('folder_id', $folderId))
                 ->first();
         }
 
@@ -1162,15 +1225,20 @@ class MiningController extends Controller
                 if (file_exists(storage_path('app/public/' . $path))) @unlink(storage_path('app/public/' . $path));
             }
 
-            $doc->update([
-                'file_name'   => null,
-                'file_path'   => null,
-                'file_type'   => null,
-                'file_size'   => null,
-                'status'      => 'pending',
-                'uploaded_by' => null,
-                'uploaded_at' => null,
-            ]);
+            if ($request->boolean('delete_record') && empty($doc->document_field_id)) {
+                // Wizard custom row removed: drop the record, not just the file
+                $doc->delete();
+            } else {
+                $doc->update([
+                    'file_name'   => null,
+                    'file_path'   => null,
+                    'file_type'   => null,
+                    'file_size'   => null,
+                    'status'      => 'pending',
+                    'uploaded_by' => null,
+                    'uploaded_at' => null,
+                ]);
+            }
         }
 
         // Clean session draft
@@ -1337,6 +1405,55 @@ class MiningController extends Controller
      * Order: linked lease's master -> existing master named in the request -> new standalone master.
      * With $allowCreate = false (drafts) no new pipeline entry is created and null may be returned.
      */
+    /**
+     * Upper/lower-case identity fields so the format rules match what users type.
+     */
+    private function normalizeIdentityInput(Request $request): void
+    {
+        $request->merge(array_filter([
+            'pan'      => $request->filled('pan') ? strtoupper(trim($request->input('pan'))) : null,
+            'gstin'    => $request->filled('gstin') ? strtoupper(trim($request->input('gstin'))) : null,
+            'mimas_no' => $request->filled('mimas_no') ? strtoupper(trim($request->input('mimas_no'))) : null,
+            'email'    => $request->filled('email') ? strtolower(trim($request->input('email'))) : null,
+        ], fn ($v) => $v !== null));
+    }
+
+    /**
+     * Format rules for applicant identity fields (same as Customers / Lease).
+     * $requireCore: client name, company and mobile are mandatory (final submit
+     * with a new customer); autosave validates formats only when present.
+     */
+    private function identityFormatRules(bool $requireCore): array
+    {
+        $req = $requireCore ? 'required' : 'nullable';
+        return [
+            'client_name'              => [$req, 'string', 'min:2', 'max:100', "regex:/^[A-Za-z][A-Za-z .'\-]*$/"],
+            'company_name'             => [$req, 'string', 'max:255'],
+            'secondary_contact_person' => ['nullable', 'string', 'max:100'],
+            'mobile_num'               => [$req, 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_mobile_num'     => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:mobile_num'],
+            'email'                    => ['nullable', 'email', 'max:255'],
+            'pan'                      => ['nullable', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/'],
+            'aadhaar_no'               => ['nullable', 'regex:/^[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}$/'],
+            'gstin'                    => ['nullable', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
+            'address'                  => ['nullable', 'string', 'max:500'],
+        ];
+    }
+
+    private function identityFormatMessages(): array
+    {
+        return [
+            'client_name.regex'          => 'Client name may contain letters, spaces, dots and hyphens only.',
+            'mobile_num.regex'           => 'Mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_mobile_num.regex' => 'Secondary mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_mobile_num.different' => 'Secondary mobile number must be different from the primary number.',
+            'pan.regex'                  => 'PAN must be 5 letters, 4 numbers and 1 letter (e.g. ABCDE1234F).',
+            'aadhaar_no.regex'           => 'Aadhaar must be 12 digits (e.g. 9876-5432-1012).',
+            'gstin.regex'                => 'GSTIN must be a valid 15-character number (e.g. 33ABCDE1234F1Z5).',
+            'area_extent_ha.regex'       => 'Area must be numbers separated by dots, e.g. 2.45 (hectares) or 19.00.4 (patta).',
+        ];
+    }
+
     private function resolveMasterProject(Request $request, bool $allowCreate, $customerId = null, $leaseId = null): ?\App\Models\MasterProject
     {
         $pipeline = app(\App\Services\MasterPipelineService::class);
@@ -1375,7 +1492,8 @@ class MiningController extends Controller
                 $q->where('application_no', 'like', "MP-{$year}-%")
                   ->orWhere('application_no', 'like', "MDG-{$year}-%");
             })
-            ->whereNull('deleted_at')
+            // Soft-deleted rows still hold their number in the UNIQUE index,
+            // so they must count too (otherwise a deleted MP-..-0001 is reused -> 500).
             ->orderByRaw("CAST(SUBSTRING_INDEX(application_no, '-', -1) AS UNSIGNED) DESC")
             ->lockForUpdate()
             ->first();
@@ -1420,7 +1538,7 @@ class MiningController extends Controller
         $prefix = "ENV-{$category}-{$year}-";
         $maxProj = DB::table('environment_projects')
             ->where('project_code', 'like', "{$prefix}%")
-            ->whereNull('deleted_at')
+            // soft-deleted codes stay in the UNIQUE index, so count them too
             ->orderByRaw("CAST(SUBSTRING_INDEX(project_code, '-', -1) AS UNSIGNED) DESC")
             ->lockForUpdate()
             ->first();

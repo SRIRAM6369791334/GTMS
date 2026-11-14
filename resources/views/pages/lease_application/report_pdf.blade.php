@@ -184,7 +184,11 @@
       color: var(--tn-navy);
       letter-spacing: -0.01em;
     }
+    .dossier-identifiers {
+      flex-shrink: 0;
+    }
     .common-id-chip {
+      white-space: nowrap; /* keep "Common ID: GTMS-..." on one line */
       display: inline-flex;
       align-items: center;
       gap: 4px;
@@ -613,8 +617,13 @@
 
       <div class="kpi-box">
         <div class="kpi-label"><i class="bi bi-cash-stack text-info"></i> Financial Settlement</div>
+        @if(($application->payment_status ?? '') === 'free')
+          <div class="kpi-value" style="color:#6D28D9;">Free &middot; ₹ 0.00 Due</div>
+          <div class="kpi-sub">₹ {{ number_format((float)($application->waived_amount ?? 0), 2) }} waived &middot; Status: Free (fee waived)</div>
+        @else
         <div class="kpi-value">₹ {{ number_format((float)($application->pending_amount ?? 50000), 2) }} Due</div>
         <div class="kpi-sub">Total ₹ {{ number_format((float)($application->product_value ?? 50000), 2) }} &middot; Status: {{ ucfirst($application->payment_status ?? 'Pending') }}</div>
+        @endif
       </div>
     </div>
 
@@ -641,7 +650,7 @@
         </div>
 
         <div class="grid-item">
-          <div class="label">Customer Unique ID (MIMAS)</div>
+          <div class="label">Customer Unique ID </div>
           <div class="value font-mono">{{ $application->customer?->mimas_no ?? 'N/A' }}</div>
           <div class="value-sub">State Mining Directorate Client No</div>
         </div>
@@ -1021,8 +1030,13 @@
       <div class="grid-4">
         <div class="grid-item">
           <div class="label">Quoted Concession Value</div>
+          @if(($application->payment_status ?? '') === 'free')
+            <div class="value font-mono" style="text-decoration:line-through;opacity:.7;">₹ {{ number_format((float)($application->waived_amount ?? 0), 2) }}</div>
+            <div class="value-sub" style="color:#6D28D9;font-weight:600;">Waived &mdash; no charge</div>
+          @else
           <div class="value font-mono">₹ {{ number_format((float)($application->product_value ?? 50000), 2) }}</div>
           <div class="value-sub">Statutory Application Commercial Fee</div>
+          @endif
         </div>
 
         <div class="grid-item">
@@ -1043,7 +1057,9 @@
             @php
               $payStatus = strtolower($application->payment_status ?? 'pending');
             @endphp
-            @if($payStatus === 'paid')
+            @if($payStatus === 'free')
+              <span class="badge" style="background:#F5F3FF;color:#5B21B6;border:1px solid #DDD6FE;"><i class="bi bi-gift-fill"></i> FREE &middot; FEE WAIVED</span>
+            @elseif($payStatus === 'paid')
               <span class="badge badge-approved"><i class="bi bi-check-circle-fill"></i> FULLY SETTLED</span>
             @elseif($payStatus === 'partial')
               <span class="badge badge-scrutiny"><i class="bi bi-hourglass-split"></i> PARTIAL PAYMENT</span>
@@ -1060,6 +1076,14 @@
           </div>
         </div>
       </div>
+      @if(($application->payment_status ?? '') === 'free')
+        @include('pages.lease_application.partials.fee_waiver_note', [
+          'waivedAmount' => $application->waived_amount,
+          'waiverReason' => $application->waiver_reason,
+          'waivedByName' => $application->waivedByUser?->name,
+          'waivedAt'     => $application->waived_at,
+        ])
+      @endif
     </div>
 
     <!-- 7. OFFICIAL AUDIT TRAIL & SCRUTINY TIMELINE -->

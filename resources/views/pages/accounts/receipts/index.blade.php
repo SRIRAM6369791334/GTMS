@@ -602,7 +602,9 @@
                     document.getElementById('modal_hist_balance').textContent = '₹ ' + formatInr(app.pending_amount);
 
                     let statusBadge = '<span class="badge bg-warning-subtle text-warning-emphasis border">Pending</span>';
-                    if (app.payment_status === 'paid' || app.pending_amount <= 0) {
+                    if (app.payment_status === 'free') {
+                        statusBadge = '<span class="badge border" style="background:#F5F3FF;color:#5B21B6;border-color:#DDD6FE!important;">Free (Waived)</span>';
+                    } else if (app.payment_status === 'paid' || app.pending_amount <= 0) {
                         statusBadge = '<span class="badge bg-success-subtle text-success border">Settled</span>';
                     } else if (app.payment_status === 'partial') {
                         statusBadge = '<span class="badge bg-primary-subtle text-primary border">Partial</span>';

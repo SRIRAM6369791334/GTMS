@@ -1,10 +1,14 @@
 @extends('layouts.app')
 @section('title', 'Project Handling Persons - Step 6')
+@push('styles')
+<link href="/css/gtms-lease.css?v=3" rel="stylesheet">
+@endpush
+
 @section('main_content')
 
 <div class="content-body default-height">
   <div class="container-fluid">
-    <div id="gtms-step6-page">
+    <div id="gtms-step6-page" class="lz-page">
       <div class="wizard-wrap">
 
         <!-- 8-STEP PROGRESS BAR (Exact Native Stepper Parity with Steps 1-5) -->
@@ -19,13 +23,13 @@
           <div class="sp-step"><div class="circ">8</div><div class="sp-label">Review</div></div>
         </div>
 
-        <div class="card s6-main-card wizard-card">
+        <div class="card s6-main-card wizard-card lz-card">
           <!-- CARD HEADER -->
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div>
-              <div class="s6-eyebrow text-uppercase fw-bold text-primary">Step 6 of 8 &bull; Project Execution Team</div>
-              <h4 class="s6-title mb-1">Project Handling Team &amp; In-Charge Persons</h4>
-              <div class="s6-subtitle">Assign field officers, surveyors, documentation coordinators, and technical team members responsible for executing this mining lease application.</div>
+              <div class="s6-eyebrow text-uppercase fw-bold text-primary lz-eyebrow">Step 6 of 8 &bull; Project Execution Team</div>
+              <h4 class="s6-title mb-1 lz-title">Project Handling Team &amp; In-Charge Persons</h4>
+              <div class="s6-subtitle lz-subtitle">Assign field officers, surveyors, documentation coordinators, and technical team members responsible for executing this mining lease application.</div>
             </div>
             <span class="badge s6-team-pill">
               <i class="bi bi-people-fill me-1.5"></i>Multi-User Allocation
@@ -110,15 +114,15 @@
             </div>
 
             <!-- WIZARD ACTIONS BAR -->
-            <div class="s6-actions d-flex justify-content-between align-items-center pt-3 border-top">
-              <a href="{{ route('step5') }}" class="btn s6-btn-back">
+            <div class="s6-actions d-flex justify-content-between align-items-center pt-3 border-top lz-actions">
+              <a href="{{ route('step5') }}" class="btn s6-btn-back lz-btn lz-btn-ghost">
                 <i class="bi bi-arrow-left me-2"></i>Back to Documents
               </a>
               <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn s6-btn-draft" id="btn_save_draft_exit">
+                <button type="button" class="btn s6-btn-draft lz-btn lz-btn-outline" id="btn_save_draft_exit">
                   <i class="bi bi-floppy me-2"></i>Save Draft &amp; Exit
                 </button>
-                <button type="submit" class="btn s6-btn-continue" id="btn_submit_step6">
+                <button type="submit" class="btn s6-btn-continue lz-btn lz-btn-primary" id="btn_submit_step6">
                   Continue to Payment <i class="bi bi-arrow-right ms-2"></i>
                 </button>
               </div>
@@ -139,77 +143,24 @@
   /* ==========================================================================
      LIGHT MODE STYLES (Strictly Scoped to #gtms-step6-page)
      ========================================================================== */
+  /* Personnel table keeps readable input widths; the .table-responsive
+     wrapper scrolls sideways on narrow screens instead of squashing inputs. */
+  #gtms-step6-page .s6-table {
+    min-width: 680px;
+  }
+
   #gtms-step6-page {
-    max-width: 860px;
+    /* wider than the form steps: the personnel table needs room for 3 inputs */
+    max-width: 1040px;
     margin: 0 auto;
     padding: 12px 10px 48px;
   }
 
   /* STEPPER PROGRESS TUNING */
-  #gtms-step6-page .step-progress {
-    margin-bottom: 22px;
-  }
 
-  #gtms-step6-page .step-progress .sp-label {
-    font-size: 0.70rem;
-    font-weight: 600;
-    color: #475569;
-    letter-spacing: 0.02em;
-  }
+/* MAIN WIZARD CARD */
 
-  #gtms-step6-page .step-progress .sp-step.active .sp-label {
-    color: #0F1E4D;
-    font-weight: 700;
-  }
-
-  #gtms-step6-page .step-progress .sp-step.done .sp-label {
-    color: #059669;
-  }
-
-  #gtms-step6-page .step-progress .sp-step.done .circ {
-    background-color: #059669;
-    border-color: #059669;
-    color: #ffffff;
-  }
-
-  #gtms-step6-page .step-progress .sp-step.active .circ {
-    background-color: #0F1E4D;
-    border-color: #0F1E4D;
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(15, 30, 77, 0.15);
-  }
-
-  /* MAIN WIZARD CARD */
-  #gtms-step6-page .s6-main-card {
-    border-radius: 16px;
-    border: 1.5px solid #e2e8f0;
-    background: #ffffff;
-    padding: 28px 32px;
-    box-shadow: 0 4px 20px -2px rgba(15, 30, 77, 0.05);
-  }
-
-  #gtms-step6-page .s6-eyebrow {
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    color: #f59e0b !important;
-    margin-bottom: 4px;
-  }
-
-  #gtms-step6-page .s6-title {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: #0F1E4D;
-    letter-spacing: -0.02em;
-  }
-
-  #gtms-step6-page .s6-subtitle {
-    font-size: 0.82rem;
-    color: #64748b;
-    line-height: 1.45;
-  }
-
-  #gtms-step6-page .s6-team-pill {
+#gtms-step6-page .s6-team-pill {
     background: #e0e7ff;
     color: #3730a3;
     border: 1px solid #c7d2fe;
@@ -455,102 +406,12 @@
   }
 
   /* WIZARD ACTIONS */
-  #gtms-step6-page .s6-actions {
-    border-top: 1.5px solid #e2e8f0 !important;
-  }
 
-  #gtms-step6-page .s6-btn-back {
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    color: #475569;
-    font-weight: 600;
-    font-size: 0.84rem;
-    padding: 8px 18px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  #gtms-step6-page .s6-btn-back:hover {
-    background: #f1f5f9;
-    color: #1e293b;
-    border-color: #94a3b8;
-  }
-
-  #gtms-step6-page .s6-btn-draft {
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    color: #0F1E4D;
-    font-weight: 600;
-    font-size: 0.84rem;
-    padding: 8px 18px;
-    border-radius: 8px;
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  #gtms-step6-page .s6-btn-draft:hover {
-    background: #f8fafc;
-    border-color: #94a3b8;
-    color: #0F1E4D;
-  }
-
-  #gtms-step6-page .s6-btn-continue {
-    background: linear-gradient(135deg, #0F1E4D 0%, #1e3a8a 100%);
-    color: #ffffff;
-    border: none;
-    font-weight: 600;
-    font-size: 0.86rem;
-    padding: 8px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.2);
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  #gtms-step6-page .s6-btn-continue:hover {
-    background: linear-gradient(135deg, #0a1435 0%, #172e6e 100%);
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(15, 30, 77, 0.3);
-  }
-
-  /* ==========================================================================
+/* ==========================================================================
      DARK MODE PARITY (100% WCAG AAA Compliant)
      ========================================================================== */
-  body[data-theme-version="dark"] #gtms-step6-page .step-progress .sp-label {
-    color: #94a3b8 !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step6-page .step-progress .sp-step.active .sp-label {
-    color: #60a5fa !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .step-progress .sp-step.active .circ {
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25) !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-main-card {
-    background: #1a1b1d !important;
-    border-color: #2e3440 !important;
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5) !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-title {
-    color: #ffffff !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-subtitle {
-    color: #94a3b8 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-team-pill {
+body[data-theme-version="dark"] #gtms-step6-page .s6-team-pill {
     background: rgba(99, 102, 241, 0.15) !important;
     color: #a5b4fc !important;
     border-color: rgba(99, 102, 241, 0.3) !important;
@@ -670,32 +531,6 @@
     color: #60a5fa !important;
   }
 
-  body[data-theme-version="dark"] #gtms-step6-page .s6-actions {
-    border-top-color: #2e3440 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-btn-back {
-    background: #25282a !important;
-    border-color: #3b4252 !important;
-    color: #cbd5e1 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-btn-back:hover {
-    background: #32373d !important;
-    color: #ffffff !important;
-    border-color: #64748b !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-btn-draft {
-    background: #25282a !important;
-    border-color: #3b4252 !important;
-    color: #93c5fd !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step6-page .s6-btn-draft:hover {
-    background: #32373d !important;
-    color: #ffffff !important;
-  }
 </style>
 
 <script>

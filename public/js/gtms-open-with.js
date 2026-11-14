@@ -86,6 +86,17 @@
             if (this.modalEl && typeof bootstrap !== 'undefined') {
                 this.modalInstance = bootstrap.Modal.getOrCreateInstance(this.modalEl);
 
+                // "Tap to open" screen buttons (bind once)
+                if (!this.modalEl.dataset.readyBound) {
+                    this.modalEl.dataset.readyBound = '1';
+                    const back = document.getElementById('gtmsReadyBack');
+                    if (back) back.addEventListener('click', () => this._setState('choose'));
+                    const again = document.getElementById('gtmsReadyAgain');
+                    if (again) again.addEventListener('click', () => {
+                        if (this.currentFile) this._triggerDirectDownload(this.currentFile);
+                    });
+                }
+
                 // Setup Reset preference button
                 const resetBtn = document.getElementById('gtmsResetChoicesBtn');
                 if (resetBtn) {
@@ -133,7 +144,7 @@
                 new bootstrap.Modal(this.modalEl).show();
             } else {
                 // Fallback: direct download/open in new tab if modal markup is not present
-                window.open(fullUrl, '_blank');
+                window.open(fullUrl, '_blank', 'noopener');
             }
         }
 
@@ -373,7 +384,7 @@
                             icon: 'bi-eye-fill',
                             iconColor: '#2563eb',
                             iconBg: '#eff6ff',
-                            handler: (file) => window.open(file.url, '_blank')
+                            handler: (file) => window.open(file.url, '_blank', 'noopener')
                         },
                         {
                             id: 'pdf_desktop',
@@ -428,7 +439,7 @@
                             icon: 'bi-arrows-fullscreen',
                             iconColor: '#0891b2',
                             iconBg: '#cffafe',
-                            handler: (file) => window.open(file.url, '_blank')
+                            handler: (file) => window.open(file.url, '_blank', 'noopener')
                         }
                     ]
                 };
@@ -483,7 +494,7 @@
                             icon: 'bi-play-circle-fill',
                             iconColor: '#4f46e5',
                             iconBg: '#e0e7ff',
-                            handler: (file) => window.open(file.url, '_blank')
+                            handler: (file) => window.open(file.url, '_blank', 'noopener')
                         },
                         {
                             id: 'video_desktop',
@@ -515,7 +526,7 @@
                             icon: 'bi-play-fill',
                             iconColor: '#059669',
                             iconBg: '#d1fae5',
-                            handler: (file) => window.open(file.url, '_blank')
+                            handler: (file) => window.open(file.url, '_blank', 'noopener')
                         },
                         {
                             id: 'audio_desktop',
@@ -579,7 +590,7 @@
                             icon: 'bi-eye-fill',
                             iconColor: '#2563eb',
                             iconBg: '#eff6ff',
-                            handler: (file) => window.open(file.url, '_blank')
+                            handler: (file) => window.open(file.url, '_blank', 'noopener')
                         },
                         {
                             id: 'text_desktop',
@@ -619,7 +630,7 @@
                         icon: 'bi-window',
                         iconColor: '#059669',
                         iconBg: '#d1fae5',
-                        handler: (file) => window.open(file.url, '_blank')
+                        handler: (file) => window.open(file.url, '_blank', 'noopener')
                     }
                 ]
             };
@@ -627,12 +638,19 @@
 
         _populateModal(file) {
             const profile = this._getFileProfile(file.ext);
+            this._setState('choose');
 
             // Set Header Badges and Icons
+            // Tint the header tile + extension badge with the file type's colours
+            if (this.modalEl) {
+                this.modalEl.style.setProperty('--gow-tile-bg', profile.iconBg || '#EFF6FF');
+                this.modalEl.style.setProperty('--gow-tile-fg', profile.iconColor || '#2563EB');
+            }
+
             const extBadge = document.getElementById('gtmsOpenWithExtBadge');
             if (extBadge) {
                 extBadge.textContent = profile.badge;
-                extBadge.className = `badge ${profile.badgeClass} fw-bold text-uppercase px-2 py-0.5`;
+                extBadge.className = 'gow-ext-badge';
             }
 
             const headerIcon = document.getElementById('gtmsOpenWithHeaderIcon');
@@ -642,13 +660,24 @@
 
             // Set Summary Fields
             const docNameEl = document.getElementById('gtmsOpenWithDocName');
-            if (docNameEl) docNameEl.textContent = file.docName || 'Attached Document';
+            if (docNameEl) {
+                docNameEl.textContent = file.docName || 'Attached Document';
+                docNameEl.title = docNameEl.textContent;
+            }
 
             const fileNameEl = document.getElementById('gtmsOpenWithFileName');
-            if (fileNameEl) fileNameEl.textContent = file.fileName;
+            if (fileNameEl) {
+                fileNameEl.textContent = file.fileName;
+                fileNameEl.title = file.fileName;
+            }
 
+            // Only show the size chip when it really looks like a size (e.g. "783 KB")
             const fileSizeEl = document.getElementById('gtmsOpenWithFileSize');
-            if (fileSizeEl) fileSizeEl.textContent = file.fileSize || `${profile.badge} Document`;
+            if (fileSizeEl) {
+                const looksLikeSize = /^\s*[\d.,]+\s*(B|KB|MB|GB)\s*$/i.test(file.fileSize || '');
+                fileSizeEl.textContent = looksLikeSize ? file.fileSize.trim() : '';
+                fileSizeEl.hidden = !looksLikeSize;
+            }
 
             // Reset Preference Button Visibility
             const resetBtn = document.getElementById('gtmsResetChoicesBtn');
@@ -670,6 +699,8 @@
                 directDlBtn.href = file.url;
                 directDlBtn.setAttribute('download', file.fileName);
                 directDlBtn.onclick = (e) => {
+                    // Cancel the link's own download, otherwise the file downloads twice
+                    e.preventDefault();
                     this._triggerDirectDownload(file);
                     if (this.modalInstance) this.modalInstance.hide();
                 };
@@ -685,19 +716,46 @@
                 card.href = 'javascript:void(0)';
                 card.className = `gtms-open-option-card ${opt.recommended ? 'recommended' : ''}`;
                 card.setAttribute('data-action-id', opt.id);
+                card.setAttribute('role', 'listitem');
 
-                card.innerHTML = `
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="gtms-open-option-icon shadow-xs" style="background: ${opt.iconBg}; color: ${opt.iconColor};">
-                            <i class="bi ${opt.icon}"></i>
-                        </div>
-                        <div>
-                            <div class="gtms-open-option-title">${opt.title}</div>
-                            <div class="gtms-open-option-desc">${opt.desc}</div>
-                        </div>
-                    </div>
-                    <i class="bi bi-chevron-right gtms-open-option-arrow"></i>
-                `;
+                // Built with textContent: titles include the file extension, which
+                // comes from the file name and must not be parsed as HTML.
+                const left = document.createElement('div');
+                left.className = 'd-flex align-items-center gap-3';
+                left.style.minWidth = '0';
+
+                const iconBox = document.createElement('div');
+                iconBox.className = 'gtms-open-option-icon';
+                iconBox.style.background = opt.iconBg;
+                iconBox.style.color = opt.iconColor;
+                const iconI = document.createElement('i');
+                iconI.className = `bi ${opt.icon}`;
+                iconI.setAttribute('aria-hidden', 'true');
+                iconBox.appendChild(iconI);
+
+                const textBox = document.createElement('div');
+                textBox.style.minWidth = '0';
+                const titleEl = document.createElement('div');
+                titleEl.className = 'gtms-open-option-title';
+                titleEl.textContent = opt.title;
+                if (opt.recommended) {
+                    const rec = document.createElement('span');
+                    rec.className = 'gow-rec';
+                    rec.textContent = 'Recommended';
+                    titleEl.appendChild(rec);
+                }
+                const descEl = document.createElement('div');
+                descEl.className = 'gtms-open-option-desc';
+                descEl.textContent = opt.desc;
+                textBox.append(titleEl, descEl);
+
+                left.append(iconBox, textBox);
+
+                const arrow = document.createElement('i');
+                arrow.className = 'bi bi-chevron-right gtms-open-option-arrow';
+                arrow.setAttribute('aria-hidden', 'true');
+
+                card.append(left, arrow);
 
                 card.addEventListener('click', (ev) => {
                     ev.preventDefault();
@@ -709,11 +767,11 @@
                         localStorage.removeItem(`gtms_pref_${file.ext}`);
                     }
 
-                    // Execute Option Handler
-                    opt.handler(file);
+                    // Execute Option Handler; desktop-app handlers return 'keep'
+                    // and switch the modal to the "tap to open" screen
+                    const result = opt.handler(file);
 
-                    // Close modal
-                    if (this.modalInstance) this.modalInstance.hide();
+                    if (result !== 'keep' && this.modalInstance) this.modalInstance.hide();
                 });
 
                 listContainer.appendChild(card);
@@ -769,8 +827,49 @@
          * Triggers download and notifies user to open with default PC software
          */
         _downloadAndPromptLaunch(file, appName) {
+            // Browsers cannot start a desktop program. Download the file and show
+            // a "tap to open" screen that tells the user exactly where to tap.
             this._triggerDirectDownload(file);
-            this._showToast(`Opening ${file.fileName} in ${appName}... Check your downloads.`, 'success');
+            this._showReadyState(file, appName);
+            return 'keep'; // keep the modal open on the ready screen
+        }
+
+        _showReadyState(file, appName) {
+            const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+            const app = appName || 'your default app';
+            set('gtmsReadyApp', app);
+            set('gtmsReadyApp2', app);
+            set('gtmsReadyApp3', app);
+            set('gtmsReadyFile', file.fileName);
+            set('gtmsReadyExt', file.ext ? `.${file.ext}` : 'this type of');
+            const isMac = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent);
+            set('gtmsReadyShortcut', isMac ? '⌘ + Shift + J' : 'Ctrl + J');
+
+            const isShown = this.modalEl && this.modalEl.classList.contains('show');
+            if (!isShown) {
+                // Reached from a remembered preference: build the modal first
+                this._populateModal(file);
+            }
+            this._setState('ready');
+            if (!isShown && this.modalInstance) this.modalInstance.show();
+
+            const doneBtn = this.modalEl && this.modalEl.querySelector('#gtmsOpenWithFooterReady .gow-btn-primary');
+            if (doneBtn) setTimeout(() => doneBtn.focus(), 50);
+        }
+
+        _setState(state) {
+            const ready = state === 'ready';
+            const toggle = (id, hide) => { const el = document.getElementById(id); if (el) el.hidden = hide; };
+            toggle('gtmsOpenWithChoose', ready);
+            toggle('gtmsOpenWithFooterChoose', ready);
+            toggle('gtmsOpenWithReady', !ready);
+            toggle('gtmsOpenWithFooterReady', !ready);
+            const title = document.getElementById('gtmsOpenWithModalLabel');
+            if (title) title.textContent = ready ? 'Tap to open' : 'Open with…';
+            const sub = this.modalEl && this.modalEl.querySelector('.gow-subtitle');
+            if (sub) sub.textContent = ready
+                ? 'One tap in your downloads opens it on this computer'
+                : 'Choose how you want to open this document';
         }
 
         _triggerDirectDownload(file) {
@@ -786,7 +885,9 @@
         }
 
         _showToast(message, type = 'info') {
-            if (typeof toastr !== 'undefined') {
+            if (window.GTMS && typeof window.GTMS.toast === 'function') {
+                window.GTMS.toast(type, message);
+            } else if (typeof toastr !== 'undefined') {
                 toastr[type](message, 'GTMS File Dispatcher');
             } else {
                 console.log(`[GTMS Open With] ${message}`);

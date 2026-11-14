@@ -39,6 +39,7 @@
     <link href="/css/style.css?v=2" rel="stylesheet">
     <link href="/css/dark-mode.css?v=3" rel="stylesheet">
     {{-- <link href="css/style1.css" rel="stylesheet"> --}}
+    <link href="/css/gtms-ui.css?v=7" rel="stylesheet">
 
     <style>
         /* GTMS Universal Pagination Styling */
@@ -626,7 +627,23 @@
 
 
     <!-- GTMS Intelligent Open With Dispatcher -->
-    <script src="/js/gtms-open-with.js?v=1"></script>
+    <script src="/js/gtms-open-with.js?v=3"></script>
+
+    <!-- GTMS UI layer: SweetAlert confirms/toasts, button + input interactions -->
+    @php
+        $gtmsFlash = [];
+        foreach (['success' => 'success', 'error' => 'error', 'warning' => 'warning', 'info' => 'info', 'status' => 'success', 'mining_transition_success' => 'success'] as $key => $icon) {
+            if (session()->has($key) && is_string(session($key))) {
+                $gtmsFlash[] = ['icon' => $icon, 'text' => session($key)];
+            }
+        }
+        if (isset($errors) && $errors->any()) {
+            $gtmsFlash[] = ['icon' => 'error', 'text' => $errors->count() === 1 ? $errors->first() : 'Please fix the ' . $errors->count() . ' highlighted fields.'];
+        }
+    @endphp
+    <script>window.GTMS_FLASH = @json($gtmsFlash);</script>
+    <script src="/js/gtms-ui.js?v=1"></script>
+    <script src="/js/gtms-validate.js?v=5"></script>
 
  @yield('scripts')
  @stack('scripts')

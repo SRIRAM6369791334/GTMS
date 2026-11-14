@@ -153,7 +153,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -192,7 +192,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -231,7 +231,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -270,7 +270,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -304,7 +304,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -338,7 +338,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -375,7 +375,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }
@@ -414,7 +414,7 @@ class PaymentCollectionController extends Controller implements HasMiddleware
             $totalProductValue += $val;
             $totalPaid += $paid;
             $totalPending += $pending;
-            if ($pending > 0 || $status !== 'paid') {
+            if ($pending > 0 || !in_array($status, ['paid', 'free'], true)) {
                 $pendingCount++;
             }
         }

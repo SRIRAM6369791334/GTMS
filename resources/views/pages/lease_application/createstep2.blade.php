@@ -1,10 +1,14 @@
 @extends('layouts.app')
 @section('title', 'Step 2 - Basic Info & MIMAS Credentials | GTMS')
+@push('styles')
+<link href="/css/gtms-lease.css?v=3" rel="stylesheet">
+@endpush
+
 @section('main_content')
 
 <div class="content-body default-height">
   <div class="container-fluid">
-    <div id="gtms-step2-page">
+    <div id="gtms-step2-page" class="lz-page">
 
       <!-- ========================================================= -->
       <!-- STEPPER PROGRESS BAR (Native GTMS Stepper)               -->
@@ -47,21 +51,21 @@
       <!-- ========================================================= -->
       <!-- MAIN STEP 2 CARD CONTAINER                                -->
       <!-- ========================================================= -->
-      <div class="s2-main-card card border-0">
+      <div class="s2-main-card card border-0 lz-card">
         
         <!-- HEADER BLOCK -->
-        <div class="s2-header-block d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="s2-header-block d-flex flex-wrap align-items-center justify-content-between gap-2 lz-head">
           <div>
-            <div class="s2-eyebrow d-flex align-items-center gap-1.5">
+            <div class="s2-eyebrow d-flex align-items-center gap-1.5 lz-eyebrow">
               <i class="bi bi-shield-check"></i>
               <span>STEP 2 OF 8 • REPRESENTATION &amp; MIMAS CREDENTIALS</span>
             </div>
-            <h4 class="s2-title">Basic Information &amp; MIMAS Credentials</h4>
-            <div class="s2-subtitle">
+            <h4 class="s2-title lz-title">Basic Information &amp; MIMAS Credentials</h4>
+            <div class="s2-subtitle lz-subtitle">
               Enter official representative contacts and statutory Mineral Management System (MIMAS) portal credentials.
             </div>
           </div>
-          <div class="s2-time-tag">
+          <div class="s2-time-tag lz-time">
             <i class="bi bi-clock-history me-1"></i>Est. ~1.5 mins
           </div>
         </div>
@@ -82,93 +86,93 @@
           @endphp
 
           <!-- SECTION 1: PRIMARY AUTHORIZED REPRESENTATIVE -->
-          <div class="s2-section-card mb-3">
-            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="s2-section-card mb-3 lz-section">
+            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2 lz-section-head">
               <div class="d-flex align-items-center">
                 <i class="bi bi-person-check text-primary me-2"></i>
-                <span class="s2-section-title">Primary Authorized Representative <span class="text-danger ms-0.5">*</span></span>
+                <span class="s2-section-title lz-section-title">Primary Authorized Representative <span class="text-danger ms-0.5">*</span></span>
               </div>
               <span class="badge s2-status-badge">
                 <i class="bi bi-award me-1"></i>Official Signatory
               </span>
             </div>
 
-            <div class="row gx-3 gy-3 s2-form-row">
+            <div class="row gx-3 gy-3 s2-form-row lz-row">
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_contact_person">
+                <label class="form-label s2-label lz-label" for="field_contact_person">
                   Contact Person Name <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon"><i class="bi bi-person"></i></span>
-                  <input type="text" class="form-control s2-input" id="field_contact_person" name="contact_person" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon lz-addon"><i class="bi bi-person"></i></span>
+                  <input type="text" class="form-control s2-input lz-input" id="field_contact_person" name="contact_person" 
                          placeholder="Full legal name" 
                          value="{{ $draft['step2']['contact_person'] ?? $draft['step1']['client_name'] ?? '' }}" required>
                 </div>
-                <div class="form-text-hint s2-hint">Authorized individual entitled to sign and receive notices.</div>
+                <div class="form-text-hint s2-hint lz-hint">Authorized individual entitled to sign and receive notices.</div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_contact_mobile">
+                <label class="form-label s2-label lz-label" for="field_contact_mobile">
                   Primary Mobile Number <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon s2-addon-prefix"><i class="bi bi-telephone me-1"></i>+91</span>
-                  <input type="tel" class="form-control s2-input" id="field_contact_mobile" name="contact_mobile" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon s2-addon-prefix lz-addon"><i class="bi bi-telephone me-1"></i>+91</span>
+                  <input type="tel" class="form-control s2-input lz-input" id="field_contact_mobile" name="contact_mobile" 
                          placeholder="10-digit mobile number" 
                          value="{{ $draft['step2']['contact_mobile'] ?? $draft['step1']['mobile_num'] ?? '' }}" 
                          required maxlength="15" pattern="[0-9]{10,15}">
                 </div>
-                <div class="form-text-hint s2-hint">Primary SMS alerts, status notifications, and OTPs.</div>
+                <div class="form-text-hint s2-hint lz-hint">Primary SMS alerts, status notifications, and OTPs.</div>
               </div>
             </div>
           </div>
 
           <!-- SECTION 2: SECONDARY CONTACT (SITE OPERATIONS) -->
-          <div class="s2-section-card mb-3">
-            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="s2-section-card mb-3 lz-section">
+            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2 lz-section-head">
               <div class="d-flex align-items-center">
                 <i class="bi bi-person-gear text-indigo me-2"></i>
-                <span class="s2-section-title">Secondary Contact &amp; Site Operations</span>
+                <span class="s2-section-title lz-section-title">Secondary Contact &amp; Site Operations</span>
               </div>
-              <span class="badge s2-opt-badge">Optional</span>
+              <span class="badge s2-opt-badge lz-opt">Optional</span>
             </div>
 
-            <div class="row gx-3 gy-3 s2-form-row">
+            <div class="row gx-3 gy-3 s2-form-row lz-row">
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_secondary_contact_person">
-                  Secondary Contact Person&nbsp;<span class="s2-opt-tag">(Optional)</span>
+                <label class="form-label s2-label lz-label" for="field_secondary_contact_person">
+                  Secondary Contact Person&nbsp;<span class="s2-opt-tag lz-opt">(Optional)</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon"><i class="bi bi-person-badge"></i></span>
-                  <input type="text" class="form-control s2-input" id="field_secondary_contact_person" name="secondary_contact_person" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon lz-addon"><i class="bi bi-person-badge"></i></span>
+                  <input type="text" class="form-control s2-input lz-input" id="field_secondary_contact_person" name="secondary_contact_person" 
                          placeholder="e.g. Quarry Manager / Site Supervisor" 
                          value="{{ $draft['step2']['secondary_contact_person'] ?? $draft['step1']['secondary_contact_person'] ?? '' }}">
                 </div>
-                <div class="form-text-hint s2-hint">Quarry manager, technical agent, or resident supervisor.</div>
+                <div class="form-text-hint s2-hint lz-hint">Quarry manager, technical agent, or resident supervisor.</div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_secondary_contact_mobile">
-                  Secondary Mobile Number&nbsp;<span class="s2-opt-tag">(Optional)</span>
+                <label class="form-label s2-label lz-label" for="field_secondary_contact_mobile">
+                  Secondary Mobile Number&nbsp;<span class="s2-opt-tag lz-opt">(Optional)</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon s2-addon-prefix"><i class="bi bi-phone me-1"></i>+91</span>
-                  <input type="tel" class="form-control s2-input" id="field_secondary_contact_mobile" name="secondary_contact_mobile" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon s2-addon-prefix lz-addon"><i class="bi bi-phone me-1"></i>+91</span>
+                  <input type="tel" class="form-control s2-input lz-input" id="field_secondary_contact_mobile" name="secondary_contact_mobile" 
                          placeholder="10-digit alternate mobile number" 
                          value="{{ $draft['step2']['secondary_contact_mobile'] ?? $draft['step1']['secondary_mobile_num'] ?? '' }}" 
                          maxlength="15" pattern="[0-9]{10,15}">
                 </div>
-                <div class="form-text-hint s2-hint">Site operational, survey call, and emergency contact.</div>
+                <div class="form-text-hint s2-hint lz-hint">Site operational, survey call, and emergency contact.</div>
               </div>
             </div>
           </div>
 
           <!-- SECTION 3: OFFICIAL MIMAS PORTAL CREDENTIALS -->
-          <div class="s2-section-card mb-3">
-            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="s2-section-card mb-3 lz-section">
+            <div class="s2-section-header d-flex align-items-center justify-content-between flex-wrap gap-2 lz-section-head">
               <div class="d-flex align-items-center">
                 <i class="bi bi-shield-lock-fill text-warning me-2"></i>
-                <span class="s2-section-title">Official MIMAS Portal Credentials <span class="text-danger ms-0.5">*</span></span>
+                <span class="s2-section-title lz-section-title">Official MIMAS Portal Credentials <span class="text-danger ms-0.5">*</span></span>
               </div>
               <span class="badge s2-gov-badge">
                 <i class="bi bi-bank me-1"></i>TN Dept. of Geology &amp; Mining
@@ -183,27 +187,27 @@
               </div>
             </div>
 
-            <div class="row gx-3 gy-3 s2-form-row">
+            <div class="row gx-3 gy-3 s2-form-row lz-row">
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_mimas_user_id">
+                <label class="form-label s2-label lz-label" for="field_mimas_user_id">
                   MIMAS User ID <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon"><i class="bi bi-key"></i></span>
-                  <input type="text" name="mimas_user_id" id="field_mimas_user_id" class="form-control s2-input" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon lz-addon"><i class="bi bi-key"></i></span>
+                  <input type="text" name="mimas_user_id" id="field_mimas_user_id" class="form-control s2-input lz-input" 
                          placeholder="e.g. TN-MMS-SLM-001 or Username" 
                          value="{{ $draft['step6']['mimas_user_id'] ?? $draft['step2']['mimas_user_id'] ?? $draft['step1']['mimas_no'] ?? '' }}" required>
                 </div>
-                <div class="form-text-hint s2-hint">Applicant login ID on the state mineral online system.</div>
+                <div class="form-text-hint s2-hint lz-hint">Applicant login ID on the state mineral online system.</div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_mimas_password">
+                <label class="form-label s2-label lz-label" for="field_mimas_password">
                   MIMAS Password <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group s2-password-group">
-                  <span class="input-group-text s2-addon"><i class="bi bi-lock"></i></span>
-                  <input type="password" name="mimas_password" id="field_mimas_password" class="form-control s2-input s2-pass-field" 
+                <div class="input-group s2-input-group s2-password-group lz-group">
+                  <span class="input-group-text s2-addon lz-addon"><i class="bi bi-lock"></i></span>
+                  <input type="password" name="mimas_password" id="field_mimas_password" class="form-control s2-input s2-pass-field lz-input" 
                          data-has-saved="{{ $hasSavedPass ? '1' : '0' }}"
                          data-real-pass="{{ $savedPlainPass ?? '' }}"
                          placeholder="{{ $hasSavedPass ? '•••••••••••• (Stored securely — click to update)' : 'Enter MIMAS portal password' }}" 
@@ -225,45 +229,45 @@
                     <i class="bi bi-clipboard"></i>
                   </button>
                 </div>
-                <div class="form-text-hint s2-hint">
+                <div class="form-text-hint s2-hint lz-hint">
                   <i class="bi bi-shield-check text-success me-1"></i>Stored encrypted via AES-256. Click eye to reveal or copy.
                 </div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_mimas_email">
+                <label class="form-label s2-label lz-label" for="field_mimas_email">
                   MIMAS Registered Email ID <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon"><i class="bi bi-envelope"></i></span>
-                  <input type="email" name="mimas_email" id="field_mimas_email" class="form-control s2-input" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon lz-addon"><i class="bi bi-envelope"></i></span>
+                  <input type="email" name="mimas_email" id="field_mimas_email" class="form-control s2-input lz-input" 
                          placeholder="official@example.com" 
                          value="{{ $draft['step6']['mimas_email'] ?? $draft['step2']['mimas_email'] ?? $draft['step1']['email'] ?? '' }}" required>
                 </div>
-                <div class="form-text-hint s2-hint">Official email linked with MIMAS departmental login.</div>
+                <div class="form-text-hint s2-hint lz-hint">Official email linked with MIMAS departmental login.</div>
               </div>
 
               <div class="col-md-6">
-                <label class="form-label s2-label" for="field_mimas_contact">
+                <label class="form-label s2-label lz-label" for="field_mimas_contact">
                   MIMAS Registered Mobile Number <span class="text-danger ms-1">*</span>
                 </label>
-                <div class="input-group s2-input-group">
-                  <span class="input-group-text s2-addon s2-addon-prefix"><i class="bi bi-phone me-1"></i>+91</span>
-                  <input type="tel" name="mimas_contact" id="field_mimas_contact" class="form-control s2-input" 
+                <div class="input-group s2-input-group lz-group">
+                  <span class="input-group-text s2-addon s2-addon-prefix lz-addon"><i class="bi bi-phone me-1"></i>+91</span>
+                  <input type="tel" name="mimas_contact" id="field_mimas_contact" class="form-control s2-input lz-input" 
                          placeholder="10-digit mobile number" 
                          value="{{ $draft['step6']['mimas_contact'] ?? $draft['step2']['mimas_contact'] ?? $draft['step1']['mobile_num'] ?? '' }}" 
                          required maxlength="10">
                 </div>
-                <div class="form-text-hint s2-hint">Mobile registered for MIMAS departmental OTP &amp; approval SMS.</div>
+                <div class="form-text-hint s2-hint lz-hint">Mobile registered for MIMAS departmental OTP &amp; approval SMS.</div>
               </div>
             </div>
           </div>
 
           <!-- SYSTEM NOTICE / GOVERNANCE PANEL -->
-          <div class="s2-notice-card mt-3 mb-0 p-3">
+          <div class="s2-notice-card mt-3 mb-0 p-3 lz-notice">
             <div class="d-flex align-items-center gap-2.5">
-              <i class="bi bi-shield-lock-fill s2-notice-icon"></i>
-              <div class="s2-notice-text">
+              <i class="bi bi-shield-lock-fill s2-notice-icon lz-notice-icon"></i>
+              <div class="s2-notice-text lz-notice-text">
                 <b>Statutory Security Guarantee:</b> All credentials saved on this step are encrypted at rest with hardware-backed AES-256-GCM. Passwords are never logged in plain text.
               </div>
             </div>
@@ -274,16 +278,16 @@
         <!-- ========================================================= -->
         <!-- WIZARD ACTIONS FOOTER                                     -->
         <!-- ========================================================= -->
-        <div class="wizard-actions s2-actions d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 pt-3">
-          <a href="{{ route('step1') }}" class="btn s2-btn-back">
+        <div class="wizard-actions s2-actions d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4 pt-3 lz-actions">
+          <a href="{{ route('step1') }}" class="btn s2-btn-back lz-btn lz-btn-ghost">
             <i class="bi bi-arrow-left me-1"></i> Back to Step 1
           </a>
           @can('application.create')
           <div class="d-flex align-items-center gap-2">
-            <button type="button" id="btn_save_later_step2" class="btn s2-btn-draft px-3">
+            <button type="button" id="btn_save_later_step2" class="btn s2-btn-draft px-3 lz-btn lz-btn-outline">
               <i class="bi bi-save me-1"></i> Save &amp; Continue Later
             </button>
-            <button type="button" id="btn_save_step2" class="btn s2-btn-submit px-4">
+            <button type="button" id="btn_save_step2" class="btn s2-btn-submit px-4 lz-btn lz-btn-primary">
               <span>Save &amp; Continue</span>
               <i class="bi bi-arrow-right ms-1"></i>
             </button>
@@ -312,111 +316,12 @@
   }
 
   /* STEPPER PROGRESS TUNING */
-  #gtms-step2-page .step-progress {
-    margin-bottom: 22px;
-  }
 
-  #gtms-step2-page .step-progress .sp-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    margin-top: 6px;
-    line-height: 1.2;
-  }
+/* MAIN CARD */
 
-  #gtms-step2-page .step-progress .circ {
-    width: 32px;
-    height: 32px;
-    font-size: 0.80rem;
-    line-height: 1;
-  }
+/* SECTION CARDS - LIGHT */
 
-  /* MAIN CARD */
-  #gtms-step2-page .s2-main-card {
-    border-radius: 14px;
-    padding: 26px 30px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
-  }
-
-  @media (max-width: 768px) {
-    #gtms-step2-page .s2-main-card {
-      padding: 20px 16px;
-    }
-  }
-
-  #gtms-step2-page .s2-header-block {
-    margin-bottom: 20px;
-  }
-
-  #gtms-step2-page .s2-eyebrow {
-    color: var(--orange, #ea580c);
-    font-weight: 700;
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1;
-    margin-bottom: 0;
-  }
-
-  #gtms-step2-page .s2-time-tag {
-    font-size: 0.73rem;
-    font-weight: 600;
-    color: #64748b;
-    background: #f1f5f9;
-    padding: 3px 8px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    line-height: 1.2;
-  }
-
-  #gtms-step2-page .s2-title {
-    font-weight: 800;
-    font-size: 1.25rem;
-    color: #0f172a;
-    line-height: 1.3;
-    margin-top: 6px;
-    margin-bottom: 5px;
-  }
-
-  #gtms-step2-page .s2-subtitle {
-    font-size: 0.83rem;
-    color: #64748b;
-    line-height: 1.5;
-    margin-bottom: 0;
-  }
-
-  /* SECTION CARDS - LIGHT */
-  #gtms-step2-page .s2-section-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 18px 20px;
-    margin-bottom: 18px;
-    transition: border-color 0.2s ease;
-  }
-
-  #gtms-step2-page .s2-section-card:hover {
-    border-color: #cbd5e1;
-  }
-
-  #gtms-step2-page .s2-section-header {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 15px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
-    line-height: 1.2;
-  }
-
-  #gtms-step2-page .s2-section-title {
-    font-size: 0.88rem;
-    font-weight: 700;
-    color: #1e293b;
-  }
-
-  #gtms-step2-page .s2-status-badge {
+#gtms-step2-page .s2-status-badge {
     background-color: #ecfdf5;
     color: #059669;
     border: 1px solid #a7f3d0;
@@ -426,17 +331,7 @@
     font-weight: 600;
   }
 
-  #gtms-step2-page .s2-opt-badge {
-    background-color: #f8fafc;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
-    font-size: 0.69rem;
-    padding: 3px 8px;
-    border-radius: 5px;
-    font-weight: 500;
-  }
-
-  #gtms-step2-page .s2-gov-badge {
+#gtms-step2-page .s2-gov-badge {
     background-color: #fffbeb;
     color: #b45309;
     border: 1px solid #fde68a;
@@ -470,117 +365,48 @@
   }
 
   /* FORM GRID & LABELS */
-  #gtms-step2-page .s2-form-row {
-    --bs-gutter-x: 1rem;
-    --bs-gutter-y: 1.25rem;
-  }
 
-  #gtms-step2-page .s2-label {
-    font-size: 0.80rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin-bottom: 6px;
-    line-height: 1.25;
-    display: flex;
-    align-items: center;
-  }
+/* INPUT GROUPS - LIGHT */
 
-  #gtms-step2-page .s2-opt-tag {
-    font-size: 0.72rem;
-    color: #64748b;
-    font-weight: normal;
-  }
-
-  #gtms-step2-page .s2-hint {
-    font-size: 0.72rem;
-    color: #64748b;
-    line-height: 1.4;
-    margin-top: 6px;
-    margin-bottom: 2px;
-  }
-
-  /* INPUT GROUPS - LIGHT */
-  #gtms-step2-page .s2-input-group {
-    border-radius: 8px;
-    transition: all 0.2s ease;
-  }
-
-  #gtms-step2-page .s2-input-group:focus-within {
-    box-shadow: 0 0 0 3px rgba(15, 30, 77, 0.10);
-    border-radius: 8px;
-  }
-
-  #gtms-step2-page .s2-input-group .s2-addon {
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    border-right: none !important;
-    border-radius: 8px 0 0 8px;
-    color: #64748b;
-    font-size: 0.88rem;
-    width: 38px;
-    height: 40px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-
-  #gtms-step2-page .s2-input-group .s2-addon-prefix {
+#gtms-step2-page .s2-input-group .s2-addon-prefix {
     width: auto;
     padding: 0 10px;
     font-size: 0.80rem;
     font-weight: 600;
   }
 
-  #gtms-step2-page .s2-input-group .s2-input {
-    background-color: #ffffff;
-    border: 1.5px solid #cbd5e1;
-    border-left: none !important;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.86rem;
-    height: 40px;
-    padding: 8px 12px;
-    color: #0f172a;
-    transition: all 0.2s ease;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-
-  #gtms-step2-page .s2-input-group:focus-within .s2-addon,
-  #gtms-step2-page .s2-input-group:focus-within .s2-input {
-    border-color: #0F1E4D !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-
-  #gtms-step2-page .s2-input-group:focus-within .s2-addon {
-    color: #0F1E4D !important;
-    background-color: #ffffff !important;
-  }
-
-  /* PASSWORD GROUP WITH INTEGRATED BUTTONS */
+/* PASSWORD GROUP WITH INTEGRATED BUTTONS */
   #gtms-step2-page .s2-password-group .s2-pass-field {
     border-right: none !important;
     border-radius: 0 !important;
   }
 
+  /* Eye / copy buttons: same 44px height and 1.5px borders as the input so
+     the group's top and bottom edges line up */
   #gtms-step2-page .s2-btn-addon {
     background-color: #f8fafc;
-    border: 1.5px solid #cbd5e1;
-    border-left: 1px solid #e2e8f0;
-    border-right: none;
-    border-radius: 0;
+    border: 1.5px solid #cbd5e1 !important;
+    border-left: 1px solid #e2e8f0 !important;
+    border-right: none !important;
+    border-radius: 0 !important;
     color: #64748b;
-    height: 40px;
-    width: 38px;
+    height: auto;
+    min-height: 44px;
+    width: 44px;
     padding: 0;
+    margin: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    align-self: stretch;
+    box-shadow: none !important;
+    transform: none !important;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
+  }
+
+  #gtms-step2-page .s2-btn-addon svg {
+    transition: transform 0.2s ease;
   }
 
   #gtms-step2-page .s2-btn-addon:hover {
@@ -588,152 +414,41 @@
     color: #1e40af;
   }
 
+  #gtms-step2-page .s2-btn-addon:hover svg {
+    transform: scale(1.12);
+  }
+
+  #gtms-step2-page .s2-btn-addon:active svg {
+    transform: scale(0.92);
+  }
+
   #gtms-step2-page .s2-btn-copy {
-    border-right: 1.5px solid #cbd5e1;
-    border-radius: 0 8px 8px 0;
-    border-left: 1px solid #e2e8f0;
+    border-right: 1.5px solid #cbd5e1 !important;
+    border-radius: 0 10px 10px 0 !important;
   }
 
   #gtms-step2-page .s2-password-group:focus-within .s2-btn-addon {
-    border-color: #0F1E4D;
+    border-color: #0F1E4D !important;
+    border-left-color: #e2e8f0 !important;
   }
 
   /* SYSTEM NOTICE CARD */
-  #gtms-step2-page .s2-notice-card {
-    background: #f8fafc;
-    border: 1px dashed #cbd5e1;
-    border-radius: 9px;
-  }
 
-  #gtms-step2-page .s2-notice-icon {
-    font-size: 1.15rem;
-    color: #0F1E4D;
-    flex-shrink: 0;
-  }
+/* WIZARD ACTIONS FOOTER */
 
-  #gtms-step2-page .s2-notice-text {
-    font-size: 0.77rem;
-    color: #475569;
-    line-height: 1.45;
-  }
-
-  /* WIZARD ACTIONS FOOTER */
-  #gtms-step2-page .s2-actions {
-    border-top: 1px solid #e2e8f0;
-  }
-
-  #gtms-step2-page .s2-btn-back {
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #0F1E4D;
-    border: 1.5px solid #cbd5e1;
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 9px 18px;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-  }
-
-  #gtms-step2-page .s2-btn-back:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0F1E4D;
-  }
-
-  #gtms-step2-page .s2-btn-draft {
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #0F1E4D;
-    border: 1.5px solid #0F1E4D;
-    background: transparent;
-    border-radius: 8px;
-    padding: 9px 18px;
-    transition: all 0.2s ease;
-  }
-
-  #gtms-step2-page .s2-btn-draft:hover {
-    background: #0F1E4D;
-    color: #ffffff;
-  }
-
-  #gtms-step2-page .s2-btn-submit {
-    background-color: #0F1E4D;
-    border: 1.5px solid #0F1E4D;
-    color: #ffffff;
-    font-size: 0.86rem;
-    font-weight: 700;
-    border-radius: 8px;
-    padding: 9px 24px;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.20);
-  }
-
-  #gtms-step2-page .s2-btn-submit:hover {
-    background-color: #081233;
-    border-color: #081233;
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.25);
-  }
-
-  /* ==========================================================================
+/* ==========================================================================
      DARK MODE STYLES (Strictly Scoped to body[data-theme-version="dark"] #gtms-step2-page)
      ========================================================================== */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-main-card {
-    background: #1e1e1e !important;
-    border: 1px solid #2e3440 !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-title {
-    color: #f8fafc !important;
-  }
+/* SECTION CARDS - DARK */
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-subtitle {
-    color: #94a3b8 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-time-tag {
-    background: #25282a !important;
-    color: #cbd5e1 !important;
-    border-color: #3b4252 !important;
-  }
-
-  /* SECTION CARDS - DARK */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-section-card {
-    background: #18191a !important;
-    border-color: #2b2d30 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-section-card:hover {
-    border-color: #3e4451 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-section-header {
-    border-bottom-color: #2b2d30 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-section-title {
-    color: #f1f5f9 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-status-badge {
+body[data-theme-version="dark"] #gtms-step2-page .s2-status-badge {
     background-color: rgba(5, 150, 105, 0.15) !important;
     color: #34d399 !important;
     border-color: rgba(5, 150, 105, 0.30) !important;
   }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-opt-badge {
-    background-color: #25282a !important;
-    color: #94a3b8 !important;
-    border-color: #3b4252 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-gov-badge {
+body[data-theme-version="dark"] #gtms-step2-page .s2-gov-badge {
     background-color: rgba(245, 158, 11, 0.15) !important;
     color: #fbbf24 !important;
     border-color: rgba(245, 158, 11, 0.30) !important;
@@ -759,40 +474,10 @@
   }
 
   /* LABELS & HINTS - DARK */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-label {
-    color: #f1f5f9 !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-opt-tag {
-    color: #94a3b8 !important;
-  }
+/* INPUTS & ADDONS - DARK */
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-hint {
-    color: #94a3b8 !important;
-  }
-
-  /* INPUTS & ADDONS - DARK */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group:focus-within {
-    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.18) !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group .s2-addon {
-    background-color: #161717 !important;
-    border-color: #3b4252 !important;
-    border-right: none !important;
-    color: #94a3b8 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group .s2-input {
-    background-color: #161717 !important;
-    border-color: #3b4252 !important;
-    border-left: none !important;
-    color: #f8fafc !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-addon {
+body[data-theme-version="dark"] #gtms-step2-page .s2-btn-addon {
     background-color: #161717 !important;
     border-color: #3b4252 !important;
     color: #94a3b8 !important;
@@ -803,82 +488,18 @@
     color: #60a5fa !important;
   }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group:focus-within .s2-addon,
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group:focus-within .s2-input {
-    border-color: #60a5fa !important;
-    box-shadow: none !important;
-    outline: none !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input-group:focus-within .s2-addon {
-    color: #60a5fa !important;
-    background-color: #161717 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-password-group:focus-within .s2-btn-addon {
+body[data-theme-version="dark"] #gtms-step2-page .s2-password-group:focus-within .s2-btn-addon {
     border-color: #60a5fa !important;
   }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-input::placeholder {
-    color: #64748b !important;
-  }
+/* NOTICE CARD - DARK */
 
-  /* NOTICE CARD - DARK */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-notice-card {
-    background: #18191a !important;
-    border-color: #3b4252 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-notice-icon {
-    color: #60a5fa !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-notice-text {
-    color: #94a3b8 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-notice-text b {
+body[data-theme-version="dark"] #gtms-step2-page .s2-notice-text b {
     color: #e2e8f0 !important;
   }
 
   /* WIZARD ACTIONS - DARK */
-  body[data-theme-version="dark"] #gtms-step2-page .s2-actions {
-    border-top-color: #2b2d30 !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-back {
-    background: #25282a !important;
-    border-color: #3b4252 !important;
-    color: #f1f5f9 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-back:hover {
-    background: #323639 !important;
-    border-color: #60a5fa !important;
-    color: #60a5fa !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-draft {
-    border-color: #3b82f6 !important;
-    color: #60a5fa !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-draft:hover {
-    background-color: #1e3a5f !important;
-    color: #ffffff !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-submit {
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step2-page .s2-btn-submit:hover {
-    background-color: #1d4ed8 !important;
-    border-color: #1d4ed8 !important;
-  }
 </style>
 
 <script>

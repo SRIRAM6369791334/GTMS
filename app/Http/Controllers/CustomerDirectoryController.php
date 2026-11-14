@@ -69,27 +69,39 @@ class CustomerDirectoryController extends Controller
             }
         }
 
+        // Normalise case/spacing so the format rules below match what users type
+        $request->merge(array_filter([
+            'pan'      => $request->filled('pan') ? strtoupper(trim($request->input('pan'))) : null,
+            'gstin'    => $request->filled('gstin') ? strtoupper(trim($request->input('gstin'))) : null,
+            'mimas_no' => $request->filled('mimas_no') ? strtoupper(trim($request->input('mimas_no'))) : null,
+            'email'    => $request->filled('email') ? strtolower(trim($request->input('email'))) : null,
+        ], fn ($v) => $v !== null));
+
         $validator = Validator::make($request->all(), [
             'mimas_no'                 => ['required', 'string', 'max:50', Rule::unique('customers', 'mimas_no')->whereNull('deleted_at')],
             'mimas_number'             => 'nullable|string|max:100',
             'mimas_status'             => 'nullable|string|max:100',
-            'customer_name'            => 'required|string|max:255',
-            'secondary_contact_person' => 'nullable|string|max:255',
+            'customer_name'            => ['required', 'string', 'min:2', 'max:100', "regex:/^[A-Za-z][A-Za-z .'\-]*$/"],
+            'secondary_contact_person' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9 \/\-.,()]+$/'],
             'company_name'             => 'nullable|string|max:255',
-            'mobile_num'               => 'required|digits_between:10,15',
-            'secondary_mobile_num'     => 'nullable|digits_between:10,15|different:mobile_num',
+            'mobile_num'               => ['required', 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_mobile_num'     => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:mobile_num'],
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
             'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
-            'pan'                      => 'nullable|string|max:10',
-            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
-            'gstin'                    => 'nullable|string|max:15',
-            'address'                  => 'nullable|string',
+            'pan'                      => ['nullable', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/'],
+            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->whereNull('deleted_at')],
+            'gstin'                    => ['nullable', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
+            'address'                  => 'nullable|string|max:500',
             'status'                   => 'required|in:0,1',
         ], [
-            'mobile_num.digits_between'           => 'The primary mobile number must be between 10 and 15 digits.',
-            'secondary_mobile_num.digits_between' => 'The secondary mobile number must be between 10 and 15 digits.',
+            'mobile_num.regex'                     => 'The primary mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_mobile_num.regex'           => 'The secondary mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'pan.regex'                            => 'PAN must be 5 letters, 4 numbers and 1 letter (e.g. ABCDE1234F).',
+            'gstin.regex'                          => 'GSTIN must be a valid 15-character number (e.g. 33ABCDE1234F1Z5).',
+            'customer_name.regex'                  => 'Customer name may contain letters, spaces, dots and hyphens only.',
+            'secondary_contact_person.regex'       => 'Contact person may contain letters, numbers, spaces and / - . , ( ) only.',
             'secondary_mobile_num.different'      => 'The secondary mobile number must be different from the primary mobile number.',
             'aadhaar_no.regex'                    => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
             'mimas_no.unique'                     => 'This Customer Unique ID is already registered by an active customer.',
@@ -245,28 +257,40 @@ class CustomerDirectoryController extends Controller
             }
         }
 
+        // Normalise case/spacing so the format rules below match what users type
+        $request->merge(array_filter([
+            'pan'      => $request->filled('pan') ? strtoupper(trim($request->input('pan'))) : null,
+            'gstin'    => $request->filled('gstin') ? strtoupper(trim($request->input('gstin'))) : null,
+            'mimas_no' => $request->filled('mimas_no') ? strtoupper(trim($request->input('mimas_no'))) : null,
+            'email'    => $request->filled('email') ? strtolower(trim($request->input('email'))) : null,
+        ], fn ($v) => $v !== null));
+
         $validator = Validator::make($request->all(), [
             'id'                       => 'required|exists:customers,id',
             'mimas_no'                 => ['required', 'string', 'max:50', Rule::unique('customers', 'mimas_no')->ignore($id)->whereNull('deleted_at')],
             'mimas_number'             => 'nullable|string|max:100',
             'mimas_status'             => 'nullable|string|max:100',
-            'customer_name'            => 'required|string|max:255',
-            'secondary_contact_person' => 'nullable|string|max:255',
+            'customer_name'            => ['required', 'string', 'min:2', 'max:100', "regex:/^[A-Za-z][A-Za-z .'\-]*$/"],
+            'secondary_contact_person' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9 \/\-.,()]+$/'],
             'company_name'             => 'nullable|string|max:255',
-            'mobile_num'               => 'required|digits_between:10,15',
-            'secondary_mobile_num'     => 'nullable|digits_between:10,15|different:mobile_num',
+            'mobile_num'               => ['required', 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_mobile_num'     => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:mobile_num'],
             'email'                    => 'nullable|email|max:255',
             'district_id'              => 'required|exists:districts,id',
             'mineral_id'               => 'nullable|exists:minerals,id',
             'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
-            'pan'                      => 'nullable|string|max:10',
-            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
-            'gstin'                    => 'nullable|string|max:15',
-            'address'                  => 'nullable|string',
+            'pan'                      => ['nullable', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/'],
+            'aadhaar_no'               => ['nullable', 'string', 'max:20', 'regex:/^[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}$/', Rule::unique('customers', 'aadhaar_no')->ignore($id)->whereNull('deleted_at')],
+            'gstin'                    => ['nullable', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
+            'address'                  => 'nullable|string|max:500',
             'status'                   => 'required|in:0,1',
         ], [
-            'mobile_num.digits_between'           => 'The primary mobile number must be between 10 and 15 digits.',
-            'secondary_mobile_num.digits_between' => 'The secondary mobile number must be between 10 and 15 digits.',
+            'mobile_num.regex'                     => 'The primary mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_mobile_num.regex'           => 'The secondary mobile number must be 10 digits and start with 6, 7, 8 or 9.',
+            'pan.regex'                            => 'PAN must be 5 letters, 4 numbers and 1 letter (e.g. ABCDE1234F).',
+            'gstin.regex'                          => 'GSTIN must be a valid 15-character number (e.g. 33ABCDE1234F1Z5).',
+            'customer_name.regex'                  => 'Customer name may contain letters, spaces, dots and hyphens only.',
+            'secondary_contact_person.regex'       => 'Contact person may contain letters, numbers, spaces and / - . , ( ) only.',
             'secondary_mobile_num.different'      => 'The secondary mobile number must be different from the primary mobile number.',
             'aadhaar_no.regex'                    => 'The Aadhaar number must be a valid 12-digit number (e.g. 9876-5432-1012 or 987654321012).',
             'mimas_no.unique'                     => 'This Customer Unique ID is already registered by an active customer.',
