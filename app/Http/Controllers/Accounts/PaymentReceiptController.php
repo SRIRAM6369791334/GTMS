@@ -610,7 +610,7 @@ class PaymentReceiptController extends Controller implements HasMiddleware
                 'product_value'    => $productValue,
                 'total_paid'       => $totalPaid,
                 'pending_amount'   => $pendingAmount,
-                'payment_status'   => ($pendingAmount <= 0 && $totalPaid > 0) ? 'paid' : ($totalPaid > 0 ? 'partial' : 'pending'),
+                'payment_status'   => (($appModel->payment_status ?? null) === 'free') ? 'free' : (($pendingAmount <= 0 && $totalPaid > 0) ? 'paid' : ($totalPaid > 0 ? 'partial' : 'pending')),
                 'total_installments'=> $totalCount,
                 'next_installment' => $totalCount + 1,
             ],

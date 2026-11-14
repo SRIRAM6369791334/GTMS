@@ -88,8 +88,84 @@ class CustomerController extends Controller
         return view('pages.lease_application.createstep1', compact('districts', 'customers', 'minerals', 'draft'));
     }
 
+    /**
+     * Format a 12-digit Aadhaar as XXXX-XXXX-XXXX (null when empty or not 12 digits).
+     */
+    private function formatAadhaar(?string $value): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        if (strlen($digits) !== 12) {
+            return $value !== null && trim($value) !== '' ? trim($value) : null;
+        }
+        return substr($digits, 0, 4) . '-' . substr($digits, 4, 4) . '-' . substr($digits, 8, 4);
+    }
+
+    /**
+     * Copy lease Step 1 details into an existing customer where the customer
+     * field is still empty. Never overwrites a value that is already set.
+     *
+     * @param bool $strict true: an Aadhaar already used by another customer throws a
+     *                     field error; false: that Aadhaar is skipped and logged.
+     */
+    private function fillMissingCustomerDetails(Customer $customer, array $data, bool $strict): void
+    {
+        $fields = [
+            'aadhaar_no'               => $this->formatAadhaar($data['aadhaar_no'] ?? null),
+            'pan'                      => $data['pan'] ?? null,
+            'gstin'                    => $data['gstin'] ?? null,
+            'email'                    => $data['email'] ?? null,
+            'company_name'             => $data['company_name'] ?? null,
+            'address'                  => $data['address'] ?? null,
+            'mobile_num'               => $data['mobile_num'] ?? null,
+            'secondary_contact_person' => $data['secondary_contact_person'] ?? null,
+            'secondary_mobile_num'     => $data['secondary_mobile_num'] ?? null,
+            'area'                     => $data['area'] ?? null,
+        ];
+
+        $updates = [];
+        foreach ($fields as $column => $value) {
+            $value = is_string($value) ? trim($value) : $value;
+            if ($value === null || $value === '' || !empty($customer->{$column})) {
+                continue;
+            }
+            $updates[$column] = $value;
+        }
+
+        // customers.aadhaar_no is UNIQUE (soft-deleted rows included).
+        if (isset($updates['aadhaar_no'])) {
+            $digits = preg_replace('/\D/', '', $updates['aadhaar_no']);
+            $owner = Customer::withTrashed()
+                ->where('id', '!=', $customer->id)
+                ->whereRaw("REPLACE(REPLACE(COALESCE(aadhaar_no, ''), '-', ''), ' ', '') = ?", [$digits])
+                ->first();
+            if ($owner) {
+                if ($strict) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'aadhaar_no' => 'This Aadhaar number is already registered to another customer ('
+                            . ($owner->customer_name ?: 'ID ' . $owner->id) . ').',
+                    ]);
+                }
+                \Log::warning('Lease submit: Aadhaar not copied to customer, already used by another customer', [
+                    'customer_id' => $customer->id, 'other_customer_id' => $owner->id,
+                ]);
+                unset($updates['aadhaar_no']);
+            }
+        }
+
+        if (!empty($updates)) {
+            $customer->update($updates);
+        }
+    }
+
     public function saveStep1(Request $request)
     {
+        // Normalise case so the format rules match what users type
+        $request->merge(array_filter([
+            'pan'   => $request->filled('pan') ? strtoupper(trim($request->input('pan'))) : null,
+            'gstin' => $request->filled('gstin') ? strtoupper(trim($request->input('gstin'))) : null,
+            'email' => $request->filled('email') ? strtolower(trim($request->input('email'))) : null,
+        ], fn ($v) => $v !== null));
+
         $validated = $request->validate([
             'customer_id'              => 'nullable|integer',
             'mimas_no'                 => 'required|string|max:50',
@@ -101,15 +177,25 @@ class CustomerController extends Controller
             'mineral_ids.*'            => 'integer|exists:minerals,id',
             'mineral_id'               => 'nullable|integer|exists:minerals,id',
             'other_mineral_name'       => 'nullable|string|max:255',
-            'mobile_num'               => 'required|string|max:15',
-            'secondary_mobile_num'     => 'nullable|string|max:15|different:mobile_num',
+            'mobile_num'               => ['required', 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_mobile_num'     => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:mobile_num'],
             'email'                    => 'nullable|email|max:255',
-            'pan'                      => 'required|string|max:10',
-            'aadhaar_no'               => 'required|string|max:14',
-            'gstin'                    => 'nullable|string|max:15',
+            'pan'                      => ['required', 'regex:/^[A-Z]{5}[0-9]{4}[A-Z]$/'],
+            'aadhaar_no'               => ['required', 'regex:/^[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}$/'],
+            'gstin'                    => ['nullable', 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/'],
             'area'                     => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'address'                  => 'nullable|string|max:500',
+        ], [
+            'mobile_num.regex'           => 'Primary phone number must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_mobile_num.regex' => 'Secondary phone number must be 10 digits and start with 6, 7, 8 or 9.',
+            'pan.regex'                  => 'PAN must be 5 letters, 4 numbers and 1 letter (e.g. ABCDE1234F).',
+            'aadhaar_no.regex'           => 'Aadhaar must be 12 digits (e.g. 9876-5432-1012).',
+            'gstin.regex'                => 'GSTIN must be a valid 15-character number (e.g. 33ABCDE1234F1Z5).',
         ]);
+
+        // Store Aadhaar in the same XXXX-XXXX-XXXX form the Customers page uses,
+        // so lookups and the unique index match across both screens.
+        $validated['aadhaar_no'] = $this->formatAadhaar($validated['aadhaar_no']);
 
         // Resolve mineral IDs and custom other mineral name
         $mineralIds = $request->input('mineral_ids', []);
@@ -137,20 +223,11 @@ class CustomerController extends Controller
             if ($customer->trashed()) {
                 $customer->restore();
             }
-            // Update secondary contact if provided and currently empty
-            $customerUpdates = [];
-            if (!empty($validated['secondary_contact_person']) && empty($customer->secondary_contact_person)) {
-                $customerUpdates['secondary_contact_person'] = $validated['secondary_contact_person'];
-            }
-            if (!empty($validated['secondary_mobile_num']) && empty($customer->secondary_mobile_num)) {
-                $customerUpdates['secondary_mobile_num'] = $validated['secondary_mobile_num'];
-            }
-            if (!empty($validated['area']) && empty($customer->area)) {
-                $customerUpdates['area'] = trim($validated['area']);
-            }
-            if (!empty($customerUpdates)) {
-                $customer->update($customerUpdates);
-            }
+            // Fill details the customer record is still missing (Aadhaar, PAN,
+            // email, ...) from what was entered in Step 1. Existing values are
+            // never overwritten; an Aadhaar held by another customer is a
+            // field error instead of a silent drop.
+            $this->fillMissingCustomerDetails($customer, $validated, true);
         } else {
             $customer = Customer::create([
                 'customer_name'            => $validated['client_name'],
@@ -182,11 +259,21 @@ class CustomerController extends Controller
             $defaultCategory = LeaseCategory::first();
             $branch = Branch::first();
 
+            // category_id is NOT NULL with a foreign key; the real category is
+            // picked in Step 3. Without any configured category the insert
+            // would fail with a 500, so return a clear message instead.
+            if (!$defaultCategory) {
+                return response()->json([
+                    'status'  => 0,
+                    'message' => 'No lease categories are configured. Ask an administrator to add lease categories (Master Data) before creating an application.',
+                ], 422);
+            }
+
             $leaseApp = LeaseApplication::create([
                 'application_no'           => $appNo,
                 'customer_id'              => $customer->id,
                 'district_id'              => $validated['district_id'],
-                'category_id'              => $defaultCategory ? $defaultCategory->id : 1,
+                'category_id'              => $defaultCategory->id,
                 'mineral_id'               => $primaryMineralId,
                 'other_mineral_name'       => $otherMineralName,
                 'taluk'                    => $validated['address'] ?? null,
@@ -1129,6 +1216,8 @@ class CustomerController extends Controller
                     'paid_amount'    => (float)($leaseApp->paid_amount ?? 0),
                     'pending_amount' => (float)($leaseApp->pending_amount ?? 0),
                     'payment_status' => $leaseApp->payment_status ?? 'pending',
+                    'waived_amount'  => $leaseApp->waived_amount !== null ? (float)$leaseApp->waived_amount : null,
+                    'waiver_reason'  => $leaseApp->waiver_reason,
                 ];
                 $draft['payment'] = $payment;
                 session(['lease_draft' => $draft]);
@@ -1143,13 +1232,33 @@ class CustomerController extends Controller
         $validated = $request->validate([
             'product_value'  => 'required|numeric|min:0',
             'paid_amount'    => 'required|numeric|min:0',
-            'payment_status' => 'nullable|string|in:paid,partial,pending',
+            'payment_status' => 'nullable|string|in:paid,partial,pending,free',
+            // A free (waived) application must say why; kept permanently on the record
+            'waiver_reason'  => 'required_if:payment_status,free|nullable|string|min:5|max:1000',
+        ], [
+            'waiver_reason.required_if' => 'Please enter the reason for waiving the fee.',
+            'waiver_reason.min'         => 'Please describe the waiver reason (at least 5 characters).',
         ]);
 
-        $productVal = (float)$validated['product_value'];
-        $paidVal = (float)$validated['paid_amount'];
-        $pendingVal = max(0, $productVal - $paidVal);
         $status = $validated['payment_status'] ?? null;
+        $isFree = $status === 'free';
+        $waivedAmount = null;
+        $waiverReason = null;
+
+        if ($isFree) {
+            // Free: nothing is chargeable. Keep the quoted value as "waived" for the
+            // record and store 0 everywhere else, so Accounts dues, ledgers,
+            // receipts and invoices all show nothing to collect.
+            $waivedAmount = (float)$validated['product_value'];
+            $waiverReason = trim($validated['waiver_reason']);
+            $productVal = 0.0;
+            $paidVal = 0.0;
+            $pendingVal = 0.0;
+        } else {
+            $productVal = (float)$validated['product_value'];
+            $paidVal = (float)$validated['paid_amount'];
+            $pendingVal = max(0, $productVal - $paidVal);
+        }
 
         if (!$status) {
             if ($paidVal <= 0) {
@@ -1166,6 +1275,8 @@ class CustomerController extends Controller
             'paid_amount'    => $paidVal,
             'pending_amount' => $pendingVal,
             'payment_status' => $status,
+            'waived_amount'  => $waivedAmount,
+            'waiver_reason'  => $waiverReason,
         ];
 
         $draft = session('lease_draft', []);
@@ -1173,13 +1284,37 @@ class CustomerController extends Controller
         session(['lease_draft' => $draft]);
 
         if (!empty($draft['application_id'])) {
+            $leaseForWaiver = LeaseApplication::find($draft['application_id']);
+            $wasFree = $leaseForWaiver && $leaseForWaiver->payment_status === 'free';
+            $reasonChanged = $leaseForWaiver && trim((string)$leaseForWaiver->waiver_reason) !== (string)$waiverReason;
+
             LeaseApplication::where('id', $draft['application_id'])->update([
                 'product_value'  => $productVal,
                 'paid_amount'    => $paidVal,
                 'pending_amount' => $pendingVal,
                 'payment_status' => $status,
+                'waived_amount'  => $waivedAmount,
+                'waiver_reason'  => $waiverReason,
+                // keep the original waiver author/date unless it is newly waived
+                'waived_by'      => $isFree ? (($wasFree && $leaseForWaiver->waived_by) ? $leaseForWaiver->waived_by : Auth::id()) : null,
+                'waived_at'      => $isFree ? (($wasFree && $leaseForWaiver->waived_at) ? $leaseForWaiver->waived_at : now()) : null,
                 'current_step'   => max(7, (int)LeaseApplication::where('id', $draft['application_id'])->value('current_step')),
             ]);
+
+            // Audit trail: waiver granted / changed / removed
+            if ($isFree && (!$wasFree || $reasonChanged)) {
+                $this->logActivity(
+                    (int)$draft['application_id'],
+                    $wasFree ? 'fee_waiver_updated' : 'fee_waived',
+                    'Application fee waived (Free). Quoted value ₹' . number_format($waivedAmount, 2) . '. Reason: ' . $waiverReason
+                );
+            } elseif (!$isFree && $wasFree) {
+                $this->logActivity(
+                    (int)$draft['application_id'],
+                    'fee_waiver_removed',
+                    'Fee waiver removed; payment status set to ' . $status . '.'
+                );
+            }
 
             ApplicationPayment::updateOrCreate(
                 [
@@ -1291,6 +1426,8 @@ class CustomerController extends Controller
                 'paid_amount'    => (float)($app->paid_amount ?? 0),
                 'pending_amount' => (float)($app->pending_amount ?? 0),
                 'payment_status' => $app->payment_status ?? 'pending',
+                'waived_amount'  => $app->waived_amount !== null ? (float)$app->waived_amount : null,
+                'waiver_reason'  => $app->waiver_reason,
             ],
             'uploaded_docs' => [],
         ];
@@ -1494,6 +1631,8 @@ class CustomerController extends Controller
                     'paid_amount'    => (float)($existingApp->paid_amount ?? 0),
                     'pending_amount' => (float)($existingApp->pending_amount ?? 0),
                     'payment_status' => $existingApp->payment_status ?? 'pending',
+                    'waived_amount'  => $existingApp->waived_amount !== null ? (float)$existingApp->waived_amount : null,
+                    'waiver_reason'  => $existingApp->waiver_reason,
                 ];
             }
         }
@@ -1502,6 +1641,8 @@ class CustomerController extends Controller
             'paid_amount'    => (float)($payment['paid_amount'] ?? 0),
             'pending_amount' => (float)($payment['pending_amount'] ?? 0),
             'payment_status' => $payment['payment_status'] ?? 'pending',
+            'waived_amount'  => $payment['waived_amount'] ?? null,
+            'waiver_reason'  => $payment['waiver_reason'] ?? null,
         ];
 
         return $preview;
@@ -1530,6 +1671,8 @@ class CustomerController extends Controller
             if ($customer->trashed()) {
                 $customer->restore();
             }
+            // Same fill as Step 1, for drafts saved before that fix existed.
+            $this->fillMissingCustomerDetails($customer, $step1, false);
         } else {
             $customer = Customer::create([
                 'customer_name' => $step1['client_name'] ?? $request->input('client_name', 'Applicant'),

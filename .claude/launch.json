@@ -1,0 +1,25 @@
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "gtms-worktree",
+            "runtimeExecutable": "C:/xampp/php/php.exe",
+            "runtimeArgs": [
+                "artisan",
+                "serve",
+                "--port=8001"
+            ],
+            "port": 8001
+        },
+        {
+            "name": "gtms-worktree-8002",
+            "runtimeExecutable": "C:/xampp/php/php.exe",
+            "runtimeArgs": [
+                "artisan",
+                "serve",
+                "--port=8002"
+            ],
+            "port": 8002
+        }
+    ]
+}

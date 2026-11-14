@@ -13,7 +13,7 @@
     --app-border-subtle: #F1F5F9;
     --app-text-primary: #0F172A;
     --app-text-secondary: #475569;
-    --app-text-muted: #94A3B8;
+    --app-text-muted: #64748B; /* was #94A3B8 (2.6:1 on white); now 4.8:1 */
     --app-table-header-bg: #F8FAFC;
     --app-row-hover: rgba(37, 99, 235, 0.03);
     --app-primary: #0F1E4D;
@@ -30,7 +30,7 @@ body[data-theme-version="dark"] {
     --app-border-subtle: #1E293B;
     --app-text-primary: #F8FAFC;
     --app-text-secondary: #CBD5E1;
-    --app-text-muted: #64748B;
+    --app-text-muted: #8391A9;
     --app-table-header-bg: #151D2E;
     --app-row-hover: rgba(59, 130, 246, 0.08);
     --app-primary: #3B82F6;
@@ -60,6 +60,22 @@ body[data-theme-version="dark"] {
     align-items: center;
     flex-wrap: wrap;
     gap: 1.25rem;
+}
+
+/* Title block takes the free space; the action stays on the right and only
+   drops below the title on narrow screens. */
+.app-header-suite > :first-child {
+    flex: 1 1 420px;
+    min-width: 0;
+}
+.app-header-suite > :last-child {
+    flex-shrink: 0;
+}
+@media (max-width: 575.98px) {
+    .app-header-suite { padding: 1.1rem 1rem; }
+    .app-header-suite > :last-child,
+    .app-header-suite .btn-app-primary { width: 100%; justify-content: center; }
+    .app-heading { font-size: 1.2rem; flex-wrap: wrap; }
 }
 
 .app-breadcrumb {
@@ -464,9 +480,9 @@ body[data-theme-version="dark"] .app-tab-count {
     background: var(--app-surface-subtle);
     color: var(--app-text-primary);
     cursor: pointer;
-    min-width: 145px;
+    min-width: 130px;
     max-width: 190px;
-    flex: 0 0 auto;
+    flex: 1 1 140px;
     transition: all 0.15s ease;
 }
 
@@ -1080,6 +1096,74 @@ body[data-theme-version="dark"] .paginate_button.current {
 body[data-theme-version="dark"] .app-modal-details #dynCommonId {
     color: #60A5FA !important;
 }
+
+/* ==========================================================================
+   DIRECTORY TABLE ALIGNMENT FIXES
+   ========================================================================== */
+/* Column minimums so content does not wrap word-by-word */
+#example10 th:nth-child(3), #example10 td:nth-child(3) { min-width: 190px; }
+
+/* Same horizontal padding for header and body cells, first/last get page gutter */
+#example10 thead th,
+#example10 tbody td {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+#example10 thead th:first-child,
+#example10 tbody td:first-child {
+    padding-left: 1.5rem !important;
+}
+#example10 thead th:last-child,
+#example10 tbody td:last-child {
+    padding-right: 1.5rem !important;
+}
+#example10 tbody td {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Client cell: name + phone on their own lines, contact person below */
+.app-client-cell { align-items: flex-start; }
+.app-client-cell > div:last-child { min-width: 0; }
+.app-client-name { word-break: break-word; }
+.app-client-meta > span { white-space: nowrap; }
+.app-client-meta .text-muted { display: block; white-space: normal; margin-top: 2px; }
+
+/* Pills and badges stay on one line */
+.app-vault-pill,
+.app-status-badge,
+.app-district-pill,
+.app-cat-badge { white-space: nowrap; }
+
+/* Row hover accent: tr borders do not render with separated borders */
+#example10 tbody tr { border-left: 0 !important; }
+#example10 tbody tr:hover { border-left: 0 !important; }
+#example10 tbody tr td:first-child { box-shadow: inset 3px 0 0 transparent; transition: box-shadow 0.15s ease; }
+#example10 tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 #3B82F6; }
+
+/* Footer: clean pagination (remove grey wrapper box) */
+.app-dt-footer { padding: 1rem 1.5rem !important; }
+.app-dt-footer .dataTables_paginate {
+    background: transparent !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    gap: 6px !important;
+}
+.app-dt-footer .dataTables_info { padding: 0 !important; margin: 0 !important; }
+.app-dt-footer .paginate_button {
+    min-width: 36px !important;
+    height: 36px !important;
+    padding: 0 12px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.app-dt-footer .paginate_button:not(.current):not(.disabled):hover { transform: translateY(-1px); }
+@media (max-width: 575.98px) {
+    .app-dt-footer { flex-direction: column; align-items: center; }
+}
 </style>
 
 <div class="content-body default-height">
@@ -1146,7 +1230,7 @@ body[data-theme-version="dark"] .app-modal-details #dynCommonId {
         <!-- 2. Bento KPI Metric Cards -->
         <div class="row g-3 mb-2">
             <!-- Total Applications -->
-            <div class="col-xl-3 col-lg-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="app-kpi-card kpi-total">
                     <div class="app-kpi-icon">
                         <i class="fa fa-folder-open"></i>
@@ -1162,7 +1246,7 @@ body[data-theme-version="dark"] .app-modal-details #dynCommonId {
             </div>
 
             <!-- Under Validation -->
-            <div class="col-xl-3 col-lg-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="app-kpi-card kpi-validation">
                     <div class="app-kpi-icon">
                         <i class="fa fa-clock"></i>
@@ -1178,7 +1262,7 @@ body[data-theme-version="dark"] .app-modal-details #dynCommonId {
             </div>
 
             <!-- Approved -->
-            <div class="col-xl-3 col-lg-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="app-kpi-card kpi-approved">
                     <div class="app-kpi-icon">
                         <i class="fa fa-check-circle"></i>
@@ -1194,7 +1278,7 @@ body[data-theme-version="dark"] .app-modal-details #dynCommonId {
             </div>
 
             <!-- Needs Review / Drafts -->
-            <div class="col-xl-3 col-lg-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="app-kpi-card kpi-review">
                     <div class="app-kpi-icon">
                         <i class="fa fa-exclamation-triangle"></i>
@@ -1342,18 +1426,11 @@ body[data-theme-version="dark"] .app-modal-details #dynCommonId {
                                         <strong>{{ $app->application_no }}</strong>
                                     </a>
                                 </div>
-                                <div class="d-flex align-items-center gap-1 mt-1">
-                                    @if($app->area_extent_ha)
-                                    <span class="app-extent-chip" title="Quarry Extent">
-                                        <i class="fa fa-ruler-combined"></i> {{ $app->area_extent_ha }} Ha
-                                    </span>
-                                    @endif
-                                    @if($mineralName)
-                                    <span class="badge app-mineral-chip" title="Target Mineral">
-                                        {{ Str::limit($mineralName, 18) }}
-                                    </span>
-                                    @endif
-                                </div>
+                                {{-- Extent / mineral chips removed from the list view; mineral kept
+                                     as hidden text so the table search still matches it --}}
+                                @if($mineralName)
+                                <span class="d-none">{{ $mineralName }}</span>
+                                @endif
                             </td>
                             <td>
                                 <div class="app-client-cell">

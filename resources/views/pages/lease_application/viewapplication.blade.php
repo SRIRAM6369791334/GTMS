@@ -181,8 +181,10 @@
   }
 
   .btn-dossier-tool {
-    width: 38px;
-    height: 38px;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    gap: 6px;
     border-radius: 10px;
     display: inline-flex;
     align-items: center;
@@ -202,6 +204,97 @@
     transform: translateY(-2px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
+  /* Visible text labels: icon-only buttons were hard to tell apart */
+  .btn-dossier-tool .tool-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--dossier-text, #0f172a);
+    white-space: nowrap;
+  }
+  .btn-dossier-tool.active-primary .tool-label {
+    color: #ffffff;
+  }
+  .btn-dossier-tool:active {
+    transform: scale(0.97);
+  }
+  .btn-dossier-tool:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+  @media (max-width: 575.98px) {
+    .btn-dossier-tool { padding: 0; width: 44px; height: 44px; }
+    .btn-dossier-tool .tool-label {
+      position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0);
+    }
+  }
+
+  /* MIMAS password show / copy buttons */
+  .mimas-pass-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    vertical-align: middle;
+  }
+  .btn-pass-tool {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+  }
+  .btn-pass-tool:not(:disabled):hover {
+    background: #eff6ff;
+    color: #1d4ed8;
+    transform: translateY(-1px);
+  }
+  .btn-pass-tool:not(:disabled):active {
+    transform: scale(0.94);
+  }
+  .btn-pass-tool:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-pass-tool.is-copied {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  body[data-theme-version="dark"] .btn-pass-tool:not(:disabled):hover {
+    background: rgba(37, 99, 235, 0.18);
+    color: #93c5fd;
+  }
+
+  /* Back to list link above the masthead crest */
+  .dossier-back-link {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: color 0.15s ease, transform 0.2s ease;
+  }
+  .dossier-back-link:hover {
+    color: #0f1e4d;
+  }
+  .dossier-back-link:hover i {
+    transform: translateX(-3px);
+  }
+  .dossier-back-link i {
+    transition: transform 0.2s ease;
+  }
+  body[data-theme-version="dark"] .dossier-back-link:hover {
+    color: #93c5fd;
+  }
+  @media print {
+    .dossier-back-link { display: none !important; }
+  }
+
   .btn-dossier-tool.active-primary {
     background: #0f1e4d;
     border-color: #0f1e4d;
@@ -1096,6 +1189,9 @@
       <div class="dossier-book-masthead">
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
           <div>
+            <a href="{{ route('application.index') }}" class="dossier-back-link">
+              <i class="bi bi-arrow-left"></i> Back to Applications
+            </a>
             <div class="dossier-badge-crest mb-2">
               <i class="bi bi-shield-shaded"></i> Government of Tamil Nadu &middot; Dept of Geology &amp; Mining
             </div>
@@ -1156,29 +1252,35 @@
             @if(isset($application->id))
             <a href="{{ route('application.report', $application->id) }}" target="_blank" class="btn-dossier-tool" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Download Official PDF Report">
               <i class="bi bi-file-earmark-pdf text-danger"></i>
+              <span class="tool-label">PDF</span>
             </a>
             @endif
 
             <button type="button" id="btn_print_official_report" class="btn-dossier-tool" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Print Official Scrutiny Report (PDF)">
               <i class="bi bi-printer text-secondary"></i>
+              <span class="tool-label">Print</span>
             </button>
 
             <button type="button" id="btn_copy_dossier_summary" class="btn-dossier-tool" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Copy Complete Executive Summary">
               <i class="bi bi-clipboard-check text-success"></i>
+              <span class="tool-label">Copy Summary</span>
             </button>
 
             <a href="{{ route('viewapplication', ['id' => $application->id]) }}" class="btn-dossier-tool" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Refresh &amp; Sync Dossier">
               <i class="bi bi-arrow-clockwise text-primary"></i>
+              <span class="tool-label">Refresh</span>
             </a>
 
             @if($linkedMining)
               <a href="{{ route('process', ['id' => $linkedMining->id]) }}" class="btn-dossier-tool" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Open Linked Mining Plan: {{ $linkedMining->common_id }}">
                 <i class="fa fa-mountain text-success"></i>
+                <span class="tool-label">Mining Plan</span>
               </a>
             @else
               @can('application.edit')
               <button type="button" class="btn-dossier-tool btn-trigger-move-mining" id="btn_masthead_move_mining" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Promote to Mining Plan Domain">
                 <i class="bi bi-rocket-takeoff text-warning"></i>
+                <span class="tool-label">Promote</span>
               </button>
               @endcan
             @endif
@@ -1186,6 +1288,7 @@
             @can('application.create')
             <a href="{{ route('step1') }}" class="btn-dossier-tool active-primary" data-bs-toggle="tooltip" data-bs-placement="bottom" title="New Application Wizard">
               <i class="bi bi-plus-lg"></i>
+              <span class="tool-label">New</span>
             </a>
             @endcan
           </div>
@@ -1293,7 +1396,7 @@
 
           <div class="col-md-3 col-sm-6">
             <div class="data-cell">
-              <div class="data-cell-label">Customer Unique ID (MIMAS)</div>
+              <div class="data-cell-label">Customer Unique ID </div>
               <div class="data-cell-value">
                 <span class="data-value-text">{{ $application->customer?->mimas_no ?? 'N/A' }}</span>
                 @if(!empty($application->customer?->mimas_no))
@@ -1558,16 +1661,25 @@
             <div class="data-cell">
               <div class="data-cell-label">MIMAS Password</div>
               <div class="data-cell-value">
-                <span id="mimas_pass_masked" class="font-monospace" style="letter-spacing: 2px;">••••••••••••</span>
-                <span id="mimas_pass_plain" class="font-monospace" style="display: none; color: var(--dossier-text-title);">{{ $mimas ? $mimas->password : 'N/A' }}</span>
-                @if($mimas && $mimas->password)
-                  <button type="button" class="btn-copy-chip ms-1" id="btn_toggle_view_pass" title="Show / Hide Password" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                @php $hasMimasPass = $mimas && !empty($mimas->password); @endphp
+                <span id="mimas_pass_masked" class="font-monospace" style="letter-spacing: 2px;">{{ $hasMimasPass ? '••••••••••••' : 'Not saved' }}</span>
+                <span id="mimas_pass_plain" class="font-monospace" style="display: none; color: var(--dossier-text-title);">{{ $hasMimasPass ? $mimas->password : '' }}</span>
+                {{-- Show / copy are always visible; disabled until a password is saved --}}
+                <span class="mimas-pass-actions">
+                  <button type="button" class="btn-copy-chip btn-pass-tool ms-1" id="btn_toggle_view_pass"
+                          title="{{ $hasMimasPass ? 'Show / Hide Password' : 'No MIMAS password saved' }}"
+                          aria-label="Show or hide MIMAS password" aria-pressed="false"
+                          data-bs-toggle="tooltip" data-bs-placement="bottom" @disabled(!$hasMimasPass)>
                     <i class="fa fa-eye" id="icon_view_pass"></i>
                   </button>
-                  <button type="button" class="btn-copy-chip" id="btn_copy_view_pass" data-clipboard-text="{{ $mimas->password }}" title="Copy Password" data-bs-toggle="tooltip" data-bs-placement="bottom">
+                  <button type="button" class="btn-copy-chip btn-pass-tool" id="btn_copy_view_pass"
+                          data-clipboard-text="{{ $hasMimasPass ? $mimas->password : '' }}"
+                          title="{{ $hasMimasPass ? 'Copy Password' : 'No MIMAS password saved' }}"
+                          aria-label="Copy MIMAS password"
+                          data-bs-toggle="tooltip" data-bs-placement="bottom" @disabled(!$hasMimasPass)>
                     <i class="fa fa-copy"></i>
                   </button>
-                @endif
+                </span>
               </div>
               <div class="data-cell-sub">Encrypted Credential</div>
             </div>
@@ -1663,7 +1775,9 @@
                   <div class="panel-sub">Settlement status and balance tracking</div>
                 </div>
               </div>
-              @if($pStatus === 'paid')
+              @if($pStatus === 'free')
+                <span class="badge text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;background:#6D28D9;"><i class="bi bi-gift-fill me-1"></i>Free (Fee Waived)</span>
+              @elseif($pStatus === 'paid')
                 <span class="badge bg-success text-white px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟢 Fully Paid</span>
               @elseif($pStatus === 'partial')
                 <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size:0.75rem;">🟡 Partial Payment</span>
@@ -1675,8 +1789,8 @@
             <div class="row g-2 text-center mt-2">
               <div class="col-4">
                 <div class="p-2 border rounded" style="background:var(--dossier-table-stripe); border-color:var(--dossier-table-border) !important;">
-                  <span class="text-muted d-block small">Product Value</span>
-                  <b class="d-block mt-1" style="color:var(--dossier-navy); font-size:0.92rem;">₹ {{ number_format((float)($application->product_value ?? 50000), 2) }}</b>
+                  <span class="text-muted d-block small">{{ $pStatus === 'free' ? 'Quoted (Waived)' : 'Product Value' }}</span>
+                  <b class="d-block mt-1" style="color:var(--dossier-navy); font-size:0.92rem;{{ $pStatus === 'free' ? 'text-decoration:line-through;opacity:.7;' : '' }}">₹ {{ number_format((float)($pStatus === 'free' ? ($application->waived_amount ?? 0) : ($application->product_value ?? 50000)), 2) }}</b>
                 </div>
               </div>
               <div class="col-4">
@@ -1694,9 +1808,17 @@
             </div>
 
             <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between text-muted small">
-              <span><i class="bi bi-clock-history me-1"></i> Status: <strong class="text-capitalize" style="color:var(--dossier-text-title);">{{ $pStatus }}</strong></span>
+              <span><i class="bi bi-clock-history me-1"></i> Status: <strong class="text-capitalize" style="color:var(--dossier-text-title);">{{ $pStatus === 'free' ? 'Free (fee waived)' : $pStatus }}</strong></span>
               <span><i class="bi bi-shield-check text-success me-1"></i> Recorded in Ledger</span>
             </div>
+            @if($pStatus === 'free')
+              @include('pages.lease_application.partials.fee_waiver_note', [
+                'waivedAmount' => $application->waived_amount,
+                'waiverReason' => $application->waiver_reason,
+                'waivedByName' => $application->waivedByUser?->name,
+                'waivedAt'     => $application->waived_at,
+              ])
+            @endif
           </div>
         </div>
       </div>
@@ -2521,7 +2643,8 @@ jQuery(document).ready(function($) {
       'Primary Contact: {{ $application->contact_person ?? ($application->customer?->customer_name ?? "N/A") }} ({{ $application->contact_mobile ?? ($application->customer?->mobile_num ?? "N/A") }})',
       'Customer MIMAS ID: {{ $application->customer?->mimas_no ?? "N/A" }}',
       'PAN: {{ $application->customer?->pan ?? "N/A" }} | GSTIN: {{ $application->customer?->gstin ?? "N/A" }}',
-      'Payment Status: {{ ucfirst($pStatus) }}',
+      'Payment Status: {{ $pStatus === 'free' ? 'Free (fee waived)' : ucfirst($pStatus) }}',
+      @if($pStatus === 'free')'Fee Waiver Reason: ' + {{ Js::from((string)$application->waiver_reason) }},@endif
       'Uploaded Documents: {{ $totalUploaded }} / {{ $docs->count() }} ({{ $validatedCount }} Validated)',
       '===================================================='
     ];
@@ -2707,26 +2830,33 @@ jQuery(document).ready(function($) {
       plain.hide();
       masked.show();
       icon.removeClass('fa-eye-slash').addClass('fa-eye');
+      $(this).attr('aria-pressed', 'false');
     } else {
       masked.hide();
       plain.show();
       icon.removeClass('fa-eye').addClass('fa-eye-slash');
+      $(this).attr('aria-pressed', 'true');
     }
   });
 
   $('#btn_copy_view_pass').on('click', function(e) {
     e.preventDefault();
-    var pass = $(this).attr('data-clipboard-text');
+    var btn = $(this);
+    var pass = btn.attr('data-clipboard-text');
+    if (!pass) return;
+    var done = function() {
+      // Brief check-mark on the button, then a SweetAlert toast
+      btn.addClass('is-copied').find('i').removeClass('fa-copy').addClass('fa-check');
+      setTimeout(function() {
+        btn.removeClass('is-copied').find('i').removeClass('fa-check').addClass('fa-copy');
+      }, 1500);
+      if (window.GTMS && GTMS.toast) GTMS.toast('success', 'MIMAS password copied');
+      else if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
+    };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(pass).then(function() {
-        if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
-        else alert('MIMAS Password copied to clipboard!');
-      });
+      navigator.clipboard.writeText(pass).then(done, function() { fallbackCopy(pass, done); });
     } else {
-      fallbackCopy(pass, function() {
-        if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
-        else alert('MIMAS Password copied to clipboard!');
-      });
+      fallbackCopy(pass, done);
     }
   });
 

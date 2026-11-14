@@ -1428,7 +1428,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
 <!-- ========================================================================= -->
 <div class="modal fade bd-customer-modal-lg" tabindex="-1" id="customerModal" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <form id="customeradd" class="modal-content">
+        <form id="customeradd" class="modal-content" data-validate novalidate>
             @csrf
             <div class="modal-header">
                 <h5 class="modal-title">Add New Customer</h5>
@@ -1440,7 +1440,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-bold">Customer Unique ID <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-fingerprint text-primary"></i></span>
-                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_no" placeholder="e.g. CUST-001 or TN-MMS-2026/001" required>
+                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_no" placeholder="e.g. CUST-001 or TN-MMS-2026/001" required data-v="code" data-v-label="Customer Unique ID">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">Customer Master ID</div>
                         <span class="text-danger error-text mimas_no_error"></span>
@@ -1449,7 +1449,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-semibold">MIMAS Number</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-badge text-primary"></i></span>
-                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_number" placeholder="e.g. TN-MMS-2026/0482">
+                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_number" placeholder="e.g. TN-MMS-2026/0482" data-v="code" data-v-label="MIMAS Number">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">State Mining Portal registration number</div>
                         <span class="text-danger error-text mimas_number_error"></span>
@@ -1458,44 +1458,44 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-semibold">MIMAS Status</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-info-circle text-primary"></i></span>
-                            <input type="text" class="form-control" name="mimas_status" placeholder="e.g. Active / Registered">
+                            <input type="text" class="form-control" name="mimas_status" placeholder="e.g. Active / Registered" data-v="text" data-v-label="MIMAS Status">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">Input status in State MIMAS portal</div>
                         <span class="text-danger error-text mimas_status_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Customer / Representative Name (Primary) <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="customer_name" placeholder="Full Name" required>
+                        <input type="text" class="form-control" name="customer_name" placeholder="Full Name" required data-v="name" data-v-label="Customer name">
                         <span class="text-danger error-text customer_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Company <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control" name="company_name" list="existing_companies" placeholder="Type or select existing company..." autocomplete="off">
+                        <input type="text" class="form-control" name="company_name" list="existing_companies" placeholder="Type or select existing company..." autocomplete="off" data-v="company" data-v-label="Company">
                         <span class="text-danger error-text company_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Primary Mobile Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="mobile_num" placeholder="10-digit Mobile" required maxlength="15">
+                        <input type="text" class="form-control" name="mobile_num" placeholder="10-digit Mobile" required data-v="mobile" data-v-label="Primary mobile number">
                         <span class="text-danger error-text mobile_num_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Email Address</label>
-                        <input type="email" class="form-control" name="email" placeholder="customer@example.com">
+                        <input type="email" class="form-control" name="email" placeholder="customer@example.com" data-v="email" data-v-label="Email">
                         <span class="text-danger error-text email_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Secondary Contact Person Name <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control" name="secondary_contact_person" placeholder="e.g. Quarry Manager / Supervisor">
+                        <input type="text" class="form-control" name="secondary_contact_person" placeholder="e.g. Quarry Manager / Supervisor" data-v="text" data-v-label="Contact person name">
                         <span class="text-danger error-text secondary_contact_person_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Secondary Mobile Number <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control" name="secondary_mobile_num" placeholder="10-digit Alternate Mobile" maxlength="15">
+                        <input type="text" class="form-control" name="secondary_mobile_num" placeholder="10-digit Alternate Mobile" data-v="mobile" data-v-label="Secondary mobile number" data-v-different="mobile_num">
                         <span class="text-danger error-text secondary_mobile_num_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">District <span class="text-danger">*</span></label>
-                        <select class="form-control" name="district_id" required>
+                        <select class="form-control" name="district_id" required data-v-label="District">
                             <option value="">Select District</option>
                             @foreach($districts as $d)
                                 <option value="{{ $d->id }}">{{ $d->name }}</option>
@@ -1513,25 +1513,25 @@ body[data-theme-version="dark"] .btn-primary:hover {
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">PAN Number <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control text-uppercase" name="pan" placeholder="AAACS1234F">
+                        <input type="text" class="form-control text-uppercase" name="pan" placeholder="AAACS1234F" data-v="pan" data-v-label="PAN">
                         <span class="text-danger error-text pan_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Aadhaar Number <span class="text-muted small">(Optional)</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-card text-primary"></i></span>
-                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" placeholder="9876-5432-1012" maxlength="14">
+                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" placeholder="9876-5432-1012" data-v="aadhaar" data-v-label="Aadhaar">
                         </div>
                         <span class="text-danger error-text aadhaar_no_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">GSTIN (15 Digits)</label>
-                        <input type="text" class="form-control text-uppercase" name="gstin" placeholder="33AAACS1234F1Z5">
+                        <input type="text" class="form-control text-uppercase" name="gstin" placeholder="33AAACS1234F1Z5" data-v="gstin" data-v-label="GSTIN">
                         <span class="text-danger error-text gstin_error"></span>
                     </div>
                     <div class="mb-3 col-md-12">
                         <label class="form-label">Registered Office / Business Address</label>
-                        <textarea class="form-control" name="address" rows="2" placeholder="Street, Taluk, Village, Pincode..."></textarea>
+                        <textarea class="form-control" name="address" rows="2" placeholder="Street, Taluk, Village, Pincode..." data-v="address" data-v-label="Address"></textarea>
                         <span class="text-danger error-text address_error"></span>
                     </div>
                 </div>
@@ -1663,7 +1663,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
 <!-- ========================================================================= -->
 <div class="modal fade" id="editCustomerModal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <form id="customeredit" class="modal-content">
+        <form id="customeredit" class="modal-content" data-validate novalidate>
             @csrf
             <input type="hidden" name="id" id="edit_id">
             <div class="modal-header">
@@ -1676,7 +1676,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-bold">Customer Unique ID <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-fingerprint text-primary"></i></span>
-                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_no" id="edit_mimas_no" required>
+                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_no" id="edit_mimas_no" required data-v="code" data-v-label="Customer Unique ID">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">Customer Master ID</div>
                         <span class="text-danger error-text edit_mimas_no_error"></span>
@@ -1685,7 +1685,7 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-semibold">MIMAS Number</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-badge text-primary"></i></span>
-                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_number" id="edit_mimas_number" placeholder="e.g. TN-MMS-2026/0482">
+                            <input type="text" class="form-control text-uppercase fw-semibold" name="mimas_number" id="edit_mimas_number" placeholder="e.g. TN-MMS-2026/0482" data-v="code" data-v-label="MIMAS Number">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">State Mining Portal registration number</div>
                         <span class="text-danger error-text edit_mimas_number_error"></span>
@@ -1694,44 +1694,44 @@ body[data-theme-version="dark"] .btn-primary:hover {
                         <label class="form-label fw-semibold">MIMAS Status</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-info-circle text-primary"></i></span>
-                            <input type="text" class="form-control" name="mimas_status" id="edit_mimas_status" placeholder="e.g. Active / Registered">
+                            <input type="text" class="form-control" name="mimas_status" id="edit_mimas_status" placeholder="e.g. Active / Registered" data-v="text" data-v-label="MIMAS Status">
                         </div>
                         <div class="form-text text-muted" style="font-size:0.72rem;">Input status in State MIMAS portal</div>
                         <span class="text-danger error-text edit_mimas_status_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Customer / Representative Name (Primary) <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="customer_name" id="edit_customer_name" required>
+                        <input type="text" class="form-control" name="customer_name" id="edit_customer_name" required data-v="name" data-v-label="Customer name">
                         <span class="text-danger error-text edit_customer_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Company <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control" name="company_name" id="edit_company_name" list="existing_companies" placeholder="Type or select existing company..." autocomplete="off">
+                        <input type="text" class="form-control" name="company_name" id="edit_company_name" list="existing_companies" placeholder="Type or select existing company..." autocomplete="off" data-v="company" data-v-label="Company">
                         <span class="text-danger error-text edit_company_name_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Primary Mobile Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="mobile_num" id="edit_mobile_num" required maxlength="15">
+                        <input type="text" class="form-control" name="mobile_num" id="edit_mobile_num" required data-v="mobile" data-v-label="Primary mobile number">
                         <span class="text-danger error-text edit_mobile_num_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Email Address</label>
-                        <input type="email" class="form-control" name="email" id="edit_email">
+                        <input type="email" class="form-control" name="email" id="edit_email" data-v="email" data-v-label="Email">
                         <span class="text-danger error-text edit_email_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Secondary Contact Person Name</label>
-                        <input type="text" class="form-control" name="secondary_contact_person" id="edit_secondary_contact_person" placeholder="e.g. Quarry Manager">
+                        <input type="text" class="form-control" name="secondary_contact_person" id="edit_secondary_contact_person" placeholder="e.g. Quarry Manager" data-v="text" data-v-label="Contact person name">
                         <span class="text-danger error-text edit_secondary_contact_person_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Secondary Mobile Number</label>
-                        <input type="text" class="form-control" name="secondary_mobile_num" id="edit_secondary_mobile_num" placeholder="10-digit Alternate Mobile" maxlength="15">
+                        <input type="text" class="form-control" name="secondary_mobile_num" id="edit_secondary_mobile_num" placeholder="10-digit Alternate Mobile" data-v="mobile" data-v-label="Secondary mobile number" data-v-different="mobile_num">
                         <span class="text-danger error-text edit_secondary_mobile_num_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">District <span class="text-danger">*</span></label>
-                        <select class="form-control" name="district_id" id="edit_district_id" required>
+                        <select class="form-control" name="district_id" id="edit_district_id" required data-v-label="District">
                             <option value="">Select District</option>
                             @foreach($districts as $d)
                                 <option value="{{ $d->id }}">{{ $d->name }}</option>
@@ -1749,25 +1749,25 @@ body[data-theme-version="dark"] .btn-primary:hover {
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">PAN Number <span class="text-muted small">(Optional)</span></label>
-                        <input type="text" class="form-control text-uppercase" name="pan" id="edit_pan">
+                        <input type="text" class="form-control text-uppercase" name="pan" id="edit_pan" data-v="pan" data-v-label="PAN">
                         <span class="text-danger error-text edit_pan_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">Aadhaar Number <span class="text-muted small">(Optional)</span></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa fa-id-card text-primary"></i></span>
-                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" id="edit_aadhaar_no" maxlength="14">
+                            <input type="text" class="form-control aadhaar-format" name="aadhaar_no" id="edit_aadhaar_no" data-v="aadhaar" data-v-label="Aadhaar">
                         </div>
                         <span class="text-danger error-text edit_aadhaar_no_error"></span>
                     </div>
                     <div class="mb-3 col-md-6">
                         <label class="form-label">GSTIN (15 Digits)</label>
-                        <input type="text" class="form-control text-uppercase" name="gstin" id="edit_gstin">
+                        <input type="text" class="form-control text-uppercase" name="gstin" id="edit_gstin" data-v="gstin" data-v-label="GSTIN">
                         <span class="text-danger error-text edit_gstin_error"></span>
                     </div>
                     <div class="mb-3 col-md-12">
                         <label class="form-label">Registered Office / Business Address</label>
-                        <textarea class="form-control" name="address" id="edit_address" rows="2"></textarea>
+                        <textarea class="form-control" name="address" id="edit_address" rows="2" data-v="address" data-v-label="Address"></textarea>
                         <span class="text-danger error-text edit_address_error"></span>
                     </div>
                 </div>
@@ -1790,5 +1790,5 @@ body[data-theme-version="dark"] .btn-primary:hover {
 
 @endsection
 @section('scripts')
-<script src="{{ asset('js/ajax/customer.js') }}"></script>
+<script src="{{ asset('js/ajax/customer.js') }}?v=2"></script>
 @endsection

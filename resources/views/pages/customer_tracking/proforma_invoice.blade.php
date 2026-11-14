@@ -691,6 +691,9 @@
                     {{ $item['ref'] }}
                   </div>
                 @endif
+                @if(!empty($item['waiver_note']))
+                  <div style="font-size: 11.5px; color: #5B21B6; font-weight: 600; margin: 4px 0 6px; padding: 4px 8px; background: #F5F3FF; border-left: 3px solid #6D28D9; border-radius: 4px;">{{ $item['waiver_note'] }}</div>
+                @endif
                 @if(!empty($item['bullets']) && count($item['bullets']) > 0)
                   <ul class="pi-item-list">
                     @foreach($item['bullets'] as $bullet)
@@ -872,6 +875,9 @@
                     {{ $item['ref'] }}
                   </div>
                 @endif
+                @if(!empty($item['waiver_note']))
+                  <div style="font-size: 11.5px; color: #5B21B6; font-weight: 600; margin: 4px 0 6px; padding: 4px 8px; background: #F5F3FF; border-left: 3px solid #6D28D9; border-radius: 4px;">{{ $item['waiver_note'] }}</div>
+                @endif
                 @if(!empty($item['bullets']) && count($item['bullets']) > 0)
                   <ul class="pi-item-list">
                     @foreach($item['bullets'] as $bullet)
@@ -935,6 +941,9 @@
                   <div style="font-size: 11px; color: #dc2626; font-weight: 600; margin-bottom: 3px; font-style: italic;">
                     {{ $item['ref'] }}
                   </div>
+                @endif
+                @if(!empty($item['waiver_note']))
+                  <div style="font-size: 11.5px; color: #5B21B6; font-weight: 600; margin: 4px 0 6px; padding: 4px 8px; background: #F5F3FF; border-left: 3px solid #6D28D9; border-radius: 4px;">{{ $item['waiver_note'] }}</div>
                 @endif
                 @if(!empty($item['bullets']) && count($item['bullets']) > 0)
                   <ul class="pi-item-list">
@@ -1057,7 +1066,11 @@
                 </div>
               </div>
               <div class="app-amount-tag">
+                @if(!empty($app['is_free']))
+                  <span style="color:#6D28D9;font-weight:700;">Free</span>
+                @else
                 ₹ {{ number_format($app['amount'], 2) }}
+                @endif
               </div>
             </label>
           @empty

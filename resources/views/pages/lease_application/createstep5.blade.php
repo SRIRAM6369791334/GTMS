@@ -1,5 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Documents - Step 5')
+@push('styles')
+<link href="/css/gtms-lease.css?v=3" rel="stylesheet">
+@endpush
+
 @section('main_content')
 
 @php
@@ -14,7 +18,7 @@
 
 <div class="content-body default-height">
   <div class="container-fluid">
-    <div id="gtms-step5-page">
+    <div id="gtms-step5-page" class="lz-page">
       <div class="wizard-wrap">
         @if(!empty($isSubmittedDossier))
         <div class="alert alert-info d-flex align-items-center justify-content-between mb-3 shadow-sm rounded-3 py-2 px-3" style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af;">
@@ -42,19 +46,19 @@
         </div>
         @endif
 
-        <div class="card s5-main-card wizard-card">
+        <div class="card s5-main-card wizard-card lz-card">
           @if(!empty($isSubmittedDossier))
-            <div class="s5-eyebrow text-uppercase text-primary fw-bold">Active Application Dossier</div>
-            <h4 class="s5-title">Statutory Documents &amp; Digital Plans Vault</h4>
-            <div class="s5-subtitle">Upload missing documents or replace files for Application <b>#{{ $draft['application_no'] ?? '' }}</b>.</div>
+            <div class="s5-eyebrow text-uppercase text-primary fw-bold lz-eyebrow">Active Application Dossier</div>
+            <h4 class="s5-title lz-title">Statutory Documents &amp; Digital Plans Vault</h4>
+            <div class="s5-subtitle lz-subtitle">Upload missing documents or replace files for Application <b>#{{ $draft['application_no'] ?? '' }}</b>.</div>
           @else
-            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 s5-header-block mb-3">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 s5-header-block mb-3 lz-head">
               <div>
-                <div class="s5-eyebrow">STEP 5 OF 8 &bull; REGULATORY REPOSITORY</div>
-                <h4 class="s5-title">Regulatory Checklist &amp; Survey Plans</h4>
-                <div class="s5-subtitle">Upload all required statutory documents, affidavits, and digital survey plans across the 3 folders.</div>
+                <div class="s5-eyebrow lz-eyebrow">STEP 5 OF 8 &bull; REGULATORY REPOSITORY</div>
+                <h4 class="s5-title lz-title">Regulatory Checklist &amp; Survey Plans</h4>
+                <div class="s5-subtitle lz-subtitle">Upload all required statutory documents, affidavits, and digital survey plans across the 3 folders.</div>
               </div>
-              <div class="s5-time-tag">
+              <div class="s5-time-tag lz-time">
                 <i class="bi bi-clock-history me-1"></i>Est. ~5-8 mins
               </div>
             </div>
@@ -497,22 +501,22 @@
           @endforeach
         </div>
 
-        <div class="wizard-actions s5-actions d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3">
+        <div class="wizard-actions s5-actions d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3 lz-actions">
           @if(!empty($isSubmittedDossier))
-            <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-back"><i class="bi bi-arrow-left me-1"></i> Cancel &amp; Back to Dossier</a>
+            <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-back lz-btn lz-btn-ghost"><i class="bi bi-arrow-left me-1"></i> Cancel &amp; Back to Dossier</a>
             <div class="d-flex gap-2">
-              <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-submit">
+              <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-submit lz-btn lz-btn-primary">
                 <i class="bi bi-check-circle me-1"></i> Return to Application Dossier
               </a>
             </div>
           @else
-            <a href="{{ route('step4') }}" class="s5-btn-back"><i class="bi bi-arrow-left me-1"></i> Back to Step 4</a>
+            <a href="{{ route('step4') }}" class="s5-btn-back lz-btn lz-btn-ghost"><i class="bi bi-arrow-left me-1"></i> Back to Step 4</a>
             @can('application.create')
             <div class="d-flex align-items-center gap-2">
-              <a href="{{ route('application.index') }}" class="s5-btn-draft">
+              <a href="{{ route('application.index') }}" class="s5-btn-draft lz-btn lz-btn-outline">
                 <i class="bi bi-floppy me-2"></i> Save Draft &amp; Exit
               </a>
-              <a href="{{ route('step6') }}" class="s5-btn-submit" id="btn_continue_mimas">
+              <a href="{{ route('step6') }}" class="s5-btn-submit lz-btn lz-btn-primary" id="btn_continue_mimas">
                 <span>Save &amp; Continue</span>
                 <i class="bi bi-arrow-right ms-1"></i>
               </a>
@@ -574,7 +578,7 @@
               <span class="input-group-text s5-modal-addon"><i class="bi bi-file-text"></i></span>
               <input type="text" class="form-control s5-modal-input" id="lease_custom_doc_name" placeholder="e.g. Property Tax Receipt, VAO Certificate, Family Tree, Site Photos" required>
             </div>
-            <div class="s5-field-hint mt-1.5"><i class="bi bi-info-circle me-1"></i>Specify clear statutory title for this document.</div>
+            <div class="s5-field-hint mt-1.5 lz-hint"><i class="bi bi-info-circle me-1"></i>Specify clear statutory title for this document.</div>
           </div>
 
           <!-- REQUIREMENT RULE -->
@@ -587,7 +591,7 @@
                 <option value="1">Mandatory Document (Required for submission)</option>
               </select>
             </div>
-            <div class="s5-field-hint mt-1.5"><i class="bi bi-shield-exclamation me-1"></i>Mandatory documents block progression until verified file is attached.</div>
+            <div class="s5-field-hint mt-1.5 lz-hint"><i class="bi bi-shield-exclamation me-1"></i>Mandatory documents block progression until verified file is attached.</div>
           </div>
 
           <!-- FILE UPLOAD DROPZONE -->
@@ -695,81 +699,10 @@
   }
 
   /* STEPPER PROGRESS TUNING */
-  #gtms-step5-page .step-progress {
-    margin-bottom: 22px;
-  }
 
-  #gtms-step5-page .step-progress .sp-label {
-    font-size: 0.72rem;
-    font-weight: 700;
-    margin-top: 6px;
-    line-height: 1.2;
-  }
+/* MAIN CARD */
 
-  #gtms-step5-page .step-progress .circ {
-    width: 32px;
-    height: 32px;
-    font-size: 0.80rem;
-    line-height: 1;
-  }
-
-  /* MAIN CARD */
-  #gtms-step5-page .s5-main-card {
-    border-radius: 14px;
-    padding: 26px 30px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
-  }
-
-  @media (max-width: 768px) {
-    #gtms-step5-page .s5-main-card {
-      padding: 20px 16px;
-    }
-  }
-
-  #gtms-step5-page .s5-header-block {
-    margin-bottom: 20px;
-  }
-
-  #gtms-step5-page .s5-eyebrow {
-    color: var(--orange, #ea580c);
-    font-weight: 700;
-    font-size: 0.74rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1;
-    margin-bottom: 0;
-  }
-
-  #gtms-step5-page .s5-time-tag {
-    font-size: 0.73rem;
-    font-weight: 600;
-    color: #64748b;
-    background: #f1f5f9;
-    padding: 3px 8px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    line-height: 1.2;
-  }
-
-  #gtms-step5-page .s5-title {
-    font-weight: 800;
-    font-size: 1.25rem;
-    color: #0f172a;
-    line-height: 1.3;
-    margin-top: 6px;
-    margin-bottom: 5px;
-  }
-
-  #gtms-step5-page .s5-subtitle {
-    font-size: 0.83rem;
-    color: #64748b;
-    line-height: 1.5;
-    margin-bottom: 0;
-  }
-
-  /* SUMMARY READINESS BANNER */
+/* SUMMARY READINESS BANNER */
   #gtms-step5-page .s5-summary-banner {
     background: #f8fafc;
     border: 1px solid #e2e8f0;
@@ -944,6 +877,26 @@
     box-shadow: 0 0 0 2px rgba(15, 30, 77, 0.15) !important;
   }
 
+  /* Optional state: readable slate text on a light chip (was grey-on-grey) */
+  #gtms-step5-page .doc-req-select.text-muted {
+    color: #475569 !important;
+    background-color: #F1F5F9 !important;
+    border-color: #CBD5E1 !important;
+  }
+  #gtms-step5-page .doc-req-select.text-danger {
+    color: #B91C1C !important;
+  }
+  #gtms-step5-page .doc-req-select,
+  #gtms-step5-page .doc-req-select.form-select-sm {
+    min-height: 30px;
+    height: 30px;
+  }
+  body[data-theme-version="dark"] #gtms-step5-page .doc-req-select.text-muted {
+    color: #CBD5E1 !important;
+    background-color: #1E293B !important;
+    border-color: #334155 !important;
+  }
+
   /* ROW ACTION BUTTONS */
   #gtms-step5-page .checklist-row .btn-upload-item {
     height: 28px;
@@ -1080,98 +1033,12 @@
   }
 
   /* FOOTER ACTIONS */
-  #gtms-step5-page .s5-actions {
-    border-top: 1px solid #e2e8f0;
-    padding-top: 18px;
-    margin-top: 24px;
-  }
 
-  #gtms-step5-page .s5-btn-back {
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #0F1E4D;
-    border: 1.5px solid #cbd5e1;
-    background: #ffffff;
-    border-radius: 8px;
-    padding: 9px 18px;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-  }
-
-  #gtms-step5-page .s5-btn-back:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0F1E4D;
-  }
-
-  #gtms-step5-page .s5-btn-draft {
-    font-size: 0.84rem;
-    font-weight: 600;
-    color: #0F1E4D;
-    border: 1.5px solid #0F1E4D;
-    background: transparent;
-    border-radius: 8px;
-    padding: 9px 18px;
-    transition: all 0.2s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-  }
-
-  #gtms-step5-page .s5-btn-draft:hover {
-    background: #0F1E4D;
-    color: #ffffff;
-  }
-
-  #gtms-step5-page .s5-btn-submit {
-    background-color: #0F1E4D;
-    border: 1.5px solid #0F1E4D;
-    color: #ffffff;
-    font-size: 0.86rem;
-    font-weight: 700;
-    border-radius: 8px;
-    padding: 9px 24px;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-    box-shadow: 0 2px 6px rgba(15, 30, 77, 0.20);
-  }
-
-  #gtms-step5-page .s5-btn-submit:hover {
-    background-color: #081233;
-    border-color: #081233;
-    color: #ffffff;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.25);
-  }
-
-  /* ==========================================================================
+/* ==========================================================================
      DARK MODE STYLES (Strictly Scoped to body[data-theme-version="dark"])
      ========================================================================== */
-  body[data-theme-version="dark"] #gtms-step5-page .s5-main-card {
-    background: #1e1e1e !important;
-    border: 1px solid #2e3440 !important;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35) !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step5-page .s5-title {
-    color: #f8fafc !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-subtitle {
-    color: #94a3b8 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-time-tag {
-    background: #25282a !important;
-    color: #cbd5e1 !important;
-    border-color: #3b4252 !important;
-  }
-
-  /* SUMMARY BANNER - DARK */
+/* SUMMARY BANNER - DARK */
   body[data-theme-version="dark"] #gtms-step5-page .s5-summary-banner {
     background: #18191a !important;
     border-color: #2b2d30 !important;
@@ -1366,46 +1233,8 @@
   }
 
   /* ACTIONS - DARK */
-  body[data-theme-version="dark"] #gtms-step5-page .s5-actions {
-    border-top-color: #2b2d30 !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-back {
-    background-color: #18191a !important;
-    color: #cbd5e1 !important;
-    border-color: #3b4252 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-back:hover {
-    background-color: #25282a !important;
-    color: #ffffff !important;
-    border-color: #60a5fa !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-draft {
-    color: #60a5fa !important;
-    border-color: #3b82f6 !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-draft:hover {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-submit {
-    background-color: #2563eb !important;
-    border-color: #2563eb !important;
-    color: #ffffff !important;
-    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35) !important;
-  }
-
-  body[data-theme-version="dark"] #gtms-step5-page .s5-btn-submit:hover {
-    background-color: #1d4ed8 !important;
-    border-color: #1d4ed8 !important;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.45) !important;
-  }
-
-  /* MODALS DARK MODE PARITY */
+/* MODALS DARK MODE PARITY */
   body[data-theme-version="dark"] .modal-content {
     background-color: #1e1e1e !important;
     border: 1px solid #2e3440 !important;

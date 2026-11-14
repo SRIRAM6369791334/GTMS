@@ -630,6 +630,9 @@
                 {{ $item['ref'] }}
               </div>
             @endif
+            @if(!empty($item['waiver_note']))
+              <div style="font-size: 11.5px; color: #5B21B6; font-weight: 600; margin: 4px 0 6px; padding: 4px 8px; background: #F5F3FF; border-left: 3px solid #6D28D9; border-radius: 4px;">{{ $item['waiver_note'] }}</div>
+            @endif
             @if(!empty($item['bullets']) && count($item['bullets']) > 0)
               <ul style="margin-left: 20px; list-style-type: disc; margin-bottom: 6px;">
                 @foreach($item['bullets'] as $bullet)
@@ -767,7 +770,11 @@
                 </div>
               </div>
               <div class="app-amount-tag">
+                @if(!empty($app['is_free']))
+                  <span style="color:#6D28D9;font-weight:700;">Free</span>
+                @else
                 ₹ {{ number_format($app['amount'], 2) }}
+                @endif
               </div>
             </label>
           @empty

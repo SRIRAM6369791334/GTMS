@@ -1,0 +1,273 @@
+/* ==========================================================================
+   GTMS UI LAYER (behaviour)
+   - Button ripple + loading state on form submit
+   - Input focus label tint, invalid-field shake, focus first error
+   - SweetAlert2 confirm dialogs for `return confirm('...')` handlers and
+     for any element with a data-confirm attribute
+   - SweetAlert2 toasts for session flash messages (window.GTMS_FLASH)
+   Exposes window.GTMS.toast(), window.GTMS.confirm() for page scripts.
+   ========================================================================== */
+(function () {
+    'use strict';
+
+    var reduceMotion = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var hasSwal = typeof window.Swal !== 'undefined';
+    var DANGER_WORDS = /\b(delete|remove|clear|discard|purge|cancel|reject|revoke|drop)\b/i;
+
+    /* ------------------------------------------------------------------
+       SweetAlert helpers
+       ------------------------------------------------------------------ */
+    function toast(icon, title, timer) {
+        if (!hasSwal || !title) return;
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: icon || 'success',
+            title: String(title),
+            showConfirmButton: false,
+            showCloseButton: true,
+            timer: timer || 4000,
+            timerProgressBar: true,
+            customClass: { popup: 'gt-swal' },
+            didOpen: function (el) {
+                el.addEventListener('mouseenter', Swal.stopTimer);
+                el.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+    }
+
+    function confirmDialog(message, opts) {
+        opts = opts || {};
+        var danger = opts.danger !== undefined ? opts.danger : DANGER_WORDS.test(message);
+        if (!hasSwal) {
+            return Promise.resolve(window.confirm(message));
+        }
+        return Swal.fire({
+            title: opts.title || (danger ? 'Are you sure?' : 'Please confirm'),
+            text: message,
+            icon: danger ? 'warning' : 'question',
+            showCancelButton: true,
+            confirmButtonText: opts.confirmText || (danger ? 'Yes, continue' : 'Confirm'),
+            cancelButtonText: opts.cancelText || 'Cancel',
+            reverseButtons: true,
+            focusCancel: danger,
+            buttonsStyling: false,
+            customClass: {
+                popup: 'gt-swal' + (danger ? ' gt-swal-danger' : ''),
+                confirmButton: 'swal2-confirm',
+                cancelButton: 'swal2-cancel'
+            },
+            showClass: { popup: reduceMotion ? '' : 'swal2-show' }
+        }).then(function (r) { return !!r.isConfirmed; });
+    }
+
+    window.GTMS = window.GTMS || {};
+    window.GTMS.toast = toast;
+    window.GTMS.confirm = confirmDialog;
+
+    /* ------------------------------------------------------------------
+       Convert inline `return confirm('...')` handlers to data-confirm
+       Only exact one-statement handlers are converted; anything more
+       complex keeps the native dialog.
+       ------------------------------------------------------------------ */
+    var CONFIRM_RE = /^\s*return\s+confirm\(\s*(['"])([\s\S]*)\1\s*\)\s*;?\s*$/;
+
+    function unescapeJs(s) {
+        return s.replace(/\\(['"\\])/g, '$1').replace(/\\n/g, '\n');
+    }
+
+    function convertInlineConfirms(root) {
+        (root || document).querySelectorAll('[onclick*="confirm("], form[onsubmit*="confirm("]').forEach(function (el) {
+            var attr = el.tagName === 'FORM' ? 'onsubmit' : 'onclick';
+            var src = el.getAttribute(attr);
+            var m = src && src.match(CONFIRM_RE);
+            if (!m) return;
+            el.setAttribute('data-confirm', unescapeJs(m[2]));
+            el.removeAttribute(attr);
+        });
+    }
+
+    // Flags let the confirmed action run once without asking again.
+    var bypass = new WeakSet();
+
+    document.addEventListener('click', function (e) {
+        var el = e.target.closest('[data-confirm]');
+        if (!el || el.tagName === 'FORM' || bypass.has(el)) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        confirmDialog(el.getAttribute('data-confirm'), {
+            title: el.getAttribute('data-confirm-title') || undefined,
+            confirmText: el.getAttribute('data-confirm-button') || undefined
+        }).then(function (ok) {
+            if (!ok) return;
+            bypass.add(el);
+            var form = el.form || (el.tagName === 'BUTTON' || el.tagName === 'INPUT' ? el.closest('form') : null);
+            if (el.tagName === 'A' && el.getAttribute('href') && el.getAttribute('href') !== '#') {
+                if (el.target === '_blank') window.open(el.href, '_blank', 'noopener');
+                else window.location.href = el.href;
+            } else if (form && (el.type === 'submit' || el.type === 'image')) {
+                bypass.add(form);
+                if (form.requestSubmit) form.requestSubmit(el);
+                else form.submit();
+            } else {
+                el.click();
+            }
+            setTimeout(function () { bypass.delete(el); }, 0);
+        });
+    }, true);
+
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if (!form.hasAttribute('data-confirm')) return;
+        if (bypass.has(form)) { bypass.delete(form); return; }
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var submitter = e.submitter || null;
+        confirmDialog(form.getAttribute('data-confirm')).then(function (ok) {
+            if (!ok) return;
+            bypass.add(form);
+            if (form.requestSubmit) form.requestSubmit(submitter && submitter.form === form ? submitter : undefined);
+            else form.submit();
+        });
+    }, true);
+
+    /* ------------------------------------------------------------------
+       Button ripple
+       ------------------------------------------------------------------ */
+    document.addEventListener('pointerdown', function (e) {
+        if (reduceMotion) return;
+        var btn = e.target.closest('.btn');
+        if (!btn || btn.disabled || btn.classList.contains('disabled')) return;
+        var rect = btn.getBoundingClientRect();
+        var size = Math.max(rect.width, rect.height);
+        var span = document.createElement('span');
+        span.className = 'gt-ripple';
+        span.style.width = span.style.height = size + 'px';
+        span.style.left = (e.clientX - rect.left - size / 2) + 'px';
+        span.style.top = (e.clientY - rect.top - size / 2) + 'px';
+        btn.appendChild(span);
+        setTimeout(function () { span.remove(); }, 560);
+    });
+
+    /* ------------------------------------------------------------------
+       Submit loading state (prevents double submit)
+       Runs after page handlers so a prevented submit is left alone.
+       ------------------------------------------------------------------ */
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        setTimeout(function () {
+            if (e.defaultPrevented) return;
+            if (form.hasAttribute('data-no-loading') || form.target === '_blank') return;
+            var btn = e.submitter && e.submitter.classList && e.submitter.classList.contains('btn')
+                ? e.submitter
+                : form.querySelector('button[type="submit"].btn, input[type="submit"].btn');
+            if (!btn || btn.hasAttribute('data-no-loading')) return;
+            btn.classList.add('gt-loading');
+            btn.setAttribute('aria-busy', 'true');
+            // Downloads and validation failures keep the page; release the button.
+            setTimeout(function () { releaseButton(btn); }, 8000);
+        }, 0);
+    });
+
+    function releaseButton(btn) {
+        btn.classList.remove('gt-loading');
+        btn.removeAttribute('aria-busy');
+    }
+
+    window.addEventListener('pageshow', function () {
+        document.querySelectorAll('.btn.gt-loading').forEach(releaseButton);
+    });
+
+    /* ------------------------------------------------------------------
+       Input focus + validation feedback
+       ------------------------------------------------------------------ */
+    var FIELD_SEL = '.form-control, .form-select, .bootstrap-select';
+
+    document.addEventListener('focusin', function (e) {
+        var f = e.target.closest(FIELD_SEL);
+        if (f && f.parentElement) f.parentElement.classList.add('gt-field-focus');
+    });
+    document.addEventListener('focusout', function (e) {
+        var f = e.target.closest(FIELD_SEL);
+        if (f && f.parentElement) f.parentElement.classList.remove('gt-field-focus');
+    });
+
+    function shake(el) {
+        if (reduceMotion || !el) return;
+        el.classList.remove('gt-shake');
+        void el.offsetWidth; // restart animation
+        el.classList.add('gt-shake');
+        setTimeout(function () { el.classList.remove('gt-shake'); }, 400);
+    }
+
+    // Native HTML5 validation: shake the first invalid field only.
+    var shookThisSubmit = false;
+    document.addEventListener('invalid', function (e) {
+        if (shookThisSubmit) return;
+        shookThisSubmit = true;
+        shake(e.target);
+        setTimeout(function () { shookThisSubmit = false; }, 300);
+    }, true);
+
+    // Clear server-side error state as soon as the user edits the field.
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (el.classList && el.classList.contains('is-invalid')) {
+            el.classList.remove('is-invalid');
+        }
+    });
+
+    /* ------------------------------------------------------------------
+       Init
+       ------------------------------------------------------------------ */
+    function init() {
+        convertInlineConfirms(document);
+
+        var page = document.querySelector('.content-body > .container-fluid, .content-body > .container');
+        if (page && !reduceMotion) page.classList.add('gt-enter');
+
+        // Server-side validation errors: focus + shake first invalid field.
+        var firstInvalid = document.querySelector('.content-body .is-invalid, .content-body .was-validated :invalid');
+        if (firstInvalid) {
+            firstInvalid.focus({ preventScroll: false });
+            shake(firstInvalid);
+        }
+
+        // Session flash messages -> toast. Matching inline alerts are removed
+        // so the user sees one message, not two.
+        var flash = window.GTMS_FLASH || [];
+        flash.forEach(function (f) {
+            document.querySelectorAll('.content-body .alert').forEach(function (a) {
+                if (a.textContent.replace(/\s+/g, ' ').trim().indexOf(String(f.text).trim()) !== -1) {
+                    a.remove();
+                }
+            });
+        });
+        flash.forEach(function (f, i) {
+            setTimeout(function () { toast(f.icon, f.text, f.icon === 'error' ? 6000 : 4000); }, i * 350);
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Content injected later (AJAX tables, modals) may carry inline confirms.
+    if (window.MutationObserver) {
+        new MutationObserver(function (muts) {
+            for (var i = 0; i < muts.length; i++) {
+                for (var j = 0; j < muts[i].addedNodes.length; j++) {
+                    var n = muts[i].addedNodes[j];
+                    if (n.nodeType === 1 && n.querySelector) {
+                        if (n.matches('[onclick*="confirm("], form[onsubmit*="confirm("]')) convertInlineConfirms(n.parentNode);
+                        else if (n.querySelector('[onclick*="confirm("], form[onsubmit*="confirm("]')) convertInlineConfirms(n);
+                    }
+                }
+            }
+        }).observe(document.documentElement, { childList: true, subtree: true });
+    }
+})();

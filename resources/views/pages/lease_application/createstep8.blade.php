@@ -1,10 +1,14 @@
 @extends('layouts.app')
 @section('title', 'Review & Final Submit - Step 8')
+@push('styles')
+<link href="/css/gtms-lease.css?v=3" rel="stylesheet">
+@endpush
+
 @section('main_content')
 
 <div class="content-body default-height">
   <div class="container-fluid">
-    <div id="gtms-step8-page">
+    <div id="gtms-step8-page" class="lz-page">
       <div class="wizard-wrap">
 
         <!-- 8-STEP PROGRESS BAR (Exact Native Stepper Parity with Steps 1-7) -->
@@ -19,15 +23,15 @@
           <div class="sp-step active"><div class="circ">8</div><div class="sp-label">Review</div></div>
         </div>
 
-        <div class="card s8-main-card wizard-card">
+        <div class="card s8-main-card wizard-card lz-card">
           <!-- CARD HEADER -->
           <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
             <div>
-              <div class="s8-eyebrow text-uppercase fw-bold text-primary mb-1">Step 8 of 8 &bull; Dossier Scrutiny &amp; Final Submission</div>
-              <h4 class="s8-title mb-1">
+              <div class="s8-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">Step 8 of 8 &bull; Dossier Scrutiny &amp; Final Submission</div>
+              <h4 class="s8-title mb-1 lz-title">
                 <i class="bi bi-clipboard2-check-fill text-primary me-2"></i>Application Scrutiny &amp; Final Review
               </h4>
-              <div class="s8-subtitle">Please verify all applicant metadata, legal categories, 19 statutory documents, assigned handling personnel, and payment details before submitting to the scrutiny department.</div>
+              <div class="s8-subtitle lz-subtitle">Please verify all applicant metadata, legal categories, 19 statutory documents, assigned handling personnel, and payment details before submitting to the scrutiny department.</div>
             </div>
             <span class="badge s8-scrutiny-pill">
               <i class="bi bi-shield-check me-1.5"></i>Pre-Submission Scrutiny
@@ -133,8 +137,8 @@
                 <div class="s8-kpi-val text-success">₹ {{ number_format($pay['paid_amount'], 2) }}</div>
                 <div class="s8-kpi-sub d-flex justify-content-between align-items-center">
                   <span class="text-muted small">Due: ₹ {{ number_format($pay['pending_amount'], 2) }}</span>
-                  <span class="badge {{ $st === 'paid' ? 'bg-success text-white' : ($st === 'partial' ? 'bg-warning text-dark' : 'bg-danger text-white') }} rounded-pill px-2 py-0.5" style="font-size:10.5px;">
-                    {{ ucfirst($st) }}
+                  <span class="badge {{ $st === 'free' ? 'text-white' : ($st === 'paid' ? 'bg-success text-white' : ($st === 'partial' ? 'bg-warning text-dark' : 'bg-danger text-white')) }} rounded-pill px-2 py-0.5" style="font-size:10.5px;{{ $st === 'free' ? 'background:#6D28D9;' : '' }}">
+                    {{ $st === 'free' ? 'Free (Waived)' : ucfirst($st) }}
                   </span>
                 </div>
               </div>
@@ -169,7 +173,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6">
                   <div class="s8-data-tile">
-                    <span class="s8-tile-label">Customer Unique ID (MIMAS)</span>
+                    <span class="s8-tile-label">Customer Unique ID </span>
                     <span class="s8-tile-value text-primary font-monospace">{{ $previewData['mimas_no'] }}</span>
                   </div>
                 </div>
@@ -348,7 +352,11 @@
                   <div class="s8-ledger-card s8-ledger-status">
                     <span class="s8-ledger-sub">Settlement Status</span>
                     <div class="pt-1">
-                      @if($st === 'paid')
+                      @if($st === 'free')
+                        <span class="badge text-white py-1.5 px-3 rounded-pill fs-7" style="background:#6D28D9;">
+                          <i class="bi bi-gift-fill me-1"></i> Free (Waived)
+                        </span>
+                      @elseif($st === 'paid')
                         <span class="badge bg-success text-white py-1.5 px-3 rounded-pill fs-7">
                           <i class="bi bi-check-circle-fill me-1"></i> Fully Paid
                         </span>
@@ -366,6 +374,14 @@
                   </div>
                 </div>
               </div>
+              @if($st === 'free')
+                @include('pages.lease_application.partials.fee_waiver_note', [
+                  'waivedAmount' => $pay['waived_amount'] ?? null,
+                  'waiverReason' => $pay['waiver_reason'] ?? null,
+                  'waivedByName' => null,
+                  'waivedAt'     => null,
+                ])
+              @endif
             </div>
           </div>
 
@@ -665,8 +681,8 @@
           </div>
 
           <!-- WIZARD ACTION BUTTONS -->
-          <div class="wizard-actions s8-actions d-flex justify-content-between align-items-center pt-3 border-top">
-            <a href="{{ route('step7') }}" class="btn s8-btn-back">
+          <div class="wizard-actions s8-actions d-flex justify-content-between align-items-center pt-3 border-top lz-actions">
+            <a href="{{ route('step7') }}" class="btn s8-btn-back lz-btn lz-btn-ghost">
               <i class="bi bi-arrow-left me-2"></i>Back to Payment
             </a>
             @can('application.create')
@@ -675,7 +691,7 @@
               <input type="hidden" name="mimas_no" value="{{ $previewData['mimas_no'] ?? '' }}">
               <input type="hidden" name="category_code" value="{{ $previewData['category_code'] ?? '' }}">
               <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
-                <button type="button" id="btn_open_submit_modal" class="btn s8-btn-submit">
+                <button type="button" id="btn_open_submit_modal" class="btn s8-btn-submit lz-btn lz-btn-primary">
                   <i class="bi bi-check-circle-fill me-2"></i>Submit Final Application
                 </button>
                 <!-- Direct submit button accessible for fallback / form dispatch -->
@@ -801,111 +817,11 @@
     margin: 0 auto;
   }
 
-  #gtms-step8-page .s8-main-card {
-    background: var(--s8-surface);
-    border: 1px solid var(--s8-border);
-    border-radius: 16px;
-    padding: 28px;
-    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05);
-  }
+/* Stepper Bar */
 
-  /* Stepper Bar */
-  #gtms-step8-page .step-progress {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: relative;
-    margin-bottom: 28px;
-    padding: 0 12px;
-  }
+/* Header Eyebrow & Badges */
 
-  #gtms-step8-page .step-progress::before {
-    content: "";
-    position: absolute;
-    top: 18px;
-    left: 36px;
-    right: 36px;
-    height: 2px;
-    background: #e2e8f0;
-    z-index: 1;
-  }
-
-  #gtms-step8-page .sp-step {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-  }
-
-  #gtms-step8-page .sp-step .circ {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    background: #ffffff;
-    border: 2px solid #cbd5e1;
-    color: #64748b;
-    transition: all 0.2s ease;
-  }
-
-  #gtms-step8-page .sp-step.done .circ {
-    background: #10b981;
-    border-color: #10b981;
-    color: #ffffff;
-    font-size: 15px;
-  }
-
-  #gtms-step8-page .sp-step.active .circ {
-    background: var(--s8-primary);
-    border-color: var(--s8-primary);
-    color: #ffffff;
-    box-shadow: 0 0 0 4px rgba(15, 30, 77, 0.15);
-  }
-
-  #gtms-step8-page .sp-label {
-    font-size: 11.5px;
-    font-weight: 600;
-    color: #64748b;
-    white-space: nowrap;
-  }
-
-  #gtms-step8-page .sp-step.active .sp-label {
-    color: var(--s8-primary);
-    font-weight: 700;
-  }
-
-  #gtms-step8-page .sp-step.done .sp-label {
-    color: #10b981;
-    font-weight: 600;
-  }
-
-  /* Header Eyebrow & Badges */
-  #gtms-step8-page .s8-eyebrow {
-    font-size: 11.5px;
-    letter-spacing: 0.08em;
-    color: #0284c7 !important;
-  }
-
-  #gtms-step8-page .s8-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--s8-navy-text);
-  }
-
-  #gtms-step8-page .s8-subtitle {
-    font-size: 13px;
-    color: var(--s8-text-muted);
-    line-height: 1.45;
-  }
-
-  #gtms-step8-page .s8-scrutiny-pill {
+#gtms-step8-page .s8-scrutiny-pill {
     background: #e0f2fe;
     color: #0369a1;
     border: 1px solid #bae6fd;
@@ -1454,47 +1370,8 @@
   }
 
   /* Wizard Actions & Buttons */
-  #gtms-step8-page .s8-actions {
-    border-color: var(--s8-border) !important;
-  }
 
-  #gtms-step8-page .s8-btn-back {
-    background: #ffffff;
-    color: #334155;
-    border: 1.5px solid #cbd5e1 !important;
-    font-size: 13.5px;
-    font-weight: 600;
-    padding: 9px 22px;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-  }
-
-  #gtms-step8-page .s8-btn-back:hover {
-    background: #f1f5f9;
-    border-color: #94a3b8 !important;
-    color: #0f172a;
-  }
-
-  #gtms-step8-page .s8-btn-submit {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #ffffff;
-    border: 1px solid #059669;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 10px 28px;
-    border-radius: 8px;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-    transition: all 0.2s ease;
-  }
-
-  #gtms-step8-page .s8-btn-submit:hover {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    color: #ffffff;
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.4);
-    transform: translateY(-1px);
-  }
-
-  /* Modal Styling */
+/* Modal Styling */
   .s8-modal-content {
     border: 1px solid #e2e8f0;
     border-radius: 16px;
@@ -1565,49 +1442,9 @@
     --s8-navy-text: #f1f5f9;
   }
 
-  body[data-theme-version="dark"] #gtms-step8-page .s8-main-card {
-    background: var(--s8-surface);
-    border-color: var(--s8-border);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  }
+/* Dark Stepper */
 
-  /* Dark Stepper */
-  body[data-theme-version="dark"] #gtms-step8-page .step-progress::before {
-    background: #334155;
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-step .circ {
-    background: #0f172a;
-    border-color: #334155;
-    color: #94a3b8;
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-step.done .circ {
-    background: #059669;
-    border-color: #059669;
-    color: #ffffff;
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-step.active .circ {
-    background: #38bdf8;
-    border-color: #38bdf8;
-    color: #0f172a;
-    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25);
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-label {
-    color: #94a3b8;
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-step.active .sp-label {
-    color: #38bdf8;
-  }
-
-  body[data-theme-version="dark"] #gtms-step8-page .sp-step.done .sp-label {
-    color: #34d399;
-  }
-
-  /* Dark Banner */
+/* Dark Banner */
   body[data-theme-version="dark"] #gtms-step8-page .s8-banner-card {
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-color: #334155;
@@ -1828,19 +1665,8 @@
   }
 
   /* Dark Actions */
-  body[data-theme-version="dark"] #gtms-step8-page .s8-btn-back {
-    background: #0f172a;
-    color: #cbd5e1;
-    border-color: #334155 !important;
-  }
 
-  body[data-theme-version="dark"] #gtms-step8-page .s8-btn-back:hover {
-    background: #334155;
-    border-color: #475569 !important;
-    color: #f8fafc;
-  }
-
-  /* Dark Modal */
+/* Dark Modal */
   body[data-theme-version="dark"] .s8-modal-content {
     background: #1e293b;
     border-color: #334155;
@@ -1866,6 +1692,126 @@
   body[data-theme-version="dark"] .s8-btn-modal-cancel:hover {
     background: #334155;
     color: #f8fafc;
+  }
+
+  /* ==========================================================================
+     STEP 8 — LAYOUT & ALIGNMENT FIXES
+     Review page shows 4 columns of facts; give it room and make every card
+     in a row the same height with labels/values on shared baselines.
+     ========================================================================== */
+  #gtms-step8-page.lz-page { max-width: 1180px; }
+  #gtms-step8-page.lz-page > .wizard-wrap { max-width: 100%; padding-left: 0; padding-right: 0; }
+
+  /* ---- Top KPI cards: equal height, nothing cut off ---- */
+  #gtms-step8-page.lz-page .s8-kpi-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px;
+    border-radius: 14px;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #gtms-step8-page.lz-page .s8-kpi-card:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15, 30, 77, .08); }
+  #gtms-step8-page.lz-page .s8-kpi-card > .d-flex:first-child { gap: 10px; min-height: 32px; margin-bottom: 10px !important; }
+  #gtms-step8-page.lz-page .s8-kpi-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  #gtms-step8-page.lz-page .s8-kpi-icon-badge { flex-shrink: 0; }
+  #gtms-step8-page.lz-page .s8-kpi-val {
+    line-height: 1.25;
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* long names wrap to max 2 lines instead of being cut to "Others, Other: …" */
+  #gtms-step8-page.lz-page .s8-kpi-val.text-truncate {
+    white-space: normal !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+  }
+  #gtms-step8-page.lz-page .s8-kpi-sub {
+    margin-top: auto;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  #gtms-step8-page.lz-page .s8-kpi-sub .badge { margin: 0 !important; white-space: nowrap; }
+  #gtms-step8-page.lz-page .s8-kpi-sub > .text-muted { white-space: nowrap; }
+
+  /* ---- Section panels ---- */
+  #gtms-step8-page.lz-page .s8-section-panel { border-radius: 14px; overflow: hidden; }
+  #gtms-step8-page.lz-page .s8-panel-header { gap: 10px; flex-wrap: wrap; padding: 14px 20px; }
+  #gtms-step8-page.lz-page .s8-panel-header > .d-flex { min-width: 0; flex-wrap: wrap; row-gap: 6px; }
+  #gtms-step8-page.lz-page .s8-panel-body { padding: 18px 20px; }
+  #gtms-step8-page.lz-page .s8-btn-edit {
+    min-height: 34px;
+    display: inline-flex; align-items: center;
+    border-radius: 8px;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  #gtms-step8-page.lz-page .s8-btn-edit:hover { transform: translateY(-1px); }
+
+  /* ---- Data tiles: same height per row, values aligned, full text ---- */
+  #gtms-step8-page.lz-page .s8-data-tile {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    transition: border-color .15s ease, background-color .15s ease;
+  }
+  #gtms-step8-page.lz-page .s8-data-tile:hover { border-color: var(--lz-border-strong); }
+  #gtms-step8-page.lz-page .s8-tile-label {
+    display: block;
+    min-height: 2.6em;          /* room for a 2-line label so values line up */
+    line-height: 1.3;
+    margin: 0 !important;
+  }
+  #gtms-step8-page.lz-page .s8-tile-value {
+    display: block;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  /* show the full value (email, contact) instead of "sriramsri@gmail.c…" */
+  #gtms-step8-page.lz-page .s8-tile-value.text-truncate {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* ---- Folder cards ---- */
+  #gtms-step8-page.lz-page .s8-folder-card {
+    height: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  #gtms-step8-page.lz-page .s8-folder-card:hover { transform: translateY(-1px); }
+  #gtms-step8-page.lz-page .s8-folder-card > .d-flex {
+    align-items: flex-start !important;
+    gap: 10px;
+    margin-bottom: 6px !important;
+  }
+  #gtms-step8-page.lz-page .s8-folder-title { line-height: 1.35; min-width: 0; }
+  #gtms-step8-page.lz-page .s8-folder-card .badge { flex-shrink: 0; margin-top: 1px; }
+  #gtms-step8-page.lz-page .s8-docs-summary > .d-flex { flex-wrap: wrap; row-gap: 6px; }
+
+  /* ---- Handlers table ---- */
+  #gtms-step8-page.lz-page .s8-table thead th { white-space: nowrap; }
+  #gtms-step8-page.lz-page .s8-table td,
+  #gtms-step8-page.lz-page .s8-table th { text-align: left; vertical-align: middle; }
+  #gtms-step8-page.lz-page .s8-table td:first-child,
+  #gtms-step8-page.lz-page .s8-table th:first-child { text-align: center; }
+
+  /* ---- Banner + declaration ---- */
+  #gtms-step8-page.lz-page .s8-banner-card { border-radius: 14px; padding: 16px 18px; }
+  #gtms-step8-page.lz-page .s8-banner-desc { max-width: 70ch; }
+
+  @media (max-width: 575.98px) {
+    #gtms-step8-page.lz-page .s8-tile-label { min-height: 0; }
+    #gtms-step8-page.lz-page .s8-panel-body { padding: 14px; }
   }
 </style>
 

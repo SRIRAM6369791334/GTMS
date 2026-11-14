@@ -108,7 +108,7 @@ class EnvironmentalB2Controller extends Controller
             $year = date('Y');
             $maxProj = DB::table('environment_projects')
                 ->where('project_code', 'like', "ENV-B2-{$year}-%")
-                ->whereNull('deleted_at')
+                // soft-deleted codes stay in the UNIQUE index, so count them too
                 ->orderByRaw("CAST(SUBSTRING_INDEX(project_code, '-', -1) AS UNSIGNED) DESC")
                 ->lockForUpdate()
                 ->first();

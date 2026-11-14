@@ -1,0 +1,743 @@
+/* ==========================================================================
+   GTMS UI LAYER
+   Shared design tokens, spacing, hover states and micro-interactions for
+   every page that uses layouts/app.blade.php. Loaded after style.css and
+   dark-mode.css so it can refine (not replace) the base theme.
+   ========================================================================== */
+
+:root {
+    /* Brand */
+    --gt-primary: #0F1E4D;
+    --gt-primary-600: #1E3A8A;
+    --gt-primary-500: #2563EB;
+    --gt-primary-50: #EFF6FF;
+    --gt-accent: #F28C28;
+
+    /* Semantic */
+    --gt-success: #15803D;
+    --gt-success-50: #F0FDF4;
+    --gt-warning: #B45309;
+    --gt-warning-50: #FEF3C7;
+    --gt-danger: #DC2626;
+    --gt-danger-50: #FEE2E2;
+    --gt-info: #0369A1;
+    --gt-info-50: #E0F2FE;
+
+    /* Surfaces and text */
+    --gt-bg: #F4F6FB;
+    --gt-surface: #FFFFFF;
+    --gt-surface-2: #F8FAFC;
+    --gt-border: #E2E8F0;
+    --gt-border-strong: #CBD5E1;
+    --gt-text: #0F172A;
+    --gt-text-2: #475569;
+    --gt-text-3: #64748B;
+
+    /* Shape, depth, motion */
+    --gt-radius-sm: 8px;
+    --gt-radius: 12px;
+    --gt-radius-lg: 16px;
+    --gt-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+    --gt-shadow: 0 4px 14px rgba(15, 30, 77, 0.08);
+    --gt-shadow-lg: 0 14px 34px rgba(15, 30, 77, 0.14);
+    --gt-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    --gt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --gt-fast: 150ms;
+    --gt-med: 240ms;
+}
+
+body[data-theme-version="dark"] {
+    --gt-bg: #0B1120;
+    --gt-surface: #111A2E;
+    --gt-surface-2: #16213A;
+    --gt-border: #24314F;
+    --gt-border-strong: #33446A;
+    --gt-text: #E2E8F0;
+    --gt-text-2: #A8B4C8;
+    --gt-text-3: #8391A9;
+    --gt-primary-50: rgba(37, 99, 235, 0.14);
+    --gt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --gt-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    --gt-shadow-lg: 0 14px 34px rgba(0, 0, 0, 0.45);
+    --gt-ring: 0 0 0 3px rgba(96, 165, 250, 0.28);
+}
+
+/* --------------------------------------------------------------------------
+   1. Page rhythm: consistent gutters and entrance
+   -------------------------------------------------------------------------- */
+.content-body {
+    background: var(--gt-bg);
+}
+.content-body > .container-fluid,
+.content-body > .container {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+@media (max-width: 767.98px) {
+    .content-body > .container-fluid,
+    .content-body > .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 1rem;
+    }
+}
+
+.gt-enter {
+    animation: gtFadeUp var(--gt-med) var(--gt-ease) both;
+}
+@keyframes gtFadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Page title row */
+.page-titles {
+    border-radius: var(--gt-radius) !important;
+    box-shadow: var(--gt-shadow-sm);
+    margin-bottom: 1.5rem !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Cards
+   -------------------------------------------------------------------------- */
+.content-body .card {
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius-lg);
+    box-shadow: var(--gt-shadow-sm);
+    transition: box-shadow var(--gt-med) var(--gt-ease),
+                transform var(--gt-med) var(--gt-ease),
+                border-color var(--gt-med) var(--gt-ease);
+    margin-bottom: 1.5rem;
+}
+.content-body .card:hover {
+    box-shadow: var(--gt-shadow);
+    border-color: var(--gt-border-strong);
+}
+/* Small stat/summary cards get a gentle lift */
+.content-body .row > [class*="col-"] > .card:not(:has(form)):not(:has(table)):hover {
+    transform: translateY(-2px);
+}
+.content-body .card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gt-border);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.content-body .card-title {
+    font-weight: 700;
+    color: var(--gt-text);
+    margin-bottom: 0;
+}
+.content-body .card-body {
+    padding: 1.5rem;
+}
+@media (max-width: 575.98px) {
+    .content-body .card-header,
+    .content-body .card-body {
+        padding: 1rem;
+    }
+}
+.content-body .card-footer {
+    padding: 1rem 1.5rem;
+    background: var(--gt-surface-2);
+    border-top: 1px solid var(--gt-border);
+    border-bottom-left-radius: var(--gt-radius-lg);
+    border-bottom-right-radius: var(--gt-radius-lg);
+}
+
+/* --------------------------------------------------------------------------
+   3. Buttons: hover lift, press scale, ripple, focus ring, loading
+   -------------------------------------------------------------------------- */
+.btn {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--gt-radius-sm);
+    font-weight: 600;
+    transition: background-color var(--gt-fast) ease,
+                border-color var(--gt-fast) ease,
+                color var(--gt-fast) ease,
+                box-shadow var(--gt-med) var(--gt-ease),
+                transform var(--gt-fast) var(--gt-ease);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    cursor: pointer;
+}
+.btn:not(.btn-link):not(:disabled):not(.disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: var(--gt-shadow);
+}
+.btn:not(:disabled):not(.disabled):active {
+    transform: translateY(0) scale(0.97);
+    box-shadow: none;
+}
+.btn:focus-visible {
+    outline: none;
+    box-shadow: var(--gt-ring) !important;
+}
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--gt-primary);
+    border-color: var(--gt-primary);
+    color: #fff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background: var(--gt-primary-600);
+    border-color: var(--gt-primary-600);
+    color: #fff;
+}
+.btn-outline-primary {
+    color: var(--gt-primary);
+    border-color: var(--gt-primary);
+}
+.btn-outline-primary:hover {
+    background: var(--gt-primary);
+    border-color: var(--gt-primary);
+    color: #fff;
+}
+body[data-theme-version="dark"] .btn-outline-primary {
+    color: #93C5FD;
+    border-color: #3B5BA9;
+}
+
+/* Ripple (span injected by gtms-ui.js) */
+.gt-ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    background: currentColor;
+    opacity: 0.25;
+    pointer-events: none;
+    animation: gtRipple 520ms ease-out forwards;
+}
+@keyframes gtRipple {
+    to { transform: scale(2.6); opacity: 0; }
+}
+
+/* Loading state while a form submits */
+.btn.gt-loading {
+    color: transparent !important;
+    pointer-events: none;
+}
+.btn.gt-loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-top-color: #fff;
+    animation: gtSpin 0.7s linear infinite;
+}
+.btn-light.gt-loading::after,
+.btn-outline-primary.gt-loading::after,
+.btn-outline-secondary.gt-loading::after {
+    border-color: rgba(15, 30, 77, 0.25);
+    border-top-color: var(--gt-primary);
+}
+@keyframes gtSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* --------------------------------------------------------------------------
+   4. Forms: labels, inputs, focus animation, validation
+   -------------------------------------------------------------------------- */
+.content-body .form-label,
+.content-body label.form-label,
+.modal .form-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--gt-text-2);
+    margin-bottom: 0.4rem;
+    transition: color var(--gt-fast) ease;
+}
+.form-label.required::after,
+label.required::after {
+    content: " *";
+    color: var(--gt-danger);
+}
+
+.form-control,
+.form-select,
+.content-body .default-select,
+.content-body .bootstrap-select > .dropdown-toggle {
+    border: 1.5px solid var(--gt-border-strong);
+    border-radius: var(--gt-radius-sm);
+    min-height: 44px;
+    font-size: 0.92rem;
+    color: var(--gt-text);
+    background-color: var(--gt-surface);
+    transition: border-color var(--gt-fast) ease,
+                box-shadow var(--gt-med) var(--gt-ease),
+                background-color var(--gt-fast) ease;
+}
+textarea.form-control {
+    min-height: 96px;
+}
+.form-control-sm,
+.form-select-sm {
+    min-height: 36px;
+}
+.form-control::placeholder {
+    color: var(--gt-text-3);
+    opacity: 0.85;
+    transition: opacity var(--gt-fast) ease, transform var(--gt-fast) ease;
+}
+.form-control:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled) {
+    border-color: #94A3B8;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--gt-primary-500);
+    box-shadow: var(--gt-ring);
+    background-color: var(--gt-surface);
+    color: var(--gt-text);
+}
+.form-control:focus::placeholder {
+    opacity: 0.45;
+    transform: translateX(4px);
+}
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: var(--gt-surface-2);
+    color: var(--gt-text-2);
+}
+
+/* Label tint when its field has focus (class set by gtms-ui.js) */
+.gt-field-focus > .form-label,
+.gt-field-focus > label {
+    color: var(--gt-primary-500);
+}
+body[data-theme-version="dark"] .gt-field-focus > .form-label,
+body[data-theme-version="dark"] .gt-field-focus > label {
+    color: #93C5FD;
+}
+
+/* Focused input gets a soft lift */
+.form-control:focus,
+.form-select:focus {
+    transform: translateY(-1px);
+}
+.input-group .form-control:focus,
+.input-group .form-select:focus {
+    transform: none;
+}
+
+/* Validation */
+.form-control.is-invalid,
+.form-select.is-invalid,
+.was-validated .form-control:invalid {
+    border-color: var(--gt-danger);
+}
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+.form-control.is-valid,
+.form-select.is-valid {
+    border-color: var(--gt-success);
+}
+.invalid-feedback,
+.text-danger.small,
+.error-text {
+    font-size: 0.8rem;
+    animation: gtFadeUp var(--gt-fast) ease both;
+}
+.gt-shake {
+    animation: gtShake 360ms ease both;
+}
+@keyframes gtShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(2px); }
+}
+
+/* Checkboxes / radios / switches */
+.form-check-input {
+    cursor: pointer;
+    transition: background-color var(--gt-fast) ease, border-color var(--gt-fast) ease,
+                box-shadow var(--gt-med) var(--gt-ease), transform var(--gt-fast) ease;
+}
+.form-check-input:checked {
+    background-color: var(--gt-primary-500);
+    border-color: var(--gt-primary-500);
+}
+.form-check-input:active {
+    transform: scale(0.9);
+}
+.form-check-input:focus {
+    box-shadow: var(--gt-ring);
+    border-color: var(--gt-primary-500);
+}
+.form-check-label {
+    cursor: pointer;
+}
+
+/* Input groups keep one continuous focus ring */
+.input-group:focus-within {
+    border-radius: var(--gt-radius-sm);
+    box-shadow: var(--gt-ring);
+}
+.input-group:focus-within .form-control,
+.input-group:focus-within .form-select {
+    box-shadow: none;
+}
+.input-group-text {
+    border: 1.5px solid var(--gt-border-strong);
+    background: var(--gt-surface-2);
+    color: var(--gt-text-2);
+    transition: border-color var(--gt-fast) ease, color var(--gt-fast) ease;
+}
+.input-group:focus-within .input-group-text {
+    border-color: var(--gt-primary-500);
+    color: var(--gt-primary-500);
+}
+
+/* Form spacing */
+.content-body form .row > [class*="col-"] {
+    margin-bottom: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   5. Tables
+   -------------------------------------------------------------------------- */
+.content-body .table {
+    color: var(--gt-text);
+    vertical-align: middle;
+}
+.content-body .table thead th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--gt-text-3);
+    background: var(--gt-surface-2);
+    border-bottom: 1px solid var(--gt-border);
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+.content-body .table tbody td {
+    padding: 0.85rem 1rem;
+    border-color: var(--gt-border);
+}
+.content-body .table tbody tr {
+    transition: background-color var(--gt-fast) ease;
+}
+.content-body .table-hover tbody tr:hover,
+.content-body .dataTable tbody tr:hover,
+.content-body .table tbody tr:hover {
+    background-color: var(--gt-primary-50);
+}
+.content-body .table td,
+.content-body .table th {
+    font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   6. Badges, alerts, tabs, dropdowns, links
+   -------------------------------------------------------------------------- */
+.badge {
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    border-radius: 999px;
+    padding: 0.35em 0.75em;
+}
+.content-body .alert {
+    border-radius: var(--gt-radius);
+    border-width: 1px;
+    animation: gtFadeUp var(--gt-med) var(--gt-ease) both;
+}
+.nav-tabs .nav-link,
+.nav-pills .nav-link {
+    transition: color var(--gt-fast) ease, background-color var(--gt-fast) ease,
+                border-color var(--gt-fast) ease;
+}
+.nav-pills .nav-link.active {
+    background-color: var(--gt-primary);
+}
+.dropdown-menu {
+    border: 1px solid var(--gt-border);
+    border-radius: var(--gt-radius);
+    box-shadow: var(--gt-shadow-lg);
+    padding: 0.4rem;
+    animation: gtDrop var(--gt-fast) var(--gt-ease) both;
+}
+@keyframes gtDrop {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}
+.dropdown-item {
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    transition: background-color var(--gt-fast) ease, color var(--gt-fast) ease;
+}
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: var(--gt-primary-50);
+    color: var(--gt-primary-600);
+}
+.content-body a:not(.btn):not(.nav-link):not(.dropdown-item):not(.page-link) {
+    transition: color var(--gt-fast) ease;
+}
+
+/* Sidebar menu hover */
+.dlabnav .metismenu > li > a {
+    transition: background-color var(--gt-fast) ease, color var(--gt-fast) ease,
+                padding-left var(--gt-med) var(--gt-ease);
+}
+.dlabnav .metismenu ul a {
+    transition: color var(--gt-fast) ease, transform var(--gt-med) var(--gt-ease);
+}
+.dlabnav .metismenu ul a:hover {
+    transform: translateX(3px);
+}
+
+/* Keyboard focus visible everywhere */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--gt-primary-500);
+    outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   7. SweetAlert2 theme (overrides the inline block in app.blade.php)
+   -------------------------------------------------------------------------- */
+.swal2-popup.gt-swal {
+    border-radius: var(--gt-radius-lg) !important;
+    padding: 1.75rem 1.5rem 1.5rem !important;
+    background: var(--gt-surface) !important;
+    color: var(--gt-text) !important;
+}
+.swal2-popup.gt-swal .swal2-title {
+    color: var(--gt-text) !important;
+}
+.swal2-popup.gt-swal .swal2-html-container {
+    color: var(--gt-text-2) !important;
+}
+.swal2-popup.gt-swal .swal2-actions button.swal2-confirm,
+.swal2-popup.gt-swal .swal2-actions button.swal2-cancel {
+    min-height: 42px;
+    min-width: 110px;
+    transition: transform var(--gt-fast) var(--gt-ease), box-shadow var(--gt-med) var(--gt-ease),
+                background-color var(--gt-fast) ease !important;
+}
+.swal2-popup.gt-swal .swal2-actions button.swal2-confirm {
+    background: var(--gt-primary) !important;
+    box-shadow: 0 4px 12px rgba(15, 30, 77, 0.22) !important;
+}
+.swal2-popup.gt-swal.gt-swal-danger .swal2-actions button.swal2-confirm {
+    background: var(--gt-danger) !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+.swal2-popup.gt-swal .swal2-actions button.swal2-cancel {
+    background: var(--gt-surface) !important;
+    color: var(--gt-text-2) !important;
+    border: 1.5px solid var(--gt-border-strong) !important;
+    box-shadow: none !important;
+}
+.swal2-popup.gt-swal .swal2-actions button:hover {
+    transform: translateY(-1px);
+}
+.swal2-popup.gt-swal .swal2-actions button:active {
+    transform: scale(0.97);
+}
+/* Toasts: compact card, small icon, readable wrapping text */
+.swal2-popup.swal2-toast {
+    display: grid !important;
+    grid-template-columns: auto 1fr auto !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+    width: min(380px, calc(100vw - 32px)) !important;
+    padding: 12px 12px 14px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--gt-border) !important;
+    border-left: 4px solid var(--gt-success) !important;
+    background: var(--gt-surface) !important;
+    box-shadow: 0 10px 28px rgba(15, 30, 77, 0.16) !important;
+    overflow: hidden;
+}
+.swal2-popup.swal2-toast.swal2-icon-error   { border-left-color: var(--gt-danger) !important; }
+.swal2-popup.swal2-toast.swal2-icon-warning { border-left-color: #F59E0B !important; }
+.swal2-popup.swal2-toast.swal2-icon-info,
+.swal2-popup.swal2-toast.swal2-icon-question { border-left-color: var(--gt-primary-500) !important; }
+.swal2-popup.swal2-toast .swal2-icon {
+    grid-column: 1 !important;
+    width: 26px !important;
+    min-width: 26px !important;
+    height: 26px !important;
+    margin: 0 !important;
+    border-width: 2px !important;
+    font-size: 11px !important;
+}
+.swal2-popup.swal2-toast .swal2-title {
+    grid-column: 2 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.86rem !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    text-align: left !important;
+    color: var(--gt-text) !important;
+    overflow-wrap: anywhere;   /* long file names wrap instead of stretching */
+}
+.swal2-popup.swal2-toast .swal2-close {
+    grid-column: 3 !important;
+    position: static !important;
+    width: 26px !important;
+    height: 26px !important;
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    color: var(--gt-text-3) !important;
+    border-radius: 6px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.swal2-popup.swal2-toast .swal2-close:hover {
+    background: var(--gt-surface-2) !important;
+    color: var(--gt-text) !important;
+}
+.swal2-popup.swal2-toast .swal2-timer-progress-bar {
+    background: rgba(15, 30, 77, 0.18) !important;
+    height: 3px !important;
+}
+
+/* Dim + blur only behind real dialogs, never behind toasts */
+.swal2-container.swal2-backdrop-show:not(.swal2-top-end):not(.swal2-top-start):not(.swal2-top):not(.swal2-bottom-end):not(.swal2-bottom-start):not(.swal2-bottom) {
+    background: rgba(15, 23, 42, 0.5) !important;
+    backdrop-filter: blur(2px);
+}
+body.swal2-toast-shown .swal2-container,
+.swal2-container:has(> .swal2-toast) {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    pointer-events: none;
+}
+.swal2-container:has(> .swal2-toast) > .swal2-toast {
+    pointer-events: auto;
+}
+
+/* --------------------------------------------------------------------------
+   8. Reduced motion
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+    .btn:hover,
+    .content-body .card:hover {
+        transform: none !important;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   9. Half-step spacing utilities
+   Views use mb-1.5, gap-2.5, p-3.5 ... which Bootstrap 5 does not ship,
+   so that spacing was silently dropped. Steps: .5=2px 1.5=6px 2.5=10px 3.5=20px
+   -------------------------------------------------------------------------- */
+.m-0\.5{margin:.125rem!important}.mt-0\.5{margin-top:.125rem!important}.mb-0\.5{margin-bottom:.125rem!important}.ms-0\.5{margin-left:.125rem!important}.me-0\.5{margin-right:.125rem!important}
+.mt-1\.5{margin-top:.375rem!important}.mb-1\.5{margin-bottom:.375rem!important}.ms-1\.5{margin-left:.375rem!important}.me-1\.5{margin-right:.375rem!important}
+.mt-2\.5{margin-top:.625rem!important}.mb-2\.5{margin-bottom:.625rem!important}.ms-2\.5{margin-left:.625rem!important}.me-2\.5{margin-right:.625rem!important}
+.mt-3\.5{margin-top:1.25rem!important}.mb-3\.5{margin-bottom:1.25rem!important}.ms-3\.5{margin-left:1.25rem!important}.me-3\.5{margin-right:1.25rem!important}
+.p-0\.5{padding:.125rem!important}.pt-0\.5{padding-top:.125rem!important}.pb-0\.5{padding-bottom:.125rem!important}.py-0\.5{padding-top:.125rem!important;padding-bottom:.125rem!important}.px-0\.5{padding-left:.125rem!important;padding-right:.125rem!important}
+.p-1\.5{padding:.375rem!important}.py-1\.5{padding-top:.375rem!important;padding-bottom:.375rem!important}.px-1\.5{padding-left:.375rem!important;padding-right:.375rem!important}
+.p-2\.5{padding:.625rem!important}.py-2\.5{padding-top:.625rem!important;padding-bottom:.625rem!important}.px-2\.5{padding-left:.625rem!important;padding-right:.625rem!important}
+.p-3\.5{padding:1.25rem!important}.py-3\.5{padding-top:1.25rem!important;padding-bottom:1.25rem!important}.px-3\.5{padding-left:1.25rem!important;padding-right:1.25rem!important}
+.gap-0\.5{gap:.125rem!important}.gap-1\.5{gap:.375rem!important}.gap-2\.5{gap:.625rem!important}.gap-3\.5{gap:1.25rem!important}
+
+/* --------------------------------------------------------------------------
+   10. Header page title: one line, ellipsis instead of wrapping over content
+   -------------------------------------------------------------------------- */
+.header .header-left {
+    min-width: 0;
+}
+.header .header-left .dashboard_bar {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 42vw;
+}
+@media (max-width: 767.98px) {
+    .header .header-left .dashboard_bar { max-width: 50vw; font-size: 1rem !important; }
+}
+
+/* --------------------------------------------------------------------------
+   11. Field validation (gtms-validate.js)
+   -------------------------------------------------------------------------- */
+.gt-v-error,
+.error-text {
+    display: block;
+    min-height: 0;
+    font-size: 0.875rem !important;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-top: 5px;
+    color: var(--gt-danger);
+}
+.gt-v-error:empty,
+.error-text:empty {
+    margin-top: 0;
+}
+/* Short "Numbers only" style hint while typing */
+.gt-v-hint {
+    color: var(--gt-warning) !important;
+    animation: gtFadeUp var(--gt-fast) ease both;
+}
+.form-control.gt-v-blocked {
+    border-color: #F59E0B !important;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18) !important;
+}
+/* Valid tick (only after the user has typed something valid) */
+.form-control.is-valid {
+    border-color: var(--gt-success);
+    background-image: none;
+    padding-right: 0.75rem;
+}
+/* Whole input-group turns red when its input is invalid */
+.input-group.gt-v-invalid .input-group-text {
+    border-color: var(--gt-danger) !important;
+    color: var(--gt-danger) !important;
+}
+.input-group.gt-v-invalid .form-control {
+    border-color: var(--gt-danger) !important;
+}
+
+/* --------------------------------------------------------------------------
+   12. Neutral "secondary" (the Dexignlabs theme maps secondary to PINK)
+   Pages use text-secondary / btn-outline-secondary / bg-secondary-subtle
+   for neutral UI; render them in slate inside page content.
+   -------------------------------------------------------------------------- */
+.content-body .text-secondary { color: var(--gt-text-3) !important; }
+.content-body .btn-outline-secondary {
+    color: var(--gt-text-2);
+    border-color: var(--gt-border-strong);
+    background: var(--gt-surface);
+}
+.content-body .btn-outline-secondary:hover,
+.content-body .btn-outline-secondary:focus {
+    color: var(--gt-text);
+    background: var(--gt-surface-2);
+    border-color: var(--gt-text-3);
+}
+.content-body .bg-secondary-subtle { background-color: #F1F5F9 !important; }
+.content-body .border-secondary-subtle { border-color: var(--gt-border-strong) !important; }
+.content-body .bg-secondary { background-color: #64748B !important; }
+body[data-theme-version="dark"] .content-body .bg-secondary-subtle { background-color: rgba(148, 163, 184, 0.15) !important; }

@@ -1052,6 +1052,46 @@ body[data-theme-version="dark"] .content-body .text-dark {
 body[data-theme-version="dark"] .content-body .text-secondary {
     color: var(--mining-text-secondary) !important;
 }
+
+/* ==========================================================================
+   LIST PAGE ALIGNMENT FIXES (gtms-module-upgrade)
+   ========================================================================== */
+/* Title block takes the free space; the action button stays on the right */
+.mining-header-suite > :first-child { flex: 1 1 420px; min-width: 0; }
+.mining-header-suite > :last-child { flex-shrink: 0; }
+@media (max-width: 575.98px) {
+    .mining-header-suite > :last-child, .mining-header-suite > :last-child .btn, .mining-header-suite > :last-child a { width: 100%; justify-content: center; }
+}
+
+/* Toolbar: controls shrink to share one row instead of wrapping to 2-3 rows */
+.mining-toolbar > * { min-width: 0; }
+.mining-toolbar .mining-search-wrap { flex: 2 1 220px; min-width: 200px; }
+.mining-toolbar select,
+.mining-toolbar .mining-filter-select {
+    flex: 1 1 130px;
+    min-width: 120px;
+    max-width: 200px;
+    min-height: 40px;
+}
+.mining-toolbar .ms-auto select { flex: 0 0 auto; min-width: 104px; }
+
+/* Table: headers on one line; table scrolls inside its card when narrow */
+.mining-table-wrap, #miningTableWrap { overflow-x: auto; }
+table.mining-table thead th,
+#miningTable thead th { white-space: nowrap; }
+
+/* Small screens: status tabs wrap instead of being cut off */
+@media (max-width: 767.98px) {
+    .mining-quick-tabs { flex-wrap: wrap; row-gap: 6px; max-width: 100%; }
+    .mining-directory-header { flex-wrap: wrap; gap: 10px; }
+}
+
+/* DataTables pagination: no grey wrapper box, even 36px buttons */
+.dataTables_wrapper .dataTables_paginate { background: transparent !important; padding: 0 !important; border-radius: 0 !important; gap: 6px !important; }
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    min-width: 36px !important; height: 36px !important; padding: 0 12px !important; margin: 0 !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+}
 </style>
 
 <div class="content-body default-height">
@@ -1108,7 +1148,7 @@ body[data-theme-version="dark"] .content-body .text-secondary {
 
         <!-- 2. 4 Bento KPI Metric Cards -->
         <div class="row g-3 mb-4">
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="mining-kpi-card mining-kpi-total">
                     <div class="mining-kpi-icon">
                         <i class="bi bi-folder-fill"></i>
@@ -1123,7 +1163,7 @@ body[data-theme-version="dark"] .content-body .text-secondary {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="mining-kpi-card mining-kpi-scrutiny">
                     <div class="mining-kpi-icon">
                         <i class="bi bi-hourglass-split"></i>
@@ -1138,7 +1178,7 @@ body[data-theme-version="dark"] .content-body .text-secondary {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="mining-kpi-card mining-kpi-approved">
                     <div class="mining-kpi-icon">
                         <i class="bi bi-check-circle-fill"></i>
@@ -1153,7 +1193,7 @@ body[data-theme-version="dark"] .content-body .text-secondary {
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-sm-6">
+            <div class="col-xl-3 col-md-6">
                 <div class="mining-kpi-card mining-kpi-draft">
                     <div class="mining-kpi-icon">
                         <i class="bi bi-pencil-square"></i>

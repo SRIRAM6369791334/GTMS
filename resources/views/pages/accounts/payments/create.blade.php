@@ -1121,7 +1121,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const meta = moduleIcons[d.application_type] || moduleIcons['general'];
 
             let statusPillCls = 'status-pending-pill', badgeTxt = 'Pending';
-            if (d.payment_status === 'paid' || d.pending_amount <= 0) {
+            if (d.payment_status === 'free') {
+                statusPillCls = 'status-settled-pill'; badgeTxt = 'Free (Waived)';
+            } else if (d.payment_status === 'paid' || d.pending_amount <= 0) {
                 statusPillCls = 'status-settled-pill'; badgeTxt = 'Settled';
             } else if (d.payment_status === 'partial') {
                 statusPillCls = 'status-pending-pill'; badgeTxt = 'Partial';
