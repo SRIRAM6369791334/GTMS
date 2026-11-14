@@ -1,0 +1,26 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Block direct access to sensitive files
+    <FilesMatch "^\.(env|git|gitignore)|artisan|composer\.(json|lock)">
+        <IfModule mod_authz_core.c>
+            Require all denied
+        </IfModule>
+        <IfModule !mod_authz_core.c>
+            Order allow,deny
+            Deny from all
+        </IfModule>
+    </FilesMatch>
+
+    # 1. If file exists inside public/, serve it directly
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f [OR]
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -d
+    RewriteRule ^(.*)$ public/$1 [L]
+
+    # 2. For all Laravel routes (/login, /dashboard, etc.), send to public/index.php
+    RewriteRule ^(.*)$ public/index.php [L]
+</IfModule>
