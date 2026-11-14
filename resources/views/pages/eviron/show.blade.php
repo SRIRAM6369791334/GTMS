@@ -659,7 +659,7 @@ body[data-theme-version="dark"] .table-admin .doc-name {
 
         <div class="col-md-3 col-sm-6">
           <div class="data-cell">
-            <div class="data-cell-label">Customer Unique ID </div>
+            <div class="data-cell-label">Customer Unique ID</div>
             <div class="data-cell-value">
               <span class="data-value-text font-monospace">{{ $project->customer?->mimas_no ?: 'N/A' }}</span>
               @if(!empty($project->customer?->mimas_no))

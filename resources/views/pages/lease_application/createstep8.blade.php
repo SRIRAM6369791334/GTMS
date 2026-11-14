@@ -173,7 +173,7 @@
                 </div>
                 <div class="col-lg-3 col-md-6">
                   <div class="s8-data-tile">
-                    <span class="s8-tile-label">Customer Unique ID </span>
+                    <span class="s8-tile-label">Customer Unique ID</span>
                     <span class="s8-tile-value text-primary font-monospace">{{ $previewData['mimas_no'] }}</span>
                   </div>
                 </div>

@@ -650,7 +650,7 @@
         </div>
 
         <div class="grid-item">
-          <div class="label">Customer Unique ID </div>
+          <div class="label">Customer Unique ID</div>
           <div class="value font-mono">{{ $application->customer?->mimas_no ?? 'N/A' }}</div>
           <div class="value-sub">State Mining Directorate Client No</div>
         </div>

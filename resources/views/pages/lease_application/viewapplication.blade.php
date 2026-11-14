@@ -1396,7 +1396,7 @@
 
           <div class="col-md-3 col-sm-6">
             <div class="data-cell">
-              <div class="data-cell-label">Customer Unique ID </div>
+              <div class="data-cell-label">Customer Unique ID</div>
               <div class="data-cell-value">
                 <span class="data-value-text">{{ $application->customer?->mimas_no ?? 'N/A' }}</span>
                 @if(!empty($application->customer?->mimas_no))

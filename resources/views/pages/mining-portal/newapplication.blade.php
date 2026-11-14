@@ -1691,7 +1691,7 @@
                                         </div>
                                         <div class="col-lg-4 col-md-6">
                                             <div class="s8-data-tile">
-                                                <span class="s8-tile-label">Customer Unique ID </span>
+                                                <span class="s8-tile-label">Customer Unique ID</span>
                                                 <span class="s8-tile-value font-monospace text-primary" id="disp_rev_mimas">-</span>
                                             </div>
                                         </div>
