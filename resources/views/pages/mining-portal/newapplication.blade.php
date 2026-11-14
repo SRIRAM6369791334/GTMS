@@ -4244,7 +4244,20 @@ body[data-theme-version="dark"] .mining-modal-header {
     background: #32373d !important;
     color: #ffffff !important;
     border-color: #64748b !important;
+  }
 #gtms-mining-page #pane_5 .checklist-row > .flex-grow-1 { min-width: 0; }
+#gtms-mining-page #pane_5 .checklist-row > .ms-2.flex-shrink-0 > * { flex-shrink: 0; }
+#gtms-mining-page #pane_5 .checklist-row .doc-req-select { width: auto; min-width: 95px; }
+#gtms-mining-page #pane_5 .checklist-row .btn-remove-item { height: 28px; width: 30px; padding: 0; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+#gtms-mining-page #pane_5 .checklist-row .btn-remove-item.d-none { display: none !important; }
+#gtms-mining-page #pane_5 .checklist-row .btn-upload-item { white-space: nowrap; }
+@media (max-width: 575.98px) {
+    #gtms-mining-page #pane_5 .checklist-row { flex-wrap: wrap; row-gap: 8px; }
+    #gtms-mining-page #pane_5 .checklist-row > .flex-grow-1 { flex: 1 1 0; min-width: 0; max-width: calc(100% - 48px); }
+    #gtms-mining-page #pane_5 .checklist-row .ci-meta { overflow-wrap: anywhere; }
+    #gtms-mining-page #pane_5 .checklist-row > .ms-2.flex-shrink-0 { margin-left: 48px !important; width: calc(100% - 48px); flex-wrap: wrap; row-gap: 6px; }
+    #gtms-mining-page #pane_5 .s5-folder-heading-wrap { flex-wrap: wrap; gap: 8px; }
+}
 #gtms-mining-page #pane_5 .ci-icon .ci-ok { color: var(--green, #16a34a); }
 #gtms-mining-page #pane_5 .checklist-row.up .ci-icon { background: var(--green-soft, #e6f4ea); border-color: #bbf7d0; }
 #gtms-mining-page #pane_5 .checklist-row.up .ci-icon.ci-icon-zip { background: #fef3c7; border-color: #fde68a; }
