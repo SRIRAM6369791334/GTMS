@@ -155,6 +155,8 @@ class MiningController extends Controller
                     'paid_amount'              => $resumeApp->paid_amount ?? 0,
                     'pending_amount'           => $resumeApp->pending_amount ?? 0,
                     'payment_status'           => $resumeApp->payment_status ?? 'pending',
+                    'waived_amount'            => $resumeApp->waived_amount,
+                    'waiver_reason'            => $resumeApp->waiver_reason,
                 ];
             }
         } elseif ($request->filled('lease_id')) {
@@ -265,9 +267,7 @@ class MiningController extends Controller
             // new customer: name, company and mobile are mandatory, all formats checked
             $rules = array_merge($rules, $this->identityFormatRules(true));
         }
-        $rules['product_value']  = 'nullable|numeric|min:0';
-        $rules['paid_amount']    = 'nullable|numeric|min:0';
-        $rules['payment_status'] = 'nullable|in:pending,partial,paid';
+        $rules = array_merge($rules, $this->paymentRules());
 
         $request->validate($rules, $this->identityFormatMessages());
 
@@ -328,10 +328,8 @@ class MiningController extends Controller
             $customerId = $customer->id;
         }
 
-        $prodVal = (float)$request->input('product_value', 0);
-        $paidVal = (float)$request->input('paid_amount', 0);
-        $pendingVal = max(0, $prodVal - $paidVal);
-        $payStatus = $request->input('payment_status') ?: ($paidVal <= 0 ? 'pending' : ($pendingVal <= 0 ? 'paid' : 'partial'));
+        $existingForPay = $request->filled('mining_app_id') ? MiningApplication::find($request->input('mining_app_id')) : null;
+        [$prodVal, $paidVal, $pendingVal, $payStatus, $waiverCols] = $this->miningPaymentFields($request, $existingForPay);
 
         if ($request->filled('mining_app_id')) {
             $miningApp = MiningApplication::findOrFail($request->input('mining_app_id'));
@@ -353,6 +351,7 @@ class MiningController extends Controller
                 'paid_amount'         => $paidVal,
                 'pending_amount'      => $pendingVal,
                 'payment_status'      => $payStatus,
+            ] + $waiverCols + [
                 'stage'               => $isDraftOrInitial ? '6.2' : $miningApp->stage,
                 'current_step'        => 9,
                 'status'              => $isDraftOrInitial ? 'scrutiny' : $miningApp->status,
@@ -398,6 +397,7 @@ class MiningController extends Controller
                 'paid_amount'         => $paidVal,
                 'pending_amount'      => $pendingVal,
                 'payment_status'      => $payStatus,
+            ] + $waiverCols + [
                 'stage'               => '6.2',
                 'current_step'        => 9,
                 'status'              => 'scrutiny',
@@ -623,7 +623,9 @@ class MiningController extends Controller
             'area_extent_ha'    => ['nullable', 'string', 'max:50', 'regex:/^[0-9]+(\.[0-9]+)*$/'],
             'product_value'     => 'nullable|numeric|min:0',
             'paid_amount'       => 'nullable|numeric|min:0',
-            'payment_status'    => 'nullable|in:pending,partial,paid',
+            'payment_status'    => 'nullable|in:pending,partial,paid,free',
+            // draft save: reason may still be empty; the final submit requires it
+            'waiver_reason'     => 'nullable|string|max:1000',
         ]), $this->identityFormatMessages());
         if ($validator->fails()) {
             return response()->json([
@@ -706,10 +708,8 @@ class MiningController extends Controller
         }
         $primaryMineralId = !empty($mineralIds) ? $mineralIds[0] : null;
 
-        $prodVal = (float)$request->input('product_value', 0);
-        $paidVal = (float)$request->input('paid_amount', 0);
-        $pendingVal = max(0, $prodVal - $paidVal);
-        $payStatus = $request->input('payment_status') ?: ($paidVal <= 0 ? 'pending' : ($pendingVal <= 0 ? 'paid' : 'partial'));
+        $existingForPay = $appId ? MiningApplication::find($appId) : null;
+        [$prodVal, $paidVal, $pendingVal, $payStatus, $waiverCols] = $this->miningPaymentFields($request, $existingForPay);
 
         if ($appId) {
             $miningApp = MiningApplication::findOrFail($appId);
@@ -732,11 +732,12 @@ class MiningController extends Controller
             if ($request->filled('village')) $appUpdates['village'] = $request->input('village');
             if ($request->filled('survey_numbers_text')) $appUpdates['survey_numbers_text'] = $request->input('survey_numbers_text');
             if ($request->filled('area_extent_ha')) $appUpdates['area_extent_ha'] = $request->input('area_extent_ha');
-            if ($request->filled('product_value')) {
+            if ($request->filled('product_value') || $payStatus === 'free') {
                 $appUpdates['product_value'] = $prodVal;
                 $appUpdates['paid_amount'] = $paidVal;
                 $appUpdates['pending_amount'] = $pendingVal;
                 $appUpdates['payment_status'] = $payStatus;
+                $appUpdates += $waiverCols;
             }
 
             $miningApp->update($appUpdates);
@@ -1440,6 +1441,60 @@ class MiningController extends Controller
         ];
     }
 
+    /**
+     * Payment fields for a mining application, same rules as Lease Step 7:
+     * Free (fee waived) stores value = paid = pending = 0 and keeps the quoted
+     * value in waived_amount with a mandatory reason, so Accounts dues, ledgers
+     * and invoices show nothing to collect.
+     *
+     * @return array{0: float, 1: float, 2: float, 3: string, 4: array} [value, paid, pending, status, waiver columns]
+     */
+    private function miningPaymentFields(Request $request, ?MiningApplication $existing = null): array
+    {
+        $status = $request->input('payment_status') ?: null;
+        static $hasWaiverCols = null;
+        $hasWaiverCols ??= \Illuminate\Support\Facades\Schema::hasColumn('mining_applications', 'waived_amount');
+        if (!$hasWaiverCols) {
+            // Migration 2026_11_14_000003 not run yet: "free" cannot be stored
+            if ($status === 'free') {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'payment_status' => 'The Free option needs a database update (run php artisan migrate).',
+                ]);
+            }
+            $value = (float) $request->input('product_value', 0);
+            $paid = (float) $request->input('paid_amount', 0);
+            $pending = max(0, $value - $paid);
+            return [$value, $paid, $pending, $status ?: ($paid <= 0 ? 'pending' : ($pending <= 0 ? 'paid' : 'partial')), []];
+        }
+        if ($status === 'free') {
+            $wasFree = $existing && $existing->payment_status === 'free';
+            return [0.0, 0.0, 0.0, 'free', [
+                'waived_amount' => (float) $request->input('product_value', 0),
+                'waiver_reason' => trim((string) $request->input('waiver_reason')),
+                // keep the original waiver author/date unless it is newly waived
+                'waived_by'     => ($wasFree && $existing->waived_by) ? $existing->waived_by : Auth::id(),
+                'waived_at'     => ($wasFree && $existing->waived_at) ? $existing->waived_at : now(),
+            ]];
+        }
+        $value = (float) $request->input('product_value', 0);
+        $paid = (float) $request->input('paid_amount', 0);
+        $pending = max(0, $value - $paid);
+        $status = $status ?: ($paid <= 0 ? 'pending' : ($pending <= 0 ? 'paid' : 'partial'));
+        return [$value, $paid, $pending, $status, [
+            'waived_amount' => null, 'waiver_reason' => null, 'waived_by' => null, 'waived_at' => null,
+        ]];
+    }
+
+    private function paymentRules(): array
+    {
+        return [
+            'product_value'  => 'nullable|numeric|min:0',
+            'paid_amount'    => 'nullable|numeric|min:0',
+            'payment_status' => 'nullable|in:pending,partial,paid,free',
+            'waiver_reason'  => 'required_if:payment_status,free|nullable|string|min:5|max:1000',
+        ];
+    }
+
     private function identityFormatMessages(): array
     {
         return [
@@ -1450,6 +1505,8 @@ class MiningController extends Controller
             'pan.regex'                  => 'PAN must be 5 letters, 4 numbers and 1 letter (e.g. ABCDE1234F).',
             'aadhaar_no.regex'           => 'Aadhaar must be 12 digits (e.g. 9876-5432-1012).',
             'gstin.regex'                => 'GSTIN must be a valid 15-character number (e.g. 33ABCDE1234F1Z5).',
+            'waiver_reason.required_if'  => 'Please enter the reason for waiving the fee.',
+            'waiver_reason.min'          => 'Please describe the waiver reason (at least 5 characters).',
             'area_extent_ha.regex'       => 'Area must be numbers separated by dots, e.g. 2.45 (hectares) or 19.00.4 (patta).',
         ];
     }

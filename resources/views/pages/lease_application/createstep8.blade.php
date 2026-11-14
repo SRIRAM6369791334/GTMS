@@ -797,7 +797,9 @@
   /* ==========================================================================
      LIGHT MODE STYLES (Strictly Scoped to #gtms-step8-page)
      ========================================================================== */
-  #gtms-step8-page {
+  /* variables also on modals moved to <body> by gtms-ui.js */
+  #gtms-step8-page,
+  body > .modal {
     --s8-primary: #0F1E4D;
     --s8-primary-hover: #162a6b;
     --s8-surface: #ffffff;
@@ -1433,7 +1435,8 @@
   /* ==========================================================================
      DARK MODE PARITY (Strictly Scoped to body[data-theme-version="dark"] #gtms-step8-page)
      ========================================================================== */
-  body[data-theme-version="dark"] #gtms-step8-page {
+  body[data-theme-version="dark"] #gtms-step8-page,
+  body[data-theme-version="dark"] > .modal {
     --s8-surface: #1e293b;
     --s8-surface-subtle: #0f172a;
     --s8-border: #334155;

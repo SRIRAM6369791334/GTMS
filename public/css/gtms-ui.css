@@ -83,7 +83,9 @@ body[data-theme-version="dark"] {
 }
 
 .gt-enter {
-    animation: gtFadeUp var(--gt-med) var(--gt-ease) both;
+    /* backwards, not both: a filled transform keeps a containing block for
+       position:fixed children (modals inside the page went off-screen) */
+    animation: gtFadeUp var(--gt-med) var(--gt-ease) backwards;
 }
 @keyframes gtFadeUp {
     from { opacity: 0; transform: translateY(10px); }

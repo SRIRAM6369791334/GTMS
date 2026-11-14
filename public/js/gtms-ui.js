@@ -225,8 +225,28 @@
     function init() {
         convertInlineConfirms(document);
 
+        // Modals written inside page wrappers can sit in a lower stacking
+        // context than the backdrop (which Bootstrap appends to <body>), so the
+        // backdrop covers the dialog. Move each modal to <body> before it opens.
+        document.addEventListener('show.bs.modal', function (e) {
+            var m = e.target;
+            if (m && m.classList && m.classList.contains('modal') && m.parentElement !== document.body) {
+                document.body.appendChild(m);
+            }
+        }, true);
+
         var page = document.querySelector('.content-body > .container-fluid, .content-body > .container');
-        if (page && !reduceMotion) page.classList.add('gt-enter');
+        if (page && !reduceMotion) {
+            page.classList.add('gt-enter');
+            // A transform animation left "in effect" turns this wrapper into the
+            // containing block for position:fixed children, so Bootstrap modals
+            // inside the page render off-screen. Drop it once the entry is done.
+            page.addEventListener('animationend', function done(e) {
+                if (e.target !== page) return;
+                page.classList.remove('gt-enter');
+                page.removeEventListener('animationend', done);
+            });
+        }
 
         // Server-side validation errors: focus + shake first invalid field.
         var firstInvalid = document.querySelector('.content-body .is-invalid, .content-body .was-validated :invalid');

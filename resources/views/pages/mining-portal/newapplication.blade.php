@@ -157,7 +157,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('newapplication.store') }}" id="miningWizardForm" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('newapplication.store') }}" id="miningWizardForm" enctype="multipart/form-data" novalidate>
                     @csrf
 
                     <div class="card mining-main-card wizard-card lz-card">
@@ -1344,216 +1344,174 @@
                         {{-- STEP 8: PAYMENT & FINANCIAL SETTLEMENT                     --}}
                         {{-- ========================================================== --}}
                         <div class="wizard-pane d-none" id="pane_7">
-                            <div class="s1-header-block mb-4 lz-head">
+                            {{-- Payment: same layout and behaviour as Lease Step 7 (createstep7) --}}
+                            <div class="s1-header-block mb-3.5 lz-head">
                                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                    <div>
-                                        <div class="s1-eyebrow text-uppercase fw-bold text-primary mb-1 lz-eyebrow">
-                                            <i class="bi bi-cash-stack me-1"></i> STEP 8 OF 9 &bull; FINANCIAL SETTLEMENT &amp; BILLING LEDGER
-                                        </div>
-                                        <h4 class="s1-title mb-1 lz-title">Payment &amp; Financial Settlement</h4>
-                                        <p class="s1-subtitle mb-0 lz-subtitle">Record the statutory service or product valuation, advance received, and compute the balance settlement in real-time.</p>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <span class="badge s1-time-tag lz-time"><i class="bi bi-clock-history me-1"></i> Est. ~1-2 mins</span>
-                                        <span class="badge s7-ledger-pill">
-                                            <i class="bi bi-cash-stack me-1.5"></i>Billing Ledger
-                                        </span>
-                                    </div>
+                                    <div class="wc-eyebrow s1-eyebrow s7-eyebrow lz-eyebrow"><i class="bi bi-cash-coin me-1"></i> Step 8 of 9 &bull; Financial Settlement</div>
+                                    <span class="lz-time"><i class="bi bi-journal-text"></i> Billing Ledger</span>
                                 </div>
+                                <h4 class="s1-title s7-title lz-title">Payment &amp; Financial Settlement</h4>
+                                <div class="s1-subtitle s7-subtitle lz-subtitle">Record the application value, advance received, balance due and settlement status.</div>
                             </div>
 
                             @php
-                                $curStatus = $prefillData['payment_status'] ?? 'pending';
+                                $st = old('payment_status', $prefillData['payment_status'] ?? 'pending');
+                                $pvM = (float) old('product_value', $prefillData['product_value'] ?? 0);
+                                $paM = (float) old('paid_amount', $prefillData['paid_amount'] ?? 0);
+                                $peM = max(0, $pvM - $paM);
+                                $isFreeM = $st === 'free';
+                                $waiverReasonM = old('waiver_reason', $prefillData['waiver_reason'] ?? '');
+                                if ($isFreeM) {
+                                    // stored value is 0 for a waived application; show the quoted amount
+                                    $pvM = (float) old('product_value', $prefillData['waived_amount'] ?? 0);
+                                    $paM = 0;
+                                    $peM = 0;
+                                }
+                                $pillM = [
+                                    'free'    => ['bi-gift-fill', 'Free (Waived)'],
+                                    'paid'    => ['bi-check-circle-fill', 'Fully Paid'],
+                                    'partial' => ['bi-clock-history', 'Part Payment'],
+                                    'pending' => ['bi-exclamation-circle-fill', 'Pending Payment'],
+                                ][$st] ?? ['bi-exclamation-circle-fill', 'Pending Payment'];
                             @endphp
 
-                            <!-- SUMMARY / LEDGER READINESS BANNER (LEASE STEP 7 PARITY) -->
-                            <div class="s7-banner-card mb-4">
-                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                                    <div class="d-flex align-items-center gap-3">
-                                        <div class="s7-banner-icon-badge">
-                                            <i class="bi bi-credit-card-2-front-fill"></i>
+                            <!-- STATUS BANNER: pill colour follows the status -->
+                            <div class="s7-banner" data-status="{{ $st }}" id="mining_s7_banner">
+                                <div class="s7-banner-icon" aria-hidden="true"><i class="bi bi-credit-card-2-front-fill"></i></div>
+                                <div class="s7-banner-text">
+                                    <div class="s7-banner-title">Statutory Ledger &amp; Fee Calculation</div>
+                                    <div class="s7-banner-desc">Fees, balance due and settlement status update live as you type.</div>
+                                </div>
+                                <span class="s7-status-pill" id="mining_banner_status_pill"><i class="bi {{ $pillM[0] }}"></i> {{ $pillM[1] }}</span>
+                            </div>
+
+                            <!-- LIVE KPI CARDS -->
+                            <div class="row g-3 s7-kpi-row">
+                                <div class="col-md-4">
+                                    <div class="s7-kpi s7-kpi-contract">
+                                        <div class="s7-kpi-head">
+                                            <span class="s7-kpi-icon" aria-hidden="true"><i class="bi bi-receipt-cutoff"></i></span>
+                                            <span class="s7-kpi-label" id="mining_kpi_contract_label">{{ $isFreeM ? 'Quoted · Waived' : 'Contract Value' }}</span>
                                         </div>
+                                        <div class="s7-kpi-value" id="disp_mining_product_val">₹ {{ number_format($pvM, 2) }}</div>
+                                        <div class="s7-kpi-sub">Total quoted service value</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="s7-kpi s7-kpi-paid">
+                                        <div class="s7-kpi-head">
+                                            <span class="s7-kpi-icon" aria-hidden="true"><i class="bi bi-check-circle-fill"></i></span>
+                                            <span class="s7-kpi-label">Paid / Advance</span>
+                                        </div>
+                                        <div class="s7-kpi-value" id="disp_mining_paid_val">₹ {{ number_format($paM, 2) }}</div>
+                                        <div class="s7-kpi-sub">Received via Cash / Bank / NEFT</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="s7-kpi s7-kpi-pending">
+                                        <div class="s7-kpi-head">
+                                            <span class="s7-kpi-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></span>
+                                            <span class="s7-kpi-label">Balance Due</span>
+                                        </div>
+                                        <div class="s7-kpi-value" id="disp_mining_pending_val">₹ {{ number_format($peM, 2) }}</div>
+                                        <div class="s7-kpi-sub">Remaining balance to collect</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="s7-section lz-section">
+                                <div class="s7-section-head lz-section-head">
+                                    <span class="s7-section-title"><i class="bi bi-currency-rupee"></i> Fee Entry &amp; Settlement</span>
+                                    <span class="s7-tag">Statutory Accounting</span>
+                                </div>
+
+                                <!-- ROW 1: AMOUNTS -->
+                                <div class="row g-3 lz-row">
+                                    <div class="col-md-4">
+                                        <label class="lz-label" for="mining_product_value">Contract Value (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group lz-group">
+                                            <span class="input-group-text lz-addon s7-addon-navy" aria-hidden="true"><i class="bi bi-currency-rupee"></i></span>
+                                            <input type="number" step="0.01" min="0" name="product_value" id="mining_product_value"
+                                                   class="form-control lz-input s7-amount" placeholder="0.00" value="{{ $pvM > 0 ? $pvM : '' }}" inputmode="decimal">
+                                        </div>
+                                        <div class="lz-hint">Total agreed fee or quotation.</div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="lz-label" for="mining_paid_amount">Paid Amount (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group lz-group {{ $isFreeM ? 's7-readonly' : '' }}">
+                                            <span class="input-group-text lz-addon s7-addon-green" aria-hidden="true"><i class="bi bi-currency-rupee"></i></span>
+                                            <input type="number" step="0.01" min="0" name="paid_amount" id="mining_paid_amount"
+                                                   class="form-control lz-input s7-amount s7-amount-green" placeholder="0.00" value="{{ $paM > 0 ? $paM : '' }}" inputmode="decimal" {{ $isFreeM ? 'readonly' : '' }}>
+                                        </div>
+                                        <div class="s7-presets" role="group" aria-label="Quick fill paid amount">
+                                            <button type="button" class="s7-preset" id="btn_quick_full" title="Set paid equal to contract value">100%</button>
+                                            <button type="button" class="s7-preset" id="btn_quick_half" title="Set paid to 50% advance">50%</button>
+                                            <button type="button" class="s7-preset" id="btn_quick_zero" title="Set paid to 0">Clear</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="lz-label" for="mining_pending_amount">Pending Balance (₹) <span class="s7-auto">Auto</span></label>
+                                        <div class="input-group lz-group s7-readonly">
+                                            <span class="input-group-text lz-addon s7-addon-red" aria-hidden="true"><i class="bi bi-currency-rupee"></i></span>
+                                            <input type="number" step="0.01" name="pending_amount" id="mining_pending_amount"
+                                                   class="form-control lz-input s7-amount s7-amount-red" placeholder="0.00" value="{{ $peM }}" readonly tabindex="-1">
+                                        </div>
+                                        <div class="lz-hint">Contract value minus paid.</div>
+                                    </div>
+                                </div>
+
+                                <div class="s7-divider"></div>
+
+                                <!-- ROW 2: STATUS + LIVE ASSESSMENT -->
+                                <div class="row g-3 lz-row">
+                                    <div class="col-md-6">
+                                        <label class="lz-label" for="mining_payment_status">Payment Settlement Status <span class="text-danger">*</span></label>
+                                        <select name="payment_status" id="mining_payment_status" class="form-select lz-select s7-status-select">
+                                            <option value="pending" {{ $st === 'pending' ? 'selected' : '' }}>Pending — full balance due</option>
+                                            <option value="partial" {{ $st === 'partial' ? 'selected' : '' }}>Partial — part payment received</option>
+                                            <option value="paid" {{ $st === 'paid' ? 'selected' : '' }}>Paid — fully cleared</option>
+                                            <option value="free" {{ $st === 'free' ? 'selected' : '' }}>Free — fee waived (no charge)</option>
+                                        </select>
+                                        <div class="lz-hint">Set automatically from the amounts; you can override it.</div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <span class="lz-label">Settlement Assessment</span>
+                                        <div class="s7-feedback" id="mining_status_feedback_box" data-status="{{ $st }}" aria-live="polite">
+                                            <div class="s7-feedback-icon" id="mining_status_feedback_icon" aria-hidden="true"><i class="bi {{ $pillM[0] }}"></i></div>
+                                            <div class="s7-feedback-title" id="mining_status_feedback_text">Full payment outstanding</div>
+                                            <span class="s7-feedback-badge" id="mining_status_feedback_badge">Pending</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- FEE WAIVER (only when status = Free) -->
+                                <div class="s7-waiver" id="mining_s7_waiver" {{ $isFreeM ? '' : 'hidden' }}>
+                                    <div class="s7-waiver-head">
+                                        <span class="s7-waiver-icon" aria-hidden="true"><i class="bi bi-gift-fill"></i></span>
                                         <div>
-                                            <div class="s7-banner-title fw-bold">Statutory Ledger &amp; Fee Calculation</div>
-                                            <div class="s7-banner-desc text-muted small">Real-time fee computation, balance due tracking, and transaction status recording for regulatory compliance.</div>
+                                            <div class="s7-waiver-title">Fee waiver</div>
+                                            <div class="s7-waiver-sub">No amount will be charged or invoiced for this application.</div>
                                         </div>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge s7-banner-status-pill {{ $curStatus === 'paid' ? 'bg-success text-white' : ($curStatus === 'partial' ? 'bg-warning text-dark' : 'bg-danger-subtle text-danger border border-danger-subtle') }}" id="mining_banner_status_pill">
-                                            @if($curStatus === 'paid')
-                                                <i class="bi bi-check-circle-fill me-1.5"></i> Fully Paid
-                                            @elseif($curStatus === 'partial')
-                                                <i class="bi bi-clock-history me-1.5"></i> Part Payment
-                                            @else
-                                                <i class="bi bi-exclamation-circle-fill me-1.5"></i> Pending Payment
-                                            @endif
-                                        </span>
+                                    <label class="lz-label" for="mining_waiver_reason">Reason for waiving the fee <span class="text-danger">*</span></label>
+                                    <textarea name="waiver_reason" id="mining_waiver_reason" class="form-control lz-textarea" rows="3" maxlength="1000"
+                                              placeholder="e.g. Government / panchayat project, long-standing client, approved by MD on 12-Nov-2026">{{ $waiverReasonM }}</textarea>
+                                    <div class="s7-waiver-foot">
+                                        <span class="lz-hint m-0"><i class="bi bi-shield-check"></i> Kept permanently, even after the application is completed.</span>
+                                        <span class="lz-hint m-0" id="mining_waiver_count">0 / 1000</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 3-BENTO KPI CARDS (EXACT LEASE STEP 7 PARITY) -->
-                            <div class="row g-3 mb-4">
-                                <!-- Bento 1: Product Value -->
-                                <div class="col-md-4">
-                                    <div class="s7-kpi-card s7-kpi-contract">
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="s7-kpi-label">Product / Service Value</span>
-                                            <div class="s7-kpi-icon-badge s7-kpi-icon-contract"><i class="bi bi-receipt-cutoff"></i></div>
-                                        </div>
-                                        <div class="s7-kpi-value text-navy" id="disp_mining_product_val">₹ {{ number_format((float)($prefillData['product_value'] ?? 0), 2) }}</div>
-                                        <div class="s7-kpi-subtext">Total agreed statutory fee or quotation</div>
-                                    </div>
-                                </div>
-
-                                <!-- Bento 2: Paid Amount -->
-                                <div class="col-md-4">
-                                    <div class="s7-kpi-card s7-kpi-paid">
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="s7-kpi-label text-success">Advance / Paid Amount</span>
-                                            <div class="s7-kpi-icon-badge s7-kpi-icon-paid"><i class="bi bi-check-circle-fill"></i></div>
-                                        </div>
-                                        <div class="s7-kpi-value text-success" id="disp_mining_paid_val">₹ {{ number_format((float)($prefillData['paid_amount'] ?? 0), 2) }}</div>
-                                        <div class="s7-kpi-subtext">Received advance via Bank / NEFT / Cash</div>
-                                    </div>
-                                </div>
-
-                                <!-- Bento 3: Pending Balance -->
-                                <div class="col-md-4">
-                                    <div class="s7-kpi-card s7-kpi-pending">
-                                        <div class="d-flex align-items-center justify-content-between mb-2">
-                                            <span class="s7-kpi-label text-danger">Pending Balance Due</span>
-                                            <div class="s7-kpi-icon-badge s7-kpi-icon-pending"><i class="bi bi-hourglass-split"></i></div>
-                                        </div>
-                                        <div class="s7-kpi-value text-danger" id="disp_mining_pending_val">₹ {{ number_format((float)($prefillData['pending_amount'] ?? 0), 2) }}</div>
-                                        <div class="s7-kpi-subtext">Remaining balance to be collected</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Financial Breakdown Form Section (Lease Step 7 Parity) -->
-                            <div class="s7-form-section mb-4">
-                                <div class="s7-form-section-header d-flex align-items-center justify-content-between">
-                                    <span class="s7-form-section-title">
-                                        <i class="bi bi-currency-rupee me-1.5 text-primary"></i>Fee Entry &amp; Settlement Assessment
-                                    </span>
-                                    <span class="badge s7-badge-status-tag">Statutory Accounting</span>
-                                </div>
-
-                                <div class="s7-form-section-body">
-                                    <div class="row g-4 mb-4">
-                                        <!-- Product Value -->
-                                        <div class="col-md-4">
-                                            <label class="form-label s7-label mb-2 lz-label">
-                                                Product / Service Value (₹) <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="s7-input-group">
-                                                <span class="s7-input-addon s7-addon-navy">
-                                                    <i class="bi bi-currency-rupee"></i>
-                                                </span>
-                                                <input type="number" step="0.01" min="0" class="form-control s7-input fw-bold text-navy" 
-                                                       id="mining_product_value" name="product_value" 
-                                                       value="{{ old('product_value', $prefillData['product_value'] ?? '0.00') }}" placeholder="0.00" required>
-                                            </div>
-                                            <div class="s7-field-hint mt-2 lz-hint">Total agreed fee for mining application.</div>
-                                        </div>
-
-                                        <!-- Paid Amount -->
-                                        <div class="col-md-4">
-                                            <label class="form-label s7-label mb-2 lz-label">
-                                                Paid Amount (₹) <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="s7-input-group">
-                                                <span class="s7-input-addon s7-addon-success">
-                                                    <i class="bi bi-currency-rupee"></i>
-                                                </span>
-                                                <input type="number" step="0.01" min="0" class="form-control s7-input fw-bold text-success" 
-                                                       id="mining_paid_amount" name="paid_amount" 
-                                                       value="{{ old('paid_amount', $prefillData['paid_amount'] ?? '0.00') }}" placeholder="0.00" required>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-between mt-2 flex-wrap gap-1">
-                                                <span class="s7-field-hint lz-hint">Advance paid by applicant.</span>
-                                                <div class="s7-quick-presets d-flex align-items-center gap-1.5">
-                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_full" title="Set paid equal to value">100% Full</button>
-                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_half" title="Set paid to 50%">50% Advance</button>
-                                                    <button type="button" class="btn s7-preset-btn" id="btn_quick_zero" title="Set paid to 0">Clear (₹0)</button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Pending Balance -->
-                                        <div class="col-md-4">
-                                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                                <label class="form-label s7-label mb-0 lz-label">Pending Balance (₹)</label>
-                                                <span class="badge s7-auto-tag">Auto-Calculated</span>
-                                            </div>
-                                            <div class="s7-input-group s7-group-readonly">
-                                                <span class="s7-input-addon s7-addon-danger">
-                                                    <i class="bi bi-currency-rupee"></i>
-                                                </span>
-                                                <input type="number" step="0.01" class="form-control s7-input s7-input-readonly fw-bold text-danger" 
-                                                       id="mining_pending_amount" name="pending_amount" 
-                                                       value="{{ old('pending_amount', $prefillData['pending_amount'] ?? '0.00') }}" readonly placeholder="0.00">
-                                            </div>
-                                            <div class="s7-field-hint mt-2 lz-hint">Auto-calculated: (Value &minus; Paid).</div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row g-4 align-items-center">
-                                        <!-- Settlement Status -->
-                                        <div class="col-md-6">
-                                            <label class="form-label s7-label mb-2 lz-label">
-                                                Settlement Status <span class="text-danger">*</span>
-                                            </label>
-                                            <div class="s7-select-wrap">
-                                                <select class="form-select s7-select fw-semibold" id="mining_payment_status" name="payment_status" required>
-                                                    <option value="pending" {{ old('payment_status', $prefillData['payment_status'] ?? 'pending') == 'pending' ? 'selected' : '' }}>🔴 Pending (Full Balance Due)</option>
-                                                    <option value="partial" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'partial' ? 'selected' : '' }}>🟡 Partial (Part Payment Received)</option>
-                                                    <option value="paid" {{ old('payment_status', $prefillData['payment_status'] ?? '') == 'paid' ? 'selected' : '' }}>🟢 Paid (Fully Cleared)</option>
-                                                </select>
-                                            </div>
-                                            <div class="s7-field-hint mt-2 lz-hint">Adapts dynamically based on amounts, or select manually.</div>
-                                        </div>
-
-                                        <!-- Live Settlement Assessment Feedback Box -->
-                                        <div class="col-md-6">
-                                            <div class="s7-assessment-wrapper">
-                                                <div class="s7-feedback-box d-flex align-items-center justify-content-between" id="mining_status_feedback_box">
-                                                    <div class="d-flex align-items-center gap-3">
-                                                        <div class="s7-feedback-icon" id="mining_status_feedback_icon">
-                                                            <i class="bi bi-clock-history"></i>
-                                                        </div>
-                                                        <div>
-                                                            <div class="s7-feedback-sub">Settlement Assessment</div>
-                                                            <div class="s7-feedback-title fw-bold" id="mining_status_feedback_text">Pending Payment</div>
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge s7-feedback-badge px-3 py-2 rounded-pill bg-danger text-white" id="mining_status_feedback_badge">
-                                                        Pending
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Payment Notes / Transaction Reference -->
-                                        <div class="col-12 mt-3">
-                                            <label class="form-label s7-label mb-2 lz-label">Payment Notes / Transaction Reference</label>
-                                            <input type="text" class="form-control s7-notes-input" id="mining_payment_notes" name="payment_notes" 
-                                                   placeholder="e.g. Advance paid via NEFT Ref: UTR291840, Cheque #10294" 
-                                                   value="{{ old('payment_notes', '') }}">
-                                            <div class="s7-field-hint mt-2 lz-hint">Optional instrument number, bank name, or receipt remarks.</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- PRO TIP CALLOUT BOX (LEASE STEP 7 PARITY) -->
-                            <div class="s7-tip-box d-flex align-items-center gap-3 mb-2">
-                                <div class="s7-tip-icon flex-shrink-0">
-                                    <i class="bi bi-lightbulb-fill"></i>
-                                </div>
-                                <div class="s7-tip-content">
-                                    <strong>Pro Tip:</strong> All financial entries recorded here are automatically reflected in <strong>Financial &amp; Billing Ledger</strong> of the official Executive Dossier and statutory reports. You can collect advance fees now and record progressive milestone payments later during scrutiny.
+                            <!-- PRO TIP -->
+                            <div class="s7-tip">
+                                <i class="bi bi-lightbulb-fill s7-tip-icon" aria-hidden="true"></i>
+                                <div>
+                                    <strong>Pro tip:</strong> These entries appear in the <strong>Financial &amp; Billing Ledger</strong>
+                                    of the Executive Dossier. You can take an advance now and record milestone payments later during scrutiny.
                                 </div>
                             </div>
                         </div>
@@ -1668,8 +1626,8 @@
                                 <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="s8-panel-header-icon s8-icon-blue"><i class="bi bi-person-badge-fill"></i></div>
-                                        <h6 class="s8-panel-title mb-0">1. Applicant &amp; Entity Identity (Step 1)</h6>
-                                        <span class="badge s8-panel-step-badge">Step 1</span>
+                                        <h6 class="s8-panel-title mb-0">1. Applicant &amp; Entity Identity</h6>
+                                        <span class="badge s8-panel-step-badge" data-step-ref="0">Step 1</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="0">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 1
@@ -1716,8 +1674,8 @@
                                 <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="s8-panel-header-icon s8-icon-emerald"><i class="bi bi-compass"></i></div>
-                                        <h6 class="s8-panel-title mb-0">2. Work Nature &amp; Location Scope (Steps 2 &ndash; 4)</h6>
-                                        <span class="badge s8-panel-step-badge">Steps 2 &ndash; 4</span>
+                                        <h6 class="s8-panel-title mb-0">2. Work Nature &amp; Location Scope</h6>
+                                        <span class="badge s8-panel-step-badge" data-step-ref="1,2,3">Steps 2 &ndash; 4</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="3">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 4
@@ -1761,13 +1719,13 @@
 
                             <!-- 3. TEAM ALLOCATION & FINANCIAL SUMMARY -->
                             <div class="row g-3 mb-4">
-                                <div class="col-lg-7">
+                                <div class="col-12">
                                     <div class="s8-section-panel h-100">
                                         <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="s8-panel-header-icon s8-icon-teal"><i class="bi bi-people-fill"></i></div>
-                                                <h6 class="s8-panel-title mb-0">3. Assigned Handling Team (Step 7)</h6>
-                                                <span class="badge s8-panel-step-badge">Step 7</span>
+                                                <h6 class="s8-panel-title mb-0">3. Assigned Handling Team</h6>
+                                                <span class="badge s8-panel-step-badge" data-step-ref="6">Step 7</span>
                                             </div>
                                             <div class="d-flex align-items-center gap-2">
                                                 <span class="badge s8-chip-blue" id="prev_handler_count_badge">0 Members</span>
@@ -1782,13 +1740,13 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-5">
+                                <div class="col-12">
                                     <div class="s8-section-panel h-100">
                                         <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center gap-2">
                                                 <div class="s8-panel-header-icon s8-icon-green"><i class="bi bi-cash-stack"></i></div>
-                                                <h6 class="s8-panel-title mb-0">4. Financial Settlement (Step 8)</h6>
-                                                <span class="badge s8-panel-step-badge">Step 8</span>
+                                                <h6 class="s8-panel-title mb-0">4. Financial Settlement</h6>
+                                                <span class="badge s8-panel-step-badge" data-step-ref="7">Step 8</span>
                                             </div>
                                             <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="7">
                                                 <i class="bi bi-pencil-square me-1"></i>Edit Step 8
@@ -1828,8 +1786,8 @@
                                 <div class="s8-panel-header d-flex justify-content-between align-items-center">
                                     <div class="d-flex align-items-center gap-2">
                                         <div class="s8-panel-header-icon s8-icon-amber"><i class="bi bi-folder-check"></i></div>
-                                        <h6 class="s8-panel-title mb-0">5. Statutory Document Folders (Steps 5 &amp; 6)</h6>
-                                        <span class="badge s8-panel-step-badge">Steps 5 &amp; 6</span>
+                                        <h6 class="s8-panel-title mb-0">5. Statutory Document Folders</h6>
+                                        <span class="badge s8-panel-step-badge" data-step-ref="4,5">Steps 5 &amp; 6</span>
                                     </div>
                                     <button type="button" class="btn btn-sm s8-btn-edit s9-btn-edit" data-target-step="5">
                                         <i class="bi bi-pencil-square me-1"></i>Edit Step 6
@@ -2026,7 +1984,9 @@
 /* -------------------------------------------------------------------------
    SCOPED DESIGN TOKENS FOR MINING WIZARD (#gtms-mining-page)
    ------------------------------------------------------------------------- */
-#gtms-mining-page {
+/* variables also on this page's modals (gtms-ui.js moves open modals to <body>) */
+#gtms-mining-page,
+body > .modal {
     --min-primary: #0F1E4D;
     --min-primary-hover: #162a6b;
     --min-surface: #ffffff;
@@ -2753,7 +2713,8 @@
 /* -------------------------------------------------------------------------
    DARK MODE OVERRIDES (Strictly Scoped)
    ------------------------------------------------------------------------- */
-body[data-theme-version="dark"] #gtms-mining-page {
+body[data-theme-version="dark"] #gtms-mining-page,
+body[data-theme-version="dark"] > .modal {
     --min-primary: #38bdf8;
     --min-primary-hover: #0284c7;
     --min-surface: #1e293b;
@@ -3336,6 +3297,361 @@ body[data-theme-version="dark"] .mining-modal-header {
     border: 2px dashed #2563eb !important;
     background: #eff6ff !important;
 }
+/* ===== Review step (pane_8) fixes ===== */
+#gtms-mining-page #pane_8 .s8-kpi-card { height: 100%; }
+#gtms-mining-page #pane_8 .s8-kpi-val { white-space: normal !important; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; line-height: 1.25; }
+#gtms-mining-page #pane_8 #prev_docs_meta { white-space: normal !important; text-align: left; line-height: 1.35; overflow: visible; }
+#gtms-mining-page #pane_8 .s8-kpi-finance .s8-kpi-sub { flex-wrap: wrap; gap: 4px 8px; }
+#gtms-mining-page #pane_8 #prev_pay_status { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
+#gtms-mining-page #pane_8 #prev_pay_status .small { text-align: right; max-width: 160px; }
+#gtms-mining-page #pane_8 .s9-btn-edit { white-space: nowrap; flex-shrink: 0; }
+#gtms-mining-page #pane_8 .s8-panel-step-badge { white-space: nowrap; }
+/* ===== Step 8 payment: copied from Lease Step 7 (createstep7) so both look the same ===== */
+  /* ==========================================================================
+     LIGHT MODE STYLES (Strictly Scoped to #gtms-mining-page #pane_7)
+     ========================================================================== */
+  #gtms-mining-page #pane_7 {
+    --s7-primary: #0F1E4D;
+    --s7-primary-hover: #162a6b;
+    --s7-surface: #ffffff;
+    --s7-surface-subtle: #f8fafc;
+    --s7-border: #e2e8f0;
+    --s7-border-focus: #0F1E4D;
+    --s7-text-dark: #0f172a;
+    --s7-text-muted: #64748b;
+    --s7-navy-text: #0F1E4D;
+    --s7-emerald: #10b981;
+    --s7-amber: #f59e0b;
+    --s7-rose: #ef4444;
+  }
+
+  /* Wizard Wrap & Card */
+  #gtms-mining-page #pane_7 .wizard-wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+
+/* Stepper Bar */
+
+/* Header Eyebrow & Badges */
+
+/* Readiness Banner: Executive Light Palette (Matches Step 6) */
+
+/* Financial 3-Bento KPI Cards */
+
+#gtms-mining-page #pane_7 .text-navy {
+    color: var(--s7-primary) !important;
+  }
+
+/* Form Section: Integrated Container with Perfect Padding */
+
+/* Single-Border Input Group (Prevents Focus Split Defect) */
+
+/* Quick Presets Buttons */
+
+/* Select Box */
+
+/* Feedback Box (Aligned with Select Height) */
+
+/* Pro Tip Box */
+
+/* Actions Bar & Buttons */
+
+/* Back Button: Clean Slate Border (Eliminates pink theme artifact) */
+
+/* Draft Button */
+
+/* Continue Button */
+
+/* ==========================================================================
+     DARK MODE PARITY (Strictly Scoped to body[data-theme-version="dark"] #gtms-mining-page #pane_7)
+     ========================================================================== */
+  body[data-theme-version="dark"] #gtms-mining-page #pane_7 {
+    --s7-surface: #1e293b;
+    --s7-surface-subtle: #0f172a;
+    --s7-border: #334155;
+    --s7-border-focus: #38bdf8;
+    --s7-text-dark: #f8fafc;
+    --s7-text-muted: #94a3b8;
+    --s7-navy-text: #f1f5f9;
+  }
+
+/* Dark Stepper */
+
+/* Dark Header */
+
+/* Dark Banner */
+
+/* Dark KPI Cards */
+
+body[data-theme-version="dark"] #gtms-mining-page #pane_7 .s7-kpi-contract .text-navy {
+    color: #38bdf8 !important;
+  }
+
+/* Dark Form Section */
+
+/* Dark Input Group */
+
+/* Dark Preset Buttons */
+
+/* Dark Select Box */
+
+/* Dark Tip Box */
+
+/* Dark Actions & Buttons */
+
+
+  /* ==========================================================================
+     STEP 7 — PAYMENT (redesign). Shared pieces (card, head, inputs, buttons)
+     come from gtms-lease.css; only payment-specific parts live here.
+     ========================================================================== */
+  #gtms-mining-page #pane_7 {
+    --s7-green: #15803D;
+    --s7-green-bg: #F0FDF4;
+    --s7-green-bd: #BBF7D0;
+    --s7-amber: #B45309;
+    --s7-amber-bg: #FFFBEB;
+    --s7-amber-bd: #FDE68A;
+    --s7-red: #B91C1C;
+    --s7-red-bg: #FEF2F2;
+    --s7-red-bd: #FECACA;
+    --s7-navy: #0F1E4D;
+    --s7-navy-bg: #EEF2FF;
+  }
+  body[data-theme-version="dark"] #gtms-mining-page #pane_7 {
+    --s7-green: #4ADE80;  --s7-green-bg: rgba(34,197,94,.10);  --s7-green-bd: rgba(34,197,94,.30);
+    --s7-amber: #FBBF24;  --s7-amber-bg: rgba(245,158,11,.10); --s7-amber-bd: rgba(245,158,11,.30);
+    --s7-red:   #F87171;  --s7-red-bg:   rgba(239,68,68,.10);  --s7-red-bd:   rgba(239,68,68,.30);
+    --s7-navy:  #93C5FD;  --s7-navy-bg:  rgba(59,130,246,.12);
+  }
+
+  /* Status banner */
+  #gtms-mining-page #pane_7 .s7-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    background: var(--lz-surface-2);
+    border: 1px solid var(--lz-border);
+  }
+  #gtms-mining-page #pane_7 .s7-banner-icon {
+    width: 42px; height: 42px; flex-shrink: 0;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.15rem;
+    background: var(--s7-navy-bg); color: var(--s7-navy);
+  }
+  #gtms-mining-page #pane_7 .s7-banner-text { flex: 1; min-width: 0; }
+  #gtms-mining-page #pane_7 .s7-banner-title { font-weight: 700; font-size: 0.92rem; color: var(--lz-text); }
+  #gtms-mining-page #pane_7 .s7-banner-desc { font-size: 0.8rem; color: var(--lz-text-3); margin-top: 2px; }
+  #gtms-mining-page #pane_7 .s7-status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+    font-size: 0.78rem; font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #gtms-mining-page #pane_7 .s7-banner[data-status="pending"] .s7-status-pill { background: var(--s7-red-bg);   color: var(--s7-red);   border-color: var(--s7-red-bd); }
+  #gtms-mining-page #pane_7 .s7-banner[data-status="partial"] .s7-status-pill { background: var(--s7-amber-bg); color: var(--s7-amber); border-color: var(--s7-amber-bd); }
+  #gtms-mining-page #pane_7 .s7-banner[data-status="paid"]    .s7-status-pill { background: var(--s7-green-bg); color: var(--s7-green); border-color: var(--s7-green-bd); }
+  @media (max-width: 575.98px) {
+    #gtms-mining-page #pane_7 .s7-banner { flex-wrap: wrap; }
+    #gtms-mining-page #pane_7 .s7-status-pill { margin-left: 56px; }
+  }
+
+  /* KPI cards: identical structure, white surface, coloured top edge */
+  #gtms-mining-page #pane_7 .s7-kpi-row { margin-bottom: 20px; }
+  #gtms-mining-page #pane_7 .s7-kpi {
+    --kc: var(--s7-navy); --kbg: var(--s7-navy-bg);
+    height: 100%;
+    padding: 16px 18px;
+    border-radius: 12px;
+    background: var(--lz-surface);
+    border: 1px solid var(--lz-border);
+    border-top: 3px solid var(--kc);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  #gtms-mining-page #pane_7 .s7-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15,30,77,.08); }
+  #gtms-mining-page #pane_7 .s7-kpi-paid    { --kc: var(--s7-green); --kbg: var(--s7-green-bg); }
+  #gtms-mining-page #pane_7 .s7-kpi-pending { --kc: var(--s7-red);   --kbg: var(--s7-red-bg); }
+  #gtms-mining-page #pane_7 .s7-kpi-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  #gtms-mining-page #pane_7 .s7-kpi-icon {
+    width: 32px; height: 32px; flex-shrink: 0;
+    border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.95rem;
+    background: var(--kbg); color: var(--kc);
+  }
+  #gtms-mining-page #pane_7 .s7-kpi-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--lz-text-3);
+  }
+  #gtms-mining-page #pane_7 .s7-kpi-value {
+    font-size: 1.55rem; font-weight: 800; line-height: 1.15; letter-spacing: -.01em;
+    color: var(--kc);
+    font-variant-numeric: tabular-nums;
+    transition: color .2s ease;
+  }
+  #gtms-mining-page #pane_7 .s7-kpi-contract .s7-kpi-value { color: var(--lz-text); }
+  #gtms-mining-page #pane_7 .s7-kpi-sub { font-size: 0.78rem; color: var(--lz-text-3); margin-top: 4px; }
+  #gtms-mining-page #pane_7 .s7-kpi-value.s7-bump { animation: s7Bump .35s ease; }
+  @keyframes s7Bump { 40% { transform: scale(1.04); } }
+
+  /* Section header */
+  #gtms-mining-page #pane_7 .s7-section-head { justify-content: space-between; }
+  #gtms-mining-page #pane_7 .s7-section-title { display: inline-flex; align-items: center; gap: 8px; }
+  #gtms-mining-page #pane_7 .s7-section-title i { color: var(--lz-navy); }
+  #gtms-mining-page #pane_7 .s7-tag {
+    font-size: 0.7rem; font-weight: 600;
+    color: var(--lz-text-2);
+    background: var(--lz-surface-2);
+    border: 1px solid var(--lz-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
+
+  /* Amount inputs */
+  #gtms-mining-page #pane_7 .s7-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+  #gtms-mining-page #pane_7 .s7-amount-green { color: var(--s7-green) !important; }
+  #gtms-mining-page #pane_7 .s7-amount-red { color: var(--s7-red) !important; }
+  #gtms-mining-page #pane_7 .lz-group .s7-addon-navy  { color: var(--s7-navy);  background: var(--s7-navy-bg); }
+  #gtms-mining-page #pane_7 .lz-group .s7-addon-green { color: var(--s7-green); background: var(--s7-green-bg); }
+  #gtms-mining-page #pane_7 .lz-group .s7-addon-red   { color: var(--s7-red);   background: var(--s7-red-bg); }
+  #gtms-mining-page #pane_7 .s7-readonly .form-control { background: var(--lz-surface-2) !important; cursor: default; }
+  #gtms-mining-page #pane_7 .s7-readonly:focus-within { box-shadow: none; transform: none; }
+  #gtms-mining-page #pane_7 .s7-auto {
+    font-size: 0.66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--lz-text-3);
+    background: var(--lz-surface-2);
+    border: 1px solid var(--lz-border);
+    border-radius: 999px;
+    padding: 0 7px;
+    line-height: 1.5;
+  }
+  #gtms-mining-page #pane_7 .lz-row .lz-label { min-height: 20px; }
+  /* hide number spinners: amounts are typed, presets fill them */
+  #gtms-mining-page #pane_7 .s7-amount::-webkit-outer-spin-button,
+  #gtms-mining-page #pane_7 .s7-amount::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  #gtms-mining-page #pane_7 .s7-amount { -moz-appearance: textfield; }
+
+  /* Quick presets: one segmented control, never wraps */
+  #gtms-mining-page #pane_7 .s7-presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-top: 8px;
+  }
+  #gtms-mining-page #pane_7 .s7-preset {
+    min-height: 34px;
+    padding: 0 8px;
+    font-size: 0.78rem; font-weight: 600;
+    white-space: nowrap;
+    color: var(--lz-text-2);
+    background: var(--lz-surface);
+    border: 1.5px solid var(--lz-border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  #gtms-mining-page #pane_7 .s7-preset:hover { border-color: var(--s7-green); color: var(--s7-green); background: var(--s7-green-bg); transform: translateY(-1px); }
+  #gtms-mining-page #pane_7 .s7-preset:active { transform: scale(.96); }
+  #gtms-mining-page #pane_7 .s7-preset:focus-visible { outline: 2px solid #2563EB; outline-offset: 2px; }
+  #gtms-mining-page #pane_7 #btn_quick_zero:hover { border-color: var(--s7-red); color: var(--s7-red); background: var(--s7-red-bg); }
+
+  #gtms-mining-page #pane_7 .s7-divider { height: 1px; background: var(--lz-border); margin: 20px 0 18px; }
+
+  /* Status select */
+  #gtms-mining-page #pane_7 .s7-status-select { font-weight: 600; color: var(--lz-text); }
+
+  /* Live assessment: same 44px height as the select so the row lines up */
+  #gtms-mining-page #pane_7 .s7-feedback {
+    --fc: var(--s7-red); --fbg: var(--s7-red-bg); --fbd: var(--s7-red-bd);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 8px 6px 10px;
+    border-radius: 10px;
+    background: var(--fbg);
+    border: 1.5px solid var(--fbd);
+    transition: background-color .25s ease, border-color .25s ease;
+  }
+  #gtms-mining-page #pane_7 .s7-feedback[data-status="partial"] { --fc: var(--s7-amber); --fbg: var(--s7-amber-bg); --fbd: var(--s7-amber-bd); }
+  #gtms-mining-page #pane_7 .s7-feedback[data-status="paid"]    { --fc: var(--s7-green); --fbg: var(--s7-green-bg); --fbd: var(--s7-green-bd); }
+  #gtms-mining-page #pane_7 .s7-feedback-icon { color: var(--fc); font-size: 1.1rem; line-height: 1; flex-shrink: 0; }
+  #gtms-mining-page #pane_7 .s7-feedback-icon i { display: block; animation: s7Pop .3s ease; }
+  @keyframes s7Pop { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  #gtms-mining-page #pane_7 .s7-feedback-title { flex: 1; min-width: 0; font-size: 0.88rem; font-weight: 700; color: var(--lz-text); }
+  #gtms-mining-page #pane_7 .s7-feedback-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    color: #fff;
+    background: var(--fc);
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+  body[data-theme-version="dark"] #gtms-mining-page #pane_7 .s7-feedback-badge { color: #0B1120; }
+
+  /* Pro tip */
+  #gtms-mining-page #pane_7 .s7-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--s7-amber-bg);
+    border: 1px solid var(--s7-amber-bd);
+    border-left: 4px solid #F59E0B;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--lz-text-2);
+  }
+  #gtms-mining-page #pane_7 .s7-tip strong { color: var(--lz-text); }
+  #gtms-mining-page #pane_7 .s7-tip-icon { color: #D97706; font-size: 1.1rem; line-height: 1.4; flex-shrink: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #gtms-mining-page #pane_7 .s7-kpi-value.s7-bump,
+    #gtms-mining-page #pane_7 .s7-feedback-icon i { animation: none; }
+  }
+
+  /* ---- Free (fee waived) ---- */
+  #gtms-mining-page #pane_7 { --s7-violet: #6D28D9; --s7-violet-bg: #F5F3FF; --s7-violet-bd: #DDD6FE; }
+  body[data-theme-version="dark"] #gtms-mining-page #pane_7 { --s7-violet: #C4B5FD; --s7-violet-bg: rgba(139,92,246,.12); --s7-violet-bd: rgba(139,92,246,.35); }
+  #gtms-mining-page #pane_7 .s7-banner[data-status="free"] .s7-status-pill { background: var(--s7-violet-bg); color: var(--s7-violet); border-color: var(--s7-violet-bd); }
+  #gtms-mining-page #pane_7 .s7-feedback[data-status="free"] { --fc: var(--s7-violet); --fbg: var(--s7-violet-bg); --fbd: var(--s7-violet-bd); }
+  #gtms-mining-page #pane_7 .s7-preset:disabled { opacity: .45; cursor: not-allowed; transform: none; background: var(--lz-surface-2); color: var(--lz-text-3); border-color: var(--lz-border); }
+
+  #gtms-mining-page #pane_7 .s7-waiver {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--s7-violet-bg);
+    border: 1.5px dashed var(--s7-violet-bd);
+    animation: s7Reveal .25s ease both;
+  }
+  #gtms-mining-page #pane_7 .s7-waiver[hidden] { display: none; }
+  @keyframes s7Reveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  #gtms-mining-page #pane_7 .s7-waiver-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  #gtms-mining-page #pane_7 .s7-waiver-icon {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--s7-violet); color: #fff; font-size: 1rem;
+  }
+  #gtms-mining-page #pane_7 .s7-waiver-title { font-weight: 700; color: var(--s7-violet); font-size: 0.92rem; }
+  #gtms-mining-page #pane_7 .s7-waiver-sub { font-size: 0.8rem; color: var(--lz-text-2); }
+  #gtms-mining-page #pane_7 .s7-waiver textarea { background: var(--lz-surface); }
+  #gtms-mining-page #pane_7 .s7-waiver textarea:focus { border-color: var(--s7-violet); box-shadow: 0 0 0 3px rgba(109,40,217,.15); }
+  #gtms-mining-page #pane_7 .s7-waiver-foot { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+#gtms-mining-page #pane_7 .s7-waiver[hidden] { display: none !important; }
+/* ===== end Lease Step 7 copy ===== */
 /* ===== Step 6 documents: copied from Lease Step 5 (createstep5) so both look the same ===== */
   #gtms-mining-page #pane_5 .s5-summary-banner {
     background: #f8fafc;
@@ -4475,6 +4791,7 @@ body[data-theme-version="dark"] #gtms-mining-page .checklist-row.row-upload-fail
     background: #f8fafc;
     border-top: 1px solid #e2e8f0;
 }
+#modalAddCustomMiningDoc .modal-title { color: #ffffff !important; }  /* layout forces .modal-title dark; this header is navy */
 #modalAddCustomMiningDoc .form-control,
   #modalAddCustomMiningDoc .form-select {
     background: #ffffff !important;
@@ -6305,13 +6622,14 @@ function initMiningWizard() {
 
         updateStepperUI(step);
 
-        btnPrev.style.display = step === 0 ? 'none' : 'inline-flex';
+        // setProperty(..., 'important'): theme rules like .btn-navy { display:inline-flex !important } beat plain inline styles
+        btnPrev.style.setProperty('display', step === 0 ? 'none' : 'inline-flex', 'important');
         var btnCancel = document.getElementById('btnCancel');
         if (btnCancel) {
             btnCancel.style.display = step === 0 ? 'inline-flex' : 'none';
         }
-        btnNext.style.display = step === 8 ? 'none' : 'inline-flex';
-        btnSubmit.style.display = step === 8 ? 'inline-flex' : 'none';
+        btnNext.style.setProperty('display', step === 8 ? 'none' : 'inline-flex', 'important');
+        btnSubmit.style.setProperty('display', step === 8 ? 'inline-flex' : 'none', 'important');
 
         if (step === 8) {
             var ack = document.getElementById('confirm_mining_scrutiny_ack');
@@ -6351,7 +6669,19 @@ function initMiningWizard() {
         var nodes = Array.prototype.filter.call(document.querySelectorAll('#wizardStepper .sp-step'), function (n) {
             return n.offsetParent !== null && getComputedStyle(n).display !== 'none';
         });
-        document.querySelectorAll('.wizard-pane .wc-eyebrow').forEach(function (eb) {
+        var posOf = function (idx) { return nodes.findIndex(function (n) { return n.id === 'stepNode_' + idx; }) + 1; };
+        // Review badges ("Step 6", "Steps 2 – 4") and "Edit Step N" buttons
+        document.querySelectorAll('[data-step-ref]').forEach(function (b) {
+            var nums = b.getAttribute('data-step-ref').split(',').map(function (x) { return posOf(parseInt(x, 10)); }).filter(function (n) { return n > 0; });
+            if (!nums.length) return;
+            var lo = Math.min.apply(null, nums), hi = Math.max.apply(null, nums);
+            b.textContent = lo === hi ? 'Step ' + lo : (hi - lo === 1 ? 'Steps ' + lo + ' & ' + hi : 'Steps ' + lo + ' – ' + hi);
+        });
+        document.querySelectorAll('.s9-btn-edit[data-target-step]').forEach(function (b) {
+            var n = posOf(parseInt(b.getAttribute('data-target-step'), 10));
+            if (n > 0) b.innerHTML = '<i class="bi bi-pencil-square me-1"></i>Edit Step ' + n;
+        });
+        document.querySelectorAll('.wizard-pane .lz-eyebrow').forEach(function (eb) {
             var pane = eb.closest('.wizard-pane');
             var idx = pane ? parseInt(pane.id.replace('pane_', ''), 10) : NaN;
             var pos = nodes.findIndex(function (n) { return n.id === 'stepNode_' + idx; });
@@ -6617,6 +6947,11 @@ function initMiningWizard() {
             if (pVal < 0) return wizFail(pvEl, 'Product value cannot be negative.');
             if (pPaid < 0) return wizFail(paEl, 'Paid amount cannot be negative.');
             if (pPaid > pVal && pVal > 0) return wizFail(paEl, 'Paid amount cannot be more than the product value.');
+            var stEl = document.getElementById('mining_payment_status');
+            var wrEl = document.getElementById('mining_waiver_reason');
+            if (stEl && stEl.value === 'free' && wrEl && wrEl.value.trim().length < 5) {
+                return wizFail(wrEl, 'Please enter the reason for waiving the fee (at least 5 characters).');
+            }
         }
         return true;
     }
@@ -7471,8 +7806,8 @@ function initMiningWizard() {
             // Populate folder cards grid
             var folderBlocks = activeGroup.querySelectorAll('.folder-doc-block');
             folderBlocks.forEach(function(fBlock, fIdx) {
-                var fHeader = fBlock.querySelector('.folder-doc-header');
-                var fTitle = fHeader ? (fHeader.querySelector('.fw-bold.small.text-navy')?.textContent || 'Folder ' + (fIdx + 1)) : 'Folder ' + (fIdx + 1);
+                var fHeadEl = fBlock.querySelector('.s5-folder-heading span');
+                var fTitle = fHeadEl ? fHeadEl.textContent : 'Folder ' + (fIdx + 1);
                 fTitle = fTitle.replace(/^\d+[\.\s-]+/, '').trim();
                 var fInputs = fBlock.querySelectorAll('.doc-file-input');
                 var fTot = fInputs.length;
@@ -7630,21 +7965,31 @@ function initMiningWizard() {
         // Payment preview
         var pVal = parseFloat($('#mining_product_value').val()) || 0;
         var pPaid = parseFloat($('#mining_paid_amount').val()) || 0;
-        var pPending = Math.max(0, pVal - pPaid);
         var pStat = $('#mining_payment_status').val() || 'pending';
+        if (pStat === 'free') pPaid = 0;            // waived: nothing paid, nothing due
+        var pPending = pStat === 'free' ? 0 : Math.max(0, pVal - pPaid);
 
         var formattedVal = '₹ ' + pVal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
         var formattedPaid = '₹ ' + pPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 });
         var formattedPending = '₹ ' + pPending.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
-        $('#prev_pay_value').text(formattedVal);
+        if (pStat === 'free') {
+            // waived: show the quote struck through, like the lease dossier
+            $('#prev_pay_value').html('<span class="text-decoration-line-through text-muted">' + formattedVal + '</span>');
+        } else {
+            $('#prev_pay_value').text(formattedVal);
+        }
         $('#prev_pay_paid').text(formattedPaid);
         $('#prev_pay_paid_card').text(formattedPaid);
         $('#prev_pay_pending').text(formattedPending);
         $('#prev_pay_pending_card').text(formattedPending);
 
         var pBadge = '';
-        if (pStat === 'paid') {
+        if (pStat === 'free') {
+            pBadge = '<span class="badge px-2 py-0.5 rounded-pill" style="font-size:10.5px;background:#F5F3FF;color:#6D28D9;border:1px solid #DDD6FE;"><i class="bi bi-gift-fill me-1"></i>Free (Waived)</span>';
+            var wr = ($('#mining_waiver_reason').val() || '').trim();
+            if (wr) pBadge += '<div class="small text-muted mt-1" style="white-space:normal;">Reason: ' + escapeHtml(wr) + '</div>';
+        } else if (pStat === 'paid') {
             pBadge = '<span class="badge bg-success text-white px-2 py-0.5 rounded-pill" style="font-size:10.5px;">Paid</span>';
         } else if (pStat === 'partial') {
             pBadge = '<span class="badge bg-warning text-dark px-2 py-0.5 rounded-pill" style="font-size:10.5px;">Partial</span>';
@@ -7703,124 +8048,126 @@ function initMiningWizard() {
         addMiningHandlerRow();
     }
 
-    function calcMiningPayment() {
-        var val = parseFloat($('#mining_product_value').val()) || 0;
-        var paid = parseFloat($('#mining_paid_amount').val()) || 0;
-        var pending = Math.max(0, val - paid);
+    // ---- Step 8 payment: same logic as Lease Step 7 (createstep7) ----
+    var MPAY_STATUS = {
+        paid:    { text: 'Account fully settled',    badge: 'Paid',    icon: 'bi-check-circle-fill',       pill: 'Fully Paid' },
+        partial: { text: 'Part payment received',    badge: 'Partial', icon: 'bi-clock-history',           pill: 'Part Payment' },
+        pending: { text: 'Full payment outstanding', badge: 'Pending', icon: 'bi-exclamation-circle-fill', pill: 'Pending Payment' },
+        free:    { text: 'Fee waived — no charge',   badge: 'Free',    icon: 'bi-gift-fill',               pill: 'Free (Waived)' }
+    };
 
-        $('#mining_pending_amount').val(pending.toFixed(2));
-        $('#disp_mining_product_val').text('₹ ' + val.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-        $('#disp_mining_paid_val').text('₹ ' + paid.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-        $('#disp_mining_pending_val').text('₹ ' + pending.toLocaleString('en-IN', { minimumFractionDigits: 2 }));
-
-        var statusSelect = $('#mining_payment_status');
-        if (val > 0) {
-            if (paid >= val) {
-                statusSelect.val('paid');
-            } else if (paid > 0) {
-                statusSelect.val('partial');
-            } else {
-                statusSelect.val('pending');
-            }
-        }
-
-        var currentStatus = statusSelect.val();
-        var badgeHtml = '';
-        if (currentStatus === 'paid') {
-            badgeHtml = '<span class="badge bg-success text-white px-2.5 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i> Paid (Settled)</span>';
-        } else if (currentStatus === 'partial') {
-            badgeHtml = '<span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill"><i class="bi bi-clock-history me-1"></i> Partial Payment</span>';
-        } else {
-            badgeHtml = '<span class="badge bg-danger text-white px-2.5 py-1 rounded-pill"><i class="bi bi-exclamation-circle-fill me-1"></i> Pending Full Due</span>';
-        }
-        $('#disp_mining_status_badge').html(badgeHtml);
-
-        // Update Step 8 banner status pill
-        var bannerPill = document.getElementById('mining_banner_status_pill');
-        if (bannerPill) {
-            if (currentStatus === 'paid') {
-                bannerPill.className = 'badge s7-banner-status-pill bg-success text-white';
-                bannerPill.innerHTML = '<i class="bi bi-check-circle-fill me-1.5"></i> Fully Paid';
-            } else if (currentStatus === 'partial') {
-                bannerPill.className = 'badge s7-banner-status-pill bg-warning text-dark';
-                bannerPill.innerHTML = '<i class="bi bi-clock-history me-1.5"></i> Part Payment';
-            } else {
-                bannerPill.className = 'badge s7-banner-status-pill bg-danger-subtle text-danger border border-danger-subtle';
-                bannerPill.innerHTML = '<i class="bi bi-exclamation-circle-fill me-1.5"></i> Pending Payment';
-            }
-        }
-
-        // Update live settlement assessment feedback box
-        var fbText = document.getElementById('mining_status_feedback_text');
-        var fbBadge = document.getElementById('mining_status_feedback_badge');
-        var fbIcon = document.getElementById('mining_status_feedback_icon');
-        var fbBox = document.getElementById('mining_status_feedback_box');
-        var isDark = document.body.getAttribute('data-theme-version') === 'dark';
-
-        if (fbText && fbBadge && fbBox) {
-            if (currentStatus === 'paid') {
-                fbText.textContent = 'Account Fully Settled';
-                fbBadge.textContent = 'Fully Paid';
-                fbBadge.className = 'badge s7-feedback-badge px-3 py-2 rounded-pill bg-success text-white';
-                if (fbIcon) fbIcon.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
-                if (isDark) {
-                    fbBox.style.background = 'rgba(16, 185, 129, 0.12)';
-                    fbBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-                } else {
-                    fbBox.style.background = '#ecfdf5';
-                    fbBox.style.border = '1px solid #a7f3d0';
-                }
-            } else if (currentStatus === 'partial') {
-                fbText.textContent = 'Part Payment Received';
-                fbBadge.textContent = 'Partial Payment';
-                fbBadge.className = 'badge s7-feedback-badge px-3 py-2 rounded-pill bg-warning text-dark';
-                if (fbIcon) fbIcon.innerHTML = '<i class="bi bi-clock-history text-warning"></i>';
-                if (isDark) {
-                    fbBox.style.background = 'rgba(245, 158, 11, 0.12)';
-                    fbBox.style.border = '1px solid rgba(245, 158, 11, 0.3)';
-                } else {
-                    fbBox.style.background = '#fffbeb';
-                    fbBox.style.border = '1px solid #fde68a';
-                }
-            } else {
-                fbText.textContent = 'Full Payment Outstanding';
-                fbBadge.textContent = 'Pending Payment';
-                fbBadge.className = 'badge s7-feedback-badge px-3 py-2 rounded-pill bg-danger text-white';
-                if (fbIcon) fbIcon.innerHTML = '<i class="bi bi-exclamation-circle-fill text-danger"></i>';
-                if (isDark) {
-                    fbBox.style.background = 'rgba(239, 68, 68, 0.12)';
-                    fbBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-                } else {
-                    fbBox.style.background = '#fef2f2';
-                    fbBox.style.border = '1px solid #fecaca';
-                }
-            }
-        }
+    function mpayMoney(v) {
+        return '₹ ' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    $('#mining_product_value, #mining_paid_amount').on('input change', calcMiningPayment);
-    $('#mining_payment_status').on('change', function() {
-        var val = $(this).val();
-        var badgeHtml = val === 'paid' ? '<span class="badge bg-success text-white px-2.5 py-1 rounded-pill"><i class="bi bi-check-circle-fill me-1"></i> Paid (Settled)</span>' :
-                       (val === 'partial' ? '<span class="badge bg-warning text-dark px-2.5 py-1 rounded-pill"><i class="bi bi-clock-history me-1"></i> Partial Payment</span>' :
-                                            '<span class="badge bg-danger text-white px-2.5 py-1 rounded-pill"><i class="bi bi-exclamation-circle-fill me-1"></i> Pending Full Due</span>');
-        $('#disp_mining_status_badge').html(badgeHtml);
+    // Free (fee waived): paid locked at 0, nothing pending, reason required
+    function applyMiningFreeMode() {
+        var sel = document.getElementById('mining_payment_status');
+        var paid = document.getElementById('mining_paid_amount');
+        if (!sel || !paid) return;
+        var isFree = sel.value === 'free';
+        var box = document.getElementById('mining_s7_waiver');
+        if (box) box.hidden = !isFree;
+        paid.readOnly = isFree;                       // readonly (not disabled) so it is still submitted
+        var grp = paid.closest('.lz-group');
+        if (grp) grp.classList.toggle('s7-readonly', isFree);
+        if (isFree) paid.value = '0.00';
+        ['btn_quick_full', 'btn_quick_half', 'btn_quick_zero'].forEach(function (id) {
+            var b = document.getElementById(id); if (b) b.disabled = isFree;
+        });
+        var lbl = document.getElementById('mining_kpi_contract_label');
+        if (lbl) lbl.textContent = isFree ? 'Quoted · Waived' : 'Contract Value';
+        var reason = document.getElementById('mining_waiver_reason');
+        if (isFree && reason && !reason.value.trim() && currentStep === 7) setTimeout(function () { reason.focus(); }, 50);
+    }
+
+    function updateMiningWaiverCount() {
+        var r = document.getElementById('mining_waiver_reason'), c = document.getElementById('mining_waiver_count');
+        if (r && c) c.textContent = r.value.length + ' / 1000';
+    }
+
+    function updateMiningStatusUI() {
+        var sel = document.getElementById('mining_payment_status');
+        if (!sel) return;
+        var st = sel.value, s = MPAY_STATUS[st] || MPAY_STATUS.pending;
+        var fb = document.getElementById('mining_status_feedback_box');
+        if (fb) { fb.setAttribute('data-status', st); fb.removeAttribute('style'); }
+        var t = document.getElementById('mining_status_feedback_text'); if (t) t.textContent = s.text;
+        var b = document.getElementById('mining_status_feedback_badge'); if (b) b.textContent = s.badge;
+        var i = document.getElementById('mining_status_feedback_icon'); if (i) i.innerHTML = '<i class="bi ' + s.icon + '"></i>';
+        var pill = document.getElementById('mining_banner_status_pill'); if (pill) pill.innerHTML = '<i class="bi ' + s.icon + '"></i> ' + s.pill;
+        var banner = document.getElementById('mining_s7_banner'); if (banner) banner.setAttribute('data-status', st);
+    }
+
+    // isManualStatusChange: keep the status the user picked
+    function calcMiningPayment(isManualStatusChange) {
+        var sel = document.getElementById('mining_payment_status');
+        var pv = document.getElementById('mining_product_value');
+        var pa = document.getElementById('mining_paid_amount');
+        if (!sel || !pv || !pa) return;
+        var isFree = sel.value === 'free';
+        var val = parseFloat(pv.value) || 0;
+        var paid = isFree ? 0 : (parseFloat(pa.value) || 0);
+        var pending = isFree ? 0 : Math.max(0, val - paid);
+        var pe = document.getElementById('mining_pending_amount');
+        if (pe) pe.value = pending.toFixed(2);
+
+        [['disp_mining_product_val', val], ['disp_mining_paid_val', paid], ['disp_mining_pending_val', pending]].forEach(function (pair) {
+            var el = document.getElementById(pair[0]), txt = mpayMoney(pair[1]);
+            if (el && el.textContent !== txt) {
+                el.textContent = txt;
+                el.classList.remove('s7-bump'); void el.offsetWidth; el.classList.add('s7-bump');
+            }
+        });
+
+        // Amount edits never switch a waived application back to a paid status
+        // only amount edits (false) re-derive the status; showStep / load keep the saved one
+        if (isManualStatusChange === false && !isFree) {
+            if (paid <= 0 || val <= 0) sel.value = 'pending';
+            else if (pending <= 0) sel.value = 'paid';
+            else sel.value = 'partial';
+        }
+        updateMiningStatusUI();
+    }
+
+    $('#mining_product_value, #mining_paid_amount').on('input', function () {
+        if (this.classList.contains('is-invalid')) { this.classList.remove('is-invalid'); }
+        calcMiningPayment(false);
+    });
+    $('#mining_payment_status').on('change', function () {
+        var leavingFree = this.dataset.prev === 'free' && this.value !== 'free';
+        this.dataset.prev = this.value;
+        applyMiningFreeMode();
+        // Leaving Free: let the amounts decide again; otherwise keep the manual pick
+        calcMiningPayment(!leavingFree);
+    });
+    $('#mining_waiver_reason').on('input', function () {
+        updateMiningWaiverCount();
+        if (this.value.trim().length >= 5) clearWizardErrors(this.closest('.s7-waiver'));
     });
 
     // Quick presets
-    $('#btn_quick_full').on('click', function() {
-        var val = parseFloat($('#mining_product_value').val()) || 0;
-        $('#mining_paid_amount').val(val.toFixed(2)).trigger('input');
+    $('#btn_quick_full').on('click', function () {
+        var v = parseFloat($('#mining_product_value').val()) || 0;
+        $('#mining_paid_amount').val(v > 0 ? v.toFixed(2) : '0.00'); calcMiningPayment(false);
     });
-    $('#btn_quick_half').on('click', function() {
-        var val = parseFloat($('#mining_product_value').val()) || 0;
-        $('#mining_paid_amount').val((val / 2).toFixed(2)).trigger('input');
+    $('#btn_quick_half').on('click', function () {
+        var v = parseFloat($('#mining_product_value').val()) || 0;
+        $('#mining_paid_amount').val(v > 0 ? (v / 2).toFixed(2) : '0.00'); calcMiningPayment(false);
     });
-    $('#btn_quick_zero').on('click', function() {
-        $('#mining_paid_amount').val('0.00').trigger('input');
+    $('#btn_quick_zero').on('click', function () {
+        $('#mining_paid_amount').val('0.00'); calcMiningPayment(false);
     });
 
-    calcMiningPayment();
+    (function initMiningPayment() {
+        var sel = document.getElementById('mining_payment_status');
+        if (!sel) return;
+        sel.dataset.prev = sel.value;
+        applyMiningFreeMode();
+        updateMiningWaiverCount();
+        calcMiningPayment(true);   // keep the saved status on load
+    })();
+
 
     btnNext.addEventListener('click', function() {
         var isMP = isMiningPlanSelected();
