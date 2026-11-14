@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Storage;
 
 class EcComplianceController extends Controller
 {
+    use \App\Http\Controllers\Concerns\WizardStoreHelpers;
+
     /**
      * Master Listing & Live KPI Statistics
      */
@@ -75,6 +77,11 @@ class EcComplianceController extends Controller
     public function wizard(int $step, Request $request)
     {
         abort_unless($step >= 1 && $step <= 8, 404);
+
+        // "New" buttons pass ?new=1: start clean instead of reusing an old draft
+        if ($request->boolean('new')) {
+            session()->forget('ec_compliance_wizard');
+        }
 
         $draft = session('ec_compliance_wizard', []);
 
@@ -198,10 +205,10 @@ class EcComplianceController extends Controller
             $draft['project_name']             = $request->input('project_name');
             $draft['district_id']              = $request->input('district_id');
             $draft['taluk_village']            = $request->input('taluk_village');
-            $draft['compliance_period']        = $request->input('compliance_period', 'April 2026 - September 2026');
+            $draft['compliance_period']        = $request->input('compliance_period');
             $draft['compliance_year']          = $request->input('compliance_year', date('Y'));
-            $draft['submission_due_date']      = $request->input('submission_due_date', '2026-12-01');
-            $draft['compliance_no']            = $request->input('compliance_no', 'HYC-' . date('Y') . '-' . sprintf('%04d', EcCompliance::count() + 1));
+            $draft['submission_due_date']      = $request->input('submission_due_date');
+            $draft['compliance_no']            = $request->input('compliance_no');
             $draft['primary_contact_person']   = $request->input('primary_contact_person');
             $draft['primary_phone']            = $request->input('primary_phone');
             $draft['secondary_contact_person'] = $request->input('secondary_contact_person');
@@ -264,93 +271,137 @@ class EcComplianceController extends Controller
     public function store(Request $request)
     {
         $draft = session('ec_compliance_wizard', []);
+        $in = $this->wizardInput($request, $draft, [
+            'customer_id', 'compliance_no', 'primary_contact_person', 'primary_phone', 'secondary_contact_person',
+            'secondary_phone', 'environment_project_id', 'environment_project_name', 'ec_certificate_id',
+            'project_name', 'district_id', 'taluk_village', 'mineral_id', 'compliance_period', 'compliance_year',
+            'submission_due_date', 'parivesh_app_no', 'parivesh_acknowledgement_no', 'parivesh_uploaded_date',
+            'nabl_lab_name', 'nabl_certificate_no', 'monitoring_date',
+            'product_value', 'paid_amount', 'payment_status', 'payment_notes',
+        ]);
 
-        $customerId = $request->input('customer_id') ?: ($draft['customer_id'] ?? Customer::value('id'));
-        $districtId = $request->input('district_id') ?: ($draft['district_id'] ?? District::value('id'));
-        $val        = (float)($request->input('product_value', $draft['product_value'] ?? 50000));
-        $paid       = (float)($request->input('paid_amount', $draft['paid_amount'] ?? 50000));
-        $pending    = max(0, $val - $paid);
-        $pStatus    = $request->input('payment_status', $draft['payment_status'] ?? ($pending == 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')));
+        if ($fail = $this->validateWizard($in, [
+            'customer_id'                 => 'required|integer|exists:customers,id',
+            'compliance_no'               => 'nullable|string|max:50',
+            'primary_contact_person'      => 'nullable|string|max:255',
+            'primary_phone'               => ['nullable', $this->mobileRule],
+            'secondary_contact_person'    => 'nullable|string|max:255',
+            'secondary_phone'             => ['nullable', $this->mobileRule, 'different:primary_phone'],
+            'environment_project_id'      => 'nullable|integer|exists:environment_projects,id',
+            'environment_project_name'    => 'nullable|string|max:255',
+            'ec_certificate_id'           => 'nullable|integer|exists:ec_certificates,id',
+            'project_name'                => 'required|string|max:255',
+            'district_id'                 => 'required|integer|exists:districts,id',
+            'taluk_village'               => 'nullable|string|max:255',
+            'mineral_id'                  => 'nullable|integer|exists:minerals,id',
+            'compliance_period'           => 'required|string|max:100',
+            'compliance_year'             => 'nullable|string|max:10',
+            'submission_due_date'         => 'nullable|date',
+            'parivesh_app_no'             => 'nullable|string|max:100',
+            'parivesh_acknowledgement_no' => 'nullable|string|max:100',
+            'parivesh_uploaded_date'      => 'nullable|date',
+            'nabl_lab_name'               => 'nullable|string|max:255',
+            'nabl_certificate_no'         => 'nullable|string|max:100',
+            'monitoring_date'             => 'nullable|date',
+            'product_value'               => 'nullable|numeric|min:0',
+            'paid_amount'                 => 'nullable|numeric|min:0',
+            'payment_status'              => 'nullable|in:pending,partial,paid',
+            'payment_notes'               => 'nullable|string|max:1000',
+        ], [
+            'customer_id' => 1, 'compliance_no' => 1, 'primary_contact_person' => 1, 'primary_phone' => 1,
+            'secondary_contact_person' => 1, 'secondary_phone' => 1, 'environment_project_id' => 1,
+            'ec_certificate_id' => 1, 'project_name' => 1, 'district_id' => 1, 'taluk_village' => 1, 'mineral_id' => 1,
+            'compliance_period' => 1, 'compliance_year' => 1, 'submission_due_date' => 1,
+            'nabl_lab_name' => 3, 'nabl_certificate_no' => 3, 'monitoring_date' => 3,
+            'parivesh_app_no' => 5, 'parivesh_acknowledgement_no' => 5, 'parivesh_uploaded_date' => 5,
+            'product_value' => 7, 'paid_amount' => 7, 'payment_status' => 7, 'payment_notes' => 7,
+        ], 'ec-compliance.step')) {
+            return $fail;
+        }
 
-        $count = EcCompliance::count() + 1;
-        $complianceNo = $request->input('compliance_no') ?: ($draft['compliance_no'] ?? sprintf('HYC-%s-%04d', date('Y'), $count));
+        try {
+            [$val, $paid, $pending, $pStatus] = $this->wizardPayment($in);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('ec-compliance.step', 7)->withErrors($e->errors())->withInput();
+        }
+
+        // Resume / edit: update the same record instead of creating a duplicate
+        $existing = !empty($draft['id']) ? EcCompliance::find($draft['id']) : null;
 
         DB::beginTransaction();
         try {
-            $compliance = EcCompliance::create([
-                'compliance_no'               => $complianceNo,
-                'customer_id'                 => $customerId,
-                'primary_contact_person'      => $request->input('primary_contact_person', $draft['primary_contact_person'] ?? null),
-                'primary_phone'               => $request->input('primary_phone', $draft['primary_phone'] ?? null),
-                'secondary_contact_person'    => $request->input('secondary_contact_person', $draft['secondary_contact_person'] ?? null),
-                'secondary_phone'             => $request->input('secondary_phone', $draft['secondary_phone'] ?? null),
-                'environment_project_id'      => $request->input('environment_project_id', $draft['environment_project_id'] ?? null),
-                'environment_project_name'    => $request->input('environment_project_name', $draft['environment_project_name'] ?? null),
-                'ec_certificate_id'           => $request->input('ec_certificate_id', $draft['ec_certificate_id'] ?? null),
-                'ec_certificate_file'         => $draft['ec_certificate_file'] ?? null,
-                'ec_certificate_name'         => $draft['ec_certificate_name'] ?? null,
-                'project_name'                => $request->input('project_name', $draft['project_name'] ?? 'Environmental Clearance Half-Yearly Compliance'),
-                'district_id'                 => $districtId,
-                'taluk_village'               => $request->input('taluk_village', $draft['taluk_village'] ?? 'Quarry Site / Taluk'),
-                'mineral_id'                  => $request->input('mineral_id', $draft['mineral_id'] ?? Mineral::value('id')),
-                'compliance_period'           => $request->input('compliance_period', $draft['compliance_period'] ?? 'April 2026 - September 2026'),
-                'compliance_year'             => $request->input('compliance_year', $draft['compliance_year'] ?? date('Y')),
-                'submission_due_date'         => $request->input('submission_due_date', $draft['submission_due_date'] ?? '2026-12-01'),
-                'submission_date'             => date('Y-m-d'),
-                'parivesh_app_no'             => $request->input('parivesh_app_no', $draft['parivesh_app_no'] ?? null),
-                'parivesh_acknowledgement_no' => $request->input('parivesh_acknowledgement_no', $draft['parivesh_acknowledgement_no'] ?? null),
-                'parivesh_uploaded_date'      => date('Y-m-d'),
-                'nabl_lab_name'               => $request->input('nabl_lab_name', $draft['nabl_lab_name'] ?? null),
-                'nabl_certificate_no'         => $request->input('nabl_certificate_no', $draft['nabl_certificate_no'] ?? null),
-                'monitoring_date'             => $request->input('monitoring_date', $draft['monitoring_date'] ?? date('Y-m-d')),
-                'status'                      => 'uploaded_to_parivesh',
+            $data = [
+                'customer_id'                 => (int) $in['customer_id'],
+                'primary_contact_person'      => $in['primary_contact_person'],
+                'primary_phone'               => $in['primary_phone'],
+                'secondary_contact_person'    => $in['secondary_contact_person'],
+                'secondary_phone'             => $in['secondary_phone'],
+                'environment_project_id'      => $in['environment_project_id'] ? (int) $in['environment_project_id'] : null,
+                'environment_project_name'    => $in['environment_project_name'],
+                'ec_certificate_id'           => $in['ec_certificate_id'] ? (int) $in['ec_certificate_id'] : null,
+                'ec_certificate_file'         => $draft['ec_certificate_file'] ?? ($existing->ec_certificate_file ?? null),
+                'ec_certificate_name'         => $draft['ec_certificate_name'] ?? ($existing->ec_certificate_name ?? null),
+                'project_name'                => $in['project_name'],
+                'district_id'                 => (int) $in['district_id'],
+                'taluk_village'               => $in['taluk_village'],
+                'mineral_id'                  => $in['mineral_id'] ? (int) $in['mineral_id'] : null,
+                'compliance_period'           => $in['compliance_period'],
+                'compliance_year'             => $in['compliance_year'] ?: date('Y'),
+                'submission_due_date'         => $in['submission_due_date'],
+                'parivesh_app_no'             => $in['parivesh_app_no'],
+                'parivesh_acknowledgement_no' => $in['parivesh_acknowledgement_no'],
+                'parivesh_uploaded_date'      => $in['parivesh_uploaded_date'],
+                'nabl_lab_name'               => $in['nabl_lab_name'],
+                'nabl_certificate_no'         => $in['nabl_certificate_no'],
+                'monitoring_date'             => $in['monitoring_date'],
                 'product_value'               => $val,
                 'paid_amount'                 => $paid,
                 'pending_amount'              => $pending,
                 'payment_status'              => $pStatus,
-                'payment_notes'               => $request->input('payment_notes', $draft['payment_notes'] ?? 'Half-yearly compliance audit and laboratory package settled'),
-            ]);
+                'payment_notes'               => $in['payment_notes'],
+            ];
 
-            // Handlers
-            $handlers = $request->input('handlers', $draft['handlers'] ?? []);
-            if (!empty($handlers)) {
-                foreach ($handlers as $hIdx => $h) {
-                    if (!empty($h['person_name']) || !empty($h['name'])) {
-                        ApplicationHandler::create([
-                            'application_type' => 'ec_compliance',
-                            'application_id'   => $compliance->id,
-                            'name'             => $h['person_name'] ?? $h['name'],
-                            'role'             => $h['role'] ?? 'Environmental Auditor',
-                            'notes'            => $h['notes'] ?? null,
-                            'sort_order'       => $hIdx + 1,
-                        ]);
-                    }
-                }
+            if ($existing) {
+                $existing->update($data);
+                $compliance = $existing;
             } else {
-                ApplicationHandler::create([
-                    'application_type' => 'ec_compliance',
-                    'application_id'   => $compliance->id,
-                    'name'             => 'Dr. N. Sundararajan',
-                    'role'             => 'Senior Environmental Auditor & EMP Specialist',
-                    'notes'            => 'Overall half-yearly compliance coordination and Parivesh submission',
-                    'sort_order'       => 1,
+                $compliance = EcCompliance::create($data + [
+                    'compliance_no'   => $this->resolveNumber(EcCompliance::class, 'compliance_no', $in['compliance_no'], 'HYC-' . date('Y') . '-'),
+                    'submission_date' => date('Y-m-d'),
+                    'status'          => 'uploaded_to_parivesh',
                 ]);
             }
 
-            // Payment
-            ApplicationPayment::create([
-                'application_type' => 'ec_compliance',
-                'application_id'   => $compliance->id,
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $pStatus,
-                'notes'            => $request->input('payment_notes', $draft['payment_notes'] ?? 'Compliance monitoring fee settled'),
-            ]);
+            // Handlers: replace with what the wizard holds (no placeholder names)
+            ApplicationHandler::where('application_type', 'ec_compliance')->where('application_id', $compliance->id)->delete();
+            foreach ((array) $request->input('handlers', $draft['handlers'] ?? []) as $hIdx => $h) {
+                $name = trim((string) ($h['person_name'] ?? $h['name'] ?? ''));
+                if ($name !== '') {
+                    ApplicationHandler::create([
+                        'application_type' => 'ec_compliance',
+                        'application_id'   => $compliance->id,
+                        'name'             => $name,
+                        'role'             => trim((string) ($h['role'] ?? '')),
+                        'notes'            => $h['notes'] ?? null,
+                        'sort_order'       => $hIdx + 1,
+                    ]);
+                }
+            }
 
-            // Save uploaded EC Certificate into documents table
+            ApplicationPayment::updateOrCreate(
+                ['application_type' => 'ec_compliance', 'application_id' => $compliance->id],
+                [
+                    'product_value'  => $val,
+                    'paid_amount'    => $paid,
+                    'pending_amount' => $pending,
+                    'payment_status' => $pStatus,
+                    'notes'          => $in['payment_notes'],
+                ]
+            );
+
+            // EC certificate uploaded in Step 1 (once per file)
             $certPath = $compliance->ec_certificate_file;
-            if ($certPath) {
+            if ($certPath && !EcComplianceDocument::where('ec_compliance_id', $compliance->id)->where('file_path', $certPath)->exists()) {
                 EcComplianceDocument::create([
                     'ec_compliance_id' => $compliance->id,
                     'folder_category'  => 'documents',
@@ -364,31 +415,31 @@ class EcComplianceController extends Controller
                 ]);
             }
 
-            // Migrate wizard documents from session draft into permanent records
-            $uploadedDocs = session('ec_compliance_wizard.uploaded_docs', []);
-            if (!empty($uploadedDocs)) {
-                foreach ($uploadedDocs as $uDoc) {
-                    EcComplianceDocument::create([
-                        'ec_compliance_id' => $compliance->id,
-                        'folder_category'  => $uDoc['folder_category'] ?? 'documents',
-                        'document_name'    => $uDoc['document_name'] ?? $uDoc['file_name'],
-                        'file_name'        => $uDoc['file_name'],
-                        'file_path'        => $uDoc['file_path'],
-                        'file_type'        => pathinfo($uDoc['file_name'], PATHINFO_EXTENSION),
-                        'file_size'        => $uDoc['file_size_bytes'] ?? null,
-                        'status'           => 'uploaded',
-                    ]);
+            foreach ((array) session('ec_compliance_wizard.uploaded_docs', []) as $uDoc) {
+                if (empty($uDoc['file_path']) || EcComplianceDocument::where('ec_compliance_id', $compliance->id)->where('file_path', $uDoc['file_path'])->exists()) {
+                    continue;
                 }
+                $fileName = $uDoc['file_name'] ?? basename($uDoc['file_path']);
+                EcComplianceDocument::create([
+                    'ec_compliance_id' => $compliance->id,
+                    'folder_category'  => $uDoc['folder_category'] ?? 'documents',
+                    'document_name'    => $uDoc['document_name'] ?? $fileName,
+                    'file_name'        => $fileName,
+                    'file_path'        => $uDoc['file_path'],
+                    'file_type'        => pathinfo($fileName, PATHINFO_EXTENSION),
+                    'file_size'        => $uDoc['file_size_bytes'] ?? null,
+                    'status'           => 'uploaded',
+                ]);
             }
 
             DB::commit();
             session()->forget('ec_compliance_wizard');
 
             return redirect()->route('ec-compliance.show', $compliance->id)
-                ->with('success', "Half-Yearly Compliance {$compliance->compliance_no} recorded and uploaded to Parivesh!");
-        } catch (\Exception $e) {
+                ->with('success', "Half-Yearly Compliance {$compliance->compliance_no} " . ($existing ? 'updated.' : 'recorded.'));
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error saving compliance: ' . $e->getMessage());
+            return $this->storeFailed('compliance record', $e, 'ec-compliance.step', 8);
         }
     }
 
@@ -504,7 +555,7 @@ class EcComplianceController extends Controller
                         'file_type'       => $ext,
                         'file_size'       => $fileSize,
                         'status'          => 'uploaded',
-                        'uploaded_by'     => Auth::id() ?? 1,
+                        'uploaded_by'     => Auth::id(),
                     ]);
                     $docId = $existingDoc->id;
                 } else {
@@ -517,7 +568,7 @@ class EcComplianceController extends Controller
                         'file_type'        => $ext,
                         'file_size'        => $fileSize,
                         'status'           => 'uploaded',
-                        'uploaded_by'      => Auth::id() ?? 1,
+                        'uploaded_by'      => Auth::id(),
                     ]);
                     $docId = $doc->id;
                 }
@@ -591,7 +642,7 @@ class EcComplianceController extends Controller
                     'file_type'       => $ext,
                     'file_size'       => $fileSize,
                     'status'          => 'uploaded',
-                    'uploaded_by'     => Auth::id() ?? 1,
+                    'uploaded_by'     => Auth::id(),
                 ]);
                 $docId = $existingDoc->id;
             } else {
@@ -604,7 +655,7 @@ class EcComplianceController extends Controller
                     'file_type'        => $ext,
                     'file_size'        => $fileSize,
                     'status'           => 'uploaded',
-                    'uploaded_by'      => Auth::id() ?? 1,
+                    'uploaded_by'      => Auth::id(),
                 ]);
                 $docId = $doc->id;
             }
@@ -710,7 +761,7 @@ class EcComplianceController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $request->validate([
-            'status'       => 'required|string|max:100',
+            'status'       => 'required|in:draft,documents_collected,lab_analysed,report_prepared,uploaded_to_parivesh,completed,archived',
             'status_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -729,7 +780,8 @@ class EcComplianceController extends Controller
             'loggable_id'   => $compliance->id,
             'action'        => 'status_updated',
             'description'   => "EC Compliance status updated to '{$cleanStatus}'.{$noteLog}",
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         return redirect()->back()->with('success', "Status updated to '{$cleanStatus}' successfully.");

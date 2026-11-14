@@ -303,6 +303,15 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:application.view')->group(function () {
         Route::get('/application/{id}/report', [CustomerController::class, 'generateReport'])->name('application.report');
     });
+    // Parivesh / Email portal passwords on demand (per-type permission checked in the controller)
+    Route::post('/credentials/{type}/{id}', [\App\Http\Controllers\PortalCredentialController::class, 'show'])
+        ->whereIn('type', ['customer', 'environment', 'ppt', 'ec_certificate'])
+        ->whereNumber('id')
+        ->middleware('throttle:60,1')
+        ->name('portal-credentials.show');
+    Route::middleware(['permission:application.view|application.create', 'throttle:30,1'])->group(function () {
+        Route::post('/application/{id}/mimas-password', [CustomerController::class, 'mimasPassword'])->name('application.mimasPassword');
+    });
 
     // Mining Plan routes
     Route::middleware('permission:mining.view')->group(function () {
@@ -310,7 +319,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/projectfolder', [MiningController::class, 'projectFolder'])->name('projectfolder');
         Route::get('/document', [MiningController::class, 'Document'])->name('document');
         Route::get('/mining/documents/{id?}', [MiningController::class, 'Document'])->name('mining.documents');
-        Route::get('/mining-portal/documents/{id?}', [MiningController::class, 'Document'])->name('mining-portal.documents');
         Route::get('/process', [MiningController::class, 'Process'])->name('process');
     });
     Route::middleware('permission:mining.create')->group(function () {
@@ -321,12 +329,6 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:mining.create|mining.edit')->group(function () {
         Route::post('/mining/document/upload', [MiningController::class, 'uploadDocument'])->name('mining.document.upload');
         Route::post('/mining/document/remove', [MiningController::class, 'removeDocument'])->name('mining.document.remove');
-        Route::post('/mining-portal/upload-document', [MiningController::class, 'uploadDocument'])->name('mining-portal.upload-document');
-        Route::post('/mining-portal/upload', [MiningController::class, 'uploadDocument'])->name('mining-portal.upload');
-        Route::post('/mining_portal/upload-document', [MiningController::class, 'uploadDocument'])->name('mining_portal.upload_document');
-        Route::post('/mining-portal/remove-document', [MiningController::class, 'removeDocument'])->name('mining-portal.remove-document');
-        Route::post('/mining-portal/remove', [MiningController::class, 'removeDocument'])->name('mining-portal.remove');
-        Route::post('/mining_portal/remove-document', [MiningController::class, 'removeDocument'])->name('mining_portal.remove_document');
     });
     Route::middleware('permission:mining.edit')->group(function () {
         Route::post('/mining/document/{id}/validate', [MiningController::class, 'validateDocument'])->name('mining.document.validate');
@@ -384,9 +386,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/environment-b2/documents/{document}/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('environment-b2.documents.remove');
         Route::post('/environment-b2/documents/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('environment-b2.documents.remove_direct');
         Route::post('/enviro_b2/upload-document', [EnvironmentalB2Controller::class, 'upload'])->name('enviro_b2.upload_document');
-        Route::post('/enviro-b2/upload', [EnvironmentalB2Controller::class, 'upload'])->name('enviro-b2.upload');
         Route::post('/enviro_b2/remove-document', [EnvironmentalB2Controller::class, 'removeDocument'])->name('enviro_b2.remove_document');
-        Route::post('/enviro-b2/remove', [EnvironmentalB2Controller::class, 'removeDocument'])->name('enviro-b2.remove');
     });
 
     Route::middleware('permission:environment.b2.review')->group(function () {
@@ -417,11 +417,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('permission:ec_certificate.create|ec_certificate.edit')->group(function () {
         Route::post('/ec-certificate/upload', [EcCertificateController::class, 'uploadDocument'])->name('ec-certificate.upload');
-        Route::post('/ec-certificate/upload-document', [EcCertificateController::class, 'uploadDocument'])->name('ec-certificate.upload-document');
-        Route::post('/ec_certificate/upload-document', [EcCertificateController::class, 'uploadDocument'])->name('ec_certificate.upload_document');
         Route::post('/ec-certificate/remove', [EcCertificateController::class, 'removeDocument'])->name('ec-certificate.remove');
-        Route::post('/ec-certificate/remove-document', [EcCertificateController::class, 'removeDocument'])->name('ec-certificate.remove-document');
-        Route::post('/ec_certificate/remove-document', [EcCertificateController::class, 'removeDocument'])->name('ec_certificate.remove_document');
     });
     Route::middleware('permission:ec_certificate.edit')->group(function () {
         Route::post('/ec-certificate/{id}/status', [EcCertificateController::class, 'updateStatus'])->whereNumber('id')->name('ec-certificate.status');
@@ -439,11 +435,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('permission:ppt.create|ppt.edit')->group(function () {
         Route::post('/ppt-department/upload', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload');
-        Route::post('/ppt_department/upload-document', [PptDepartmentController::class, 'uploadDocument'])->name('ppt_department.upload_document');
-        Route::post('/ppt-department/upload-document', [PptDepartmentController::class, 'uploadDocument'])->name('ppt-department.upload_document');
         Route::post('/ppt-department/remove', [PptDepartmentController::class, 'removeDocument'])->name('ppt-department.remove');
-        Route::post('/ppt_department/remove-document', [PptDepartmentController::class, 'removeDocument'])->name('ppt_department.remove_document');
-        Route::post('/ppt-department/remove-document', [PptDepartmentController::class, 'removeDocument'])->name('ppt-department.remove_document');
     });
     Route::middleware('permission:ppt.edit')->group(function () {
         Route::post('/ppt-department/{id}/status', [PptDepartmentController::class, 'updateStatus'])->whereNumber('id')->name('ppt-department.status');
@@ -495,10 +487,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:ec_compliance.edit|ec_compliance.create')->group(function () {
         Route::post('/ec-compliance/{id}/status', [EcComplianceController::class, 'updateStatus'])->whereNumber('id')->name('ec-compliance.status');
         Route::post('/ec-compliance/upload', [EcComplianceController::class, 'uploadDocument'])->name('ec-compliance.upload');
-        Route::post('/ec_compliance/upload-document', [EcComplianceController::class, 'uploadDocument'])->name('ec_compliance.upload_document');
         Route::post('/ec-compliance/remove', [EcComplianceController::class, 'removeDocument'])->name('ec-compliance.remove');
-        Route::post('/ec-compliance/remove-document', [EcComplianceController::class, 'removeDocument'])->name('ec-compliance.remove_document');
-        Route::post('/ec_compliance/remove-document', [EcComplianceController::class, 'removeDocument'])->name('ec_compliance.remove_document');
     });
 
     // Accounts & Financial Management Module

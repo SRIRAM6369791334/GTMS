@@ -96,7 +96,7 @@ class EcCertificateController extends Controller
                 $currentDraftProjId = $draft['step1']['environment_project_id'] ?? null;
                 if ($currentDraftProjId != $selectedProject->id) {
                     $year = date('Y');
-                    $nextCount = EcCertificate::count() + 1;
+                    $nextCount = EcCertificate::withTrashed()->count() + 1;
                     $ecRefNo = sprintf("SEIAA-TN/EC/%s/%04d", $year, $nextCount);
                     $pariveshNo = sprintf("SIA/TN/MIN/%d/%s", 10000 + $selectedProject->id, $year);
                     $applicantName = $selectedProject->customer?->company_name ?: ($selectedProject->customer?->customer_name ?: $selectedProject->contact_name);
@@ -107,8 +107,7 @@ class EcCertificateController extends Controller
                             'environment_project_id' => $selectedProject->id,
                             'ec_ref_no'              => $ecRefNo,
                             'parivesh_app_no'        => $pariveshNo,
-                            'parivesh_password'      => $selectedProject->parivesh_password ?? $selectedProject->customer?->parivesh_password ?? null,
-                            'email_password'         => $selectedProject->email_password ?? $selectedProject->customer?->email_password ?? null,
+                // portal passwords: fetched by the page on demand, not put in the draft
                             'applicant_name'         => $applicantName,
                             'issue_date'             => date('Y-m-d'),
                             'validity_years'         => 5,
@@ -129,7 +128,7 @@ class EcCertificateController extends Controller
         // Initialize dynamic defaults for step 1 if not already populated
         if ($selectedProject && empty($draft['step1'])) {
             $year = date('Y');
-            $nextCount = EcCertificate::count() + 1;
+            $nextCount = EcCertificate::withTrashed()->count() + 1;
             $ecRefNo = sprintf("SEIAA-TN/EC/%s/%04d", $year, $nextCount);
             $pariveshNo = sprintf("SIA/TN/MIN/%d/%s", 10000 + $selectedProject->id, $year);
             $applicantName = $selectedProject->customer?->company_name ?: ($selectedProject->customer?->customer_name ?: $selectedProject->contact_name);
@@ -138,8 +137,7 @@ class EcCertificateController extends Controller
                 'environment_project_id' => $selectedProject->id,
                 'ec_ref_no'              => $ecRefNo,
                 'parivesh_app_no'        => $pariveshNo,
-                'parivesh_password'      => $selectedProject->parivesh_password ?? $selectedProject->customer?->parivesh_password ?? null,
-                'email_password'         => $selectedProject->email_password ?? $selectedProject->customer?->email_password ?? null,
+                // portal passwords: fetched by the page on demand, not put in the draft
                 'applicant_name'         => $applicantName,
                 'primary_phone'          => $selectedProject->customer?->mobile_num ?? $selectedProject->contact_phone,
                 'secondary_phone'        => $selectedProject->customer?->secondary_mobile_num ?? $selectedProject->secondary_phone,
@@ -312,10 +310,17 @@ class EcCertificateController extends Controller
 
             case 5:
                 // Step 5: Payment & Financial Settlement
+                $request->validate([
+                    'product_value'  => 'nullable|numeric|min:0',
+                    'paid_amount'    => 'nullable|numeric|min:0',
+                    'payment_status' => 'nullable|in:pending,partial,paid',
+                    'payment_notes'  => 'nullable|string|max:1000',
+                ]);
                 $pv = (float) $request->input('product_value', 0);
                 $pa = (float) $request->input('paid_amount', 0);
+                \App\Support\PaymentConsistency::assert($request->input('payment_status') ?: null, $pv, $pa);
                 $pe = max(0, $pv - $pa);
-                $pStatus = $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
+                $pStatus = $request->input('payment_status') ?: ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
 
                 $draft['step5'] = [
                     'product_value'  => $pv,
@@ -457,7 +462,7 @@ class EcCertificateController extends Controller
                         'pending_amount'         => $pe,
                         'payment_status'         => $pStatus,
                         'status'                 => 'active',
-                        'created_by'             => Auth::id() ?? 1,
+                        'created_by'             => Auth::id(),
                     ]
                 );
 
@@ -500,9 +505,10 @@ class EcCertificateController extends Controller
                 ActivityLog::create([
                     'loggable_type' => EnvironmentProject::class,
                     'loggable_id'   => $project->id,
-                    'user_id'       => Auth::id() ?? 1,
+                    'user_id'       => Auth::id(),
                     'action'        => 'EC Certificate Issued',
                     'description'   => "Environmental Clearance Certificate '{$certificate->ec_ref_no}' issued to {$certificate->applicant_name}.",
+                    'created_at'    => now(),
                 ]);
 
                 // Clear wizard session
@@ -514,7 +520,7 @@ class EcCertificateController extends Controller
         } catch (\Throwable $e) {
             Log::error('Failed to issue EC Certificate: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('ec-certificate.step', 6)
-                ->with('error', 'Failed to issue EC Certificate: ' . $e->getMessage());
+                ->with('error', 'Failed to issue the EC Certificate. Please check the details and try again. If it keeps failing, contact the administrator.');
         }
     }
 
@@ -524,7 +530,7 @@ class EcCertificateController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $request->validate([
-            'status'       => 'required|string|max:100',
+            'status'       => 'required|in:active,expired,revoked,surrendered',
             'status_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -543,7 +549,8 @@ class EcCertificateController extends Controller
             'loggable_id'   => $certificate->id,
             'action'        => 'status_updated',
             'description'   => "EC Certificate status updated to '{$cleanStatus}'.{$noteLog}",
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         return redirect()->back()->with('success', "Status updated to '{$cleanStatus}' successfully.");

@@ -79,9 +79,9 @@
           @php
             $savedPlainPass = $draft['step6']['mimas_password'] ?? ($draft['step2']['mimas_password'] ?? null);
             if ((empty($savedPlainPass) || $savedPlainPass === '__UNCHANGED__') && !empty($draft['application_id'])) {
-                $cred = \App\Models\MimasCredential::where('lease_application_id', $draft['application_id'])->first();
-                if ($cred) $savedPlainPass = $cred->password;
+                $savedPlainPass = \App\Models\MimasCredential::where('lease_application_id', $draft['application_id'])->value('password');
             }
+            // Only the flag reaches the page; the password is fetched on demand.
             $hasSavedPass = !empty($savedPlainPass);
           @endphp
 
@@ -209,7 +209,7 @@
                   <span class="input-group-text s2-addon lz-addon"><i class="bi bi-lock"></i></span>
                   <input type="password" name="mimas_password" id="field_mimas_password" class="form-control s2-input s2-pass-field lz-input" 
                          data-has-saved="{{ $hasSavedPass ? '1' : '0' }}"
-                         data-real-pass="{{ $savedPlainPass ?? '' }}"
+                         data-pass-url="{{ !empty($draft['application_id']) ? route('application.mimasPassword', $draft['application_id']) : '' }}"
                          placeholder="{{ $hasSavedPass ? '•••••••••••• (Stored securely — click to update)' : 'Enter MIMAS portal password' }}" 
                          value="{{ $hasSavedPass ? '__UNCHANGED__' : '' }}" required autocomplete="new-password">
                   <button class="btn s2-btn-addon s2-btn-toggle" type="button" id="btn_toggle_password" title="Show / Hide Password">
@@ -516,18 +516,44 @@ $(document).ready(function() {
     }
   });
 
+  // Saved password is fetched on demand (not printed in the page source)
+  var savedPassCache = null;
+  function getSavedPassword() {
+    var url = $('#field_mimas_password').attr('data-pass-url');
+    if (savedPassCache !== null) return Promise.resolve(savedPassCache);
+    if (!url || $('#field_mimas_password').data('has-saved') != '1') return Promise.resolve('');
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      savedPassCache = data.status === 1 ? data.password : '';
+      return savedPassCache;
+    }).catch(function() { return ''; });
+  }
+
   // Toggle password visibility (Eye Icon)
   $('#btn_toggle_password').on('click', function(e) {
     e.preventDefault();
     var passInput = $('#field_mimas_password');
-    var realPass = passInput.attr('data-real-pass') || '';
+    var realPass = savedPassCache || '';
     if (passInput.prop('type') === 'password') {
-      passInput.prop('type', 'text');
-      if (passInput.val() === '__UNCHANGED__' && realPass) {
-        passInput.val(realPass);
+      var show = function(saved) {
+        passInput.prop('type', 'text');
+        if (passInput.val() === '__UNCHANGED__' && saved) {
+          passInput.val(saved);
+        }
+        $('#svg_eye_open').hide();
+        $('#svg_eye_closed').show();
+      };
+      if (passInput.val() === '__UNCHANGED__') {
+        getSavedPassword().then(show);
+      } else {
+        show('');
       }
-      $('#svg_eye_open').hide();
-      $('#svg_eye_closed').show();
     } else {
       passInput.prop('type', 'password');
       if (passInput.val() === realPass && passInput.data('has-saved') == '1') {
@@ -542,8 +568,14 @@ $(document).ready(function() {
   $('#btn_copy_password').on('click', function(e) {
     e.preventDefault();
     var passInput = $('#field_mimas_password');
-    var realPass = passInput.attr('data-real-pass') || passInput.val();
-    if (realPass === '__UNCHANGED__') realPass = passInput.attr('data-real-pass') || '';
+    if (passInput.val() === '__UNCHANGED__') {
+      getSavedPassword().then(copyPassword);
+    } else {
+      copyPassword(passInput.val());
+    }
+  });
+
+  function copyPassword(realPass) {
     if (!realPass) {
       if (typeof toastr !== 'undefined') toastr.info('No password entered to copy.');
       else alert('No password entered to copy.');
@@ -563,7 +595,7 @@ $(document).ready(function() {
       if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
       else alert('MIMAS Password copied to clipboard!');
     }
-  });
+  }
 
   // Numeric-only input restriction on mobiles
   $('#field_contact_mobile, #field_secondary_contact_mobile, #field_mimas_contact').on('input', function() {

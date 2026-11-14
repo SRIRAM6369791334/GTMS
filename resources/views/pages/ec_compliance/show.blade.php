@@ -44,7 +44,7 @@
         <a href="{{ route('ec-compliance.step', ['step' => 1, 'resume' => $comp->id]) }}" class="btn btn-navy">
           <i class="bi bi-pencil-square me-1"></i> Edit Filing
         </a>
-        <a href="{{ route('dgps-survey.step', 1) }}" 
+        <a href="{{ route('dgps-survey.step', 1) }}?new=1" 
            class="btn btn-sm" 
            style="background: linear-gradient(135deg, #312e81 0%, #6366f1 100%); color: #fff; border: none;"
            title="Initiate DGPS Boundary Pillar Survey for this quarry site">
@@ -549,7 +549,7 @@
                 <p class="text-muted small mb-0">Establish GPS-verified boundary coordinates for quarry lease area demarcation using differential GNSS equipment.</p>
               </div>
             </div>
-            <a href="{{ route('dgps-survey.step', 1) }}" class="btn btn-sm px-4 shadow-sm" style="background:#6366f1; color:#fff;">
+            <a href="{{ route('dgps-survey.step', 1) }}?new=1" class="btn btn-sm px-4 shadow-sm" style="background:#6366f1; color:#fff;">
               <i class="bi bi-arrow-right me-1"></i> Start DGPS Survey
             </a>
           </div>

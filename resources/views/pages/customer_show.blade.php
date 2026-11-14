@@ -1339,7 +1339,7 @@ body[data-theme-version="dark"] .dos-chip-aadhaar {
                                             <small class="text-muted">MoEFCC / SEIAA half-yearly compliance filings, PARIVESH submissions &amp; monitoring</small>
                                         </div>
                                         @can('ec_compliance.create')
-                                        <a href="{{ route('ec-compliance.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-sm btn-dos-action" style="color: #059669;">
+                                        <a href="{{ route('ec-compliance.step', 1) }}?new=1&customer_id={{ $customer->id }}" class="btn btn-sm btn-dos-action" style="color: #059669;">
                                             <i class="fa fa-plus me-1"></i> New Compliance
                                         </a>
                                         @endcan

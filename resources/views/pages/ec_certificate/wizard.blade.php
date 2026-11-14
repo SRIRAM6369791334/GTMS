@@ -294,8 +294,6 @@
                       data-mimas="{{ $p->customer?->mimas_no }}"
                       data-mobile="{{ $p->customer?->mobile_num ?? $p->contact_phone }}"
                       data-secondary-mobile="{{ $p->customer?->secondary_mobile_num ?? $p->secondary_phone }}"
-                      data-parivesh-password="{{ $p->parivesh_password ?? $p->customer?->parivesh_password }}"
-                      data-email-password="{{ $p->email_password ?? $p->customer?->email_password }}"
                       @selected($selectedProject && $selectedProject->id === $p->id)>
                       {{ $p->project_code }} — {{ $p->project_name }} ({{ $p->customer?->company_name ?: $p->customer?->customer_name }}) [{{ $p->category_badge }}]
                     </option>
@@ -354,9 +352,9 @@
                 <i class="fa fa-key me-1 text-muted"></i> Parivesh Portal Password
               </label>
               <div class="input-group">
-                <input type="text" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ec_parivesh_password"
-                  value="{{ old('parivesh_password', $s1['parivesh_password'] ?? ($selectedProject?->parivesh_password ?? ($selectedProject?->customer?->parivesh_password ?? ''))) }}"
-                  placeholder="e.g. Parivesh@Pass2026" autocomplete="off">
+                <input type="password" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ec_parivesh_password"
+                  value="{{ old('parivesh_password', $s1['parivesh_password'] ?? '') }}" data-cred-prefill="parivesh_password"
+                  placeholder="e.g. Parivesh@Pass2026" autocomplete="new-password">
                 <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ec_parivesh_password" title="Toggle visibility">
                   <i class="fa fa-eye"></i>
                 </button>
@@ -373,9 +371,9 @@
                 <i class="fa fa-lock me-1 text-muted"></i> Portal / Email Password
               </label>
               <div class="input-group">
-                <input type="text" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ec_email_password"
-                  value="{{ old('email_password', $s1['email_password'] ?? ($selectedProject?->email_password ?? ($selectedProject?->customer?->email_password ?? ''))) }}"
-                  placeholder="e.g. Email@Pass2026" autocomplete="off">
+                <input type="password" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ec_email_password"
+                  value="{{ old('email_password', $s1['email_password'] ?? '') }}" data-cred-prefill="email_password"
+                  placeholder="e.g. Email@Pass2026" autocomplete="new-password">
                 <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ec_email_password" title="Toggle visibility">
                   <i class="fa fa-eye"></i>
                 </button>
@@ -919,6 +917,22 @@
 </div>
 
 <script>
+  // Saved portal passwords of the selected project are fetched on demand, not printed in the page
+  document.addEventListener('DOMContentLoaded', function () {
+    var projectId = @json($selectedProject?->id);
+    var fields = document.querySelectorAll('[data-cred-prefill]');
+    if (!projectId || !fields.length || !window.GTMS || !GTMS.credentials) return;
+    var needed = Array.prototype.some.call(fields, function (el) { return !el.value; });
+    if (!needed) return;
+    GTMS.credentials('environment', projectId).then(function (cred) {
+      fields.forEach(function (el) {
+        var v = cred[el.getAttribute('data-cred-prefill')];
+        if (!el.value && v) el.value = v;
+      });
+    }).catch(function () {});
+  });
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
   // Step 2: Reactive AJAX EC Certificate Upload & Drag-and-Drop
   function uploadEcCertificateFile(file) {
@@ -1272,11 +1286,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const fPariveshPass = document.getElementById('field_ec_parivesh_password');
     const fEmailPass = document.getElementById('field_ec_email_password');
-    if (fPariveshPass && c.parivesh_password) {
-      fPariveshPass.value = c.parivesh_password;
-    }
-    if (fEmailPass && c.email_password) {
-      fEmailPass.value = c.email_password;
+    // Saved portal passwords are fetched for this one customer only
+    if (c.id && window.GTMS && GTMS.credentials) {
+      GTMS.credentials('customer', c.id).then(function (cred) {
+        if (fPariveshPass && cred.parivesh_password) fPariveshPass.value = cred.parivesh_password;
+        if (fEmailPass && cred.email_password) fEmailPass.value = cred.email_password;
+      }).catch(function () {});
     }
 
     // Try matching customer in approved project dropdown

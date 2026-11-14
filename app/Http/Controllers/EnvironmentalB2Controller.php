@@ -64,12 +64,22 @@ class EnvironmentalB2Controller extends Controller
             'location'                 => 'nullable|string|max:255',
             'contact_name'             => 'nullable|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
-            'contact_phone'            => 'required|string|max:20',
-            'secondary_phone'          => 'nullable|string|max:20',
+            'contact_phone'            => ['required', 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_phone'          => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:contact_phone'],
             'contact_email'            => 'nullable|email|max:255',
             'mimas_no'                 => 'nullable|string|max:50',
-            'aadhaar_no'               => 'nullable|string|max:14',
+            'aadhaar_no'               => ['nullable', 'regex:/^[2-9][0-9]{3}[ -]?[0-9]{4}[ -]?[0-9]{4}$/'],
+        ], [
+            'contact_phone.regex'   => 'Contact phone must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_phone.regex' => 'Secondary phone must be 10 digits and start with 6, 7, 8 or 9.',
+            'aadhaar_no.regex'      => 'Aadhaar must be 12 digits (e.g. 9876-5432-1012).',
         ]);
+
+        // Same XXXX-XXXX-XXXX form Lease / Customers store
+        if (!empty($validated['aadhaar_no'])) {
+            $digits = preg_replace('/\D/', '', $validated['aadhaar_no']);
+            $validated['aadhaar_no'] = substr($digits, 0, 4) . '-' . substr($digits, 4, 4) . '-' . substr($digits, 8, 4);
+        }
 
         $project = DB::transaction(function () use ($validated, $request) {
             // 1. Resolve or Create Customer (Lease / Mining Pattern)
@@ -91,8 +101,10 @@ class EnvironmentalB2Controller extends Controller
             } else {
                 $customer = Customer::create([
                     'customer_name'            => $validated['client_name'],
-                    'company_name'             => (!empty($validated['company_name'])) ? $validated['company_name'] : ($validated['client_name'] . ' Quarry'),
-                    'mimas_no'                 => (!empty($validated['mimas_no'])) ? $validated['mimas_no'] : ('TN-MMS-' . strtoupper(substr(md5(uniqid()), 0, 6))),
+                    // No made-up company name or MIMAS number
+                    'company_name'             => $validated['company_name'] ?? null,
+                    'mimas_no'                 => $validated['mimas_no'] ?? null,
+                    'aadhaar_no'               => $validated['aadhaar_no'] ?? null,
                     'mobile_num'               => $validated['contact_phone'],
                     'secondary_mobile_num'     => $validated['secondary_phone'] ?? null,
                     'secondary_contact_person' => $validated['secondary_contact_person'] ?? null,
@@ -100,7 +112,7 @@ class EnvironmentalB2Controller extends Controller
                     'district_id'              => $validated['district_id'],
                     'address'                  => $validated['location'] ?? null,
                     'status'                   => 1,
-                    'created_by'               => Auth::id() ?? 1,
+                    'created_by'               => Auth::id(),
                 ]);
             }
 
@@ -134,7 +146,7 @@ class EnvironmentalB2Controller extends Controller
                 'contact_email'            => $validated['contact_email'] ?? $customer->email,
                 'status'                   => 'draft',
                 'branch_id'                => Auth::user()?->branch_id ?? 1,
-                'created_by'               => Auth::id() ?? 1,
+                'created_by'               => Auth::id(),
             ]);
 
             // 4. Auto-generate B2 Document Checklist across 6 folders
@@ -164,9 +176,10 @@ class EnvironmentalB2Controller extends Controller
             ActivityLog::create([
                 'loggable_type' => EnvironmentProject::class,
                 'loggable_id'   => $project->id,
-                'user_id'       => Auth::id() ?? 1,
+                'user_id'       => Auth::id(),
                 'action'        => 'Project Created',
                 'description'   => "B2 Environment Clearance project {$projectCode} created with 6 folders and checklist.",
+                'created_at'    => now(),
             ]);
 
             return $project;
@@ -306,7 +319,7 @@ class EnvironmentalB2Controller extends Controller
                 'file_size'   => $fileSize,
                 'status'      => 'uploaded',
                 'review_note' => null,
-                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_by' => Auth::id(),
                 'uploaded_at' => now(),
                 'reviewed_by' => null,
                 'reviewed_at' => null,
@@ -315,9 +328,10 @@ class EnvironmentalB2Controller extends Controller
             ActivityLog::create([
                 'loggable_type' => EnvironmentProject::class,
                 'loggable_id'   => $project ? $project->id : $doc->environment_project_id,
-                'user_id'       => Auth::id() ?? 1,
+                'user_id'       => Auth::id(),
                 'action'        => 'Document Uploaded',
                 'description'   => "Uploaded '{$doc->document_name}' ({$origName}).",
+                'created_at'    => now(),
             ]);
         }
 
@@ -437,16 +451,17 @@ class EnvironmentalB2Controller extends Controller
         $document->update([
             'status'      => $validated['status'],
             'review_note' => $validated['review_note'] ?? null,
-            'reviewed_by' => Auth::id() ?? 1,
+            'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),
         ]);
 
         ActivityLog::create([
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $document->environment_project_id,
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
             'action'        => 'Document ' . ucfirst(str_replace('_', ' ', $validated['status'])),
             'description'   => "Document '{$document->document_name}' marked as {$validated['status']}." . ($validated['review_note'] ? ' Note: ' . $validated['review_note'] : ''),
+            'created_at'    => now(),
         ]);
 
         return back()->with('success', "Document review recorded as " . ucfirst(str_replace('_', ' ', $validated['status'])) . ".");
@@ -458,7 +473,7 @@ class EnvironmentalB2Controller extends Controller
     public function updateStatus(Request $request, EnvironmentProject $project)
     {
         $validated = $request->validate([
-            'status'       => 'required|string|max:100',
+            'status'       => 'required|in:draft,validation,validated,revision_required,reported,approved,archived',
             'status_notes' => 'nullable|string|max:1000',
         ]);
 
@@ -482,9 +497,10 @@ class EnvironmentalB2Controller extends Controller
         ActivityLog::create([
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $project->id,
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
             'action'        => 'Stage Advanced',
             'description'   => "Project status transitioned to " . ucfirst($status) . ".{$noteLog}",
+            'created_at'    => now(),
         ]);
 
         return back()->with('success', "Project stage updated to " . ucfirst($status) . ".");

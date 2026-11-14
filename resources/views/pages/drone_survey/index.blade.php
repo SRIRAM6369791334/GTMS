@@ -14,7 +14,7 @@
       </div>
       <div class="col-lg-6 col-12 text-lg-end">
         @can('drone.create')
-        <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-navy shadow-sm" style="background-color: #0F1E4D; color: white;">
+        <a href="{{ route('drone-survey.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-navy shadow-sm" style="background-color: #0F1E4D; color: white;">
           <i class="fa fa-plus me-1"></i> New Drone Survey
         </a>
         @endcan
@@ -221,7 +221,7 @@
                     <i class="fa fa-paper-plane fa-3x mb-3 text-muted opacity-50"></i>
                     <p class="mb-2">No Drone Survey records found.</p>
                     @can('drone.create')
-                    <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-sm btn-navy" style="background-color: #0F1E4D; color: white;">
+                    <a href="{{ route('drone-survey.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-sm btn-navy" style="background-color: #0F1E4D; color: white;">
                       <i class="fa fa-plus me-1"></i> Register First Survey
                     </a>
                     @endcan

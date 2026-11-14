@@ -14,7 +14,7 @@
       </div>
       <div class="col-lg-6 col-12 text-lg-end">
         @can('ppt.create')
-        <a href="{{ route('ppt-department.step', 1) }}" class="btn btn-navy shadow-sm">
+        <a href="{{ route('ppt-department.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-navy shadow-sm">
           <i class="fa fa-plus me-1"></i> New PPT Application
         </a>
         @endcan
@@ -245,7 +245,7 @@
                     <i class="fa fa-folder-open fa-3x mb-3 text-muted opacity-50"></i>
                     <p class="mb-2">No PPT Department applications found.</p>
                     @can('ppt.create')
-                    <a href="{{ route('ppt-department.step', 1) }}" class="btn btn-sm btn-navy">
+                    <a href="{{ route('ppt-department.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-sm btn-navy">
                       <i class="fa fa-plus me-1"></i> Start New Application
                     </a>
                     @endcan

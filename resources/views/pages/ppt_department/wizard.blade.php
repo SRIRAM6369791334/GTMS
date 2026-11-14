@@ -121,8 +121,6 @@ $folders = [
                       data-mobile="{{ $c->mobile_num }}"
                       data-secondary-mobile="{{ $c->secondary_mobile_num }}"
                       data-mimas="{{ $c->mimas_no }}"
-                      data-parivesh-password="{{ $c->parivesh_password }}"
-                      data-email-password="{{ $c->email_password }}"
                       {{ ($draft['customer_id'] ?? '') == $c->id ? 'selected' : ($loop->first && empty($draft['customer_id']) ? 'selected' : '') }}>
                       {{ $c->company_name ? $c->company_name . ' (' . $c->customer_name . ')' : $c->customer_name }}
                     </option>
@@ -154,8 +152,8 @@ $folders = [
               <div class="col-md-6">
                 <label class="form-label fw-bold text-navy"><i class="fa fa-key me-1 text-muted"></i> Parivesh Portal Password</label>
                 <div class="input-group">
-                  <input type="text" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ppt_parivesh_password"
-                    placeholder="e.g. Parivesh@Pass2026" value="{{ $draft['parivesh_password'] ?? '' }}" autocomplete="off">
+                  <input type="password" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_ppt_parivesh_password"
+                    placeholder="e.g. Parivesh@Pass2026" value="{{ $draft['parivesh_password'] ?? '' }}" autocomplete="new-password">
                   <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ppt_parivesh_password" title="Toggle visibility">
                     <i class="fa fa-eye"></i>
                   </button>
@@ -170,8 +168,8 @@ $folders = [
               <div class="col-md-6">
                 <label class="form-label fw-bold text-navy"><i class="fa fa-lock me-1 text-muted"></i> Portal / Email Password</label>
                 <div class="input-group">
-                  <input type="text" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ppt_email_password"
-                    placeholder="e.g. Email@Pass2026" value="{{ $draft['email_password'] ?? '' }}" autocomplete="off">
+                  <input type="password" class="form-control auto-filled-field font-monospace" name="email_password" id="field_ppt_email_password"
+                    placeholder="e.g. Email@Pass2026" value="{{ $draft['email_password'] ?? '' }}" autocomplete="new-password">
                   <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_ppt_email_password" title="Toggle visibility">
                     <i class="fa fa-eye"></i>
                   </button>
@@ -1095,14 +1093,8 @@ document.addEventListener('DOMContentLoaded', function() {
       fSecMobile.value = c.secondary_mobile_num || '';
     }
 
-    const fPariveshPass = document.getElementById('field_ppt_parivesh_password');
-    const fEmailPass = document.getElementById('field_ppt_email_password');
-    if (fPariveshPass && c.parivesh_password) {
-      fPariveshPass.value = c.parivesh_password;
-    }
-    if (fEmailPass && c.email_password) {
-      fEmailPass.value = c.email_password;
-    }
+    // Saved portal passwords are fetched for this one customer only
+    fillPptCredentials(c.id);
 
     // Visual cue on all autofilled fields
     document.querySelectorAll('.auto-filled-field').forEach(el => {
@@ -1182,15 +1174,22 @@ document.addEventListener('DOMContentLoaded', function() {
       if (opt && fSecMobile) {
         fSecMobile.value = opt.dataset.secondaryMobile || '';
       }
-      const fParivesh = document.getElementById('field_ppt_parivesh_password');
-      const fEmailPass = document.getElementById('field_ppt_email_password');
-      if (opt && fParivesh) {
-        fParivesh.value = opt.dataset.pariveshPassword || '';
-      }
-      if (opt && fEmailPass) {
-        fEmailPass.value = opt.dataset.emailPassword || '';
-      }
+      fillPptCredentials(opt ? opt.value : null);
     });
+  }
+
+  function fillPptCredentials(customerId) {
+    const fParivesh = document.getElementById('field_ppt_parivesh_password');
+    const fEmailPass = document.getElementById('field_ppt_email_password');
+    if (!customerId || !window.GTMS || !GTMS.credentials) {
+      if (fParivesh) fParivesh.value = '';
+      if (fEmailPass) fEmailPass.value = '';
+      return;
+    }
+    GTMS.credentials('customer', customerId).then(function (cred) {
+      if (fParivesh) fParivesh.value = cred.parivesh_password;
+      if (fEmailPass) fEmailPass.value = cred.email_password;
+    }).catch(function () { /* leave fields for manual entry */ });
   }
 
   // Toggle password visibility (text <-> password) & copy

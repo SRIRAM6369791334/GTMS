@@ -61,6 +61,11 @@ class CustomerController extends Controller
         if ($minerals->isEmpty()) {
             $minerals = Mineral::orderBy('name')->get();
         }
+        // A submitted dossier left in the session (opened via /step5?id=) is not
+        // a draft: start a fresh application instead of showing its data.
+        if ($this->lockedDraftResponse()) {
+            session()->forget('lease_draft');
+        }
         $draft = session('lease_draft', []);
 
         if ($request->filled('customer_id') && empty($draft['step1']['customer_id'])) {
@@ -157,8 +162,34 @@ class CustomerController extends Controller
         }
     }
 
+    /**
+     * Wizard saves may only change a draft (or an application sent back for
+     * revision). Opening a submitted dossier's documents via /step5?id=
+     * puts it in the session, so later step saves must not touch it.
+     */
+    private function lockedDraftResponse()
+    {
+        $appId = session('lease_draft.application_id');
+        if (!$appId) {
+            return null;
+        }
+        $status = LeaseApplication::where('id', $appId)->value('status');
+        if ($status === null || in_array($status, ['draft', 'revision_required'], true)) {
+            return null;
+        }
+        $msg = 'This application is already submitted. Make changes from the application dossier.';
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['status' => 0, 'message' => $msg], 422);
+        }
+        return redirect()->route('viewapplication', ['id' => $appId])->with('error', $msg);
+    }
+
     public function saveStep1(Request $request)
     {
+        if ($locked = $this->lockedDraftResponse()) {
+            return $locked;
+        }
+
         // Normalise case so the format rules match what users type
         $request->merge(array_filter([
             'pan'   => $request->filled('pan') ? strtoupper(trim($request->input('pan'))) : null,
@@ -285,7 +316,7 @@ class CustomerController extends Controller
                 'current_step'             => 1,
                 'status'                   => 'draft',
                 'branch_id'                => $branch ? $branch->id : null,
-                'created_by'               => Auth::id() ?? 1,
+                'created_by'               => Auth::id(),
             ]);
             if (!empty($mineralIds)) {
                 $leaseApp->minerals()->sync($mineralIds);
@@ -343,6 +374,10 @@ class CustomerController extends Controller
 
     public function saveStep2(Request $request)
     {
+        if ($locked = $this->lockedDraftResponse()) {
+            return $locked;
+        }
+
         $validated = $request->validate([
             'contact_person'           => 'required|string|max:255',
             'contact_mobile'           => 'required|string|max:15',
@@ -428,6 +463,10 @@ class CustomerController extends Controller
 
     public function saveStep3(Request $request)
     {
+        if ($locked = $this->lockedDraftResponse()) {
+            return $locked;
+        }
+
         $categoryIdInput = $request->input('category_id');
 
         if ($categoryIdInput === 'other') {
@@ -478,7 +517,7 @@ class CustomerController extends Controller
             LeaseApplication::where('id', $draft['application_id'])->update([
                 'category_id'         => $finalCategoryId,
                 'other_category_rule' => $otherRule,
-                'current_step'        => 3,
+                'current_step'        => max(3, (int)LeaseApplication::where('id', $draft['application_id'])->value('current_step')),
             ]);
         }
 
@@ -592,36 +631,7 @@ class CustomerController extends Controller
                     $leaseApp?->update(['current_step' => 5]);
                 }
             }
-            $dbDocs = LeaseDocument::where('lease_application_id', $draftAppId)->get();
-            foreach ($dbDocs as $doc) {
-                $item = $doc->document_field_id;
-                if ($item && !isset($uploadedDocs[$item])) {
-                    $uploadedDocs[$item] = [
-                        'doc_name'    => $doc->document_name,
-                        'file_name'   => $doc->file_name,
-                        'file_size'   => $doc->file_size,
-                        'file_type'   => $doc->file_type,
-                        'folder_id'   => $doc->folder_id,
-                        'draft_path'  => $doc->file_path,
-                        'uploaded_at' => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
-                    ];
-                } elseif (!$item) {
-                    $customKey = 'custom_' . $doc->id;
-                    if (!isset($uploadedDocs[$customKey])) {
-                        $uploadedDocs[$customKey] = [
-                            'doc_name'     => $doc->document_name,
-                            'is_custom'    => true,
-                            'is_mandatory' => false,
-                            'file_name'    => $doc->file_name,
-                            'file_size'    => $doc->file_size,
-                            'file_type'    => $doc->file_type,
-                            'folder_id'    => $doc->folder_id,
-                            'draft_path'   => $doc->file_path,
-                            'uploaded_at'  => $doc->uploaded_at ? $doc->uploaded_at->format('d M Y, h:i A') : 'Saved',
-                        ];
-                    }
-                }
-            }
+            // (DB documents were merged into $uploadedDocs above.)
             $draft['uploaded_docs'] = $uploadedDocs;
             session(['lease_draft' => $draft]);
         }
@@ -757,7 +767,7 @@ class CustomerController extends Controller
                             'file_type'     => $fileType,
                             'file_size'     => $fileSize,
                             'status'        => 'uploaded',
-                            'uploaded_by'   => Auth::id() ?? 1,
+                            'uploaded_by'   => Auth::id(),
                             'uploaded_at'   => now(),
                         ]);
                     } else {
@@ -771,7 +781,7 @@ class CustomerController extends Controller
                             'file_type'            => $fileType,
                             'file_size'            => $fileSize,
                             'status'               => 'uploaded',
-                            'uploaded_by'          => Auth::id() ?? 1,
+                            'uploaded_by'          => Auth::id(),
                             'uploaded_at'          => now(),
                         ]);
                     }
@@ -790,7 +800,7 @@ class CustomerController extends Controller
                             'file_type'      => $fileType,
                             'file_size'      => $fileSize,
                             'status'         => 'uploaded',
-                            'uploaded_by'    => Auth::id() ?? 1,
+                            'uploaded_by'    => Auth::id(),
                             'uploaded_at'    => now(),
                         ]
                     );
@@ -880,7 +890,7 @@ class CustomerController extends Controller
                         'file_type'     => $fileType,
                         'file_size'     => $fileSize,
                         'status'        => 'uploaded',
-                        'uploaded_by'   => Auth::id() ?? 1,
+                        'uploaded_by'   => Auth::id(),
                         'uploaded_at'   => now(),
                     ]);
                 } else {
@@ -894,7 +904,7 @@ class CustomerController extends Controller
                         'file_type'            => $fileType,
                         'file_size'            => $fileSize,
                         'status'               => 'uploaded',
-                        'uploaded_by'          => Auth::id() ?? 1,
+                        'uploaded_by'          => Auth::id(),
                         'uploaded_at'          => now(),
                     ]);
                 }
@@ -913,7 +923,7 @@ class CustomerController extends Controller
                         'file_type'      => $fileType,
                         'file_size'      => $fileSize,
                         'status'         => 'uploaded',
-                        'uploaded_by'    => Auth::id() ?? 1,
+                        'uploaded_by'    => Auth::id(),
                         'uploaded_at'    => now(),
                     ]
                 );
@@ -1132,6 +1142,10 @@ class CustomerController extends Controller
 
     public function saveStep6(Request $request)
     {
+        if ($locked = $this->lockedDraftResponse()) {
+            return $locked;
+        }
+
         $request->validate([
             'handlers'         => 'nullable|array',
             'handlers.*.name'  => 'nullable|string|max:255',
@@ -1229,6 +1243,10 @@ class CustomerController extends Controller
 
     public function saveStep7(Request $request)
     {
+        if ($locked = $this->lockedDraftResponse()) {
+            return $locked;
+        }
+
         $validated = $request->validate([
             'product_value'  => 'required|numeric|min:0',
             'paid_amount'    => 'required|numeric|min:0',
@@ -1241,6 +1259,7 @@ class CustomerController extends Controller
         ]);
 
         $status = $validated['payment_status'] ?? null;
+        \App\Support\PaymentConsistency::assert($status, (float)$validated['product_value'], (float)$validated['paid_amount']);
         $isFree = $status === 'free';
         $waivedAmount = null;
         $waiverReason = null;
@@ -1537,7 +1556,8 @@ class CustomerController extends Controller
                 $mimasPasswordPreview = $cred->password;
             }
         }
-        $preview['mimas_password'] = $mimasPasswordPreview;
+        // Only a flag: the password itself is fetched on demand (Show / Copy).
+        $preview['has_mimas_password'] = !empty($mimasPasswordPreview) && $mimasPasswordPreview !== '__UNCHANGED__';
 
         // Resolve District Name
         if (!empty($step1['district_id'])) {
@@ -1656,6 +1676,27 @@ class CustomerController extends Controller
         $step3 = $draft['step3'] ?? [];
         $step6 = $draft['step6'] ?? [];
 
+        // Guard: a real draft with Step 1 data must exist, and it must still be
+        // a draft (or sent back for revision). Never submit twice or create a
+        // customer from placeholder values.
+        $failSubmit = function (string $msg, string $route = 'step1', array $params = []) use ($request) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 0, 'message' => $msg], 422);
+            }
+            return redirect()->route($route, $params)->with('error', $msg);
+        };
+        if (empty($draft['application_id']) || empty($step1['client_name']) || empty($step1['mimas_no']) || empty($step1['mobile_num'])) {
+            return $failSubmit('No draft application found. Please complete Step 1 before submitting.');
+        }
+        $draftStatus = LeaseApplication::where('id', $draft['application_id'])->value('status');
+        if ($draftStatus === null) {
+            session()->forget('lease_draft');
+            return $failSubmit('The draft application no longer exists. Please start again.');
+        }
+        if (!in_array($draftStatus, ['draft', 'revision_required'], true)) {
+            return $failSubmit('This application is already submitted.', 'viewapplication', ['id' => $draft['application_id']]);
+        }
+
         // 1. Resolve Customer (find or create)
         $customer = null;
         if (!empty($step1['customer_id'])) {
@@ -1675,14 +1716,15 @@ class CustomerController extends Controller
             $this->fillMissingCustomerDetails($customer, $step1, false);
         } else {
             $customer = Customer::create([
-                'customer_name' => $step1['client_name'] ?? $request->input('client_name', 'Applicant'),
-                'company_name'  => $step1['company_name'] ?? $request->input('company_name', 'Applicant Quarry'),
-                'mimas_no'      => $step1['mimas_no'] ?? $request->input('mimas_no', 'TN-MMS-' . strtoupper(substr(md5(uniqid()), 0, 6))),
-                'mobile_num'    => $step1['mobile_num'] ?? $request->input('mobile_num', '0000000000'),
+                // Step 1 data is guaranteed above; no placeholder identities.
+                'customer_name' => $step1['client_name'],
+                'company_name'  => $step1['company_name'] ?? null,
+                'mimas_no'      => $step1['mimas_no'],
+                'mobile_num'    => $step1['mobile_num'],
                 'email'         => $step1['email'] ?? null,
-                'district_id'   => $step1['district_id'] ?? $request->input('district_id', 1),
-                'mineral_id'    => $step1['mineral_id'] ?? 1,
-                'pan'           => $step1['pan'] ?? 'PANNA0000P',
+                'district_id'   => $step1['district_id'] ?? null,
+                'mineral_id'    => $step1['mineral_id'] ?? null,
+                'pan'           => $step1['pan'] ?? null,
                 'aadhaar_no'    => $step1['aadhaar_no'] ?? null,
                 'gstin'         => $step1['gstin'] ?? null,
                 'area'          => !empty($step1['area']) ? trim($step1['area']) : null,
@@ -1710,19 +1752,24 @@ class CustomerController extends Controller
         $otherMineralName = $step1['other_mineral_name'] ?? null;
 
         $branch = Branch::first();
-        $user = Auth::user() ?? User::first();
+        $user = Auth::user();
 
         $appNo = null;
         $submittedAppId = null;
 
         DB::transaction(function() use (&$appNo, &$submittedAppId, $customer, $district, $category, $mineral, $mineralIds, $otherMineralName, $branch, $user, $request, $draft, $step1, $step2, $step3, $step6) {
             $currentYear = (int)date('Y');
-            $appNo = $this->generateOfficialAppNumber();
 
             // Check if this was a saved draft in DB
             $existingAppId = $draft['application_id'] ?? null;
-            $leaseApp = $existingAppId ? LeaseApplication::find($existingAppId) : null;
+            $leaseApp = $existingAppId ? LeaseApplication::lockForUpdate()->find($existingAppId) : null;
             $oldAppNo = $leaseApp ? $leaseApp->application_no : null;
+
+            // A re-submit after revision keeps its official number; only a
+            // draft (LA-DRAFT-...) gets a new LA-YYYY-NNNN number.
+            $appNo = ($oldAppNo && !str_starts_with($oldAppNo, 'LA-DRAFT-'))
+                ? $oldAppNo
+                : $this->generateOfficialAppNumber();
 
             $areaExtentRaw = !empty($step1['area']) ? trim($step1['area']) : ($customer->area ?? null);
             $numExtent = $this->parseAreaExtentToFloat($areaExtentRaw);
@@ -1740,14 +1787,15 @@ class CustomerController extends Controller
                     'taluk'              => $step1['address'] ?? null,
                     'area_extent_ha'     => $areaExtentRaw,
                     'area_extent_acres'  => $acresStr,
-                    'start_date'         => "{$currentYear}-10-01",
-                    'end_date'           => ($currentYear + 5) . "-09-30",
-                    'lease_period_years' => 5,
+                    // Default lease term only when none is recorded yet; never overwrite
+                    'start_date'         => $leaseApp->start_date ?? "{$currentYear}-10-01",
+                    'end_date'           => $leaseApp->end_date ?? (($currentYear + 5) . "-09-30"),
+                    'lease_period_years' => $leaseApp->lease_period_years ?? 5,
                     'contact_person'           => $step2['contact_person'] ?? ($step1['client_name'] ?? $customer->customer_name),
                     'secondary_contact_person' => $step2['secondary_contact_person'] ?? ($step1['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null)),
                     'contact_mobile'           => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
                     'secondary_contact_mobile' => $step2['secondary_contact_mobile'] ?? ($step1['secondary_mobile_num'] ?? ($customer->secondary_mobile_num ?? null)),
-                    'current_step'             => 6,
+                    'current_step'             => 8,
                     'status'                   => 'under_scrutiny',
                     'branch_id'                => $branch ? $branch->id : null,
                 ]);
@@ -1771,7 +1819,7 @@ class CustomerController extends Controller
                     'secondary_contact_person' => $step2['secondary_contact_person'] ?? ($step1['secondary_contact_person'] ?? ($customer->secondary_contact_person ?? null)),
                     'contact_mobile'           => $step2['contact_mobile'] ?? ($step1['mobile_num'] ?? $customer->mobile_num),
                     'secondary_contact_mobile' => $step2['secondary_contact_mobile'] ?? ($step1['secondary_mobile_num'] ?? ($customer->secondary_mobile_num ?? null)),
-                    'current_step'             => 6,
+                    'current_step'             => 8,
                     'status'                   => 'under_scrutiny',
                     'branch_id'                => $branch ? $branch->id : null,
                     'created_by'               => $user ? $user->id : 1,
@@ -2015,19 +2063,41 @@ class CustomerController extends Controller
                             $size = filesize($targetFilePath);
                         }
                     }
-                    LeaseDocument::create([
-                        'lease_application_id' => $leaseApp->id,
-                        'document_field_id'    => null,
-                        'folder_id'            => $cFolderId,
-                        'document_name'        => $cDocName,
-                        'file_name'            => $targetFileName,
-                        'file_path'            => $targetFilePath ? ($uploadSubdir . '/' . $targetFileName) : null,
-                        'file_type'            => $fileType,
-                        'file_size'            => $size,
-                        'status'               => $targetFilePath ? 'uploaded' : 'pending',
-                        'uploaded_by'          => $user->id,
-                        'uploaded_at'          => now(),
-                    ]);
+                    // Step 5 already saved this custom document as a row
+                    // (key "custom_<id>"): update that row instead of adding a
+                    // duplicate on every submit.
+                    $existingCustom = null;
+                    if (is_string($k) && preg_match('/^custom_(\d+)$/', $k, $cm)) {
+                        $existingCustom = LeaseDocument::where('lease_application_id', $leaseApp->id)
+                            ->whereNull('document_field_id')
+                            ->where('id', (int)$cm[1])
+                            ->first();
+                    }
+                    $customData = [
+                        'folder_id'     => $cFolderId,
+                        'document_name' => $cDocName,
+                        'file_name'     => $targetFileName,
+                        'file_path'     => $targetFilePath ? ($uploadSubdir . '/' . $targetFileName) : null,
+                        'file_type'     => $fileType,
+                        'file_size'     => $size,
+                    ];
+                    if ($existingCustom) {
+                        if (!$targetFilePath) {
+                            // file not found on disk: keep what the row already has
+                            unset($customData['file_name'], $customData['file_path'], $customData['file_size']);
+                        } elseif (!in_array($existingCustom->status, ['validated', 'approved'], true)) {
+                            $customData['status'] = 'uploaded';
+                        }
+                        $existingCustom->update($customData);
+                    } else {
+                        LeaseDocument::create($customData + [
+                            'lease_application_id' => $leaseApp->id,
+                            'document_field_id'    => null,
+                            'status'               => $targetFilePath ? 'uploaded' : 'pending',
+                            'uploaded_by'          => $user->id,
+                            'uploaded_at'          => now(),
+                        ]);
+                    }
                 }
             }
 
@@ -2051,9 +2121,9 @@ class CustomerController extends Controller
         // Clear draft session after successful submission
         session()->forget('lease_draft');
 
-        if ($request->input('move_to_mining') == 1 && $submittedAppId) {
-            return $this->moveToMining($request, $submittedAppId);
-        }
+        // (A "submit and move to mining" shortcut used to live here. It could never
+        // run: a just-submitted lease is under_scrutiny, and moveToMining needs
+        // an approved lease. Promotion happens from the dossier after approval.)
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
@@ -2080,9 +2150,10 @@ class CustomerController extends Controller
             }
         ];
 
-        $application = $id
-            ? LeaseApplication::with($withRelations)->find($id)
-            : LeaseApplication::with($withRelations)->latest()->first();
+        if (!$id) {
+            return redirect('/application')->with('error', 'Select an application to open its dossier.');
+        }
+        $application = LeaseApplication::with($withRelations)->find($id);
 
         if (!$application) {
             return redirect('/application')->with('error', 'The requested lease application dossier was not found.');
@@ -2101,6 +2172,24 @@ class CustomerController extends Controller
     // Process Flow 6.2: Validate Application
     // ───────────────────────────────────────
 
+    /**
+     * Return the saved MIMAS portal password on demand (Show / Copy buttons).
+     * The password is no longer printed into page HTML; every reveal is logged.
+     */
+    public function mimasPassword(Request $request, $id)
+    {
+        $app = LeaseApplication::findOrFail($id);
+        $cred = MimasCredential::where('lease_application_id', $app->id)->first();
+        if (!$cred || empty($cred->password)) {
+            return response()->json(['status' => 0, 'message' => 'No MIMAS password saved.'], 404);
+        }
+
+        $this->logActivity($app->id, 'mimas_password_viewed', 'MIMAS portal password revealed by ' . (Auth::user()->name ?? 'user') . '.');
+
+        return response()->json(['status' => 1, 'password' => $cred->password])
+            ->header('Cache-Control', 'no-store');
+    }
+
     public function validateApplication(Request $request, $id)
     {
         $app = LeaseApplication::findOrFail($id);
@@ -2110,15 +2199,35 @@ class CustomerController extends Controller
             'remarks' => 'nullable|string|max:1000',
         ]);
 
+        // Only a submitted application under scrutiny can be validated; a draft
+        // is not submitted and an approved one must not move back.
+        if (!in_array($app->status, ['submitted', 'under_scrutiny'], true)) {
+            $msg = 'Only a submitted application under scrutiny can be validated.';
+            if ($request->ajax()) {
+                return response()->json(['status' => 0, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
+        }
+
         if ($request->action === 'pass') {
+            $flagged = LeaseDocument::where('lease_application_id', $id)->where('status', 'revision_required')->count();
+            if ($flagged > 0) {
+                $msg = $flagged . ' document(s) are marked for revision. Resolve them before validating the application.';
+                if ($request->ajax()) {
+                    return response()->json(['status' => 0, 'message' => $msg], 422);
+                }
+                return back()->with('error', $msg);
+            }
+
             $app->update(['status' => 'validated', 'current_step' => 8]);
 
-            // Automatically mark all uploaded documents for this application as validated
+            // Mark the uploaded (not yet reviewed) documents as validated
             LeaseDocument::where('lease_application_id', $id)
                 ->whereNotNull('file_path')
+                ->where('status', 'uploaded')
                 ->update([
                     'status'      => 'validated',
-                    'reviewed_by' => Auth::id() ?? 1,
+                    'reviewed_by' => Auth::id(),
                     'reviewed_at' => now(),
                 ]);
 
@@ -2155,7 +2264,7 @@ class CustomerController extends Controller
         $doc->update([
             'status'       => $newStatus,
             'review_note'  => $request->note ?? $doc->review_note,
-            'reviewed_by'  => Auth::id() ?? 1,
+            'reviewed_by'  => Auth::id(),
             'reviewed_at'  => now(),
         ]);
 
@@ -2254,7 +2363,7 @@ class CustomerController extends Controller
                 'file_type'   => $fileType,
                 'file_size'   => $fileSize,
                 'status'      => 'uploaded',
-                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_by' => Auth::id(),
                 'uploaded_at' => now(),
             ]);
 
@@ -2304,7 +2413,7 @@ class CustomerController extends Controller
             'file_type'   => $fileType,
             'file_size'   => $fileSize,
             'status'      => 'uploaded',
-            'uploaded_by' => Auth::id() ?? 1,
+            'uploaded_by' => Auth::id(),
             'uploaded_at' => now(),
         ]);
 
@@ -2341,8 +2450,12 @@ class CustomerController extends Controller
     {
         $app = LeaseApplication::findOrFail($id);
 
-        if (!in_array($app->status, ['validated', 'under_scrutiny'])) {
-            return back()->with('error', 'Application must be validated before approval.');
+        if ($app->status !== 'validated') {
+            $msg = 'Application must be validated before approval.';
+            if ($request->ajax()) {
+                return response()->json(['status' => 0, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
         }
 
         $app->update([
@@ -2369,6 +2482,14 @@ class CustomerController extends Controller
         $request->validate([
             'reason' => 'required|string|max:1000',
         ]);
+
+        if (!in_array($app->status, ['submitted', 'under_scrutiny', 'validated'], true)) {
+            $msg = 'Only a submitted application under review can be sent back for revision.';
+            if ($request->ajax()) {
+                return response()->json(['status' => 0, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
+        }
 
         $app->update([
             'status'       => 'revision_required',
@@ -2408,10 +2529,13 @@ class CustomerController extends Controller
             ->latest()
             ->take(10)
             ->get();
-        $quotation = \App\Models\Quotation::where('lease_application_id', $application->id)
-            ->orWhere('customer_id', $application->customer_id)
-            ->latest()
-            ->first();
+        // This application's own quotation; otherwise only a customer quotation
+        // not tied to another application.
+        $quotation = \App\Models\Quotation::where('lease_application_id', $application->id)->latest()->first()
+            ?? \App\Models\Quotation::where('customer_id', $application->customer_id)
+                ->whereNull('lease_application_id')
+                ->latest()
+                ->first();
 
         $this->logActivity($id, 'report_generated', 'Summary report generated.');
 
@@ -2431,7 +2555,7 @@ class CustomerController extends Controller
     {
         try {
             ActivityLog::create([
-                'user_id'       => Auth::id() ?? 1,
+                'user_id'       => Auth::id(),
                 'action'        => $action,
                 'description'   => $description,
                 'loggable_type' => 'lease_application',
@@ -2529,7 +2653,7 @@ class CustomerController extends Controller
             'stage'                => '6.1',
             'status'               => 'draft',
             'branch_id'            => $lease->branch_id,
-            'created_by'           => Auth::id() ?? 1,
+            'created_by'           => Auth::id(),
         ]);
 
         // Sync mineral pivot (all selected minerals from lease application)
@@ -2578,7 +2702,7 @@ class CustomerController extends Controller
                     'file_type'             => $lDoc->file_type ?? 'application/pdf',
                     'file_size'             => file_exists($destPath) ? filesize($destPath) : ($lDoc->file_size ?? 0),
                     'status'                => in_array($lDoc->status, ['validated', 'approved']) ? 'validated' : 'uploaded',
-                    'uploaded_by'           => Auth::id() ?? 1,
+                    'uploaded_by'           => Auth::id(),
                     'uploaded_at'           => now(),
                 ]);
                 $clonedCount++;
@@ -2622,7 +2746,7 @@ class CustomerController extends Controller
 
         try {
             ActivityLog::create([
-                'user_id'       => Auth::id() ?? 1,
+                'user_id'       => Auth::id(),
                 'action'        => 'created_from_lease',
                 'description'   => "Mining Plan initiated from Lease Application {$lease->application_no} under Common Tracking ID: {$commonId}. {$clonedCount} verified statutory documents auto-cloned.",
                 'loggable_type' => 'mining_application',

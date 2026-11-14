@@ -65,7 +65,7 @@
             <i class="fa fa-download me-1"></i> Download PDF
           </a>
         @endif
-        <a href="{{ route('ec-compliance.step', 1) }}" 
+        <a href="{{ route('ec-compliance.step', 1) }}?new=1" 
            class="btn btn-sm ms-2" 
            style="background: linear-gradient(135deg, #0F1E4D 0%, #10b981 100%); color: #fff; border: none;"
            title="Initiate Half-Yearly Compliance Report linked to this EC Certificate">
@@ -216,8 +216,9 @@
                       <div class="d-flex align-items-center justify-content-between py-1 border-bottom small">
                         <span class="text-muted"><i class="fa fa-key me-1"></i> Parivesh Pass:</span>
                         <span>
-                          <code class="text-primary fw-bold">{{ $cParivesh }}</code>
-                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1 btn-copy-val" data-copy-text="{{ $cParivesh }}" title="Copy"><i class="fa fa-copy"></i></button>
+                          <code class="text-primary fw-bold" id="ec_parivesh_pass">••••••••••</code>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1" data-cred-action="toggle" data-cred-type="ec_certificate" data-cred-id="{{ $certificate->id }}" data-cred-field="parivesh_password" data-cred-target="#ec_parivesh_pass" title="Show / Hide"><i class="fa fa-eye"></i></button>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1" data-cred-action="copy" data-cred-type="ec_certificate" data-cred-id="{{ $certificate->id }}" data-cred-field="parivesh_password" title="Copy"><i class="fa fa-copy"></i></button>
                         </span>
                       </div>
                     @endif
@@ -225,8 +226,9 @@
                       <div class="d-flex align-items-center justify-content-between py-1 small">
                         <span class="text-muted"><i class="fa fa-lock me-1"></i> Email Pass:</span>
                         <span>
-                          <code class="text-primary fw-bold">{{ $cEmail }}</code>
-                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1 btn-copy-val" data-copy-text="{{ $cEmail }}" title="Copy"><i class="fa fa-copy"></i></button>
+                          <code class="text-primary fw-bold" id="ec_email_pass">••••••••••</code>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1" data-cred-action="toggle" data-cred-type="ec_certificate" data-cred-id="{{ $certificate->id }}" data-cred-field="email_password" data-cred-target="#ec_email_pass" title="Show / Hide"><i class="fa fa-eye"></i></button>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-1 ms-1" data-cred-action="copy" data-cred-type="ec_certificate" data-cred-id="{{ $certificate->id }}" data-cred-field="email_password" title="Copy"><i class="fa fa-copy"></i></button>
                         </span>
                       </div>
                     @endif
@@ -337,7 +339,7 @@
             <div class="mb-2"><i class="fa fa-clipboard-check fa-2x text-success"></i></div>
             <h6 class="fw-bold" style="color:#0F1E4D;">Next Step: EC Half-Yearly Compliance</h6>
             <p class="text-muted small mb-3">Submit statutory environmental monitoring report to SEIAA as mandated every 6 months during the EC validity period.</p>
-            <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-success btn-sm px-4 shadow-sm">
+            <a href="{{ route('ec-compliance.step', 1) }}?new=1" class="btn btn-success btn-sm px-4 shadow-sm">
               <i class="fa fa-arrow-right me-1"></i> Start Compliance Filing
             </a>
           </div>

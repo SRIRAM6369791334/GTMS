@@ -204,14 +204,14 @@ class Step5ChallengerBoundaryStressTest extends TestCase
 
     public function test_mining_portal_removal_of_nonexistent_document_returns_graceful_json(): void
     {
-        $respA = $this->postJson(route('mining-portal.remove-document'), [
+        $respA = $this->postJson(route('mining.document.remove'), [
             'doc_id'                => 99999999,
             'mining_application_id' => 99999999,
         ]);
         $respA->assertStatus(200);
         $respA->assertJson(['status' => 1, 'success' => true]);
 
-        $respB = $this->postJson(route('mining-portal.remove-document'), []);
+        $respB = $this->postJson(route('mining.document.remove'), []);
         $respB->assertStatus(200);
         $respB->assertJson(['status' => 1, 'success' => true]);
     }

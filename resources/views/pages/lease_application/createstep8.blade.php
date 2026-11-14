@@ -628,12 +628,12 @@
                     <span class="s8-tile-label">Portal Password</span>
                     <div class="d-flex align-items-center gap-1 pt-0.5">
                       <span id="preview_pass_masked" class="font-monospace fw-bold text-navy" style="letter-spacing:2px; font-size:14px;">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</span>
-                      <span id="preview_pass_plain" class="font-monospace fw-bold text-primary" style="display:none; font-size:13px;">{{ $previewData['mimas_password'] ?? 'Not Entered' }}</span>
-                      @if(!empty($previewData['mimas_password']) && $previewData['mimas_password'] !== '__UNCHANGED__')
+                      <span id="preview_pass_plain" class="font-monospace fw-bold text-primary" style="display:none; font-size:13px;"></span>
+                      @if(!empty($previewData['has_mimas_password']) && !empty($draft['application_id']))
                         <button type="button" class="btn btn-xs s8-btn-cred ms-1" id="btn_toggle_preview_pass" title="Reveal / Conceal Password">
                           <i class="fa fa-eye" id="icon_preview_pass"></i>
                         </button>
-                        <button type="button" class="btn btn-xs s8-btn-cred ms-0.5" id="btn_copy_preview_pass" data-clipboard-text="{{ $previewData['mimas_password'] }}" title="Copy Password">
+                        <button type="button" class="btn btn-xs s8-btn-cred ms-0.5" id="btn_copy_preview_pass" data-pass-url="{{ route('application.mimasPassword', $draft['application_id']) }}" title="Copy Password">
                           <i class="fa fa-copy"></i>
                         </button>
                       @endif
@@ -1880,26 +1880,53 @@ $(document).ready(function() {
   });
 
   // Toggle MIMAS Password Reveal in Step 8 Preview
+  // MIMAS password is fetched on demand (not printed in the page source)
+  var previewPassCache = null;
+  function getPreviewPassword() {
+    if (previewPassCache !== null) return Promise.resolve(previewPassCache);
+    return fetch($('#btn_copy_preview_pass').attr('data-pass-url'), {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      if (data.status !== 1) throw new Error(data.message || 'Password not available');
+      previewPassCache = data.password;
+      return previewPassCache;
+    });
+  }
+
   $('#btn_toggle_preview_pass').on('click', function(e) {
     e.preventDefault();
     var masked = $('#preview_pass_masked');
     var plain = $('#preview_pass_plain');
     var icon = $('#icon_preview_pass');
     if (plain.is(':visible')) {
-      plain.hide();
+      plain.hide().text('');
       masked.show();
       icon.removeClass('fa-eye-slash').addClass('fa-eye');
-    } else {
-      masked.hide();
-      plain.show();
-      icon.removeClass('fa-eye').addClass('fa-eye-slash');
+      return;
     }
+    getPreviewPassword().then(function(pass) {
+      plain.text(pass).show();
+      masked.hide();
+      icon.removeClass('fa-eye').addClass('fa-eye-slash');
+    }).catch(function(err) {
+      if (typeof toastr !== 'undefined') toastr.error(err.message);
+    });
   });
 
   // Copy Password to Clipboard
   $('#btn_copy_preview_pass').on('click', function(e) {
     e.preventDefault();
-    var pass = $(this).attr('data-clipboard-text');
+    getPreviewPassword().then(copyPreviewPass).catch(function(err) {
+      if (typeof toastr !== 'undefined') toastr.error(err.message);
+    });
+  });
+
+  function copyPreviewPass(pass) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(pass).then(function() {
         if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
@@ -1914,7 +1941,7 @@ $(document).ready(function() {
       if (typeof toastr !== 'undefined') toastr.success('MIMAS Password copied to clipboard!');
       else alert('MIMAS Password copied to clipboard!');
     }
-  });
+  }
 
   // Modal Open Trigger with Compliance Check
   $('#btn_open_submit_modal').on('click', function(e) {

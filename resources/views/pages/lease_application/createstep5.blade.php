@@ -503,9 +503,9 @@
 
         <div class="wizard-actions s5-actions d-flex justify-content-between align-items-center mt-4 flex-wrap gap-3 lz-actions">
           @if(!empty($isSubmittedDossier))
-            <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-back lz-btn lz-btn-ghost"><i class="bi bi-arrow-left me-1"></i> Cancel &amp; Back to Dossier</a>
+            <a href="{{ route('viewapplication', ['id' => $leaseApp->id]) }}" class="s5-btn-back lz-btn lz-btn-ghost"><i class="bi bi-arrow-left me-1"></i> Cancel &amp; Back to Dossier</a>
             <div class="d-flex gap-2">
-              <a href="{{ route('viewapplication', ['id' => $draft['application_id'] ?? 1]) }}" class="s5-btn-submit lz-btn lz-btn-primary">
+              <a href="{{ route('viewapplication', ['id' => $leaseApp->id]) }}" class="s5-btn-submit lz-btn lz-btn-primary">
                 <i class="bi bi-check-circle me-1"></i> Return to Application Dossier
               </a>
             </div>
@@ -2621,7 +2621,11 @@ document.addEventListener('DOMContentLoaded', function () {
           doc_item: docItem,
           requirement: val
         })
-      }).catch(err => console.log('Requirement save notice:', err));
+      }).then(res => {
+        if (!res.ok && typeof toastr !== 'undefined') toastr.error('Could not save the document requirement. Please try again.');
+      }).catch(() => {
+        if (typeof toastr !== 'undefined') toastr.error('Network error while saving the document requirement.');
+      });
     }
   });
 

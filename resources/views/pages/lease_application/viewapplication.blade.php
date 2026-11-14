@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Lease Application Dossier #' . ($application->application_no ?? 'LA-2026-0001'))
+@section('title', 'Lease Application Dossier #' . ($application->application_no ?? '—'))
 @section('main_content')
 
 @php
@@ -1196,7 +1196,7 @@
               <i class="bi bi-shield-shaded"></i> Government of Tamil Nadu &middot; Dept of Geology &amp; Mining
             </div>
             <div class="dossier-title-main">
-              <span>Lease Dossier #{{ $application->application_no ?? 'LA-2026-0001' }}</span>
+              <span>Lease Dossier #{{ $application->application_no ?? '—' }}</span>
               <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $application->application_no }}" data-copy-label="Application Number" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Copy Application Number">
                 <i class="bi bi-clipboard"></i>
               </button>
@@ -1663,7 +1663,7 @@
               <div class="data-cell-value">
                 @php $hasMimasPass = $mimas && !empty($mimas->password); @endphp
                 <span id="mimas_pass_masked" class="font-monospace" style="letter-spacing: 2px;">{{ $hasMimasPass ? '••••••••••••' : 'Not saved' }}</span>
-                <span id="mimas_pass_plain" class="font-monospace" style="display: none; color: var(--dossier-text-title);">{{ $hasMimasPass ? $mimas->password : '' }}</span>
+                <span id="mimas_pass_plain" class="font-monospace" style="display: none; color: var(--dossier-text-title);"></span>
                 {{-- Show / copy are always visible; disabled until a password is saved --}}
                 <span class="mimas-pass-actions">
                   <button type="button" class="btn-copy-chip btn-pass-tool ms-1" id="btn_toggle_view_pass"
@@ -1673,7 +1673,7 @@
                     <i class="fa fa-eye" id="icon_view_pass"></i>
                   </button>
                   <button type="button" class="btn-copy-chip btn-pass-tool" id="btn_copy_view_pass"
-                          data-clipboard-text="{{ $hasMimasPass ? $mimas->password : '' }}"
+                          data-pass-url="{{ route('application.mimasPassword', $application->id) }}"
                           title="{{ $hasMimasPass ? 'Copy Password' : 'No MIMAS password saved' }}"
                           aria-label="Copy MIMAS password"
                           data-bs-toggle="tooltip" data-bs-placement="bottom" @disabled(!$hasMimasPass)>
@@ -2820,29 +2820,57 @@ jQuery(document).ready(function($) {
     }
   }
 
+  // MIMAS password is fetched on demand (not printed in the page source)
+  var mimasPassCache = null;
+  function getMimasPassword() {
+    if (mimasPassCache !== null) return Promise.resolve(mimasPassCache);
+    return fetch($('#btn_copy_view_pass').attr('data-pass-url'), {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+      }
+    }).then(function(res) { return res.json(); }).then(function(data) {
+      if (data.status !== 1) throw new Error(data.message || 'Password not available');
+      mimasPassCache = data.password;
+      return mimasPassCache;
+    });
+  }
+
   // Toggle MIMAS Password Reveal in View Application
   $('#btn_toggle_view_pass').on('click', function(e) {
     e.preventDefault();
+    var btn = $(this);
     var masked = $('#mimas_pass_masked');
     var plain = $('#mimas_pass_plain');
     var icon = $('#icon_view_pass');
     if (plain.is(':visible')) {
-      plain.hide();
+      plain.hide().text('');
       masked.show();
       icon.removeClass('fa-eye-slash').addClass('fa-eye');
-      $(this).attr('aria-pressed', 'false');
-    } else {
-      masked.hide();
-      plain.show();
-      icon.removeClass('fa-eye').addClass('fa-eye-slash');
-      $(this).attr('aria-pressed', 'true');
+      btn.attr('aria-pressed', 'false');
+      return;
     }
+    getMimasPassword().then(function(pass) {
+      plain.text(pass).show();
+      masked.hide();
+      icon.removeClass('fa-eye').addClass('fa-eye-slash');
+      btn.attr('aria-pressed', 'true');
+    }).catch(function(err) {
+      if (typeof toastr !== 'undefined') toastr.error(err.message);
+    });
   });
 
   $('#btn_copy_view_pass').on('click', function(e) {
     e.preventDefault();
     var btn = $(this);
-    var pass = btn.attr('data-clipboard-text');
+    getMimasPassword().then(function(pass) { copyMimasPass(btn, pass); }).catch(function(err) {
+      if (typeof toastr !== 'undefined') toastr.error(err.message);
+    });
+  });
+
+  function copyMimasPass(btn, pass) {
     if (!pass) return;
     var done = function() {
       // Brief check-mark on the button, then a SweetAlert toast
@@ -2858,7 +2886,7 @@ jQuery(document).ready(function($) {
     } else {
       fallbackCopy(pass, done);
     }
-  });
+  }
 
   // Intercept clicks on ZIP archive view buttons
   $(document).on('click', '.btn-doc-view', function(e) {

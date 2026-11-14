@@ -2102,7 +2102,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                             </p>
                                             <div class="row g-2 mb-4">
                                                 <div class="col-sm-6">
-                                                    <a href="{{ route('dgps-survey.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-primary btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                    <a href="{{ route('dgps-survey.step', 1) }}?new=1&customer_id={{ $customer->id }}" class="btn btn-outline-primary btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
                                                         <i class="bi bi-geo-alt-fill text-indigo fs-5"></i>
                                                         <div>
                                                             <div class="fw-bold fs-12 text-dark">DGPS Survey</div>
@@ -2111,7 +2111,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                                     </a>
                                                 </div>
                                                 <div class="col-sm-6">
-                                                    <a href="{{ route('drone-survey.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-warning btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                    <a href="{{ route('drone-survey.step', 1) }}?new=1&customer_id={{ $customer->id }}" class="btn btn-outline-warning btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
                                                         <i class="bi bi-camera-video-fill text-warning fs-5"></i>
                                                         <div>
                                                             <div class="fw-bold fs-12 text-dark">Drone 3D Survey</div>
@@ -2120,7 +2120,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                                     </a>
                                                 </div>
                                                 <div class="col-sm-6">
-                                                    <a href="{{ route('ec-compliance.step', 1) }}?customer_id={{ $customer->id }}" class="btn btn-outline-info btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
+                                                    <a href="{{ route('ec-compliance.step', 1) }}?new=1&customer_id={{ $customer->id }}" class="btn btn-outline-info btn-sm w-100 text-start p-2 rounded-3 d-flex align-items-center gap-2">
                                                         <i class="bi bi-clipboard-check text-info fs-5"></i>
                                                         <div>
                                                             <div class="fw-bold fs-12 text-dark">EC Compliance</div>
@@ -2890,7 +2890,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                         <i class="bi bi-eye"></i> View Presentation Dossier &nearr;
                                     </a>
                                 @else
-                                    <a href="{{ route('ppt-department.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('ppt-department.step', 1) }}?new=1" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-plus-lg"></i> Schedule Presentation
                                     </a>
                                 @endif
@@ -3043,7 +3043,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                         <i class="bi bi-eye"></i> View Compliance Dossier &nearr;
                                     </a>
                                 @else
-                                    <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('ec-compliance.step', 1) }}?new=1" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-plus-lg"></i> Start Compliance Filing
                                     </a>
                                 @endif
@@ -3112,7 +3112,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                         <i class="bi bi-eye"></i> View Survey Dossier &nearr;
                                     </a>
                                 @else
-                                    <a href="{{ route('dgps-survey.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('dgps-survey.step', 1) }}?new=1" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-plus-lg"></i> Book DGPS Survey
                                     </a>
                                 @endif
@@ -3181,7 +3181,7 @@ body[data-theme-version="dark"] .form-select:focus {
                                         <i class="bi bi-eye"></i> View 3D Drone Dossier &nearr;
                                     </a>
                                 @else
-                                    <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
+                                    <a href="{{ route('drone-survey.step', 1) }}?new=1" class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 rounded-pill py-2 shadow-sm">
                                         <i class="bi bi-plus-lg"></i> Book Drone Flight
                                     </a>
                                 @endif

@@ -72,13 +72,19 @@ class MimasPasswordViewTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('mimas_pass_masked');
         $response->assertSee('mimas_pass_plain');
-        $response->assertSee('SecretMimasPass@2026');
+        // the password is fetched on demand, never printed into the page
+        $response->assertDontSee('SecretMimasPass@2026');
+        $response->assertSee(route('application.mimasPassword', $this->leaseApp->id), false);
         $response->assertSee('btn_toggle_view_pass');
         $response->assertSee('btn_copy_view_pass');
+
+        $this->actingAs($this->user)->postJson(route('application.mimasPassword', $this->leaseApp->id))
+            ->assertOk()
+            ->assertJson(['password' => 'SecretMimasPass@2026']);
     }
 
     /** @test */
-    public function step2_renders_with_real_pass_data_attribute_for_decrypted_password()
+    public function step2_fetches_saved_password_on_demand_instead_of_printing_it()
     {
         session([
             'lease_draft' => [
@@ -98,12 +104,13 @@ class MimasPasswordViewTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('step2'));
 
         $response->assertStatus(200);
-        $response->assertSee('data-real-pass="SecretMimasPass@2026"', false);
+        $response->assertDontSee('SecretMimasPass@2026');
+        $response->assertSee('data-pass-url="' . route('application.mimasPassword', $this->leaseApp->id) . '"', false);
         $response->assertSee('btn_copy_password');
     }
 
     /** @test */
-    public function step8_review_renders_decrypted_password_with_toggle_and_copy()
+    public function step8_review_offers_toggle_and_copy_without_printing_password()
     {
         session([
             'lease_draft' => [
@@ -125,16 +132,16 @@ class MimasPasswordViewTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('btn_toggle_preview_pass');
         $response->assertSee('btn_copy_preview_pass');
-        $response->assertSee('SecretMimasPass@2026');
+        $response->assertDontSee('SecretMimasPass@2026');
     }
 
     /** @test */
-    public function application_report_pdf_renders_decrypted_mimas_password()
+    public function application_report_pdf_masks_mimas_password()
     {
         $response = $this->actingAs($this->user)->get(route('application.report', ['id' => $this->leaseApp->id]));
 
         $response->assertStatus(200);
         $response->assertSee('Portal Password');
-        $response->assertSee('SecretMimasPass@2026');
+        $response->assertDontSee('SecretMimasPass@2026');
     }
 }

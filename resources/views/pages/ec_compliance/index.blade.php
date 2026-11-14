@@ -15,7 +15,7 @@
       </div>
       <div class="col-lg-5 col-12 text-lg-end">
         @canany(['ec_compliance.create', 'environment.view'])
-        <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-navy shadow-sm">
+        <a href="{{ route('ec-compliance.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-navy shadow-sm">
           <i class="fa fa-plus me-1"></i> New Compliance Filing
         </a>
         @endcanany
@@ -231,7 +231,7 @@
                     <i class="fas fa-clipboard-check fa-3x mb-3 text-muted opacity-50"></i>
                     <p class="mb-2">No EC Half-Yearly Compliance filings registered yet.</p>
                     @canany(['ec_compliance.create', 'environment.view'])
-                    <a href="{{ route('ec-compliance.step', 1) }}" class="btn btn-sm btn-navy">
+                    <a href="{{ route('ec-compliance.step', ['step' => 1, 'new' => 1]) }}" class="btn btn-sm btn-navy">
                       <i class="fa fa-plus me-1"></i> Start New Compliance Filing
                     </a>
                     @endcanany

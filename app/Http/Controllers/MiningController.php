@@ -330,6 +330,11 @@ class MiningController extends Controller
 
         $existingForPay = $request->filled('mining_app_id') ? MiningApplication::find($request->input('mining_app_id')) : null;
         [$prodVal, $paidVal, $pendingVal, $payStatus, $waiverCols] = $this->miningPaymentFields($request, $existingForPay);
+        \App\Support\PaymentConsistency::assert(
+            $request->input('payment_status') ?: null,
+            (float) $request->input('product_value', 0),
+            (float) $request->input('paid_amount', 0)
+        );
 
         if ($request->filled('mining_app_id')) {
             $miningApp = MiningApplication::findOrFail($request->input('mining_app_id'));
@@ -1055,7 +1060,7 @@ class MiningController extends Controller
                     'file_type'   => $ext,
                     'file_size'   => $fileSize,
                     'status'      => 'uploaded',
-                    'uploaded_by' => Auth::id() ?? 1,
+                    'uploaded_by' => Auth::id(),
                     'uploaded_at' => now(),
                 ]);
             } elseif ($app) {
@@ -1069,7 +1074,7 @@ class MiningController extends Controller
                     'file_type'             => $ext,
                     'file_size'             => $fileSize,
                     'status'                => 'uploaded',
-                    'uploaded_by'           => Auth::id() ?? 1,
+                    'uploaded_by'           => Auth::id(),
                     'uploaded_at'           => now(),
                 ]);
             }
@@ -1138,7 +1143,7 @@ class MiningController extends Controller
                 'file_type'   => $ext,
                 'file_size'   => $fileSize,
                 'status'      => 'uploaded',
-                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_by' => Auth::id(),
                 'uploaded_at' => now(),
             ]);
         } elseif ($app) {
@@ -1152,7 +1157,7 @@ class MiningController extends Controller
                 'file_type'             => $ext,
                 'file_size'             => $fileSize,
                 'status'                => 'uploaded',
-                'uploaded_by'           => Auth::id() ?? 1,
+                'uploaded_by'           => Auth::id(),
                 'uploaded_at'           => now(),
             ]);
         }
@@ -1378,8 +1383,17 @@ class MiningController extends Controller
      */
     public function advanceStage(Request $request, $id)
     {
-        $app = MiningApplication::findOrFail($id);
+        $app = MiningApplication::with('documents')->findOrFail($id);
+        $request->validate([
+            'stage' => 'required|in:6.1,6.2,6.3,6.4,6.5,6.6',
+        ]);
         $targetStage = $request->input('stage');
+
+        // Approve (6.3) and every later stage need all checklist documents
+        // validated; the page hides those buttons otherwise, the server checks too.
+        if (in_array($targetStage, ['6.3', '6.4', '6.5', '6.6'], true) && !$this->allDocumentsValidated($app)) {
+            return back()->with('error', 'All checklist documents must be validated before Stage ' . $targetStage . '.');
+        }
 
         $statusMap = [
             '6.1' => 'draft',
@@ -1387,14 +1401,42 @@ class MiningController extends Controller
             '6.3' => 'approved',
             '6.4' => 'approved',
             '6.5' => 'archived',
+            '6.6' => 'archived',
         ];
 
+        $fromStage = $app->stage;
         $app->update([
             'stage' => $targetStage,
-            'status' => $statusMap[$targetStage] ?? $app->status,
+            'status' => $statusMap[$targetStage],
         ]);
 
+        $this->logMiningActivity($app->id, 'stage_changed', 'Stage changed from ' . ($fromStage ?: '-') . ' to ' . $targetStage . '.');
+
         return back()->with('success', 'Application stage updated to ' . $targetStage . '.');
+    }
+
+    private function allDocumentsValidated(MiningApplication $app): bool
+    {
+        $docs = $app->documents;
+        return $docs->count() > 0 && $docs->where('status', 'validated')->count() === $docs->count();
+    }
+
+    private function logMiningActivity(int $miningId, string $action, string $description): void
+    {
+        try {
+            ActivityLog::create([
+                'user_id'       => Auth::id(),
+                'action'        => $action,
+                'description'   => $description,
+                'loggable_type' => 'mining_application',
+                'loggable_id'   => $miningId,
+                'ip_address'    => request()->ip(),
+                'user_agent'    => request()->userAgent(),
+                'created_at'    => now(),
+            ]);
+        } catch (\Exception $e) {
+            \Log::warning('Mining activity log failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -1416,7 +1458,23 @@ class MiningController extends Controller
             'gstin'    => $request->filled('gstin') ? strtoupper(trim($request->input('gstin'))) : null,
             'mimas_no' => $request->filled('mimas_no') ? strtoupper(trim($request->input('mimas_no'))) : null,
             'email'    => $request->filled('email') ? strtolower(trim($request->input('email'))) : null,
+            // Same XXXX-XXXX-XXXX form Lease and Customers store, so lookups
+            // match and the unique index sees one value per person.
+            'aadhaar_no' => $request->filled('aadhaar_no') ? $this->formatAadhaar($request->input('aadhaar_no')) : null,
         ], fn ($v) => $v !== null));
+    }
+
+    /**
+     * 12-digit Aadhaar as XXXX-XXXX-XXXX; any other input is returned trimmed
+     * so the format rule can reject it.
+     */
+    private function formatAadhaar(?string $value): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        if (strlen($digits) !== 12) {
+            return trim((string) $value);
+        }
+        return substr($digits, 0, 4) . '-' . substr($digits, 4, 4) . '-' . substr($digits, 8, 4);
     }
 
     /**
@@ -1588,6 +1646,15 @@ class MiningController extends Controller
             return redirect()->route('environment-b2.show', $existingEnv)->with('info', $msg);
         }
 
+        // Gate: same rule as the page button - every checklist document validated.
+        if (!$this->allDocumentsValidated($mining)) {
+            $msg = 'All mining checklist documents must be validated before moving to Environment Clearance.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 0, 'message' => $msg], 422);
+            }
+            return back()->with('error', $msg);
+        }
+
         $category = $request->input('category', 'B2');
         $year = date('Y');
 
@@ -1620,7 +1687,7 @@ class MiningController extends Controller
             'contact_email'         => $mining->customer?->email,
             'status'                => 'draft',
             'branch_id'             => $mining->branch_id ?? 1,
-            'created_by'            => Auth::id() ?? 1,
+            'created_by'            => Auth::id(),
         ]);
 
         // Auto-clone Documents into Environment Storage
@@ -1655,7 +1722,7 @@ class MiningController extends Controller
                     'file_type'              => $mDoc->file_type ?? 'application/pdf',
                     'file_size'              => filesize($dest),
                     'status'                 => 'uploaded',
-                    'uploaded_by'            => Auth::id() ?? 1,
+                    'uploaded_by'            => Auth::id(),
                     'uploaded_at'            => now(),
                 ]);
 
@@ -1690,9 +1757,10 @@ class MiningController extends Controller
         ActivityLog::create([
             'loggable_type' => EnvironmentProject::class,
             'loggable_id'   => $envProject->id,
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
             'action'        => 'Project Initiated from Mining Plan',
             'description'   => "Environment Clearance project {$projectCode} created from Mining Plan {$mining->application_no} with cloned documents.",
+            'created_at'    => now(),
         ]);
 
         // Keep the master pipeline in step with this module move.

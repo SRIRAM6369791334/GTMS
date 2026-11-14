@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Storage;
 
 class DgpsSurveyController extends Controller
 {
+    use \App\Http\Controllers\Concerns\WizardStoreHelpers;
+
     /**
      * Master Index Listing (Dynamic Database Records & KPI Cards)
      */
@@ -70,6 +72,11 @@ class DgpsSurveyController extends Controller
     public function wizard(int $step, Request $request)
     {
         abort_unless($step >= 1 && $step <= 6, 404);
+
+        // "New" buttons pass ?new=1: start clean instead of reusing an old draft
+        if ($request->boolean('new')) {
+            session()->forget('dgps_wizard');
+        }
 
         $draft = session('dgps_wizard', []);
 
@@ -129,9 +136,9 @@ class DgpsSurveyController extends Controller
         if ($step === 1) {
             $draft['customer_id']          = $request->input('customer_id');
             $draft['lease_application_id'] = $request->input('lease_application_id');
-            $draft['lease_area_ha']        = $request->input('lease_area_ha', 3.85);
-            $draft['location']             = $request->input('location', 'Salem / Semmandapatti');
-            $draft['survey_no']            = $request->input('survey_no', 'DGPS-' . date('Y') . '-' . sprintf('%04d', DgpsSurvey::count() + 1));
+            $draft['lease_area_ha']        = $request->input('lease_area_ha');
+            $draft['location']             = $request->input('location');
+            $draft['survey_no']            = $request->input('survey_no');
             $draft['primary_phone']        = $request->input('primary_phone');
             $draft['secondary_phone']      = $request->input('secondary_phone');
         }
@@ -177,98 +184,134 @@ class DgpsSurveyController extends Controller
     public function store(Request $request)
     {
         $draft = session('dgps_wizard', []);
+        $in = $this->wizardInput($request, $draft, [
+            'customer_id', 'lease_application_id', 'survey_no', 'field_book_no', 'lease_area_ha', 'surveyed_area_ha',
+            'area_discrepancy_ha', 'location', 'survey_date', 'instrument_model', 'instrument_serial_no',
+            'survey_team_notes', 'primary_phone', 'secondary_phone',
+            'product_value', 'paid_amount', 'payment_status', 'payment_notes',
+        ]);
 
-        $customerId = $request->input('customer_id') ?: ($draft['customer_id'] ?? Customer::value('id'));
-        $val        = (float)($request->input('product_value', $draft['product_value'] ?? 35000));
-        $paid       = (float)($request->input('paid_amount', $draft['paid_amount'] ?? 35000));
-        $pending    = max(0, $val - $paid);
-        $pStatus    = $request->input('payment_status', $draft['payment_status'] ?? ($pending == 0 ? 'paid' : ($paid > 0 ? 'partial' : 'pending')));
+        // A link to a lease that no longer exists (stale draft) is dropped, not an error
+        if ($in['lease_application_id'] && !DB::table('lease_applications')->where('id', (int) $in['lease_application_id'])->exists()) {
+            $in['lease_application_id'] = null;
+        }
 
-        $count = DgpsSurvey::count() + 1;
-        $surveyNo = $request->input('survey_no') ?: ($draft['survey_no'] ?? sprintf('DGPS-%s-%04d', date('Y'), $count));
+        if ($fail = $this->validateWizard($in, [
+            'customer_id'          => 'required|integer|exists:customers,id',
+            'lease_application_id' => 'nullable|integer|exists:lease_applications,id',
+            'survey_no'            => 'nullable|string|max:50',
+            'field_book_no'        => 'nullable|string|max:100',
+            'lease_area_ha'        => 'nullable|numeric|min:0',
+            'surveyed_area_ha'     => 'nullable|numeric|min:0',
+            'area_discrepancy_ha'  => 'nullable|numeric',
+            'location'             => 'nullable|string|max:255',
+            'survey_date'          => 'nullable|date',
+            'instrument_model'     => 'nullable|string|max:255',
+            'instrument_serial_no' => 'nullable|string|max:255',
+            'survey_team_notes'    => 'nullable|string|max:2000',
+            'primary_phone'        => ['nullable', $this->mobileRule],
+            'secondary_phone'      => ['nullable', $this->mobileRule, 'different:primary_phone'],
+            'product_value'        => 'nullable|numeric|min:0',
+            'paid_amount'          => 'nullable|numeric|min:0',
+            'payment_status'       => 'nullable|in:pending,partial,paid',
+            'payment_notes'        => 'nullable|string|max:1000',
+        ], [
+            'customer_id' => 1, 'lease_application_id' => 1, 'survey_no' => 1, 'lease_area_ha' => 1, 'location' => 1,
+            'primary_phone' => 1, 'secondary_phone' => 1, 'survey_date' => 2, 'survey_team_notes' => 2,
+            'product_value' => 5, 'paid_amount' => 5, 'payment_status' => 5, 'payment_notes' => 5,
+        ], 'dgps-survey.step')) {
+            return $fail;
+        }
+
+        try {
+            [$val, $paid, $pending, $pStatus] = $this->wizardPayment($in);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->route('dgps-survey.step', 5)->withErrors($e->errors())->withInput();
+        }
+
+        // Resume / edit: update the same survey instead of creating a duplicate
+        $existing = !empty($draft['id']) ? DgpsSurvey::find($draft['id']) : null;
 
         DB::beginTransaction();
         try {
-            $survey = DgpsSurvey::create([
-                'survey_no'            => $surveyNo,
-                'field_book_no'        => $request->input('field_book_no', $draft['field_book_no'] ?? null),
-                'customer_id'          => $customerId,
-                'lease_application_id' => $request->input('lease_application_id', $draft['lease_application_id'] ?? null),
-                'lease_area_ha'        => (float)($request->input('lease_area_ha', $draft['lease_area_ha'] ?? 3.85)),
-                'surveyed_area_ha'     => (float)($request->input('surveyed_area_ha', $draft['surveyed_area_ha'] ?? 3.84)),
-                'area_discrepancy_ha'  => $request->input('area_discrepancy_ha', $draft['area_discrepancy_ha'] ?? null),
-                'location'             => $request->input('location', $draft['location'] ?? 'Salem District'),
-                'survey_date'          => $request->input('survey_date', $draft['survey_date'] ?? date('Y-m-d')),
-                'instrument_model'     => $request->input('instrument_model', $draft['instrument_model'] ?? null),
-                'instrument_serial_no' => $request->input('instrument_serial_no', $draft['instrument_serial_no'] ?? null),
-                'survey_status'        => 'scheduled',
-                'report_status'        => 'pending',
+            $data = [
+                'field_book_no'        => $in['field_book_no'],
+                'customer_id'          => (int) $in['customer_id'],
+                'lease_application_id' => $in['lease_application_id'] ? (int) $in['lease_application_id'] : null,
+                'lease_area_ha'        => $in['lease_area_ha'] !== null ? (float) $in['lease_area_ha'] : null,
+                'surveyed_area_ha'     => $in['surveyed_area_ha'] !== null ? (float) $in['surveyed_area_ha'] : null,
+                'area_discrepancy_ha'  => $in['area_discrepancy_ha'],
+                'location'             => $in['location'],
+                'survey_date'          => $in['survey_date'],
+                'instrument_model'     => $in['instrument_model'],
+                'instrument_serial_no' => $in['instrument_serial_no'],
                 'product_value'        => $val,
                 'paid_amount'          => $paid,
                 'pending_amount'       => $pending,
                 'payment_status'       => $pStatus,
-                'survey_team_notes'    => $request->input('survey_team_notes', $draft['survey_team_notes'] ?? null),
-            ]);
+                'survey_team_notes'    => $in['survey_team_notes'],
+            ];
 
-            // Save Handlers
-            $handlers = $request->input('handlers', $draft['handlers'] ?? []);
-            if (!empty($handlers)) {
-                foreach ($handlers as $hIdx => $h) {
-                    if (!empty($h['person_name']) || !empty($h['name'])) {
-                        ApplicationHandler::create([
-                            'application_type' => 'dgps',
-                            'application_id'   => $survey->id,
-                            'name'             => $h['person_name'] ?? $h['name'],
-                            'role'             => $h['role'] ?? 'Surveyor',
-                            'notes'            => $h['notes'] ?? null,
-                            'sort_order'       => $hIdx + 1,
-                        ]);
-                    }
-                }
+            if ($existing) {
+                $existing->update($data);
+                $survey = $existing;
             } else {
-                ApplicationHandler::create([
-                    'application_type' => 'dgps',
-                    'application_id'   => $survey->id,
-                    'name'             => 'Er. A. Vijayakumar',
-                    'role'             => 'Chief Land Surveyor',
-                    'notes'            => 'Base station setup, static observation & benchmark fixation',
-                    'sort_order'       => 1,
+                $survey = DgpsSurvey::create($data + [
+                    'survey_no'     => $this->resolveNumber(DgpsSurvey::class, 'survey_no', $in['survey_no'], 'DGPS-' . date('Y') . '-'),
+                    'survey_status' => 'scheduled',
+                    'report_status' => 'pending',
                 ]);
             }
 
-            // Save Payment
-            ApplicationPayment::create([
-                'application_type' => 'dgps',
-                'application_id'   => $survey->id,
-                'product_value'    => $val,
-                'paid_amount'      => $paid,
-                'pending_amount'   => $pending,
-                'payment_status'   => $pStatus,
-                'notes'            => $request->input('payment_notes', $draft['payment_notes'] ?? 'Field survey charges settled'),
-            ]);
-
-            DB::commit();
-            // Migrate wizard documents to DB
-            $uploadedDocs = session('dgps_wizard.uploaded_docs', $draft['uploaded_docs'] ?? []);
-            if (!empty($uploadedDocs)) {
-                foreach ($uploadedDocs as $uDoc) {
-                    DgpsDocument::create([
-                        'dgps_survey_id' => $survey->id,
-                        'folder_id'      => $uDoc['folder_id'] ?? 1,
-                        'document_name'  => $uDoc['doc_name'] ?? ($uDoc['document_name'] ?? $uDoc['file_name']),
-                        'file_path'      => $uDoc['file_path'],
-                        'status'         => 'uploaded',
+            // Handlers: replace with what the wizard holds (no placeholder names)
+            ApplicationHandler::where('application_type', 'dgps')->where('application_id', $survey->id)->delete();
+            foreach ((array) $request->input('handlers', $draft['handlers'] ?? []) as $hIdx => $h) {
+                $name = trim((string) ($h['person_name'] ?? $h['name'] ?? ''));
+                if ($name !== '') {
+                    ApplicationHandler::create([
+                        'application_type' => 'dgps',
+                        'application_id'   => $survey->id,
+                        'name'             => $name,
+                        'role'             => trim((string) ($h['role'] ?? '')),
+                        'notes'            => $h['notes'] ?? null,
+                        'sort_order'       => $hIdx + 1,
                     ]);
                 }
             }
 
+            ApplicationPayment::updateOrCreate(
+                ['application_type' => 'dgps', 'application_id' => $survey->id],
+                [
+                    'product_value'  => $val,
+                    'paid_amount'    => $paid,
+                    'pending_amount' => $pending,
+                    'payment_status' => $pStatus,
+                    'notes'          => $in['payment_notes'],
+                ]
+            );
+
+            // Documents uploaded in this wizard session, inside the same transaction
+            foreach ((array) session('dgps_wizard.uploaded_docs', $draft['uploaded_docs'] ?? []) as $uDoc) {
+                if (empty($uDoc['file_path']) || DgpsDocument::where('dgps_survey_id', $survey->id)->where('file_path', $uDoc['file_path'])->exists()) {
+                    continue;
+                }
+                DgpsDocument::create([
+                    'dgps_survey_id' => $survey->id,
+                    'folder_id'      => $uDoc['folder_id'] ?? 1,
+                    'document_name'  => $uDoc['doc_name'] ?? ($uDoc['document_name'] ?? ($uDoc['file_name'] ?? basename($uDoc['file_path']))),
+                    'file_path'      => $uDoc['file_path'],
+                    'status'         => 'uploaded',
+                ]);
+            }
+
+            DB::commit();
             session()->forget('dgps_wizard');
 
             return redirect()->route('dgps-survey.show', $survey->id)
-                ->with('success', "DGPS Survey {$survey->survey_no} successfully saved and synchronized!");
-        } catch (\Exception $e) {
+                ->with('success', "DGPS Survey {$survey->survey_no} " . ($existing ? 'updated.' : 'saved.'));
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error saving DGPS survey: ' . $e->getMessage());
+            return $this->storeFailed('DGPS survey', $e, 'dgps-survey.step', 6);
         }
     }
 

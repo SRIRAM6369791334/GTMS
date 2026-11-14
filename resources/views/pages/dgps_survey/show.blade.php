@@ -814,7 +814,7 @@
                 </p>
               </div>
             </div>
-            <a href="{{ route('drone-survey.step', 1) }}" class="btn btn-warning px-4 py-2 fw-bold text-white shadow-sm" style="background:#f97316; border:none;">
+            <a href="{{ route('drone-survey.step', 1) }}?new=1" class="btn btn-warning px-4 py-2 fw-bold text-white shadow-sm" style="background:#f97316; border:none;">
               Start Drone Survey <i class="bi bi-arrow-right ms-1"></i>
             </a>
           </div>

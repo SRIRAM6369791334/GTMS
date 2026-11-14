@@ -742,9 +742,11 @@ body[data-theme-version="dark"] .table-admin .doc-name {
           <div class="data-cell">
             <div class="data-cell-label"><i class="fa fa-key text-muted me-1"></i> Parivesh Password</div>
             <div class="data-cell-value">
-              <span class="data-value-text font-monospace">{{ $project->parivesh_password ?: ($project->customer?->parivesh_password ?: 'Not Configured') }}</span>
-              @if(!empty($project->parivesh_password) || !empty($project->customer?->parivesh_password))
-                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->parivesh_password ?: $project->customer?->parivesh_password }}" title="Copy Parivesh Password"><i class="fa fa-copy"></i></button>
+              @php $hasParivesh = !empty($project->parivesh_password) || !empty($project->customer?->parivesh_password); @endphp
+              <span class="data-value-text font-monospace" id="env_parivesh_pass">{{ $hasParivesh ? '••••••••••' : 'Not Configured' }}</span>
+              @if($hasParivesh)
+                <button type="button" class="btn-copy-chip" data-cred-action="toggle" data-cred-type="environment" data-cred-id="{{ $project->id }}" data-cred-field="parivesh_password" data-cred-target="#env_parivesh_pass" title="Show / Hide Parivesh Password"><i class="fa fa-eye"></i></button>
+                <button type="button" class="btn-copy-chip" data-cred-action="copy" data-cred-type="environment" data-cred-id="{{ $project->id }}" data-cred-field="parivesh_password" title="Copy Parivesh Password"><i class="fa fa-copy"></i></button>
               @endif
             </div>
             <div class="data-cell-sub">Parivesh Portal Credential</div>
@@ -755,9 +757,11 @@ body[data-theme-version="dark"] .table-admin .doc-name {
           <div class="data-cell">
             <div class="data-cell-label"><i class="fa fa-lock text-muted me-1"></i> Email Password</div>
             <div class="data-cell-value">
-              <span class="data-value-text font-monospace">{{ $project->email_password ?: ($project->customer?->email_password ?: 'Not Configured') }}</span>
-              @if(!empty($project->email_password) || !empty($project->customer?->email_password))
-                <button type="button" class="btn-copy-chip btn-copy-val" data-copy-text="{{ $project->email_password ?: $project->customer?->email_password }}" title="Copy Email Password"><i class="fa fa-copy"></i></button>
+              @php $hasEmailPass = !empty($project->email_password) || !empty($project->customer?->email_password); @endphp
+              <span class="data-value-text font-monospace" id="env_email_pass">{{ $hasEmailPass ? '••••••••••' : 'Not Configured' }}</span>
+              @if($hasEmailPass)
+                <button type="button" class="btn-copy-chip" data-cred-action="toggle" data-cred-type="environment" data-cred-id="{{ $project->id }}" data-cred-field="email_password" data-cred-target="#env_email_pass" title="Show / Hide Email Password"><i class="fa fa-eye"></i></button>
+                <button type="button" class="btn-copy-chip" data-cred-action="copy" data-cred-type="environment" data-cred-id="{{ $project->id }}" data-cred-field="email_password" title="Copy Email Password"><i class="fa fa-copy"></i></button>
               @endif
             </div>
             <div class="data-cell-sub">Correspondence Email Access</div>

@@ -46,7 +46,7 @@ class PptDgpsAndEcComplianceTest extends TestCase
             'pan'           => 'ABCDE' . rand(1000, 9999) . 'F',
             'aadhaar_no'    => '9842-' . rand(1000, 9999) . '-' . rand(1000, 9999),
             'slug'          => 'kaveri-granites-' . rand(1000, 9999),
-            'status'        => 'active',
+            'status'        => 1,
         ]);
     }
 
@@ -177,6 +177,7 @@ class PptDgpsAndEcComplianceTest extends TestCase
 
         $saveRes = $this->actingAs($this->user)->post(route('ec-compliance.saveStep', 1), [
             'customer_id'              => $this->customer->id,
+            'district_id'              => \App\Models\District::value('id'),
             'primary_contact_person'   => 'R. Sundararajan',
             'primary_phone'            => '9876543210',
             'secondary_contact_person' => 'K. Manickam',

@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Storage;
 
 class EnverionsoneController extends Controller
 {
+    use \App\Http\Controllers\Concerns\WizardStoreHelpers;
+
     // ─── Module ID for Environment folders ────────────────────────────────
     const ENV_MODULE_ID = 1;
 
@@ -125,15 +127,28 @@ class EnverionsoneController extends Controller
             'location'                 => 'nullable|string|max:255',
             'contact_name'             => 'nullable|string|max:255',
             'secondary_contact_person' => 'nullable|string|max:255',
-            'contact_phone'            => 'required|string|max:20',
-            'secondary_phone'          => 'nullable|string|max:20',
+            'contact_phone'            => ['required', 'regex:/^[6-9][0-9]{9}$/'],
+            'secondary_phone'          => ['nullable', 'regex:/^[6-9][0-9]{9}$/', 'different:contact_phone'],
             'contact_email'            => 'nullable|email|max:255',
             'parivesh_password'        => 'nullable|string|max:255',
             'email_password'           => 'nullable|string|max:255',
             'mimas_no'                 => 'nullable|string|max:50',
             'mining_application_id'    => 'nullable|integer|exists:mining_applications,id',
             'lease_application_id'     => 'nullable|integer|exists:lease_applications,id',
+            'product_value'            => 'nullable|numeric|min:0',
+            'paid_amount'              => 'nullable|numeric|min:0',
+            'payment_status'           => 'nullable|in:pending,partial,paid',
+        ], [
+            'contact_phone.regex'   => 'Contact phone must be 10 digits and start with 6, 7, 8 or 9.',
+            'secondary_phone.regex' => 'Secondary phone must be 10 digits and start with 6, 7, 8 or 9.',
+            'aadhaar_no.regex'      => 'Aadhaar must be 12 digits (e.g. 9876-5432-1012).',
         ]);
+
+        \App\Support\PaymentConsistency::assert(
+            $request->input('payment_status') ?: null,
+            (float) $request->input('product_value', 0),
+            (float) $request->input('paid_amount', 0)
+        );
 
         // B1 must have sub_category
         if ($validated['category'] === 'B1' && empty($validated['sub_category'])) {
@@ -167,8 +182,15 @@ class EnverionsoneController extends Controller
             // Resolve or link customer
             $customerId = $validated['customer_id'] ?? null;
             if (!$customerId) {
-                $customer = Customer::withTrashed()
-                    ->where('customer_name', $validated['client_name'])->first();
+                // Match on MIMAS number first; a name alone is not unique, so
+                // a name match also needs the same mobile number.
+                $customer = !empty($validated['mimas_no'])
+                    ? Customer::withTrashed()->where('mimas_no', $validated['mimas_no'])->first()
+                    : null;
+                $customer ??= Customer::withTrashed()
+                    ->where('customer_name', $validated['client_name'])
+                    ->where('mobile_num', $validated['contact_phone'])
+                    ->first();
                 if ($customer) {
                     if ($customer->trashed()) $customer->restore();
                     $customerId = $customer->id;
@@ -183,7 +205,9 @@ class EnverionsoneController extends Controller
                         'parivesh_password'        => $validated['parivesh_password'] ?? null,
                         'email_password'           => $validated['email_password'] ?? null,
                         'mimas_no'                 => $validated['mimas_no'] ?? null,
-                        'branch_id'                => auth()->user()->branch_id ?? 1,
+                        'branch_id'                => auth()->user()->branch_id ?? null,
+                        'status'                   => 1,
+                        'created_by'               => Auth::id(),
                     ]);
                     $customerId = $customer->id;
                 }
@@ -202,7 +226,7 @@ class EnverionsoneController extends Controller
             $pv = (float) $request->input('product_value', 0);
             $pa = (float) $request->input('paid_amount', 0);
             $pe = max(0, $pv - $pa);
-            $status = $request->input('payment_status', ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial')));
+            $status = $request->input('payment_status') ?: ($pa <= 0 ? 'pending' : ($pe <= 0 ? 'paid' : 'partial'));
 
             $miningAppId = $request->input('mining_application_id');
             $leaseAppId  = $request->input('lease_application_id');
@@ -306,6 +330,7 @@ class EnverionsoneController extends Controller
                 'action'        => 'project_created',
                 'description'   => "Environment Clearance project {$code} ({$cat}" . ($sc ? "/{$sc}" : '') . ") created.",
                 'user_id'       => Auth::id(),
+                'created_at'    => now(),
             ]);
 
             return redirect()->route('eviron.show', $project->id)
@@ -475,7 +500,7 @@ class EnverionsoneController extends Controller
                 'file_type'   => $ext,
                 'file_size'   => $fileSize,
                 'status'      => 'uploaded',
-                'uploaded_by' => Auth::id() ?? 1,
+                'uploaded_by' => Auth::id(),
                 'uploaded_at' => now(),
             ]);
         }
@@ -644,12 +669,24 @@ class EnverionsoneController extends Controller
     public function updateStatus(Request $request, int $id)
     {
         $request->validate([
-            'status'       => 'required|string|max:100',
+            'status'       => 'required|in:draft,validation,validated,revision_required,reported,approved,archived',
             'status_notes' => 'nullable|string|max:1000',
         ]);
 
         $project = EnvironmentProject::findOrFail($id);
         $cleanStatus = trim($request->status);
+
+        // Approval needs reviewed documents: none flagged for revision and at
+        // least one uploaded or validated (same rule as the B2 dossier).
+        if ($cleanStatus === 'approved' && $project->status !== 'approved') {
+            $docs = EnvironmentDocument::where('environment_project_id', $id);
+            if ((clone $docs)->where('status', 'revision_required')->exists()) {
+                return back()->with('error', 'Some documents are marked for revision. Resolve them before approving the project.');
+            }
+            if ((clone $docs)->whereIn('status', ['uploaded', 'validated', 'approved'])->doesntExist()) {
+                return back()->with('error', 'Upload the project documents before approving the project.');
+            }
+        }
 
         $updateData = ['status' => $cleanStatus];
         if ($request->has('status_notes')) {
@@ -670,7 +707,8 @@ class EnverionsoneController extends Controller
             'loggable_id'   => $project->id,
             'action'        => 'status_updated',
             'description'   => "Project status changed to '{$cleanStatus}'.{$noteLog}",
-            'user_id'       => Auth::id() ?? 1,
+            'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         return back()->with('success', "Project status updated to '{$cleanStatus}' successfully.");
@@ -756,11 +794,14 @@ class EnverionsoneController extends Controller
     {
         $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
         abort_unless($project->category === 'B1', 400, 'Only Category B1 applications require PPT appraisal.');
+        // Same rule as the dossier button: only while Stage 1 (ToR) is being prepared
+        if ($project->b1_stage !== 'sc1_prep' && !$project->pptStage1) {
+            return back()->with('error', 'Stage 1 (ToR) presentation can be scheduled only while the project is in ToR preparation.');
+        }
 
         $ppt = $project->pptStage1;
         if (!$ppt) {
-            $count = PptApplication::count() + 1;
-            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+            $appNo = $this->nextNumber(PptApplication::class, 'application_no', 'PPT-' . date('Y') . '-');
 
             $ppt = PptApplication::create([
                 'application_no'         => $appNo,
@@ -808,6 +849,7 @@ class EnverionsoneController extends Controller
             'action'        => 'sc1_submitted_to_ppt',
             'description'   => "TOR completed and submitted to PPT Department for ToR Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         // Keep the master pipeline in step with this module move.
@@ -843,11 +885,13 @@ class EnverionsoneController extends Controller
     {
         $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
         abort_unless($project->category === 'B1' && in_array($project->sub_category, ['ETA', 'SC2']), 400, 'Project must be in ETA stage.');
+        if ($project->b1_stage !== 'sc2_prep' && !$project->pptStage2) {
+            return back()->with('error', 'Stage 2 (Final EC) presentation can be scheduled only after the ToR presentation is approved.');
+        }
 
         $ppt = $project->pptStage2;
         if (!$ppt) {
-            $count = PptApplication::count() + 1;
-            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+            $appNo = $this->nextNumber(PptApplication::class, 'application_no', 'PPT-' . date('Y') . '-');
 
             $ppt = PptApplication::create([
                 'application_no'         => $appNo,
@@ -895,6 +939,7 @@ class EnverionsoneController extends Controller
             'action'        => 'sc2_submitted_to_ppt',
             'description'   => "ETA completed and submitted to PPT Department for Final EC Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         // Keep the master pipeline in step with this module move.
@@ -930,11 +975,13 @@ class EnverionsoneController extends Controller
     {
         $project = EnvironmentProject::with(['handlers', 'customer', 'district'])->findOrFail($id);
         abort_unless($project->category === 'B2', 400, 'Only Category B2 applications can be submitted via B2 PPT gate.');
+        if (!$project->pptStage1 && ($project->status !== 'draft' || $project->ecCertificates()->exists())) {
+            return back()->with('error', 'This project cannot be sent for PPT appraisal in its current status.');
+        }
 
         $ppt = $project->pptStage1;
         if (!$ppt) {
-            $count = PptApplication::count() + 1;
-            $appNo = sprintf('PPT-%s-%04d', date('Y'), $count);
+            $appNo = $this->nextNumber(PptApplication::class, 'application_no', 'PPT-' . date('Y') . '-');
 
             $ppt = PptApplication::create([
                 'application_no'         => $appNo,
@@ -981,6 +1028,7 @@ class EnverionsoneController extends Controller
             'action'        => 'b2_submitted_to_ppt',
             'description'   => "Category B2 project submitted to PPT Department for SEAC Presentation ({$ppt->application_no}).",
             'user_id'       => Auth::id(),
+            'created_at'    => now(),
         ]);
 
         // Keep the master pipeline in step with this module move.

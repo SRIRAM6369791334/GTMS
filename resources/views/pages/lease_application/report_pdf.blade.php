@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Official Scrutiny Dossier Report &middot; {{ $application->application_no ?? 'LA-2026-0001' }}</title>
+  <title>Official Scrutiny Dossier Report &middot; {{ $application->application_no ?? '—' }}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
     :root {
@@ -562,7 +562,7 @@
       </div>
 
       <div class="dossier-identifiers">
-        <div class="app-number-hero">{{ $application->application_no ?? 'LA-2026-0001' }}</div>
+        <div class="app-number-hero">{{ $application->application_no ?? '—' }}</div>
         <div class="common-id-chip">
           <i class="bi bi-fingerprint"></i> Common ID: <strong>{{ $application->common_id ?? ('GTMS-' . date('Y') . '-' . str_pad($application->id, 4, '0', STR_PAD_LEFT)) }}</strong>
         </div>
@@ -958,9 +958,10 @@
         <div class="grid-item">
           <div class="label">Portal Password</div>
           <div class="value font-mono" style="color: var(--tn-navy); letter-spacing: 0.5px;">
-            {{ $mimas && !empty($mimas->password) ? $mimas->password : 'sriramsri@001' }}
+            {{-- The report is printed and shared: never print the password itself --}}
+            {{ $mimas && !empty($mimas->password) ? '••••••••••' : 'Not recorded' }}
           </div>
-          <div class="value-sub">Authenticated Authority Passkey</div>
+          <div class="value-sub">{{ $mimas && !empty($mimas->password) ? 'Stored encrypted — view in the dossier' : 'No portal password saved' }}</div>
         </div>
 
         <div class="grid-item">
@@ -1147,7 +1148,7 @@
         <strong>GTMS Enterprise Scrutiny System</strong> &middot; Generated on {{ date('d M Y, h:i:s A') }} &middot; Confidential Official Record
       </div>
       <div class="security-hash">
-        DocHash: {{ strtoupper(substr(hash('sha256', ($application->application_no ?? 'LA-2026-0001') . ($application->created_at ?? now())), 0, 16)) }}
+        DocHash: {{ strtoupper(substr(hash('sha256', ($application->application_no ?? '—') . ($application->created_at ?? now())), 0, 16)) }}
       </div>
     </div>
 

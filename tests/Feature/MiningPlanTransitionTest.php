@@ -57,7 +57,7 @@ class MiningPlanTransitionTest extends TestCase
             'email'         => 'balatraders@gmail.com',
             'pan'           => 'ABCDE1234F',
             'aadhaar_no'    => '9876-5432-1012',
-            'status'        => 'active',
+            'status'        => 1,
         ]);
 
         $mineral = Mineral::first() ?? Mineral::create(['name' => 'Rough Stone', 'status' => 1]);
@@ -79,7 +79,7 @@ class MiningPlanTransitionTest extends TestCase
             'taluk'                     => 'Omalur',
             'village'                   => 'Karuppur',
             'sf_no'                     => 'SF.No 101/1, 101/2',
-            'area_extent_ha'            => 2.50,
+            'area_extent_ha'            => '2.50',
             'lease_period_years'        => 5,
             'contact_person'            => 'R. Balasubramanian',
             'contact_mobile'            => '9876543210',
@@ -262,7 +262,7 @@ class MiningPlanTransitionTest extends TestCase
             'taluk'               => 'Omalur Updated',
             'village'             => 'Karuppur Updated',
             'survey_numbers_text' => 'SF.No 101/1A',
-            'area_extent_ha'      => 3.25,
+            'area_extent_ha'      => '3.25',
         ];
 
         $submitResponse = $this->post(route('newapplication.store'), $postData);
@@ -348,7 +348,7 @@ class MiningPlanTransitionTest extends TestCase
             'taluk'               => 'Test Taluk',
             'village'             => 'Test Village',
             'survey_numbers_text' => 'SF.No 123',
-            'area_extent_ha'      => 2.50,
+            'area_extent_ha'      => '2.50',
         ];
 
         $submitResponse = $this->post(route('newapplication.store'), $postData);
@@ -403,7 +403,7 @@ class MiningPlanTransitionTest extends TestCase
             'taluk'                      => 'Test Taluk',
             'village'                    => 'Test Village',
             'survey_numbers_text'        => 'SF.No 123',
-            'area_extent_ha'             => 2.50,
+            'area_extent_ha'             => '2.50',
         ];
 
         $invalidResponse = $this->post(route('newapplication.store'), $invalidPostData);

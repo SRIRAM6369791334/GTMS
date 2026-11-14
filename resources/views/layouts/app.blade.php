@@ -36,6 +36,10 @@
     <!-- Style css -->
     <link href="/vendor/bootstrap-select/css/bootstrap-select.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lykmapipo/themify-icons@0.1.2/css/themify-icons.css">
     <link href="/css/style.css?v=2" rel="stylesheet">
     <link href="/css/dark-mode.css?v=3" rel="stylesheet">
     {{-- <link href="css/style1.css" rel="stylesheet"> --}}
@@ -582,6 +586,7 @@
     <script src="/js/custom.min.js"></script>
     <script src="/js/app.js?v=3"></script>
     <script src="/js/admin.js"></script>
+    <script src="/js/settings.js"></script>
     <script src="/js/dlabnav-init.js"></script>
     <script>
         function cardsCenter() {
@@ -642,7 +647,7 @@
         }
     @endphp
     <script>window.GTMS_FLASH = @json($gtmsFlash);</script>
-    <script src="/js/gtms-ui.js?v=3"></script>
+    <script src="/js/gtms-ui.js?v=4"></script>
     <script src="/js/gtms-validate.js?v=5"></script>
 
  @yield('scripts')

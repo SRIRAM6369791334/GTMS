@@ -335,7 +335,7 @@
               <i class="fa fa-key me-1 text-muted"></i> Parivesh Portal Password
             </label>
             <div class="input-group">
-              <input type="text" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_parivesh_password" value="{{ old('parivesh_password') }}" placeholder="e.g. Parivesh@Pass2026" autocomplete="off">
+              <input type="password" class="form-control auto-filled-field font-monospace" name="parivesh_password" id="field_parivesh_password" value="{{ old('parivesh_password') }}" placeholder="e.g. Parivesh@Pass2026" autocomplete="new-password">
               <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_parivesh_password" title="Toggle visibility">
                 <i class="fa fa-eye"></i>
               </button>
@@ -352,7 +352,7 @@
               <i class="fa fa-lock me-1 text-muted"></i> Portal / Email Password
             </label>
             <div class="input-group">
-              <input type="text" class="form-control auto-filled-field font-monospace" name="email_password" id="field_email_password" value="{{ old('email_password') }}" placeholder="e.g. Email@Pass2026" autocomplete="off">
+              <input type="password" class="form-control auto-filled-field font-monospace" name="email_password" id="field_email_password" value="{{ old('email_password') }}" placeholder="e.g. Email@Pass2026" autocomplete="new-password">
               <button class="btn btn-outline-secondary btn-toggle-pass-visibility" type="button" data-target="field_email_password" title="Toggle visibility">
                 <i class="fa fa-eye"></i>
               </button>
@@ -924,8 +924,6 @@ body[data-theme-version="dark"] #gtms-eviron-create-page .checklist-row {
           'mobile_num'               => $c->mobile_num,
           'secondary_mobile_num'     => $c->secondary_mobile_num,
           'email'                    => $c->email,
-          'parivesh_password'        => $c->parivesh_password,
-          'email_password'           => $c->email_password,
           'district_id'              => $c->district_id,
           'district_name'            => $c->district?->name,
           'address'                  => $c->address,
@@ -1213,11 +1211,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('secondary_phone')) document.getElementById('secondary_phone').value = c.secondary_mobile_num || '';
     if (document.getElementById('contact_email')) document.getElementById('contact_email').value = c.email || '';
     if (document.getElementById('mimas_no')) document.getElementById('mimas_no').value = c.mimas_no || c.mimas_number || '';
-    if (document.getElementById('field_parivesh_password') && c.parivesh_password) {
-      document.getElementById('field_parivesh_password').value = c.parivesh_password;
-    }
-    if (document.getElementById('field_email_password') && c.email_password) {
-      document.getElementById('field_email_password').value = c.email_password;
+    // Saved portal passwords are fetched for this one customer only
+    if (c.id && window.GTMS && GTMS.credentials) {
+      GTMS.credentials('customer', c.id).then(function (cred) {
+        var fp = document.getElementById('field_parivesh_password');
+        var fe = document.getElementById('field_email_password');
+        if (fp && cred.parivesh_password) fp.value = cred.parivesh_password;
+        if (fe && cred.email_password) fe.value = cred.email_password;
+      }).catch(function () {});
     }
 
     // District Dropdown Auto-Selection

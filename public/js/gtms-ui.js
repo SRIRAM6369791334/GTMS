@@ -67,6 +67,80 @@
     window.GTMS.confirm = confirmDialog;
 
     /* ------------------------------------------------------------------
+       Portal credentials (Parivesh / Email passwords) are never printed
+       into page HTML. Pages fetch them on demand:
+         GTMS.credentials('customer'|'environment'|'ppt'|'ec_certificate', id)
+       resolves to { parivesh_password, email_password } (empty strings when
+       none are saved). Every fetch is logged on the server.
+    ------------------------------------------------------------------ */
+    var credCache = {};
+    window.GTMS.credentials = function (type, id) {
+        if (!type || !id) return Promise.resolve({ parivesh_password: '', email_password: '' });
+        var key = type + ':' + id;
+        if (credCache[key]) return credCache[key];
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        credCache[key] = fetch('/credentials/' + encodeURIComponent(type) + '/' + encodeURIComponent(id), {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': meta ? meta.getAttribute('content') : ''
+            }
+        }).then(function (res) {
+            if (!res.ok) throw new Error('Could not load the saved portal passwords.');
+            return res.json();
+        }).then(function (data) {
+            return {
+                parivesh_password: data.parivesh_password || '',
+                email_password: data.email_password || ''
+            };
+        }).catch(function (err) {
+            delete credCache[key];
+            throw err;
+        });
+        return credCache[key];
+    };
+
+    /* Show / Copy buttons for a saved portal password:
+         <span id="x">••••••••</span>
+         <button data-cred-action="toggle|copy" data-cred-type="environment"
+                 data-cred-id="12" data-cred-field="parivesh_password"
+                 data-cred-target="#x">...</button>                        */
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest ? e.target.closest('[data-cred-action]') : null;
+        if (!btn) return;
+        e.preventDefault();
+        var field = btn.getAttribute('data-cred-field');
+        var target = btn.getAttribute('data-cred-target') ? document.querySelector(btn.getAttribute('data-cred-target')) : null;
+        var action = btn.getAttribute('data-cred-action');
+
+        if (action === 'toggle' && target && target.getAttribute('data-cred-shown') === '1') {
+            target.textContent = target.getAttribute('data-cred-mask') || '••••••••••';
+            target.setAttribute('data-cred-shown', '0');
+            return;
+        }
+
+        window.GTMS.credentials(btn.getAttribute('data-cred-type'), btn.getAttribute('data-cred-id')).then(function (cred) {
+            var value = cred[field] || '';
+            if (!value) { toast('info', 'No password saved.'); return; }
+            if (action === 'toggle' && target) {
+                if (!target.getAttribute('data-cred-mask')) target.setAttribute('data-cred-mask', target.textContent);
+                target.textContent = value;
+                target.setAttribute('data-cred-shown', '1');
+            } else if (action === 'copy') {
+                var done = function () { toast('success', 'Password copied'); };
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(value).then(done);
+                } else {
+                    var tmp = document.createElement('textarea');
+                    tmp.value = value; document.body.appendChild(tmp); tmp.select();
+                    try { document.execCommand('copy'); done(); } finally { tmp.remove(); }
+                }
+            }
+        }).catch(function (err) { toast('error', err.message); });
+    });
+
+    /* ------------------------------------------------------------------
        Convert inline `return confirm('...')` handlers to data-confirm
        Only exact one-statement handlers are converted; anything more
        complex keeps the native dialog.
